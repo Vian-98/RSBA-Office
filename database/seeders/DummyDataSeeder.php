@@ -27,8 +27,10 @@ class DummyDataSeeder extends Seeder
             'ruangan',
             'surat_cuti_jenis',
             'surat_cuti',
+            'surat_cuti_approval',
             'surat_sp3',
             'surat_sp3_details',
+            'surat_sp3_approval',
             'um_supplier',
             'um_kategori',
             'um_penyimpanan',
@@ -136,9 +138,14 @@ class DummyDataSeeder extends Seeder
             ]
         );
 
+        $karyawanDimas = Karyawan::where('nama', 'Dimas Faqih')->first();
+
         $karyawanJabatans = [];
         if ($karyawanAdmin) {
             $karyawanJabatans[] = ['jabatan_id' => 1, 'karyawan_id' => $karyawanAdmin->id, 'tgl_mulai' => '2020-01-01', 'created_at' => now(), 'updated_at' => now()];
+        }
+        if ($karyawanDimas) {
+            $karyawanJabatans[] = ['jabatan_id' => 1, 'karyawan_id' => $karyawanDimas->id, 'tgl_mulai' => '2026-01-01', 'created_at' => now(), 'updated_at' => now()];
         }
         // Kepala Bagian
         $karyawanJabatans[] = ['jabatan_id' => 2, 'karyawan_id' => $kabagSdm->id, 'tgl_mulai' => '2015-01-01', 'created_at' => now(), 'updated_at' => now()];
@@ -233,6 +240,31 @@ class DummyDataSeeder extends Seeder
             ];
         }
         DB::table('surat_cuti')->insert($suratCutis);
+
+        // Seed approvals for seeded cuti
+        $cutiCt001 = DB::table('surat_cuti')->where('no_surat', 'CT-001')->first();
+        if ($cutiCt001 && $karyawanSdm) {
+            DB::table('surat_cuti_approval')->insert([
+                'surat_cuti_id' => $cutiCt001->id,
+                'disetujui_oleh' => $karyawanSdm->id,
+                'status' => 'waiting',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+
+        $cutiCt002 = DB::table('surat_cuti')->where('no_surat', 'CT-002')->first();
+        if ($cutiCt002 && $karyawanSdm) {
+            DB::table('surat_cuti_approval')->insert([
+                'surat_cuti_id' => $cutiCt002->id,
+                'disetujui_oleh' => $karyawanSdm->id,
+                'status' => 'approved',
+                'created_at' => now(),
+                'updated_at' => now(),
+                'signature_hash' => hash('sha256', 'dummy-signature-cuti-002'),
+                'approved_at' => now()->toIso8601String()
+            ]);
+        }
 
         // 11. Seed SuratSp3 (Surat Perintah Pembayaran)
         $userAdmin = User::where('email', 'admin@rsba.com')->first();
@@ -507,23 +539,25 @@ class DummyDataSeeder extends Seeder
         $spesialisIds = DB::table('dokter_spesialisasi')->pluck('id')->toArray();
 
         // Create Dokter Karyawan record
-        $karyawanDokter = Karyawan::create([
-            'nip' => '9999999999',
-            'nik' => '9999999999999999',
-            'nama' => 'Dr. John Doe, Sp.A',
-            'tgl_lahir' => '1980-05-15',
-            'hp' => '081234567890',
-            'prov' => 'Jawa Barat',
-            'kab' => 'Bandung',
-            'kec' => 'Coblong',
-            'desa' => 'Dago',
-            'alamat' => 'Jl. Dago Asri No. 10',
-            'agama' => 'islam',
-            'status' => 'tetap',
-            'tgl_masuk' => '2015-01-01',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $karyawanDokter = Karyawan::firstOrCreate(
+            ['nip' => '9999999999'],
+            [
+                'nik' => '9999999999999999',
+                'nama' => 'Dr. John Doe, Sp.A',
+                'tgl_lahir' => '1980-05-15',
+                'hp' => '081234567890',
+                'prov' => 'Jawa Barat',
+                'kab' => 'Bandung',
+                'kec' => 'Coblong',
+                'desa' => 'Dago',
+                'alamat' => 'Jl. Dago Asri No. 10',
+                'agama' => 'islam',
+                'status' => 'tetap',
+                'tgl_masuk' => '2015-01-01',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
 
         $dokterId = DB::table('dokter')->insertGetId([
             'karyawan_id' => $karyawanDokter->id,

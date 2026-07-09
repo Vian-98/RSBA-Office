@@ -40,7 +40,7 @@ class MenuSeeder extends Seeder
                 'id' => 3,
                 'nama' => 'Dashboard Kamar',
                 'route' => 'dashboard.kamar',
-                'icon' => 'home',
+                'icon' => 'bed',
                 'permission' => ['view-dashboard-kamar'],
                 'parent_id' => 1,
                 'group' => null,
@@ -380,7 +380,7 @@ class MenuSeeder extends Seeder
             ],
             [
                 'id' => 43,
-                'nama' => 'Cuti',
+                'nama' => 'Izin dan Cuti',
                 'route' => 'kepegawaian.surat.cuti',
                 'icon' => null,
                 'permission' => ['create-cuti-other-karyawan', 'view-kepegawaian-surat-cuti'],

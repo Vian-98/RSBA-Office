@@ -8,12 +8,14 @@ use App\Traits\AuthorizesFromRoute;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
+use TallStackUi\Traits\Interactions;
 
 #[Title('Penggajian')]
 class Index extends Component
 {
     use WithPagination;
     use AuthorizesFromRoute;
+    use Interactions;
 
     public string $search = '';
     public string $bagianFilter = '';
@@ -41,6 +43,7 @@ class Index extends Component
 
         $calc = $this->calculateSalary($karyawan);
         $this->selectedSlip = [
+            'id' => $karyawan->id,
             'nama' => $karyawan->full_nama,
             'nip' => $karyawan->nip,
             'status' => $karyawan->status->nama(),
@@ -109,6 +112,44 @@ class Index extends Component
             'pajak' => $pajak,
             'gaji_bersih' => $gajiBersih,
         ];
+    }
+
+    public function sendEmail(int $karyawanId): void
+    {
+        $karyawan = Karyawan::with(['jabatan.bagian', 'user'])->find($karyawanId);
+        if (!$karyawan) {
+            $this->toast()->error('Gagal !', 'Karyawan tidak ditemukan.')->send();
+            return;
+        }
+
+        $email = optional($karyawan->user)->email;
+        if (!$email) {
+            $this->toast()->warning('Peringatan !', 'Karyawan ini tidak memiliki akun user atau alamat email terdaftar.')->send();
+            return;
+        }
+
+        $calc = $this->calculateSalary($karyawan);
+        $slipData = [
+            'nama' => $karyawan->full_nama,
+            'nip' => $karyawan->nip,
+            'status' => $karyawan->status->nama(),
+            'jabatan' => $calc['jabatan_nama'],
+            'bagian' => $calc['bagian_nama'],
+            'periode' => CarbonTranslate(now(), 'F Y'),
+            'gaji_pokok' => $calc['gaji_pokok'],
+            'tunjangan' => $calc['tunjangan'],
+            'bpjs_kes' => $calc['bpjs_kes'],
+            'bpjs_ket' => $calc['bpjs_ket'],
+            'pajak' => $calc['pajak'],
+            'gaji_bersih' => $calc['gaji_bersih'],
+        ];
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\SlipGajiMail($slipData));
+            $this->toast()->success('Berhasil !', 'Slip gaji berhasil dikirim ke email: ' . $email)->send();
+        } catch (\Throwable $e) {
+            $this->toast()->error('Gagal !', 'Error saat mengirim email: ' . $e->getMessage())->send();
+        }
     }
 
     public function render()

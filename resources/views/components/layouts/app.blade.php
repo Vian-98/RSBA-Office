@@ -31,20 +31,20 @@
 
 
         @auth
-            <div class="flex h-full w-full flex-row">
+            <div class="flex h-full w-full flex-row overflow-hidden">
                 {{-- SIDEBAR --}}
                 <livewire:Partials.Sidebar key="sidebar" />
 
                 <!-- Main content -->
-                <div id="main-content" class="scrollbar-hidden max-h-screen flex-1 overflow-y-auto p-6 transition-all duration-200">
+                <div id="main-content" class="max-h-screen flex-1 flex flex-col overflow-hidden transition-all duration-300">
 
                     {{-- NAVBAR --}}
-                    <div class="h-16 rounded-md bg-white shadow-md">
+                    <div class="h-16 rounded-md bg-white shadow-md shrink-0 mx-6 mt-6">
                         <livewire:Partials.Navbar :title="isset($title) ? $title : config('app.name')" key="navbar" />
                     </div>
 
                     {{-- CONTENT --}}
-                    <main id="main" class="mt-4">
+                    <main id="main" class="flex-1 overflow-y-auto scrollbar-hidden px-6 py-4">
                         {{ $slot }}
                     </main>
 

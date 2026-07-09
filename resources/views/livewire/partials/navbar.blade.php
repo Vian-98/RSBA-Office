@@ -4,8 +4,8 @@
             <a @click.prevent="toggle()" @keyup.enter="alert('Submitted!')" class="hover:text-danger-500" href="#">
                 <div x-data="{ isHover: false }">
                     <x-tabler-menu-2 x-show="!isHover" @mouseover="isHover = true" />
-                    <x-tabler-layout-sidebar-left-expand x-show="isHover && !isOpen()" @mouseleave="isHover = false" />
-                    <x-tabler-layout-sidebar-left-collapse x-show="isHover && isOpen()" @mouseleave="isHover = false" />
+                    <x-tabler-layout-sidebar-left-expand x-show="isHover && !isSidebarExpanded()" @mouseleave="isHover = false" />
+                    <x-tabler-layout-sidebar-left-collapse x-show="isHover && isSidebarExpanded()" @mouseleave="isHover = false" />
                 </div>
             </a>
             <a href="">
@@ -20,7 +20,9 @@
                         <x-slot:action>
                             <x-ts:button.circle flat outline class="relative" x-on:click="show = !show">
                                 <x-tabler-bell />
-                                <span class="absolute right-0.5 top-1 block h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-red-300"></span>
+                                @if ($hasUnread)
+                                    <span class="absolute right-0.5 top-1 block h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-red-300"></span>
+                                @endif
                             </x-ts:button.circle>
                         </x-slot:action>
 

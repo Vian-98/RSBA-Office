@@ -7,6 +7,7 @@ use Throwable;
 use App\Models\Surat\SuratCuti;
 use App\Models\Surat\SuratCutiApproval;
 use App\Models\User;
+use App\Models\Sdm\Karyawan;
 use App\Services\DigitalSignatureService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -47,7 +48,17 @@ class ApprovalManual extends Component
     #[Computed]
     public function approvalOptions(): array
     {
-        return $this->suratCuti->approvals->map(
+        $approvals = $this->suratCuti ? $this->suratCuti->approvals : collect();
+        if ($approvals->isEmpty()) {
+            return Karyawan::whereNull('resign')->get()->map(
+                fn($k) => [
+                    'value' => $k->id,
+                    'nama' => $k->nama,
+                ]
+            )->toArray();
+        }
+
+        return $approvals->map(
             fn($approval) => [
                 'value' => $approval->karyawan->id,
                 'nama' => $approval->karyawan->nama,
@@ -113,6 +124,21 @@ class ApprovalManual extends Component
                     'signature_hash' => $signature['data_hash'],
                     'approved_at' => now()->toIso8601String()
                 ];
+
+                // If approval record does not exist in DB, create it first
+                $hasApproval = (clone $queryApprovals)
+                    ->where('disetujui_oleh', $approver)
+                    ->exists();
+
+                if (!$hasApproval) {
+                    SuratCutiApproval::create([
+                        'surat_cuti_id' => $this->suratCuti->id,
+                        'disetujui_oleh' => $approver,
+                        'status' => 'waiting',
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
 
                 // update approvals cuti
                 (clone $queryApprovals)

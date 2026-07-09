@@ -176,6 +176,19 @@ class Sidebar extends Component
         return null;
     }
 
+    public function logout(): void
+    {
+        try {
+            Auth::guard('web')->logout();
+            session()->invalidate();
+            session()->regenerateToken();
+
+            $this->redirect(\App\Livewire\Auth\Login::class, navigate: true);
+        } catch (\Throwable $e) {
+            // silent fail
+        }
+    }
+
     public function render()
     {
         return view('livewire.partials.sidebar');

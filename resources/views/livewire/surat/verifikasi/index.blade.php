@@ -15,6 +15,7 @@
         @if ($tab === 'sp3')
             <livewire:Surat.Sp3.Verify />
         @elseif($tab === 'cuti')
+            <livewire:Surat.Cuti.Verify />
         @else
             <span>Click Options</span>
         @endif

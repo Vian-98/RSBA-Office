@@ -19,6 +19,7 @@ class Setting extends Component
 
     public function render()
     {
-        return view('livewire.profile.setting');
+        return view('livewire.profile.setting')
+            ->title('Settings');
     }
 }
