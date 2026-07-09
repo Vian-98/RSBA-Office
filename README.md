@@ -1,32 +1,79 @@
 <h1 align="center">RSBA OFFICE</h1>
 
 <p align="center">
-
+  Aplikasi perkantoran (SIM-SDM & Internal Office) pada <b>Rumah Sakit Bintang Amin Lampung</b>.
 </p>
 
-## About
-
-Aplikasi perkantoran pada <b>Rumah Sakit Bintang Amin Lampung</b>, beberapa feature yang tersedia:
-
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
+## Fitur Utama & Pembaruan
+- **Collapsible Sidebar**: Menu navigasi sidebar modern yang dapat dilipat (*collapsible*) melalui tombol hamburger di navbar desktop/mobile dengan scroll terpisah dan auto-scroll prevention.
+- **Dynamic Header & Title**: Sinkronisasi dinamis judul halaman pada navbar (misal: "Profile", "Notifikasi", "Settings") dan browser tab title template menggunakan nama instansi **RS Bintang Amin**.
+- **Notification System (Tandai Dibaca)**: Fitur notifikasi yang interaktif dengan opsi menandai dibaca per notif atau tandai semua dibaca, lengkap dengan *badge bell indicator* dinamis (realtime event updates).
+- **Payroll & Slip Gaji Digital**:
+  - Tampilan tabel slip gaji yang rapi dengan grid solid garis pemisah tegas (black/dark double-line separator).
+  - Cetak langsung (*print layout*) dengan styling CSS mandiri (instan tanpa delay CDN).
+  - Kirim slip gaji ke email karyawan secara otomatis via SMTP Gmail/Mailtrap.
+  - Dilengkapi lampiran dokumen **PDF Slip Gaji** otomatis menggunakan library `barryvdh/laravel-dompdf`.
+- **Izin & Cuti Refactoring**: Pembaharuan nama istilah dari "Cuti" menjadi "Izin dan Cuti" pada seluruh modul, modal, dan seeder.
+- **Profil Karyawan & BPJS**: Pencatatan nomor kepesertaan BPJS Kesehatan dan BPJS Ketenagakerjaan yang terintegrasi dengan migrasi database.
 
 ## Prerequisite
-- [Laravel 12](https://laravel.com/docs/12.x)
-- PHP 8.2 Above (atau mengikuti laravel)
-- [TallStackUI](https://tallstackui.com/docs/v2) 
-- [Livewire](https://livewire.laravel.com/docs/quickstart)
-- [Filament Table](https://filamentphp.com/docs/3.x/tables/installation)
-- [Tailwind 3](https://v3.tailwindcss.com/docs/installation)
-- [Tabler Icon](https://tabler.io/icons) using library `secondnetwork/blade-tabler-icons`
+- **PHP**: `^8.2`
+- **Laravel Framework**: `^12.0`
+- **Database**: MySQL / MariaDB
+- **TallStackUI**: `^3.0` (TALL Stack toolkit)
+- **Livewire**: `^4.0`
+- **Filament Table**: `^5.0` (untuk filter & listing data)
+- **Tailwind CSS**: `^3.0`
+- **Tabler Icons**: `secondnetwork/blade-tabler-icons`
+- **PDF Engine**: `barryvdh/laravel-dompdf`
 
-## Contributing
+## Langkah Instalasi & Konfigurasi
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 1. Clone Repository & Install Dependencies
+```bash
+composer install
+npm install
+npm run dev
+```
 
-## Security Vulnerabilities
+### 2. Konfigurasi Environment (`.env`)
+Salin file `.env.example` ke `.env` dan konfigurasikan database serta mail SMTP untuk pengiriman slip gaji:
+```ini
+APP_NAME="RS Bintang Amin"
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Konfigurasi Database
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=nama_database_anda
+DB_USERNAME=root
+DB_PASSWORD=
 
-## License
+# Konfigurasi Mail SMTP (Contoh Gmail)
+MAIL_MAILER=smtp
+MAIL_SCHEME=null
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=email_anda@gmail.com
+MAIL_PASSWORD=sandi_aplikasi_16_karakter
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="email_anda@gmail.com"
+MAIL_FROM_NAME="${APP_NAME}"
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 3. Migrasi & Seeding Database
+Jalankan migrasi untuk membuat tabel (termasuk kolom BPJS dan notifikasi) serta jalankan seeder untuk mengisi data awal:
+```bash
+php artisan migrate:fresh --seed
+```
+
+### 4. Clear Cache (Penting setelah edit `.env`)
+Jika melakukan perubahan konfigurasi pada file `.env`, jalankan perintah berikut:
+```bash
+php artisan config:clear
+php artisan view:clear
+php artisan cache:clear
+```
+
+## Lisensi
+Aplikasi ini berlisensi di bawah [MIT license](https://opensource.org/licenses/MIT).
