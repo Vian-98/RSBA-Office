@@ -12,10 +12,9 @@
             }
         </style>
         <tallstackui:script />
-        @livewireStyles
         @filamentStyles
 
-        @vite('resources/css/app.css')
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         {{-- inject style laravel --}}
         @stack('style')
@@ -52,9 +51,6 @@
             </div>
         @endauth
 
-        @vite('resources/js/app.js')
-
-        @livewireScripts
         @filamentScripts
 
         {{-- Inject Script Laravel --}}

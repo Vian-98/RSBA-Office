@@ -9,7 +9,6 @@
 
         <tallstackui:script />
         @filamentStyles
-        @livewireStyles
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
 
@@ -22,7 +21,6 @@
         </div>
 
         @filamentScripts
-        @livewireScripts
     </body>
 
 </html>
