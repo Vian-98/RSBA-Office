@@ -41,6 +41,7 @@ class TransaksiBeliLangsung extends Component
     public int $supplier;
     public string $no_faktur, $keterangan;
     public $status_pembayaran = 'lunas';
+    public bool $isSaving = false;
     public array $cabarOptions = [
         ['value' => 'lunas', 'nama' => 'Tunai / Lunas'],
         ['value' => 'tempo', 'nama' => 'Tempo'],
@@ -200,6 +201,11 @@ class TransaksiBeliLangsung extends Component
 
         $this->validate();
 
+        if ($this->isSaving) {
+            return;
+        }
+        $this->isSaving = true;
+
         DB::beginTransaction();
         try {
 
@@ -317,6 +323,7 @@ class TransaksiBeliLangsung extends Component
             DB::commit();
 
             $this->dispatch('new-transaksi-langsung-created');
+            $this->dispatch('close-modal', id: 'modal-pengajuan-to-langsung');
 
             $this->toast()
                 ->success('Berhasil', 'Pembelian berhasil disimpan.')
@@ -324,6 +331,7 @@ class TransaksiBeliLangsung extends Component
         } catch (Throwable $e) {
             // Rollback
             DB::rollBack();
+            $this->isSaving = false;
 
             $this->toast()
                 ->error('Failed', 'Error:' . $e->getMessage())
