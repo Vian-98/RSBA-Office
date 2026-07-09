@@ -17,15 +17,15 @@
 - **Profil Karyawan & BPJS**: Pencatatan nomor kepesertaan BPJS Kesehatan dan BPJS Ketenagakerjaan yang terintegrasi dengan migrasi database.
 
 ## Prerequisite
-- **PHP**: `^8.2`
-- **Laravel Framework**: `^12.0`
+- **PHP**: `^8.2` (atau mengikuti Laravel)
+- **Laravel Framework**: [Laravel 12](https://laravel.com/docs/12.x)
 - **Database**: MySQL / MariaDB
-- **TallStackUI**: `^3.0` (TALL Stack toolkit)
-- **Livewire**: `^4.0`
-- **Filament Table**: `^5.0` (untuk filter & listing data)
-- **Tailwind CSS**: `^3.0`
-- **Tabler Icons**: `secondnetwork/blade-tabler-icons`
-- **PDF Engine**: `barryvdh/laravel-dompdf`
+- **TallStackUI**: [TallStackUI](https://tallstackui.com/docs/v2) 
+- **Livewire**: [Livewire](https://livewire.laravel.com/docs/quickstart)
+- **Filament Table**: [Filament Table](https://filamentphp.com/docs/3.x/tables/installation) (untuk filter & listing data)
+- **Tailwind CSS**: [Tailwind 3](https://v3.tailwindcss.com/docs/installation)
+- **Tabler Icons**: [Tabler Icon](https://tabler.io/icons) menggunakan library `secondnetwork/blade-tabler-icons`
+- **PDF Engine**: [Laravel DomPDF](https://github.com/barryvdh/laravel-dompdf) (`barryvdh/laravel-dompdf`)
 
 ## Langkah Instalasi & Konfigurasi
 
