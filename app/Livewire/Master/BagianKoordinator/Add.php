@@ -27,6 +27,7 @@ class Add extends Component
 
     public function submit()
     {
+        $this->aktif = filter_var($this->aktif, FILTER_VALIDATE_BOOLEAN);
         $this->validate();
 
         $exists = BagianKoordinator::where('bagian_id', $this->bagian_id)
@@ -44,6 +45,19 @@ class Add extends Component
                 'karyawan_id' => $this->karyawan_id,
                 'aktif' => $this->aktif,
             ]);
+
+            $karyawan = \App\Models\Sdm\Karyawan::with('user')->find($this->karyawan_id);
+            if ($karyawan && $karyawan->user && $this->aktif) {
+                $permissions = [
+                    'view-kepegawaian-jadwal-kerja',
+                    'add-kepegawaian-jadwal-kerja',
+                    'edit-kepegawaian-jadwal-kerja',
+                    'delete-kepegawaian-jadwal-kerja',
+                ];
+                $karyawan->user->givePermissionTo($permissions);
+                \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $karyawan->user->id);
+                \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $karyawan->user->id);
+            }
 
             $this->dispatch('new-bagian-koordinator-created');
             $this->dispatch('close-modal', id: 'new-bagian-koordinator');

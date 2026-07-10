@@ -55,6 +55,8 @@ class Kelola extends Component
             $this->dates[] = Carbon::create($this->jadwalKerja->tahun, $this->jadwalKerja->bulan, $d);
         }
 
+        $this->syncDetails($daysInMonth);
+
         // Group details by Karyawan
         $grouped = $this->jadwalKerja->details->groupBy('karyawan_id');
         
@@ -76,6 +78,42 @@ class Kelola extends Component
             }
 
             $this->karyawans[] = $row;
+        }
+    }
+
+    private function syncDetails($daysInMonth)
+    {
+        $karyawansInRoom = \App\Models\Sdm\Karyawan::where('ruangan_id', $this->jadwalKerja->ruangan_id)
+            ->whereNull('resign_at')
+            ->get();
+            
+        $existingDetails = $this->jadwalKerja->details;
+        $detailsToInsert = [];
+        
+        foreach ($karyawansInRoom as $karyawan) {
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $dateStr = $this->dates[$d - 1]->format('Y-m-d');
+                $exists = $existingDetails->where('karyawan_id', $karyawan->id)->where('tanggal', $dateStr)->first();
+                
+                if (!$exists) {
+                    $detailsToInsert[] = [
+                        'jadwal_kerja_id' => $this->jadwalKerja->id,
+                        'karyawan_id' => $karyawan->id,
+                        'shift_id' => null,
+                        'tanggal' => $dateStr,
+                        'status_kehadiran' => 'belum_dicek',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+            }
+        }
+        
+        if (!empty($detailsToInsert)) {
+            foreach (array_chunk($detailsToInsert, 500) as $chunk) {
+                JadwalKerjaDetail::insert($chunk);
+            }
+            $this->jadwalKerja->load(['details.karyawan', 'details.shift']);
         }
     }
 

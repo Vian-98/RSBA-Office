@@ -2,7 +2,7 @@
     <div class="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm">
         <div>
             <h2 class="text-lg font-semibold text-gray-800">
-                Jadwal Tugas Saya
+                Jadwal Kerja Saya
             </h2>
             <p class="text-sm text-gray-500">
                 Lihat jadwal tugas dan shift Anda pada periode yang dipilih.
@@ -52,6 +52,26 @@
                             <span>Status Kehadiran:</span>
                             <x-ts:badge :color="$detail->status_kehadiran->color()" text="{{ $detail->status_kehadiran->nama() }}" xs />
                         </div>
+                        @if($detail->shift_id)
+                            <div class="flex justify-between text-gray-500">
+                                <span>Jam Masuk Aktual:</span>
+                                <span>{{ $detail->absen_masuk_at ? \Carbon\Carbon::parse($detail->absen_masuk_at)->format('H:i') : '--:--' }}</span>
+                            </div>
+                            <div class="flex justify-between text-gray-500">
+                                <span>Jam Keluar Aktual:</span>
+                                <span>{{ $detail->absen_keluar_at ? \Carbon\Carbon::parse($detail->absen_keluar_at)->format('H:i') : '--:--' }}</span>
+                            </div>
+                            @if($detail->catatan)
+                            <div class="text-xs text-red-500 mt-1 italic">
+                                Catatan: {{ $detail->catatan }}
+                            </div>
+                            @endif
+                            @if($detail->status_kehadiran === \App\Enums\StatusKehadiran::PERLU_VERIFIKASI)
+                            <div class="text-xs text-yellow-600 mt-1">
+                                Menunggu konfirmasi SDM
+                            </div>
+                            @endif
+                        @endif
                     </div>
                 </div>
             @endforeach

@@ -16,19 +16,19 @@ class Edit extends Component
 {
     use Interactions;
 
-    public ?BagianKoordinator $record;
+    public ?int $recordId = null;
 
     public $bagian_id;
     public $karyawan_id;
     public $aktif;
 
-    #[On('load-bagian-koordinator-data')]
-    public function loadData($id)
+    public function mount($id)
     {
-        $this->record = BagianKoordinator::findOrFail($id);
-        $this->bagian_id = $this->record->bagian_id;
-        $this->karyawan_id = $this->record->karyawan_id;
-        $this->aktif = $this->record->aktif;
+        $this->recordId = $id;
+        $record = BagianKoordinator::findOrFail($id);
+        $this->bagian_id = $record->bagian_id;
+        $this->karyawan_id = $record->karyawan_id;
+        $this->aktif = $record->aktif;
     }
 
     public function rules()
@@ -42,9 +42,12 @@ class Edit extends Component
 
     public function submit()
     {
+        $this->aktif = filter_var($this->aktif, FILTER_VALIDATE_BOOLEAN);
         $this->validate();
 
-        if ($this->record->bagian_id != $this->bagian_id || $this->record->karyawan_id != $this->karyawan_id) {
+        $record = BagianKoordinator::findOrFail($this->recordId);
+
+        if ($record->bagian_id != $this->bagian_id || $record->karyawan_id != $this->karyawan_id) {
             $exists = BagianKoordinator::where('bagian_id', $this->bagian_id)
                 ->where('karyawan_id', $this->karyawan_id)
                 ->exists();
@@ -56,11 +59,40 @@ class Edit extends Component
         }
 
         try {
-            $this->record->update([
+            $record->update([
                 'bagian_id' => $this->bagian_id,
                 'karyawan_id' => $this->karyawan_id,
                 'aktif' => $this->aktif,
             ]);
+
+            $karyawan = \App\Models\Sdm\Karyawan::with('user')->find($this->karyawan_id);
+            if ($karyawan && $karyawan->user && $this->aktif) {
+                $permissions = [
+                    'view-kepegawaian-jadwal-kerja',
+                    'add-kepegawaian-jadwal-kerja',
+                    'edit-kepegawaian-jadwal-kerja',
+                    'delete-kepegawaian-jadwal-kerja',
+                ];
+                $karyawan->user->givePermissionTo($permissions);
+                \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $karyawan->user->id);
+                \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $karyawan->user->id);
+            } elseif ($karyawan && $karyawan->user && !$this->aktif) {
+                if (!$karyawan->bagianKoordinasi()->exists()) {
+                    $permissions = [
+                        'view-kepegawaian-jadwal-kerja',
+                        'add-kepegawaian-jadwal-kerja',
+                        'edit-kepegawaian-jadwal-kerja',
+                        'delete-kepegawaian-jadwal-kerja',
+                    ];
+                    foreach ($permissions as $perm) {
+                        if ($karyawan->user->hasPermissionTo($perm)) {
+                            $karyawan->user->revokePermissionTo($perm);
+                        }
+                    }
+                }
+                \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $karyawan->user->id);
+                \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $karyawan->user->id);
+            }
 
             $this->dispatch('bagian-koordinator-updated');
             $this->dispatch('close-modal', id: 'edit-bagian-koordinator');

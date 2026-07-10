@@ -6,6 +6,7 @@ use App\Models\Menu;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Isolate;
+use Livewire\Attributes\On;
 
 #[Isolate]
 class Sidebar extends Component
@@ -21,6 +22,22 @@ class Sidebar extends Component
     public function updatedSearchMenu(): void
     {
         // saat pencarian
+        $this->loadMenus();
+    }
+
+    #[On('updated-role-user')]
+    #[On('updated-permission-user')]
+    #[On('new-role-created')]
+    #[On('new-permission-created')]
+    #[On('menu-updated')]
+    #[On('new-menu-created')]
+    public function refreshMenus(): void
+    {
+        // Hapus cache milik user yang sedang login agar perubahan role/permission langsung berefek di UI-nya
+        cache()->forget('user-sidebar-menu:' . auth()->id());
+        cache()->forget('user-permissions:view:' . auth()->id());
+        cache()->forget('user-sidebar-menu:base');
+        
         $this->loadMenus();
     }
 

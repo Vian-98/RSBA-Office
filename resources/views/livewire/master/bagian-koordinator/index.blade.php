@@ -26,8 +26,7 @@
             Edit Koordinator Bagian
         </x-slot>
         @if($editingId)
-            <livewire:Master.BagianKoordinator.Edit lazy :key="$editingId" />
-            <div x-init="$dispatch('load-bagian-koordinator-data', { id: {{ $editingId }} })"></div>
+            <livewire:Master.BagianKoordinator.Edit lazy :id="$editingId" :key="$editingId" />
         @endif
     </x-filament::modal>
 </div>
