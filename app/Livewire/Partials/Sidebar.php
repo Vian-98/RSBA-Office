@@ -193,9 +193,6 @@ class Sidebar extends Component
         return $result;
     }
 
-    /**
-     * Get only 'view' permissions for a user (cached per user)
-     */
     private function getCachedUserViewPermissions(int $userId): array
     {
         return cache()->remember('user-permissions:view:' . $userId, 60 * 60, function () {
@@ -205,7 +202,14 @@ class Sidebar extends Component
                 ? $user->getAllPermissions()->pluck('name')->toArray()
                 : $user->permissions->pluck('name')->toArray();
 
-            return array_values(array_filter($all, fn($p) => str_starts_with($p, 'view')));
+            $permissions = array_values(array_filter($all, fn($p) => str_starts_with($p, 'view')));
+
+            // Allow users with assigned ruangan to view the asset menu
+            if ($user?->karyawan?->ruangan_id && !in_array('view-umum-asset', $permissions)) {
+                $permissions[] = 'view-umum-asset';
+            }
+
+            return $permissions;
         });
     }
 

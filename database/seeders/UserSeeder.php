@@ -28,6 +28,7 @@ class UserSeeder extends Seeder
                 'nip' => '0000000000',
                 'nik' => '0000000000000000',
                 'role' => 'Super-Admin',
+                'ruangan_id' => null,
             ],
             [
                 'email' => 'dimasfaqih005@gmail.com',
@@ -35,6 +36,7 @@ class UserSeeder extends Seeder
                 'nip' => '0000000001',
                 'nik' => '0000000000000001',
                 'role' => 'Super-Admin',
+                'ruangan_id' => null,
             ],
             [
                 'email' => 'sdm@rsba.com',
@@ -42,6 +44,7 @@ class UserSeeder extends Seeder
                 'nip' => '1111111111',
                 'nik' => '1111111111111111',
                 'role' => 'Staff-SDM',
+                'ruangan_id' => null,
             ],
             [
                 'email' => 'umum@rsba.com',
@@ -49,6 +52,7 @@ class UserSeeder extends Seeder
                 'nip' => '2222222222',
                 'nik' => '2222222222222222',
                 'role' => 'Bagian-Umum',
+                'ruangan_id' => null,
             ],
             [
                 'email' => 'keuangan@rsba.com',
@@ -56,6 +60,7 @@ class UserSeeder extends Seeder
                 'nip' => '3333333333',
                 'nik' => '3333333333333333',
                 'role' => 'Keuangan',
+                'ruangan_id' => null,
             ],
             [
                 'email' => 'administrasi@rsba.com',
@@ -63,6 +68,7 @@ class UserSeeder extends Seeder
                 'nip' => '4444444444',
                 'nik' => '4444444444444444',
                 'role' => 'Administrasi',
+                'ruangan_id' => null,
             ],
             [
                 'email' => 'guest@rsba.com',
@@ -70,6 +76,23 @@ class UserSeeder extends Seeder
                 'nip' => '5555555555',
                 'nik' => '5555555555555555',
                 'role' => 'Guest',
+                'ruangan_id' => null,
+            ],
+            [
+                'email' => 'bedah@rsba.com',
+                'nama' => 'Staff Bedah',
+                'nip' => '6666666666',
+                'nik' => '6666666666666666',
+                'role' => 'Staff-Bedah',
+                'ruangan_id' => 3, // Poli Bedah
+            ],
+            [
+                'email' => 'ugd@rsba.com',
+                'nama' => 'Staff UGD',
+                'nip' => '7777777777',
+                'nik' => '7777777777777777',
+                'role' => 'Staff-UGD',
+                'ruangan_id' => 1, // UGD
             ],
         ];
 
@@ -79,6 +102,7 @@ class UserSeeder extends Seeder
                 [
                     'nik' => $u['nik'],
                     'nama' => $u['nama'],
+                    'ruangan_id' => $u['ruangan_id'],
                     'tgl_lahir' => '1995-01-01',
                     'hp' => '-',
                     'prov' => '-',
@@ -93,6 +117,11 @@ class UserSeeder extends Seeder
                     'updated_at' => now(),
                 ]
             );
+
+            // Update ruangan_id in case it was created previously without it
+            if ($karyawan->ruangan_id !== $u['ruangan_id']) {
+                $karyawan->update(['ruangan_id' => $u['ruangan_id']]);
+            }
 
             $user = User::updateOrCreate(
                 ['email' => $u['email']],

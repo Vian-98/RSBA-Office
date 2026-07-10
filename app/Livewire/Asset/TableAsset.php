@@ -34,7 +34,17 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
             ->query(
                 AssetBarang::with(['barang', 'ruangan', 'barang.kategori'])
                     ->withHierarchySort()
-                // AssetBarang::with(['barang', 'ruangan', 'barang.kategori'])
+                    ->when(
+                        !auth()->user()->hasRole('Super-Admin') && !auth()->user()->can('view-umum-asset'),
+                        function (Builder $query) {
+                            $user = auth()->user();
+                            if ($user && $user->karyawan && $user->karyawan->ruangan_id) {
+                                $query->where('ruangan_id', $user->karyawan->ruangan_id);
+                            } else {
+                                $query->whereNull('id'); // Hide all if no ruangan
+                            }
+                        }
+                    )
             )
             ->columns([
                 TextColumn::make('kode')

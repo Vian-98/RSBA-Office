@@ -4,21 +4,21 @@
 
 <{{ $tag }} @if ($href) href="{!! $href !!}" @else
     role="button"
-        @endif @if ($unfocus) data-tsui-unfocus @endif {{ $attributes->except('type')->class([
+@endif {{ $attributes->except('type')->class([
         $customization['wrapper.class'],
         $customization['wrapper.sizes.' . $size],
         $colors['background'],
-        $customization['wrapper.block'] => $block,
+        'w-full' => $block,
         $customization['wrapper.border.radius.rounded'] => !$square && !$round,
         $customization['wrapper.border.radius.circle'] => !$square && $round !== null,
     ]) }} type="{{ $attributes->get('type', $submit ? 'submit' : 'button') }}" @if ($livewire && $loading)
-    wire:loading.attr="disabled" wire:loading.class="{{ $customization['wire.loading-cursor'] }}"
+    wire:loading.attr="disabled" wire:loading.class="!cursor-wait"
 @endif @if ($tooltip)
     x-tooltip="{{ $tooltip }}"
 @endif>
 @if ($livewire && $loading && $position === 'left')
     <x-ts-ui::icon.generic.loading-button :$loading :$delay @class([
-                $customization['icon.spinner-animation'],
+                'animate-spin',
                 $customization['icon.sizes.' . $size],
                 $colors['icon'],
             ]) />
@@ -38,7 +38,7 @@
 @endif
 @if ($livewire && $loading && $position === 'right')
     <x-ts-ui::icon.generic.loading-button :$loading :$delay @class([
-            $customization['icon.spinner-animation'],
+            'animate-spin',
             $customization['icon.sizes.' . $size],
             $colors['icon'],
         ]) />

@@ -7,18 +7,16 @@
      x-on:command-palette:{{ $open }}.window="open()"
      x-on:command-palette:{{ $close }}.window="close()"
      {{ $attributes->whereStartsWith('x-on:') }}>
-    @if ($configurations['overlay'])
-        <div x-show="show"
-             @if (!$ts_ui__flash)
-                 x-transition:enter="ease-out duration-200"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-150"
-                 x-transition:leave-start="opacity-100"
-                 x-transition:leave-end="opacity-0"
-             @endif
-             @class([$customization['backdrop'], $configurations['zIndex'], ($configurations['blur'] ? $customization['blur.'.($configurations['blur'] === true ? 'sm' : $configurations['blur'])] : '') => (bool) $configurations['blur']])></div>
-    @endif
+    <div x-show="show"
+         @if (!$ts_ui__flash)
+             x-transition:enter="ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+         @endif
+         @class([$customization['backdrop'], $configurations['zIndex'], $customization['blur.'.($configurations['blur'] === true ? 'sm' : $configurations['blur'])] ?? null => $configurations['blur']])></div>
     <div x-show="show"
          x-on:click.self="close()"
          x-on:keydown.escape.window="close()"
@@ -43,14 +41,13 @@
              ])
              dusk="tallstackui_command_palette">
             <div @class([$customization['input.wrapper']])
-                 x-bind:class="{ '{{ $customization['input.border-empty'] }}': available.length === 0 && (!search || loading || !fetched) }">
+                 x-bind:class="{ 'border-b-0!': available.length === 0 && (!search || loading || !fetched) }">
                 <x-dynamic-component :component="TallStackUi::prefix('icon')"
                                      :icon="TallStackUi::icon('magnifying-glass')"
                                      internal
                                      @class([$customization['input.icon']]) />
                 <input x-ref="search"
                        x-model="search"
-                       x-on:select.stop=""
                        x-on:keydown.arrow-down.prevent="navigate('next')"
                        x-on:keydown.arrow-up.prevent="navigate('previous')"
                        x-on:keydown.enter.prevent="available[selected] && selectOption(available[selected])"
@@ -59,12 +56,12 @@
                        dusk="tallstackui_command_palette_search"
                        @class([$customization['input.base']]) />
                 <div x-show="loading" @class([$customization['input.loading']])>
-                    <x-ts-ui::icon.generic.loading :class="$customization['loading.icon']" />
+                    <x-ts-ui::icon.generic.loading class="h-5 w-5 animate-spin text-dark-400" />
                 </div>
             </div>
             <div x-ref="list"
                  x-on:mousemove="_keyboard = false"
-                 @class([$customization['list'], $customization['list-scrollbar'] => $configurations['scrollbar']])
+                 @class([$customization['list'], 'command-palette-scrollbar' => $configurations['scrollbar']])
                  x-show="available.length > 0 || (search && !loading && fetched)">
                 <template x-for="(option, index) in available" :key="option.__tsui_key ?? index">
                     <button type="button"

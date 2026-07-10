@@ -22,7 +22,7 @@
                                          :icon="TallStackUi::icon('chevron-down')"
                                          internal
                                          class="{{ $customization['action.icon'] }}"
-                                         x-bind:class="{ 'transform {{ $customization['action.icon-rotated'] }}': animate && show }" />
+                                         x-bind:class="{ 'transform rotate-180': animate && show }" />
                 </button>
             </div>
         @elseif ($icon)
@@ -35,7 +35,7 @@
                                          :$icon
                                          internal
                                          class="{{ $customization['action.icon'] }}"
-                                         x-bind:class="{ 'transform {{ $customization['action.icon-rotated'] }}': animate && show }" />
+                                         x-bind:class="{ 'transform rotate-180': animate && show }" />
                 </button>
             </div>
         @else
@@ -44,21 +44,11 @@
         <x-dynamic-component :component="TallStackUi::prefix('floating')"
                              scope="dropdown.floating"
                              :floating="$customization['floating.default']"
-                             @class([
-                                 $customization['floating.widths.xxs'],
-                                 $customization['floating.widths.xs'],
-                                 $customization['floating.widths.sm'],
-                                 $customization['floating.widths.md'],
-                                 $customization['floating.widths.lg'],
-                                 $customization['floating.widths.xl'],
-                                 $customization['floating.widths.2xl'],
-                             ])
+                             :class="$customization['floating.class']"
                              offset="5"
                              :$position
                              x-anchor="$refs.dropdown"
-                             role="menu"
-                             :data-tsui-dropdown-size="$size"
-                             :data-tsui-dropdown-width="$width">
+                             role="menu">
             <x-slot:transition>
                 {!! $transitions() !!}
             </x-slot:transition>

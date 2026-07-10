@@ -11,8 +11,7 @@
     @js($decimals),
     @js($precision),
     @js($clearable),
-    @js($configurations['mutate']),
-    @js($configurations['decimal']),
+    @js($mutate),
     @js($livewire),
     @js($property),
     @js($value),
@@ -20,7 +19,7 @@
     <x-dynamic-component :component="TallStackUi::prefix('input')"
                          scope="form.currency.input"
                          {{ $attributes->whereDoesntStartWith('wire:model') }}
-                         :class="$customization['input.appearance']"
+                         class="appearance-number-none"
                          inputmode="numeric"
                          :$label
                          :$hint
@@ -30,11 +29,11 @@
                          x-model="input">
         @if ($symbol || $currency || $clearable)
             @if (!empty($symbols['symbol']) && $symbol)
-                <x-slot:prefix :class="$customization['symbol.spacing']">
+                <x-slot:prefix class="ml-2">
                     {{ is_string($symbol) && $symbol !== '1' ? $symbol : $symbols['symbol'] }}
                 </x-slot:prefix>
             @endif
-            <x-slot:suffix :class="$customization['currency.spacing']">
+            <x-slot:suffix class="mr-2">
                 @if (!empty($symbols['currency']) && $currency)
                     {{ is_string($currency) && $currency !== '1' ? $currency : $symbols['currency'] }}
                 @endif

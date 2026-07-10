@@ -8,12 +8,12 @@
 
 <x-dynamic-component :component="TallStackUi::prefix('wrapper.input')" :$id :$property :$error :$label :$hint
                      :$invalidate>
-    <div x-data="tallstackui_formTag({!! $entangle !!}, @js($limit), @js($lazy), @js($prefix), @js($livewire), @js($property), @js($value))"
+    <div x-data="tallstackui_formTag({!! $entangle !!}, @js($limit), @js($prefix), @js($livewire), @js($property), @js($value))"
          x-cloak
          x-on:click="$refs.input.focus()"
             {{ $attributes->whereStartsWith('x-on')->except('x-on:erase') }}
             @class([
-               'block!',
+               '!block',
                $customization['input.wrapper'],
                $customization['input.color.base'] => !$error,
                $customization['input.color.background'] => !$attributes->get('disabled') && !$attributes->get('readonly'),

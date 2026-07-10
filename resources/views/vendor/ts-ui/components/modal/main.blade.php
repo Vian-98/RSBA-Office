@@ -2,7 +2,6 @@
     $customization = $classes();
 @endphp
 
-<template x-teleport="body">
 <div x-cloak
      @if ($id) id="{{ $id }}" @endif
      @class(['relative', $configurations['zIndex']])
@@ -28,14 +27,14 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
             @endif
-            @class([$customization['wrapper.first'], ($configurations['blur'] ? $customization['blur.'.($configurations['blur'] === true ? 'sm' : $configurations['blur'])] : '') => (bool) $configurations['blur']])></div>
+            @class([$customization['wrapper.first'], $customization['blur.'.($configurations['blur'] === true ? 'sm' : $configurations['blur'])] ?? null => $configurations['blur']])></div>
     <div class="{{ $customization['wrapper.second'] }}">
         <div @class([
                 $customization['wrapper.third'],
                 $configurations['size'],
                 $customization['positions.top'] => !$configurations['center'],
                 $customization['positions.center'] => $configurations['center'],
-                $customization['wrapper.third-centered-padding'] => $configurations['center'],
+                'p-4' => $configurations['center'],
             ])>
             <div x-show="show"
                  @if (!$configurations['persistent']) x-on:mousedown.away="top_ui && (show = false)" @endif
@@ -47,11 +46,11 @@
                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     @endif
-                    @class([$customization['wrapper.fourth'], $configurations['size'], $customization['wrapper.scrollable'] => $configurations['scrollable'], $customization['wrapper.fourth-centered-rounded'] => $configurations['center']])>
+                    @class([$customization['wrapper.fourth'], $configurations['size'], $customization['wrapper.scrollable'] => $configurations['scrollable'], 'rounded-xl' => $configurations['center']])>
                 @if ($title)
                     <div class="{{ $customization['title.wrapper'] }}">
                         <h3 class="{{ $customization['title.text'] }}">{{ $title }}</h3>
-                        <button type="button" x-on:click="show = false" dusk="tallstackui_modal_close">
+                        <button type="button" x-on:click="show = false">
                             <x-dynamic-component :component="TallStackUi::prefix('icon')"
                                                  :icon="TallStackUi::icon('x-mark')"
                                                  internal
@@ -62,8 +61,8 @@
                 <div @class([
                         $customization['body'],
                         $customization['body.scrollable'] => $configurations['scrollable'],
-                        $customization['scrollbar.thin'] => $configurations['scrollable'] && $configurations['scrollbar'] === 'thin',
-                        $customization['scrollbar.thick'] => $configurations['scrollable'] && $configurations['scrollbar'] === 'thick',
+                        'soft-scrollbar' => $configurations['scrollable'] && $configurations['scrollbar'] === 'thin',
+                        'custom-scrollbar' => $configurations['scrollable'] && $configurations['scrollbar'] === 'thick',
                     ])>
                     {{ $slot }}
                 </div>
@@ -76,4 +75,3 @@
         </div>
     </div>
 </div>
-</template>

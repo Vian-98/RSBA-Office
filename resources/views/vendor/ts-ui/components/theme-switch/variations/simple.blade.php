@@ -31,14 +31,14 @@
              @if (!$onlyIcons)
                  x-bind:class="{
                      '{{ $customization['switch.translate.' . $size] }}': darkTheme === true,
-                     '{{ $customization['switch.translate-x-0'] }}': darkTheme === false
+                     'translate-x-0': darkTheme === false
                  }"
                 @endif>
             <span class="{{ $customization['wrapper'] }}"
                   aria-hidden="true"
                   x-bind:class="{
-                      '{{ $customization['transition.leave.to'] }} {{ $customization['transition.leave.class'] }}': darkTheme === true,
-                      '{{ $customization['transition.enter.to'] }} {{ $customization['transition.enter.class'] }}': darkTheme === false
+                      'opacity-0 duration-100 ease-out': darkTheme === true,
+                      'opacity-100 duration-200 ease-in': darkTheme === false
                   }">
                <x-dynamic-component :component="TallStackUi::prefix('icon')"
                                     :icon="TallStackUi::icon($onlyIcons ? 'moon' : 'sun')"
@@ -53,8 +53,8 @@
             <span class="{{ $customization['wrapper'] }}"
                   aria-hidden="true"
                   x-bind:class="{
-                      '{{ $customization['transition.enter.to'] }} {{ $customization['transition.enter.class'] }}': darkTheme === true,
-                      '{{ $customization['transition.leave.to'] }} {{ $customization['transition.leave.class'] }}': darkTheme === false
+                      'opacity-100 duration-200 ease-in': darkTheme === true,
+                      'opacity-0 duration-100 ease-out': darkTheme === false
                   }">
                <x-dynamic-component :component="TallStackUi::prefix('icon')"
                                     :icon="TallStackUi::icon($onlyIcons ? 'sun' : 'moon')"

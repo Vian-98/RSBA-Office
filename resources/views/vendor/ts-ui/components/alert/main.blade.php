@@ -2,23 +2,16 @@
     $customization = $classes();
 @endphp
 
-<div @class([
-        $customization['wrapper'],
-        $colors['background'],
-        $customization['square'] => $square,
-        ($customization['rounded.'.$rounded] ?? '') => ! $square && $rounded,
-        ($customization['bordered.'.$borderedAttributes['side']] ?? '') => $borderedAttributes['side'] !== null,
-        $colors['bordered'] => $borderedAttributes['side'] !== null && $colors['bordered'],
-     ])
+<div @class([$customization['wrapper'], $colors['background']])
      x-data="tallstackui_alert(@js($dismiss))"
      x-show="show"
      x-transition:leave="transition ease-in duration-300"
      x-transition:leave-start="opacity-100"
      x-transition:leave-end="opacity-0">
-    <div @class([$customization['content.wrapper'], $customization['content.wrapper-with-title'] => $title !== null])>
+    <div @class([$customization['content.wrapper'], 'items-start' => $title !== null])>
         <div class="{{ $customization['content.base'] }}">
             @if ($icon)
-                <div @class([$customization['icon.wrapper'] => $icon, $customization['icon.wrapper-with-title'] => $icon && $title])>
+                <div @class([$customization['icon.wrapper'] => $icon, 'mt-1' => $icon && $title])>
                     @if ($icon)
                         <x-dynamic-component :component="TallStackUi::prefix('icon')"
                                              :$icon
@@ -29,7 +22,7 @@
             @endif
             <div class="{{ $colors['text'] }}">
                 @if ($title)
-                    <h3 @class([$customization['text.title'], $colors['text'] => $title !== null, $customization['text.title-spacing'] => $title])>{!! $title !!}</h3>
+                    <h3 @class([$customization['text.title'], $colors['text'] => $title !== null, 'mb-2' => $title])>{!! $title !!}</h3>
                 @endif
                 <p class="{{ $customization['text.description'] }}">{!! $text ?? $slot !!}</p>
             </div>

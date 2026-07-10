@@ -7,11 +7,7 @@
 @endif tabindex="0"
 {{ $attributes->class([
     'gap-x-2' => $icon,
-    $customization['item.base'],
-    $customization['item.sizes.xs'],
-    $customization['item.sizes.sm'],
-    $customization['item.sizes.md'],
-    $customization['item.sizes.lg'],
+    $customization['item'],
     $customization['border'] => $separator,
 ]) }} @if ($navigate)
     wire:navigate
@@ -20,23 +16,11 @@
 @endif x-on:click="$refs.dropdown.dispatchEvent(new CustomEvent('select'))">
 @if ($icon && $position === 'left')
     <x-dynamic-component :component="TallStackUi::prefix('icon')" :$icon internal
-                         @class([
-                             $customization['icon.base'],
-                             $customization['icon.sizes.xs'],
-                             $customization['icon.sizes.sm'],
-                             $customization['icon.sizes.md'],
-                             $customization['icon.sizes.lg'],
-                         ]) />
+                         class="{{ $customization['icon'] }}" />
 @endif
 {!! $text ?? $slot !!}
 @if ($icon && $position === 'right')
     <x-dynamic-component :component="TallStackUi::prefix('icon')" :$icon internal
-                         @class([
-                             $customization['icon.base'],
-                             $customization['icon.sizes.xs'],
-                             $customization['icon.sizes.sm'],
-                             $customization['icon.sizes.md'],
-                             $customization['icon.sizes.lg'],
-                         ]) />
+                         class="{{ $customization['icon'] }}" />
 @endif
 </{{ $tag }}>

@@ -3,7 +3,8 @@
 @endphp
 
 <span {{ $attributes->class([
-        $customization['border.radius.' . $rounded] => !$square,
+        'rounded-md' => !$round && !$square,
+        'rounded-full' => $round,
         $customization['wrapper.class'],
         $customization['wrapper.sizes.' . $size],
         $colors['background'],
@@ -15,7 +16,7 @@
     {{ __('ts-ui::messages.environment.environment') }}: {{ str(app()->environment())->title() }}
     @if ($branch)
         ({{ __('ts-ui::messages.environment.branch') }}:
-        <x-ts-ui::icon.generic.fork :class="$customization['icon.fork-size']" /> {{ $branch }})
+        <x-ts-ui::icon.generic.fork class="w-4 h-4" /> {{ $branch }})
     @endif
     @if ($right)
         {{ $right }}

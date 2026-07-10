@@ -3,7 +3,7 @@
 @endphp
 
 <div @class(['relative grid', $customization['sizes.circle.' . $size]])>
-    <svg class="{{ $customization['svg.stack'] }}"
+    <svg class="h-full w-full col-start-1 row-start-1"
          width="{{ $sizeCircle }}"
          height="{{ $sizeCircle }}"
          viewBox="0 0 36 36"
@@ -12,14 +12,14 @@
                 cy="18"
                 r="{{ $sizeCircle / 2 - $strokePercent / 2 }}"
                 fill="none"
-                @class([$customization['svg.stroke'], $customization['background']])
+                @class(['stroke-current', $customization['background']])
                 stroke-width="{{ $strokeCircle }}"></circle>
-        <g class="{{ $customization['svg.rotation'] }}">
+        <g class="origin-center -rotate-90 transform">
             <circle cx="18"
                     cy="18"
                     r="{{ $sizeCircle / 2 - $strokePercent / 2 }}"
                     fill="none"
-                    @class([$customization['svg.stroke'], str_replace('bg-', 'text-', $colors['background'])])
+                    @class(['stroke-current', str_replace('bg-', 'text-', $colors['background'])])
                     stroke-width="{{ $strokePercent }}"
                     stroke-dasharray="100"
                     stroke-dashoffset="{{ 100 - $percent }}"></circle>

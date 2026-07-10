@@ -15,9 +15,11 @@
 
              <!-- Barcode -->
 
+             @if($this->generateBarcode)
              <div class="barcode">
                  <img src="data:image/png;base64,{{ $this->generateBarcode }}" alt="barcode">
              </div>
+             @endif
 
              <!-- Asset Info -->
              <div class="asset-info">

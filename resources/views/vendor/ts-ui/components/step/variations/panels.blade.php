@@ -1,7 +1,7 @@
 <li x-bind:id="item.id ? 'li-' + item.id : null"
     class="{{ $customization['panels.li'] }}"
     x-bind:class="{ 'cursor-pointer': navigate === true }"
-    x-on:click="if (navigate === false || (previous === false && item.step < parseInt(selected))) return; window.dispatchEvent(new CustomEvent('tallstackui:floating-flush')); selected = item.step;">
+    x-on:click="if (navigate === false || (previous === false && item.step < parseInt(selected))) return; selected = item.step;">
     <div class="{{ $customization['panels.wrapper'] }}">
         <span class="{{ $customization['panels.item'] }}">
             <span class="{{ $customization['panels.circle.wrapper'] }}"
@@ -23,7 +23,7 @@
                                      internal
                                      class="{{ $customization['panels.check'] }}" />
             </span>
-            <div class="flex {{ $customization['panels.text-layout'] }}">
+            <div class="flex flex-col">
                 <span class="{{ $customization['panels.text.title.wrapper'] }}"
                       x-bind:class="{
                         '{{ $customization['panels.text.title.inactive'] }}': parseInt(selected) === item.step && item.completed === false || parseInt(selected) < item.step,

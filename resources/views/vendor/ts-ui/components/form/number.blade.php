@@ -10,8 +10,8 @@
             $customization['input.color.background'] => !$attributes->get('disabled') && !$attributes->get('readonly'),
             $customization['input.color.disabled'] => $attributes->get('disabled') || $attributes->get('readonly'),
             $customization['error'] => $error === true
-        ]) x-data="tallstackui_formNumber({!! $entangle !!}, @js($min), @js($max), @js($delay), @js($step), @js($debounce))">
-        <div @class([$customization['buttons.wrapper'], $customization['input.wrapper-centralized'] => $centralized])>
+        ]) x-data="tallstackui_formNumber({!! $entangle !!}, @js($min), @js($max), @js($delay), @js($step))">
+        <div @class([$customization['buttons.wrapper'], 'justify-between' => $centralized])>
             <input @if ($id) id="{{ $id }}" @endif
             type="number"
                    inputmode="{{ $mode() }}"
@@ -22,24 +22,25 @@
                    @if ($selectable) x-on:keydown="$event.preventDefault()" @endif
                    {{ $attributes->class([
                         $customization['input.base'],
-                        $customization['input.centralized'] => $centralized,
-                        $customization['input.caret'] => $selectable,
-                        $customization['input.appearance']
+                        'text-center' => $centralized,
+                        'caret-transparent' => $selectable,
+                        'appearance-number-none'
                     ])}}
                    dusk="tallstackui_form_number_input"
                    x-on:blur="validate()"
                    x-ref="input">
             <button @if (!$attributes->get('disabled', $attributes->get('readonly', false))) x-on:click="decrement()"
                     @endif
-                    x-on:pointerdown="if (!interval) interval = setInterval(() => decrement(), delay * 100);"
-                    x-on:pointerup="if (interval) { clearInterval(interval); interval = null; }"
-                    x-on:pointerleave="if (interval) { clearInterval(interval); interval = null; }"
-                    x-on:pointercancel="if (interval) { clearInterval(interval); interval = null; }"
+                    x-on:mousedown="interval = setInterval(() => decrement(), delay * 100);"
+                    x-on:touchstart="if (!interval) interval = setInterval(() => decrement(), delay * 100);"
+                    x-on:touchend="if (interval) { clearInterval(interval); interval = null; }"
+                    x-on:mouseup="if (interval) { clearInterval(interval); interval = null; }"
+                    x-on:mouseleave="if (interval) { clearInterval(interval); interval = null; }"
                     x-ref="minus"
                     type="button"
                     @disabled($attributes->get('disabled', $attributes->get('readonly', false)))
                     dusk="tallstackui_form_number_decrement"
-                    @class([$customization['buttons.left.base'], $customization['buttons.left.centralized'] => $centralized])>
+                    @class([$customization['buttons.left.base'], 'order-first' => $centralized])>
                 <x-dynamic-component :component="TallStackUi::prefix('icon')"
                                      :icon="$icons['left']"
                                      internal
@@ -47,15 +48,16 @@
             </button>
             <button @if (!$attributes->get('disabled', $attributes->get('readonly', false))) x-on:click="increment()"
                     @endif
-                    x-on:pointerdown="if (!interval) interval = setInterval(() => increment(), delay * 100);"
-                    x-on:pointerup="if (interval) { clearInterval(interval); interval = null; }"
-                    x-on:pointerleave="if (interval) { clearInterval(interval); interval = null; }"
-                    x-on:pointercancel="if (interval) { clearInterval(interval); interval = null; }"
+                    x-on:mousedown="interval = setInterval(() => increment(), delay * 100);"
+                    x-on:touchstart="if (!interval) interval = setInterval(() => increment(), delay * 100);"
+                    x-on:touchend="if (interval) { clearInterval(interval); interval = null; }"
+                    x-on:mouseup="if (interval) { clearInterval(interval); interval = null; }"
+                    x-on:mouseleave="if (interval) { clearInterval(interval); interval = null; }"
                     x-ref="plus"
                     type="button"
                     @disabled($attributes->get('disabled', $attributes->get('readonly', false)))
                     dusk="tallstackui_form_number_increment"
-                    @class([$customization['buttons.right.base'], $customization['buttons.right.separator'] => !$centralized])>
+                    @class([$customization['buttons.right.base'], 'border-l border-gray-200 dark:border-gray-600' => !$centralized])>
                 <x-dynamic-component :component="TallStackUi::prefix('icon')"
                                      :icon="$icons['right']"
                                      internal

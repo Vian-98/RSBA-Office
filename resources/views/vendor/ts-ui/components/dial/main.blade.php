@@ -11,16 +11,15 @@
      {{ $attributes->only('x-on:open') }}>
     <div x-anchor.{{ $anchor }}.offset.10="$refs.button || $el"
          x-show="show"
-         x-on:click="show = false"
          @if (!$ts_ui__flash)
              x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="{{ $transition['start'] }}"
-             x-transition:enter-end="{{ $transition['end'] }}"
+             x-transition:enter-start="opacity-0 scale-75"
+             x-transition:enter-end="opacity-100 scale-100"
              x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="{{ $transition['end'] }}"
-             x-transition:leave-end="{{ $transition['start'] }}"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-75"
          @endif
-         @class([$customization['items'], $customization['items-vertical'] => !$horizontal])>
+         @class([$customization['items'], 'flex-col' => !$horizontal])>
         {{ $slot }}
     </div>
     <button type="button"
@@ -30,7 +29,7 @@
             aria-haspopup="true"
             x-bind:aria-expanded="show"
             @class([
-                $customization['button.rounded'] => !$square,
+                'rounded-full' => !$square,
                 $colors['background'],
                 $customization['button.base'],
                 $customization['button.sizes.'.$size],
@@ -39,6 +38,6 @@
                              :icon="TallStackUi::icon($icon)"
                              internal
                              @class([$customization['icon.base'], $customization['icon.sizes.'.$size], $colors['icon']])
-                             x-bind:class="{ '{{ $customization['icon.rotated'] }}': show }" />
+                             x-bind:class="{ 'rotate-45': show }" />
     </button>
 </div>

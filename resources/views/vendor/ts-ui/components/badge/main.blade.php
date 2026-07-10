@@ -3,7 +3,8 @@
 @endphp
 
 <span {{ $attributes->class([
-        $customization['border.radius.' . $rounded] => !$square,
+        $customization['border.radius.rounded'] => !$round && !$square,
+        $customization['border.radius.circle'] => $round,
         $customization['wrapper.class'],
         $customization['wrapper.sizes.' . $size],
         $colors['background'],
@@ -16,7 +17,7 @@
         <x-dynamic-component :component="TallStackUi::prefix('icon')"
                              :$icon
                              internal
-                             @class([$customization['icon-spacing.left'] => $position === 'left', $customization['icon'], $colors['icon']]) />
+                             @class(['mr-1' => $position === 'left', $customization['icon'], $colors['icon']]) />
     @endif
     {{ $text ?? $slot }}
     @if ($right)
@@ -25,6 +26,6 @@
         <x-dynamic-component :component="TallStackUi::prefix('icon')"
                              :$icon
                              internal
-                             @class([$customization['icon-spacing.right'] => $position === 'right', $customization['icon'], $colors['icon']]) />
+                             @class(['ml-1' => $position === 'right', $customization['icon'], $colors['icon']]) />
     @endif
 </span>

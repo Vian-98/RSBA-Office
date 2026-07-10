@@ -24,6 +24,8 @@ class RoleSeeder extends Seeder
         $keuangan = Role::firstOrCreate(['name' => 'Keuangan']);
         $administrasi = Role::firstOrCreate(['name' => 'Administrasi']);
         $guest = Role::firstOrCreate(['name' => 'Guest']);
+        $staffBedah = Role::firstOrCreate(['name' => 'Staff-Bedah']);
+        $staffUgd = Role::firstOrCreate(['name' => 'Staff-UGD']);
 
         // Fetch all permissions currently in database
         $allPermissions = Permission::all()->pluck('name')->toArray();
@@ -79,5 +81,9 @@ class RoleSeeder extends Seeder
 
         // 5. Guest permissions
         $guest->syncPermissions($commonPermissions);
+        
+        // 6. Bedah & UGD basic permissions
+        $staffBedah->syncPermissions($commonPermissions);
+        $staffUgd->syncPermissions($commonPermissions);
     }
 }

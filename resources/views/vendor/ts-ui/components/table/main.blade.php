@@ -2,8 +2,7 @@
     $customization = $classes();
 @endphp
 
-<div x-data="tallstackui_table({!! $entangle !!}, @js($selectable))"
-     @if ($selectable) data-ids='@json($ids())' @endif
+<div x-data="tallstackui_table({!! $entangle !!}, @js($ids()), @js($selectable))"
      @if ($persistent) x-ref="persist" @endif>
     @if (is_string($header))
         <p class="{{ $customization['slots.header'] }}">{{ $header }}</p>
@@ -13,9 +12,9 @@
     @if (count((array) $rows) > 0 && $livewire && !is_null($filter))
         <div @class([
                 $customization['filter.wrapper'],
-                $customization['filter.wrapper-with-search-and-quantity'] => isset($filter['quantity']) && isset($filter['search']),
-                $customization['filter.wrapper-quantity-only']   => isset($filter['quantity']) && ! isset($filter['search']),
-                $customization['filter.wrapper-search-only']     => ! isset($filter['quantity']) && isset($filter['search']),
+                'justify-between' => isset($filter['quantity']) && isset($filter['search']),
+                'justify-start'   => isset($filter['quantity']) && ! isset($filter['search']),
+                'justify-end'     => ! isset($filter['quantity']) && isset($filter['search']),
             ])>
             @isset ($filter['quantity'])
                 <div class="{{ $customization['filter.quantity'] }}">
@@ -50,17 +49,17 @@
                                                    wire:loading="{{ $target }}" />
                 @endif
                 @if (!$headerless)
-                    <thead @class([$customization['table.th-uppercase'], $customization['table.thead.normal'] => !$striped, $customization['table.thead.striped'] => $striped])>
+                    <thead @class(['uppercase', $customization['table.thead.normal'] => !$striped, $customization['table.thead.striped'] => $striped])>
                     <tr>
                         @if ($expandable)
-                            <th @class([$customization['table.th-checkbox-width'], $customization['table.th']])></th>
+                            <th @class(['w-8', $customization['table.th']])></th>
                         @endif
                         @if ($selectable)
-                            <th @class([$customization['table.th-actions-width'], $customization['table.th']]) wire:key="checkall-{{ implode(',', $ids()) }}">
+                            <th @class(['w-6', $customization['table.th']]) wire:key="checkall-{{ implode(',', $ids()) }}">
                                 <x-dynamic-component :component="TallStackUi::prefix('checkbox')"
                                                      scope="table.checkbox"
                                                      x-ref="checkbox"
-                                                     x-on:change="all($el.checked, {{ \Illuminate\Support\Js::from($ids()) }})"
+                                                     x-on:click="all($el.checked, {{ \Illuminate\Support\Js::from($ids()) }})"
                                                      dusk="tallstackui_table_select_all"
                                                      sm />
                             </th>
@@ -68,7 +67,7 @@
                         @foreach ($headers as $header)
                             <th scope="col" class="{{ $customization['table.th'] }}">
                                 <a @if ($livewire && $sortable($header))
-                                       class="{{ $customization['table.th-sort-wrapper'] }} cursor-pointer"
+                                       class="inline-flex cursor-pointer truncate"
                                    wire:click="$set('sort', {column: '{{ $head($header)['column'] }}', direction: '{{ $head($header)['direction'] }}' })"
                                         @endif>
                                     @if ($header['unescaped'] ?? false)
@@ -106,7 +105,7 @@
                         @endphp
                         <tr @class([
                             $customization['table.tr'],
-                            $customization['row.striped'] => $striped && $loop->index % 2 === 0 && ! $highlighted($value),
+                            'bg-gray-50 dark:bg-dark-800/50' => $striped && $loop->index % 2 === 0 && ! $highlighted($value),
                             $highlighted($value),
                         ]) @if ($livewire) wire:key="{{ $id }}" @endif>
                             @if ($expandable)
@@ -114,12 +113,12 @@
                                     @isset($sub_table)
                                         <button type="button"
                                                 x-on:click="toggle('{{ $id }}')"
-                                                @class([$customization['expandable.button'], 'cursor-pointer'])>
+                                                class="{{ $customization['expandable.button'] }} cursor-pointer">
                                             <x-dynamic-component :component="TallStackUi::prefix('icon')"
                                                                  :icon="TallStackUi::icon('chevron-right')"
                                                                  internal
-                                                                 x-bind:class="expanded('{{ $id }}') ? '{{ $customization['expandable.rotated'] }}' : ''"
-                                                                 class="{{ $customization['expandable.icon'] }}" />
+                                                                 x-bind:class="expanded('{{ $id }}') ? 'rotate-90' : ''"
+                                                                 class="h-4 w-4 transition-transform duration-200" />
                                         </button>
                                     @endisset
                                 </td>
@@ -131,7 +130,7 @@
                                                          id="checkbox-{{ $key }}"
                                                          :attributes="$modifier()"
                                                          value="{{ data_get($value, $selectableProperty) }}"
-                                                         x-on:change="select({{ \Illuminate\Support\Js::from($value) }})"
+                                                         x-on:click="select($el.checked, {{ \Illuminate\Support\Js::from($value) }})"
                                                          sm />
                                 </td>
                             @endif
@@ -142,11 +141,11 @@
                                     $clickable = $link !== null;
                                 @endphp
                                 @isset(${"column_".$row})
-                                    <td @if ($clickable) x-on:click.prevent="redirect(@js($url), @js($blank))" @endif @class([$customization['table.td'], $customization['cell-clickable'] => $clickable])>
+                                    <td @if ($clickable) x-on:click.prevent="redirect(@js($url), @js($blank))" @endif @class([$customization['table.td'], 'cursor-pointer' => $clickable])>
                                         {{ ${"column_".$row}($value) }}
                                     </td>
                                 @else
-                                    <td @if ($clickable) x-on:click.prevent="redirect(@js($url), @js($blank))" @endif @class([$customization['table.td'], $customization['cell-clickable'] => $clickable])>
+                                    <td @if ($clickable) x-on:click.prevent="redirect(@js($url), @js($blank))" @endif @class([$customization['table.td'], 'cursor-pointer' => $clickable])>
                                         {{ data_get($value, $header['index']) }}
                                     </td>
                                 @endisset
