@@ -204,9 +204,14 @@ class Sidebar extends Component
 
             $permissions = array_values(array_filter($all, fn($p) => str_starts_with($p, 'view')));
 
-            // Allow users with assigned ruangan to view the asset menu
-            if ($user?->karyawan?->ruangan_id && !in_array('view-umum-asset', $permissions)) {
-                $permissions[] = 'view-umum-asset';
+            // Allow users with assigned ruangan to view the asset & pengajuan menu
+            if ($user?->karyawan?->ruangan_id) {
+                if (!in_array('view-umum-asset', $permissions)) {
+                    $permissions[] = 'view-umum-asset';
+                }
+                if (!in_array('view-umum-pengajuan', $permissions)) {
+                    $permissions[] = 'view-umum-pengajuan';
+                }
             }
 
             return $permissions;
