@@ -11,6 +11,12 @@
             <div class="w-full lg:w-1/4">
                 <x-ts:input wire:model.lazy="form.nip" placeholder="NIP [Auto Generate]" readonly />
             </div>
+            <div class="w-full lg:w-1/4">
+                <x-ts:select.styled wire:model.defer="form.kategori_kerja" placeholder="Kategori Kerja" :options="[
+                    ['label' => 'Pekerja Reguler (Jam Kantor)', 'value' => 'reguler'],
+                    ['label' => 'Pekerja Shift', 'value' => 'shift']
+                ]" select="label:label|value:value" />
+            </div>
         </div>
 
         {{-- identitas --}}

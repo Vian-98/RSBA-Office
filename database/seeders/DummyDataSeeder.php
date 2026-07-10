@@ -163,6 +163,82 @@ class DummyDataSeeder extends Seeder
         }
         DB::table('sdm_kary_jabatan')->insert($karyawanJabatans);
 
+        // --- Tambahan: Dummy Pegawai Ruangan untuk UGD dan Poli Anak ---
+        // UGD: id 1, Poli Anak: id 2 (asumsi berdasarkan urutan insert Ruangan di line 63)
+        $ruanganUgd = $ruanganIds[0] ?? 1;
+        $ruanganPoliAnak = $ruanganIds[1] ?? 2;
+        $ruanganMelati = $ruanganIds[3] ?? 4;
+        
+        $dummyPegawai = [];
+        $kategoriKerja = \App\Enums\KategoriKerja::class;
+        
+        // 8 Pegawai UGD (Semua SHIFT)
+        for ($i = 1; $i <= 8; $i++) {
+            $dummyPegawai[] = [
+                'nip' => 'UGD' . str_pad($i, 3, '0', STR_PAD_LEFT),
+                'nik' => '320' . rand(1000000000000, 9999999999999),
+                'nama' => 'Perawat UGD ' . $i,
+                'ruangan_id' => $ruanganUgd,
+                'kategori_kerja' => 'shift', // Enum
+                'tgl_lahir' => '1995-01-01', 'hp' => '0812' . rand(10000000, 99999999),
+                'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => 'Alamat ' . $i,
+                'agama' => 'islam', 'status' => 'tetap', 'tgl_masuk' => '2022-01-01', 'cuti' => 12,
+                'created_at' => now(), 'updated_at' => now(),
+            ];
+        }
+
+        // 6 Pegawai Poli Anak (Campuran REGULER dan SHIFT)
+        for ($i = 1; $i <= 6; $i++) {
+            $dummyPegawai[] = [
+                'nip' => 'POL' . str_pad($i, 3, '0', STR_PAD_LEFT),
+                'nik' => '320' . rand(1000000000000, 9999999999999),
+                'nama' => 'Perawat Poli Anak ' . $i,
+                'ruangan_id' => $ruanganPoliAnak,
+                'kategori_kerja' => $i <= 2 ? 'reguler' : 'shift', // 2 reguler, 4 shift
+                'tgl_lahir' => '1995-01-01', 'hp' => '0812' . rand(10000000, 99999999),
+                'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => 'Alamat ' . $i,
+                'agama' => 'islam', 'status' => 'tetap', 'tgl_masuk' => '2022-01-01', 'cuti' => 12,
+                'created_at' => now(), 'updated_at' => now(),
+            ];
+        }
+
+        // 6 Pegawai Melati (Semua SHIFT)
+        for ($i = 1; $i <= 6; $i++) {
+            $dummyPegawai[] = [
+                'nip' => 'MLT' . str_pad($i, 3, '0', STR_PAD_LEFT),
+                'nik' => '320' . rand(1000000000000, 9999999999999),
+                'nama' => 'Perawat Inap Melati ' . $i,
+                'ruangan_id' => $ruanganMelati,
+                'kategori_kerja' => 'shift',
+                'tgl_lahir' => '1995-01-01', 'hp' => '0812' . rand(10000000, 99999999),
+                'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => 'Alamat ' . $i,
+                'agama' => 'islam', 'status' => 'tetap', 'tgl_masuk' => '2022-01-01', 'cuti' => 12,
+                'created_at' => now(), 'updated_at' => now(),
+            ];
+        }
+
+        DB::table('sdm_karyawan')->insert($dummyPegawai);
+
+        // --- Create User for Perawat UGD 1 ---
+        $karyawanPerawat = Karyawan::where('nip', 'UGD001')->first();
+        if ($karyawanPerawat) {
+            $userPerawat = User::updateOrCreate(
+                ['email' => 'perawat@rsba.com'],
+                [
+                    'password' => Hash::make('1234'),
+                    'karyawan_id' => $karyawanPerawat->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+            $userPerawat->syncRoles(['Guest']);
+            
+            // Berikan permission view-profile-jadwal-tugas-saya
+            $perm = \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'view-profile-jadwal-tugas-saya']);
+            $userPerawat->givePermissionTo($perm);
+        }
+        // -----------------------------------------------------------
+
         // 8. Seed Karyawan Pendidikan
         $pendidikans = [];
         if ($karyawanSdm) {

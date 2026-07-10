@@ -122,7 +122,29 @@ class PermissionSeeder extends Seeder
             'view-administrasi-registrasi-index',
             'add-administrasi-registrasi-index',
             'edit-administrasi-registrasi-index',
-            'delete-administrasi-registrasi-index'
+            'delete-administrasi-registrasi-index',
+
+            // ── Modul Jadwal Kerja (Fase 0 & 1) ──
+            'view-kepegawaian-jadwal-kerja',
+            'add-kepegawaian-jadwal-kerja',
+            'edit-kepegawaian-jadwal-kerja',
+            'delete-kepegawaian-jadwal-kerja',
+            'view-profile-jadwal-tugas-saya',
+            'view-kepegawaian-master-jadwal-shift',
+            'add-kepegawaian-master-jadwal-shift',
+            'edit-kepegawaian-master-jadwal-shift',
+            'delete-kepegawaian-master-jadwal-shift',
+            'view-kepegawaian-master-jadwal-aturan',
+            'add-kepegawaian-master-jadwal-aturan',
+            'edit-kepegawaian-master-jadwal-aturan',
+            'view-kepegawaian-master-ruangan-shift',
+            'add-kepegawaian-master-ruangan-shift',
+            'edit-kepegawaian-master-ruangan-shift',
+            'delete-kepegawaian-master-ruangan-shift',
+            'view-kepegawaian-master-bagian-koordinator',
+            'add-kepegawaian-master-bagian-koordinator',
+            'edit-kepegawaian-master-bagian-koordinator',
+            'delete-kepegawaian-master-bagian-koordinator',
         ];
 
         foreach ($permissions as $permission) {
