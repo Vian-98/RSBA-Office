@@ -93,7 +93,7 @@ class Kelola extends Component
         foreach ($karyawansInRoom as $karyawan) {
             for ($d = 1; $d <= $daysInMonth; $d++) {
                 $dateStr = $this->dates[$d - 1]->format('Y-m-d');
-                $exists = $existingDetails->where('karyawan_id', $karyawan->id)->where('tanggal', $dateStr)->first();
+                $exists = $existingDetails->where('karyawan_id', $karyawan->id)->first(fn($detail) => $detail->tanggal->format('Y-m-d') === $dateStr);
                 
                 if (!$exists) {
                     $detailsToInsert[] = [
