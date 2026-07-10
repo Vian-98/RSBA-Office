@@ -90,7 +90,7 @@
     </div>
 
     <!-- Salary Slip Modal -->
-    <x-ts:modal wire:model="isOpenModal" size="md" class="relative z-50">
+    <x-ts:modal wire="isOpenModal" size="3xl" class="relative z-50">
         <x-slot:title>
             <span class="flex items-center gap-1.5 font-bold text-slate-800">
                 <x-tabler-file-invoice class="h-5 w-5 text-indigo-500" />
@@ -100,113 +100,223 @@
 
         @if($selectedSlip)
             <!-- Printable Area -->
-            <div id="salary-slip-print" class="p-6 bg-white border border-slate-100 rounded-2xl shadow-sm text-slate-700 text-sm">
+            <div id="salary-slip-print" class="p-6 bg-white text-slate-800 text-sm select-none">
                 <!-- Header -->
-                <div class="text-center border-b-2 border-slate-900 pb-4 mb-4">
-                    <h2 class="text-lg font-bold text-slate-900 tracking-wide uppercase">RUMAH SAKIT BAITURRAHIM JAMBI</h2>
-                    <p class="text-2xs text-slate-500 mt-0.5">Jl. Prof. M. Yamin No. 99, Jambi | Telp: (0741) 987654</p>
-                    <div class="mt-3 inline-block bg-slate-100 px-3 py-1 rounded-full text-xs font-bold text-slate-700 tracking-wider">SLIP GAJI BULANAN</div>
+                <div class="flex flex-col items-center justify-center pb-4 mb-4 border-b-2 border-slate-900">
+                    <x-logo class="h-12 w-auto mb-1" style="height: 48px; width: auto;" />
+                    <h2 class="text-base font-black tracking-widest text-slate-800 uppercase leading-none">RS BINTANG AMIN</h2>
                 </div>
 
-                <!-- Info Grid -->
-                <div class="grid grid-cols-2 gap-y-2 text-xs border-b border-slate-100 pb-3 mb-4">
-                    <div>
-                        <span class="text-slate-400 font-medium">Nama Karyawan:</span>
-                        <div class="font-bold text-slate-900 mt-0.5">{{ $selectedSlip['nama'] }}</div>
-                    </div>
-                    <div>
-                        <span class="text-slate-400 font-medium">NIP / Status:</span>
-                        <div class="font-bold text-slate-900 mt-0.5">{{ $selectedSlip['nip'] }} ({{ $selectedSlip['status'] }})</div>
-                    </div>
-                    <div class="mt-2">
-                        <span class="text-slate-400 font-medium">Jabatan / Bagian:</span>
-                        <div class="font-bold text-slate-900 mt-0.5">{{ $selectedSlip['jabatan'] }} ({{ $selectedSlip['bagian'] }})</div>
-                    </div>
-                    <div class="mt-2">
-                        <span class="text-slate-400 font-medium">Periode Pembayaran:</span>
-                        <div class="font-bold text-slate-900 mt-0.5">{{ $selectedSlip['periode'] }}</div>
-                    </div>
-                </div>
+                <!-- Info Block -->
+                <table class="w-full text-xs font-semibold mb-4 border-collapse">
+                    <tbody>
+                        <tr class="border-t border-b border-slate-800">
+                            <td class="w-20 py-1.5 font-bold">Nama</td>
+                            <td class="w-4 py-1.5">:</td>
+                            <td class="py-1.5 font-bold">{{ $selectedSlip['nama'] }}</td>
+                        </tr>
+                        <tr class="border-b border-slate-800">
+                            <td class="py-1.5 font-bold">NIP</td>
+                            <td class="py-1.5">:</td>
+                            <td class="py-1.5 font-bold">{{ $selectedSlip['nip'] }}</td>
+                        </tr>
+                        <tr class="border-b border-slate-800">
+                            <td class="py-1.5 font-bold">Jabatan</td>
+                            <td class="py-1.5">:</td>
+                            <td class="py-1.5 font-bold">{{ $selectedSlip['jabatan'] }}</td>
+                        </tr>
+                        <tr class="border-b-4 border-double border-slate-800">
+                            <td class="py-1.5 font-bold">Bulan</td>
+                            <td class="py-1.5">:</td>
+                            <td class="py-1.5 font-bold">{{ $selectedSlip['periode'] }}</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <!-- Salary Computations -->
-                <div class="space-y-4">
-                    <!-- Earnings -->
-                    <div>
-                        <h4 class="text-xs font-bold uppercase text-indigo-600 tracking-wider mb-2">Penghasilan (A)</h4>
-                        <div class="space-y-1.5 text-xs">
-                            <div class="flex justify-between">
-                                <span class="text-slate-500">Gaji Pokok</span>
-                                <span class="font-bold text-slate-800">Rp {{ number_format($selectedSlip['gaji_pokok'], 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-500">Tunjangan Jabatan</span>
-                                <span class="font-bold text-slate-800">Rp {{ number_format($selectedSlip['tunjangan'], 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between border-t border-slate-100 pt-1.5 font-bold text-slate-900">
-                                <span>Total Penerimaan Bruto</span>
-                                <span>Rp {{ number_format($selectedSlip['gaji_pokok'] + $selectedSlip['tunjangan'], 0, ',', '.') }}</span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Main Grid Table -->
+                <table class="w-full text-xs border-collapse border border-slate-800">
+                    <tbody>
+                        <!-- Gaji Pokok -->
+                        <tr class="border-b border-slate-800">
+                            <td class="w-1/2 border-r border-slate-800 px-3 py-1.5 font-medium">Gaji Pokok</td>
+                            <td class="w-[15%] border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="w-[10%] border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="w-[25%] px-3 py-1.5 text-right font-medium">{{ number_format($selectedSlip['gaji_pokok'], 0, ',', '.') }}</td>
+                        </tr>
+                        <!-- Tj. Tetap -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Tj. Tetap</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        <!-- Tj. Kehadiran -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Tj. Kehadiran</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        <!-- Tj. Lain - Lain -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Tj. Lain – Lain</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        <!-- Tj. Jabatan -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Tj. Jabatan</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">{{ number_format($selectedSlip['tunjangan'], 0, ',', '.') }}</td>
+                        </tr>
+                        <!-- Tj. Shift -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Tj. Shift</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        <!-- Tj. Radiasi -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Tj. Radiasi</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        <!-- Uang Lembur -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Uang Lembur</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        <!-- Tj. Hari Raya -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Tj. Hari Raya</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        
+                        <!-- TOTAL GAJI -->
+                        <tr class="border-b-4 border-double border-slate-800 font-bold bg-slate-50/50">
+                            <td class="border-r border-slate-800 px-3 py-1.5 uppercase text-slate-800">TOTAL GAJI</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp.</td>
+                            <td class="px-3 py-1.5 text-right text-slate-800">{{ number_format($selectedSlip['gaji_pokok'] + $selectedSlip['tunjangan'], 0, ',', '.') }}</td>
+                        </tr>
 
-                    <!-- Deductions -->
-                    <div>
-                        <h4 class="text-xs font-bold uppercase text-rose-600 tracking-wider mb-2">Potongan (B)</h4>
-                        <div class="space-y-1.5 text-xs">
-                            <div class="flex justify-between">
-                                <span class="text-slate-500">Iuran BPJS Kesehatan</span>
-                                <span class="font-semibold text-rose-600">Rp {{ number_format($selectedSlip['bpjs_kes'], 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-500">Iuran BPJS Ketenagakerjaan</span>
-                                <span class="font-semibold text-rose-600">Rp {{ number_format($selectedSlip['bpjs_ket'], 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-500">Pajak Penghasilan (PPh 21)</span>
-                                <span class="font-semibold text-rose-600">Rp {{ number_format($selectedSlip['pajak'], 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between border-t border-slate-100 pt-1.5 font-bold text-rose-700">
-                                <span>Total Potongan</span>
-                                <span>Rp {{ number_format($selectedSlip['bpjs_kes'] + $selectedSlip['bpjs_ket'] + $selectedSlip['pajak'], 0, ',', '.') }}</span>
-                            </div>
-                        </div>
-                    </div>
+                        <!-- Spacer row -->
+                        <tr class="border-b border-slate-800 h-4 bg-slate-50/20">
+                            <td class="border-r border-slate-800 px-3 py-1"></td>
+                            <td class="border-r border-slate-800 px-3 py-1"></td>
+                            <td class="border-r border-slate-800 px-3 py-1 text-center">Rp</td>
+                            <td class="px-3 py-1 text-right"></td>
+                        </tr>
 
-                    <!-- Net Pay -->
-                    <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3.5 mt-4">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <div class="text-2xs font-bold text-indigo-700 uppercase tracking-wider">GAJI BERSIH DITERIMA (A - B)</div>
-                                <div class="text-4xs text-indigo-400 mt-0.5">*Ditransfer langsung ke rekening payroll terdaftar</div>
-                            </div>
-                            <span class="text-lg font-black text-indigo-800">
-                                Rp {{ number_format($selectedSlip['gaji_bersih'], 0, ',', '.') }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                        <!-- Pot. Absensi -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Pot. Absensi</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        <!-- Cash Bon -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Cash Bon</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        <!-- Pot. Obat / Perawatan -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Pot. Obat / Perawatan</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+                        <!-- Pot. BPJS Kesehatan -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Pot. BPJS Kesehatan</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">{{ number_format($selectedSlip['bpjs_kes'], 0, ',', '.') }}</td>
+                        </tr>
+                        <!-- Pot. BPJS TK -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Pot. BPJS TK</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">{{ number_format($selectedSlip['bpjs_ket'], 0, ',', '.') }}</td>
+                        </tr>
+                        <!-- Potongan Lain-lain -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Potongan Lain-lain</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
 
-                <!-- Signatures -->
-                <div class="mt-8 grid grid-cols-2 text-center text-xs text-slate-500">
-                    <div>
-                        <p class="font-medium">Penerima,</p>
-                        <div class="h-12"></div>
-                        <p class="font-bold text-slate-900 border-b border-slate-300 pb-0.5 inline-block">{{ $selectedSlip['nama'] }}</p>
-                    </div>
-                    <div>
-                        <p class="font-medium">Jambi, {{ now()->translatedFormat('d F Y') }}</p>
-                        <p class="font-medium">Mengetahui, Kabag SDM</p>
-                        <div class="h-12"></div>
-                        <p class="font-bold text-slate-900 border-b border-slate-300 pb-0.5 inline-block">Staff SDM RSBA</p>
-                    </div>
+                        <!-- TOTAL POTONGAN -->
+                        <tr class="border-b-4 border-double border-slate-800 font-bold bg-slate-50/50">
+                            <td class="border-r border-slate-800 px-3 py-1.5 uppercase text-slate-800">TOTAL POTONGAN</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp.</td>
+                            <td class="px-3 py-1.5 text-right text-slate-800">{{ number_format($selectedSlip['bpjs_kes'] + $selectedSlip['bpjs_ket'], 0, ',', '.') }}</td>
+                        </tr>
+
+                        <!-- Spacer row -->
+                        <tr class="border-b border-slate-800 h-4 bg-slate-50/20">
+                            <td class="border-r border-slate-800 px-3 py-1"></td>
+                            <td class="border-r border-slate-800 px-3 py-1"></td>
+                            <td class="border-r border-slate-800 px-3 py-1 text-center">Rp</td>
+                            <td class="px-3 py-1 text-right"></td>
+                        </tr>
+
+                        <!-- PPh Pasal 21 -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">PPh Pasal 21</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">{{ number_format($selectedSlip['pajak'], 0, ',', '.') }}</td>
+                        </tr>
+                        <!-- Pot. Bank -->
+                        <tr class="border-b border-slate-800">
+                            <td class="border-r border-slate-800 px-3 py-1.5 font-medium">Pot. Bank</td>
+                            <td class="border-r border-slate-800 px-3 py-1.5"></td>
+                            <td class="border-r border-slate-800 px-3 py-1.5 text-center">Rp</td>
+                            <td class="px-3 py-1.5 text-right font-medium">-</td>
+                        </tr>
+
+                        <!-- PENGHASILAN NETTO -->
+                        <tr class="font-bold bg-indigo-50/60">
+                            <td class="border-l border-r border-slate-800 px-3 py-2 uppercase text-indigo-800">PENGHASILAN NETTO</td>
+                            <td class="border-r border-slate-800 px-3 py-2"></td>
+                            <td class="border-r border-slate-800 px-3 py-2 text-center text-indigo-800">Rp.</td>
+                            <td class="border-r border-slate-800 px-3 py-2 text-right text-indigo-850 text-sm">{{ number_format($selectedSlip['gaji_bersih'], 0, ',', '.') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Bottom Signatures -->
+                <div class="mt-6 flex flex-col text-xs text-slate-600 pl-6">
+                    <p class="font-medium">Bandar Lampung, {{ now()->translatedFormat('d F Y') }}</p>
+                    <p class="font-medium">Wadir SDM & Umum</p>
+                    <div class="h-16"></div>
+                    <p class="font-bold text-slate-800 leading-none">Riyanti, SP., M.Kes</p>
                 </div>
             </div>
 
-            <!-- Print Actions -->
             <x-slot:footer>
                 <div class="flex justify-end gap-2.5">
-                    <x-ts:button flat color="slate" wire:click="closeModal">Tutup</x-ts:button>
-                    <x-ts:button color="indigo" class="font-bold" onclick="printSalarySlip()">
+                    <x-ts:button size="sm" flat color="slate" wire:click="closeModal">Tutup</x-ts:button>
+                    <x-ts:button size="sm" color="sky" class="font-bold text-white bg-sky-600 hover:bg-sky-700" wire:click="sendEmail({{ $selectedSlip['id'] }})" loading="sendEmail">
+                        <x-tabler-mail class="mr-1.5 h-4 w-4" />
+                        Kirim ke Email
+                    </x-ts:button>
+                    <x-ts:button size="sm" color="indigo" class="font-bold" onclick="printSalarySlip()">
                         <x-tabler-printer class="mr-1.5 h-4 w-4" />
                         Cetak Slip Gaji
                     </x-ts:button>
@@ -219,23 +329,75 @@
     <script>
         function printSalarySlip() {
             var printContents = document.getElementById('salary-slip-print').innerHTML;
-            var originalContents = document.body.innerHTML;
 
             // Open new print window to print only the slip
-            var printWindow = window.open('', '', 'height=600,width=800');
+            var printWindow = window.open('', '', 'height=700,width=850');
             printWindow.document.write('<html><head><title>Cetak Slip Gaji</title>');
-            printWindow.document.write('<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">');
-            printWindow.document.write('<style>@media print { body { padding: 20px; } }</style>');
+            printWindow.document.write('<style>');
+            printWindow.document.write('body { font-family: sans-serif; font-size: 13px; color: #1e293b; line-height: 1.4; padding: 20px; margin: 0; }');
+            printWindow.document.write('.flex { display: flex; }');
+            printWindow.document.write('.flex-col { flex-direction: column; }');
+            printWindow.document.write('.items-center { align-items: center; }');
+            printWindow.document.write('.justify-center { justify-content: center; }');
+            printWindow.document.write('.pb-4 { padding-bottom: 12px; }');
+            printWindow.document.write('.mb-4 { margin-bottom: 16px; }');
+            printWindow.document.write('.border-b-2 { border-bottom: 2px solid #0f172a; }');
+            printWindow.document.write('.border-slate-900 { border-color: #0f172a; }');
+            printWindow.document.write('.text-base { font-size: 14px; }');
+            printWindow.document.write('.font-black { font-weight: 800; }');
+            printWindow.document.write('.tracking-widest { letter-spacing: 0.1em; }');
+            printWindow.document.write('.uppercase { text-transform: uppercase; }');
+            printWindow.document.write('.leading-none { line-height: 1; }');
+            printWindow.document.write('.w-full { width: 100%; }');
+            printWindow.document.write('.text-xs { font-size: 11px; }');
+            printWindow.document.write('.font-semibold { font-weight: 600; }');
+            printWindow.document.write('.border-collapse { border-collapse: collapse; }');
+            printWindow.document.write('.border-t { border-top: 1px solid #cbd5e1; }');
+            printWindow.document.write('.border-b { border-bottom: 1px solid #cbd5e1; }');
+            printWindow.document.write('.border-slate-300 { border-color: #cbd5e1; }');
+            printWindow.document.write('.py-1\\.5 { padding-top: 6px; padding-bottom: 6px; }');
+            printWindow.document.write('.font-bold { font-weight: bold; }');
+            printWindow.document.write('.border { border: 1px solid #1e293b; }');
+            printWindow.document.write('.border-slate-800 { border-color: #1e293b; }');
+            printWindow.document.write('.border-b-4 { border-bottom-width: 4px; }');
+            printWindow.document.write('.border-double { border-bottom-style: double !important; border-color: #1e293b !important; }');
+            printWindow.document.write('.border-r { border-right: 1px solid #cbd5e1; }');
+            printWindow.document.write('.px-3 { padding-left: 12px; padding-right: 12px; }');
+            printWindow.document.write('.font-medium { font-weight: 500; }');
+            printWindow.document.write('.text-center { text-align: center; }');
+            printWindow.document.write('.text-right { text-align: right; }');
+            printWindow.document.write('.bg-slate-50\\/50 { background-color: #f8fafc; }');
+            printWindow.document.write('.h-4 { height: 16px; }');
+            printWindow.document.write('.bg-slate-50\\/20 { background-color: #f8fafc; }');
+            printWindow.document.write('.py-2 { padding-top: 8px; padding-bottom: 8px; }');
+            printWindow.document.write('.text-indigo-800 { color: #3730a3; }');
+            printWindow.document.write('.text-sm { font-size: 13px; }');
+            printWindow.document.write('.mt-6 { margin-top: 24px; }');
+            printWindow.document.write('.pl-6 { padding-left: 24px; }');
+            printWindow.document.write('.text-slate-600 { color: #475569; }');
+            
+            // Strict print styles to force single page and correct colors
+            printWindow.document.write('@media print {');
+            printWindow.document.write('  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 10px; margin: 0; }');
+            printWindow.document.write('  table { border-collapse: collapse !important; border: 1px solid #1e293b !important; }');
+            printWindow.document.write('  td { border-bottom: 1px solid #cbd5e1 !important; border-right: 1px solid #cbd5e1 !important; }');
+            printWindow.document.write('  tr.border-double td { border-bottom: 4px double #1e293b !important; }');
+            printWindow.document.write('  tr:last-child td { border-bottom: none !important; }');
+            printWindow.document.write('  td:last-child { border-right: none !important; }');
+            printWindow.document.write('  .bg-indigo-50\\/60 { background-color: #f0f9ff !important; color: #075985 !important; }');
+            printWindow.document.write('  .bg-slate-50\\/50 { background-color: #f8fafc !important; }');
+            printWindow.document.write('}');
+            printWindow.document.write('</style>');
             printWindow.document.write('</head><body>');
             printWindow.document.write(printContents);
             printWindow.document.write('</body></html>');
             printWindow.document.close();
 
-            // Wait for styles load and print
+            // Wait for DOM parsing and print
             setTimeout(function() {
                 printWindow.print();
                 printWindow.close();
-            }, 500);
+            }, 250);
         }
     </script>
 </div>

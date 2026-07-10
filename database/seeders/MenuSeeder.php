@@ -40,7 +40,7 @@ class MenuSeeder extends Seeder
                 'id' => 3,
                 'nama' => 'Dashboard Kamar',
                 'route' => 'dashboard.kamar',
-                'icon' => 'home',
+                'icon' => 'bed',
                 'permission' => ['view-dashboard-kamar'],
                 'parent_id' => 1,
                 'group' => null,
@@ -363,10 +363,19 @@ class MenuSeeder extends Seeder
             [
                 'id' => 40,
                 'nama' => 'Akreditasi',
-                'route' => 'kepegawaian.akreditasi.index',
+                'route' => null,
                 'icon' => 'brand-google-drive',
                 'permission' => ['assesor-akreditasi', 'view-kepegawaian-akreditasi'],
                 'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 64,
+                'nama' => 'Semua Kegiatan',
+                'route' => 'kepegawaian.akreditasi.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-akreditasi'],
+                'parent_id' => 40,
                 'group' => 'sdm',
             ],
             [
@@ -380,7 +389,7 @@ class MenuSeeder extends Seeder
             ],
             [
                 'id' => 43,
-                'nama' => 'Cuti',
+                'nama' => 'Izin dan Cuti',
                 'route' => 'kepegawaian.surat.cuti',
                 'icon' => null,
                 'permission' => ['create-cuti-other-karyawan', 'view-kepegawaian-surat-cuti'],
@@ -468,6 +477,71 @@ class MenuSeeder extends Seeder
                 'parent_id' => 1,
                 'group' => 'admin',
             ],
+
+            // ── Jadwal & Kehadiran (Fase 0 & 1) ──
+            [
+                'id' => 57,
+                'nama' => 'Jadwal & Kehadiran',
+                'route' => null,
+                'icon' => 'calendar-time',
+                'permission' => ['view-kepegawaian-jadwal-kerja'],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 55,
+                'nama' => 'Jadwal Kerja',
+                'route' => 'kepegawaian.jadwal-kerja.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-jadwal-kerja'],
+                'parent_id' => 57,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 56,
+                'nama' => 'Jadwal Tugas Saya',
+                'route' => 'profile.jadwal-tugas-saya',
+                'icon' => null,
+                'permission' => ['view-profile-jadwal-tugas-saya'],
+                'parent_id' => 57,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 60,
+                'nama' => 'Master Shift',
+                'route' => 'kepegawaian.master.jadwal-shift.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-jadwal-shift'],
+                'parent_id' => 57,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 61,
+                'nama' => 'Aturan Jadwal',
+                'route' => 'kepegawaian.master.jadwal-aturan.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-jadwal-aturan'],
+                'parent_id' => 57,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 62,
+                'nama' => 'Shift per Ruangan',
+                'route' => 'kepegawaian.master.ruangan-shift.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-ruangan-shift'],
+                'parent_id' => 57,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 63,
+                'nama' => 'Koordinator',
+                'route' => 'kepegawaian.master.bagian-koordinator.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-bagian-koordinator'],
+                'parent_id' => 57,
+                'group' => 'sdm',
+            ],
         ];
 
         foreach ($menus as $menuData) {
@@ -483,13 +557,14 @@ class MenuSeeder extends Seeder
             }
 
             Menu::create([
-                'id' => $menuData['id'],
-                'nama' => $menuData['nama'],
-                'route' => $menuData['route'],
-                'icon' => $menuData['icon'],
-                'permission' => !empty($menuData['permission']) ? $menuData['permission'] : null,
-                'group' => $group,
-                'parent_id' => $menuData['parent_id'],
+                'id'           => $menuData['id'],
+                'nama'         => $menuData['nama'],
+                'route'        => $menuData['route'],
+                'route_params' => $menuData['route_params'] ?? null,
+                'icon'         => $menuData['icon'],
+                'permission'   => !empty($menuData['permission']) ? $menuData['permission'] : null,
+                'group'        => $group,
+                'parent_id'    => $menuData['parent_id'],
             ]);
         }
     }

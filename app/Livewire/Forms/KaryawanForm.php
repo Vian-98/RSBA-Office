@@ -40,6 +40,8 @@ class KaryawanForm extends Form
     public $dom_kec;
     public $dom_desa;
     public $dom_alamat;
+    public $bpjs_kesehatan;
+    public $bpjs_tk;
 
     public $jabatan;
     public $tgl_jabatan;
@@ -50,6 +52,7 @@ class KaryawanForm extends Form
     public $tgl_status;
 
     public $ruangan;
+    public $kategori_kerja;
 
     function mount($karyawan)
     {
@@ -71,7 +74,9 @@ class KaryawanForm extends Form
             'kab' => 'required',
             'kec' => 'required',
             'desa' => 'required',
-            'alamat' => 'required'
+            'alamat' => 'required',
+            'bpjs_kesehatan' => 'nullable|string|max:50',
+            'bpjs_tk' => 'nullable|string|max:50'
         ];
     }
 
@@ -103,6 +108,8 @@ class KaryawanForm extends Form
         $this->dom_kec = $karyawan->dom_kec;
         $this->dom_desa = $karyawan->dom_desa;
         $this->dom_alamat = $karyawan->dom_alamat;
+        $this->bpjs_kesehatan = $karyawan->bpjs_kesehatan;
+        $this->bpjs_tk = $karyawan->bpjs_tk;
     }
 
     // set using different compoenent
@@ -111,6 +118,8 @@ class KaryawanForm extends Form
         $this->status = $karyawan->status;
         $this->jabatan = $karyawan->jabatan[0]->id ?? '';
         $this->dinas = $karyawan->resign ?? '';
+        $this->ruangan = $karyawan->ruangan_id;
+        $this->kategori_kerja = $karyawan->kategori_kerja?->value ?? 'reguler';
     }
 
     // simpan data
@@ -145,6 +154,10 @@ class KaryawanForm extends Form
             "agama" => $this->agama,
             "suku" => $this->suku,
             "npwp" => $this->npwp,
+            "bpjs_kesehatan" => $this->bpjs_kesehatan,
+            "bpjs_tk" => $this->bpjs_tk,
+            "ruangan_id" => empty($this->ruangan) ? null : $this->ruangan,
+            "kategori_kerja" => empty($this->kategori_kerja) ? 'reguler' : $this->kategori_kerja,
             "cuti" => 0
 
         ];
@@ -193,7 +206,9 @@ class KaryawanForm extends Form
             'dom_kab' => $this->dom_kab,
             'dom_kec' => $this->dom_kec,
             'dom_desa' => $this->dom_desa,
-            'dom_alamat' => $this->dom_alamat
+            'dom_alamat' => $this->dom_alamat,
+            'bpjs_kesehatan' => $this->bpjs_kesehatan,
+            'bpjs_tk' => $this->bpjs_tk
         ];
 
         if (auth()->user()->hasRole('Staff-SDM') || auth()->user()->hasRole('Super-Admin')) {

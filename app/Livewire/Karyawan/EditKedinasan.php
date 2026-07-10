@@ -65,16 +65,6 @@ class EditKedinasan extends Component
     {
         $this->validate($this->rules());
 
-        // try {
-        // $data = [
-        //     'status' => $this->form->status,
-        //     'tgl_status' => $this->form->tgl_status ?: null,
-        //     'jabatan' => $this->form->jabatan,
-        //     'tgl_jabatan' => $this->form->tgl_jabatan ?: null,
-        //     'resign' => $this->form->dinas ?: null,
-        //     'resign_at' => $this->form->tgl_dinas ?: null,
-        //     // 'ket_dinas' => $this->form->ket_dinas ?: null,
-        // ];
         if ($this->form->tgl_status && ($this->form->status != $this->status_init)) {
             $this->updateStatus();
         }
@@ -84,35 +74,21 @@ class EditKedinasan extends Component
             $this->updateJabatan();
         }
 
-        // if ($this->form->tgl_dinas || $this->form->tgl_status) {
-        //     # code...
-        //     $data = [
-        //         'status' => $this->form->status,
-        //         'resign' => $this->form->dinas ?: 'null',
-        //         'resign_at' => $this->form->tgl_dinas ?: 'null',
-        //     ];
+        // update ruangan dan kategori kerja
+        $data = [];
+        if ($this->form->ruangan !== $this->ruangan_init) {
+            $data['ruangan_id'] = empty($this->form->ruangan) ? null : $this->form->ruangan;
+        }
+        
+        $data['kategori_kerja'] = $this->form->kategori_kerja;
+        
+        if (count($data) > 0) {
+            Karyawan::where('id', $this->form->karyawan->id)->update($data);
+        }
 
-        //     // update
-        //     Karyawan::where('id', $this->form->karyawan->id)
-        //         ->update($this->only($data));
-        //     // $this->dispatch('dinas-' . $this->form->karyawan->id);
-
-        //     // refresh compoenent
-        //     $this->mount($this->form->karyawan->id);
-
-        //     $this->toast()
-        //         ->success('Sukses', 'Update data kedinasan berhasil.')
-        //         ->send();
-        // }
-
-        // $this->toast()
-        //     ->success('Sukses', 'Update data kedinasan berhasil.')
-        //     ->send();
-        // } catch (\Throwable $th) {
-        //     $this->toast()
-        //         ->error('Failed', 'Error : ' . $th->getMessage())
-        //         ->send();
-        // }
+        $this->toast()
+            ->success('Sukses', 'Update data kedinasan berhasil.')
+            ->send();
     }
 
     function updateStatus()

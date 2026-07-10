@@ -9,7 +9,6 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <tallstackui:script />
-        @livewireStyles
         @filamentStyles
     </head>
 
@@ -32,7 +31,7 @@
                                     Pelayanan Prima, Sehat Milik Semua <br>
                                     <span class="italic">We Care, We Cure</span>
                                 </p>
-                            </div>
+                             </div>
                         </div>
                     </div>
                     <div class="w-full rounded-lg bg-white shadow-lg shadow-indigo-300 lg:w-6/12 xl:w-5/12">
@@ -42,7 +41,6 @@
             </div>
         </div>
 
-        @livewireScripts
         @filamentScripts
     </body>
 

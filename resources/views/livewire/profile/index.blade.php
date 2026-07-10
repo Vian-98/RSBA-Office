@@ -132,7 +132,7 @@
                     <livewire:Karyawan.Document.DocumentList :id="$user?->karyawan_id" key="'document-list'" @document-karyawan-created="$refresh" @document-karyawan-deleted="$refresh" />
                 </x-ts:tab.items>
 
-                <x-ts:tab.items tab="Cuti">
+                <x-ts:tab.items tab="Izin dan Cuti">
                     <x-slot:left>
                         <x-ts:icon name="tabler.calendar-pause" class="h-5 w-5" />
                     </x-slot:left>

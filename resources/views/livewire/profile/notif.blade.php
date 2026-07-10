@@ -10,19 +10,49 @@
             <p class="text-3xs text-slate-400 max-w-xs mt-0.5">Anda akan menerima pemberitahuan saat ada aktivitas baru.</p>
         </div>
     @else
+        @php
+            $hasUnread = collect($notifications)->contains('is_read', false);
+        @endphp
+        
+        @if ($hasUnread)
+            <div class="flex justify-end mb-1">
+                <button wire:click="markAllAsRead" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1">
+                    <x-ts:icon name="tabler.circle-check" class="h-3.5 w-3.5" />
+                    Tandai semua dibaca
+                </button>
+            </div>
+        @endif
+
         <div class="flex flex-col gap-2.5">
             @foreach($notifications as $notif)
                 @php
+                    $isUnread = !$notif['is_read'];
                     $colors = match($notif['type']) {
-                        'success' => ['bg' => 'bg-emerald-50/60', 'border' => 'border-emerald-100/70', 'text' => 'text-emerald-700', 'iconBg' => 'bg-emerald-500'],
-                        'warning' => ['bg' => 'bg-amber-50/60', 'border' => 'border-amber-100/70', 'text' => 'text-amber-700', 'iconBg' => 'bg-amber-500'],
-                        'danger' => ['bg' => 'bg-rose-50/60', 'border' => 'border-rose-100/70', 'text' => 'text-rose-700', 'iconBg' => 'bg-rose-500'],
-                        default => ['bg' => 'bg-indigo-50/60', 'border' => 'border-indigo-100/70', 'text' => 'text-indigo-700', 'iconBg' => 'bg-indigo-500'],
+                        'success' => [
+                            'bg' => $isUnread ? 'bg-emerald-50/80 border-emerald-100/70 shadow-emerald-500/5' : 'bg-slate-50/40 border-slate-100/70 opacity-70',
+                            'text' => 'text-emerald-700',
+                            'iconBg' => $isUnread ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'
+                        ],
+                        'warning' => [
+                            'bg' => $isUnread ? 'bg-amber-50/80 border-amber-100/70 shadow-amber-500/5' : 'bg-slate-50/40 border-slate-100/70 opacity-70',
+                            'text' => 'text-amber-700',
+                            'iconBg' => $isUnread ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'
+                        ],
+                        'danger' => [
+                            'bg' => $isUnread ? 'bg-rose-50/80 border-rose-100/70 shadow-rose-500/5' : 'bg-slate-50/40 border-slate-100/70 opacity-70',
+                            'text' => 'text-rose-700',
+                            'iconBg' => $isUnread ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-500'
+                        ],
+                        default => [
+                            'bg' => $isUnread ? 'bg-indigo-50/80 border-indigo-100/70 shadow-indigo-500/5' : 'bg-slate-50/40 border-slate-100/70 opacity-70',
+                            'text' => 'text-indigo-700',
+                            'iconBg' => $isUnread ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
+                        ],
                     };
                 @endphp
-                <div class="relative overflow-hidden rounded-xl border {{ $colors['border'] }} {{ $colors['bg'] }} p-3 shadow-3xs transition-all duration-200 hover:shadow-2xs">
+                <div class="relative overflow-hidden rounded-xl border transition-all duration-200 p-3 shadow-3xs hover:shadow-2xs {{ $colors['bg'] }}">
                     <div class="flex gap-3">
-                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $colors['iconBg'] }} text-white shadow-3xs">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-3xs {{ $colors['iconBg'] }}">
                             @if(str_contains($notif['icon'], 'calendar'))
                                 <svg class="h-4.5 w-4.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
@@ -46,9 +76,18 @@
                             @endif
                         </span>
                         <div class="flex-1 min-w-0">
-                            <div class="flex flex-col">
-                                <h4 class="text-xs font-bold text-slate-800 leading-tight">{{ $notif['title'] }}</h4>
-                                <span class="text-4xs text-slate-400 mt-0.5">{{ $notif['time'] }}</span>
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex flex-col min-w-0">
+                                    <h4 class="text-xs font-bold text-slate-800 leading-tight">{{ $notif['title'] }}</h4>
+                                    <span class="text-4xs text-slate-400 mt-0.5">{{ $notif['time'] }}</span>
+                                </div>
+                                @if ($isUnread)
+                                    <button wire:click="markAsRead('{{ $notif['id'] }}')" 
+                                            class="rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors shrink-0" 
+                                            title="Tandai sudah dibaca">
+                                        <x-ts:icon name="tabler.check" class="h-4 w-4" />
+                                    </button>
+                                @endif
                             </div>
                             <p class="mt-1 text-2xs text-slate-600 leading-relaxed">{{ $notif['message'] }}</p>
                             @if(isset($notif['route']) && Route::has($notif['route']))
