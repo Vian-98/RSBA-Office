@@ -20,7 +20,7 @@ class Index extends Component
     #[Locked]
     public ?Distribusi $distribusi;
 
-    public bool $stats = false;
+
     public $search = '';
 
 
