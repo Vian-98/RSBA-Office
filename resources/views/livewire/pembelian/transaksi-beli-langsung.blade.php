@@ -254,7 +254,7 @@
                 </div>
 
             </div>
-            <x-ts:button sm type="submit" loading="submit" icon="tabler.checks">Simpan</x-ts:button>
+            <x-ts:button sm type="submit" loading="submit" wire:loading.attr="disabled" wire:target="submit" icon="tabler.checks">Simpan</x-ts:button>
 
         </div>
     </form>

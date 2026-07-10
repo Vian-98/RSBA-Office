@@ -30,6 +30,13 @@ class UserSeeder extends Seeder
                 'role' => 'Super-Admin',
             ],
             [
+                'email' => 'dimasfaqih005@gmail.com',
+                'nama' => 'Dimas Faqih',
+                'nip' => '0000000001',
+                'nik' => '0000000000000001',
+                'role' => 'Super-Admin',
+            ],
+            [
                 'email' => 'sdm@rsba.com',
                 'nama' => 'Staff SDM',
                 'nip' => '1111111111',

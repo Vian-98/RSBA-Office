@@ -26,6 +26,13 @@
                     </div>
                 @endif
             </div>
+            
+            <div class="w-full">
+                <x-ts:select.styled wire:model.defer="form.kategori_kerja" placeholder="Kategori Kerja" :options="[
+                    ['label' => 'Pekerja Reguler (Jam Kantor)', 'value' => 'reguler'],
+                    ['label' => 'Pekerja Shift', 'value' => 'shift']
+                ]" select="label:label|value:value" />
+            </div>
         </div>
 
         <div class="flex justify-end gap-2 pt-4">

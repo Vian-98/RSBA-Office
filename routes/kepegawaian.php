@@ -11,6 +11,14 @@ Route::prefix('karyawan')
         Route::get('/edit/{id}', App\Livewire\Karyawan\Edit::class)->name('edit');
     });
 
+// Jadwal Kerja
+Route::prefix('jadwal-kerja')
+    ->name('jadwal-kerja.')
+    ->group(function () {
+        Route::get('/', App\Livewire\Kepegawaian\JadwalKerja\Index::class)->name('index');
+        Route::get('/kelola/{id}', App\Livewire\Kepegawaian\JadwalKerja\Kelola::class)->name('kelola');
+    });
+
 
 // Master data
 Route::prefix('master')
@@ -48,6 +56,28 @@ Route::prefix('master')
             ->group(function () {
 
                 Route::get('/', App\Livewire\Master\Cuti\Index::class)->name('index');
+            });
+
+        Route::prefix('jadwal-shift')
+            ->name('jadwal-shift.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\JadwalShift\Index::class)->name('index');
+            });
+
+        Route::prefix('bagian-koordinator')
+            ->name('bagian-koordinator.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\BagianKoordinator\Index::class)->name('index');
+            });
+
+        Route::prefix('ruangan-shift')->name('ruangan-shift.')->group(function () {
+            Route::get('/', \App\Livewire\Master\RuanganShift\Index::class)->name('index');
+        });
+
+        Route::prefix('jadwal-aturan')
+            ->name('jadwal-aturan.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\JadwalAturan\Index::class)->name('index');
             });
     });
 

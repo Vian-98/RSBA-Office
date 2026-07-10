@@ -27,6 +27,7 @@ class RoleSeeder extends Seeder
 
         // Fetch all permissions currently in database
         $allPermissions = Permission::all()->pluck('name')->toArray();
+        $commonPermissions = ['view-dashboard', 'view-dashboard-kamar', 'view-profile-jadwal-tugas-saya'];
 
         // 1. SDM permissions
         $sdmKeywords = ['kepegawaian', 'karyawan', 'dokter', 'cuti', 'sp3', 'jasmed', 'akreditasi', 'verifikasi', 'tanda-tangan-digital', 'export-karyawan', 'bagian', 'jabatan', 'ruangan', 'spesialis', 'surat', 'gaji', 'view-master'];
@@ -38,9 +39,7 @@ class RoleSeeder extends Seeder
             }
             return false;
         });
-        $sdmPermissions[] = 'view-dashboard';
-        $sdmPermissions[] = 'view-dashboard-kamar';
-        $staffSdm->syncPermissions(array_unique($sdmPermissions));
+        $staffSdm->syncPermissions(array_unique(array_merge($sdmPermissions, $commonPermissions)));
 
         // 2. Umum permissions
         $umumKeywords = ['umum', 'supplier', 'kategori', 'satuan', 'penyimpanan', 'barang', 'pembelian', 'distribusi', 'gudang', 'asset', 'opname', 'maintenance', 'pengajuan', 'laporang'];
@@ -52,9 +51,7 @@ class RoleSeeder extends Seeder
             }
             return false;
         });
-        $umumPermissions[] = 'view-dashboard';
-        $umumPermissions[] = 'view-dashboard-kamar';
-        $bagianUmum->syncPermissions(array_unique($umumPermissions));
+        $bagianUmum->syncPermissions(array_unique(array_merge($umumPermissions, $commonPermissions)));
 
         // 3. Keuangan permissions
         $keuanganKeywords = ['keuangan', 'hutang', 'piutang', 'rekanan', 'coa', 'jurnal', 'akuntansi'];
@@ -66,9 +63,7 @@ class RoleSeeder extends Seeder
             }
             return false;
         });
-        $keuanganPermissions[] = 'view-dashboard';
-        $keuanganPermissions[] = 'view-dashboard-kamar';
-        $keuangan->syncPermissions(array_unique($keuanganPermissions));
+        $keuangan->syncPermissions(array_unique(array_merge($keuanganPermissions, $commonPermissions)));
 
         // 4. Administrasi permissions
         $admKeywords = ['administrasi', 'pasien', 'registrasi'];
@@ -80,12 +75,9 @@ class RoleSeeder extends Seeder
             }
             return false;
         });
-        $admPermissions[] = 'view-dashboard';
-        $admPermissions[] = 'view-dashboard-kamar';
-        $administrasi->syncPermissions(array_unique($admPermissions));
+        $administrasi->syncPermissions(array_unique(array_merge($admPermissions, $commonPermissions)));
 
         // 5. Guest permissions
-        $guestPermissions = ['view-dashboard', 'view-dashboard-kamar'];
-        $guest->syncPermissions($guestPermissions);
+        $guest->syncPermissions($commonPermissions);
     }
 }

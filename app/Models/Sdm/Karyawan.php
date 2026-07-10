@@ -3,6 +3,7 @@
 namespace App\Models\Sdm;
 
 use App\Enums\StatusKaryawan;
+use App\Enums\KategoriKerja;
 use App\Models\Surat\CutiJenis;
 use App\Models\Surat\SuratCuti;
 use App\Models\User;
@@ -19,7 +20,8 @@ class Karyawan extends Model
 
     // casting enum status karyawan
     protected $casts = [
-        'status' => StatusKaryawan::class
+        'status' => StatusKaryawan::class,
+        'kategori_kerja' => KategoriKerja::class,
     ];
 
     public function user(): HasOne
@@ -159,5 +161,21 @@ class Karyawan extends Model
     public function suratCuti()
     {
         return $this->hasMany(SuratCuti::class, 'karyawan_id');
+    }
+
+    public function bagianKoordinasi()
+    {
+        return $this->belongsToMany(Bagian::class, 'sdm_bagian_koordinator', 'karyawan_id', 'bagian_id')
+            ->wherePivot('aktif', true);
+    }
+
+    public function isKoordinatorBagian(int $bagianId): bool
+    {
+        return $this->bagianKoordinasi()->where('bagian.id', $bagianId)->exists();
+    }
+
+    public function ruangan()
+    {
+        return $this->belongsTo(\App\Models\Ruangan::class, 'ruangan_id');
     }
 }
