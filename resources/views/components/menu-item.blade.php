@@ -9,7 +9,8 @@
     $submenuActive = false;
     if (!empty($menu['submenus'])) {
         foreach ($menu['submenus'] as $submenu) {
-            if (request()->routeIs($submenu['route'])) {
+            $subParams = $submenu['route_params'] ?? [];
+            if (request()->routeIs($submenu['route']) && empty(array_diff_assoc($subParams, request()->route()?->parameters() ?? []))) {
                 $submenuActive = true;
                 break;
             }
@@ -59,7 +60,14 @@
         </span>
     </div>
 @else
-    <a href="{{ (!empty($menu['route']) && Route::has($menu['route'])) ? route($menu['route']) : '#' }}" 
+    @php
+        $menuUrl = '#';
+        if (!empty($menu['route']) && Route::has($menu['route'])) {
+            $menuParams = $menu['route_params'] ?? [];
+            $menuUrl = route($menu['route'], $menuParams);
+        }
+    @endphp
+    <a href="{{ $menuUrl }}" 
        {{ $attributes->merge([]) }} 
        :class="isCollapsed && isAboveBreakpoint ? 'justify-center mx-1 px-1' : 'justify-start gap-3 mx-2 px-3'"
        class="py-2.5 rounded-lg transition-all duration-200 cursor-pointer flex items-center relative group {{ $baseClass }}" 
@@ -92,7 +100,13 @@
          {{ $attributes->merge(['class' => 'submenu ml-4 ' . ($submenuActive ? 'active' : 'hidden')]) }}>
         <div class="ml-2 space-y-1 border-l-2 border-indigo-500/25">
             @foreach ($menu['submenus'] as $submenu)
-                <x-menu-item :menu="$submenu" :active="request()->routeIs($submenu['route'])" />
+                @php
+                    $subParams  = $submenu['route_params'] ?? [];
+                    $subActive  = !empty($submenu['route']) && Route::has($submenu['route'])
+                        ? request()->fullUrlIs(route($submenu['route'], $subParams))
+                        : false;
+                @endphp
+                <x-menu-item :menu="$submenu" :active="$subActive" />
             @endforeach
         </div>
     </div>

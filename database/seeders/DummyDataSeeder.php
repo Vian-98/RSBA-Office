@@ -55,6 +55,13 @@ class DummyDataSeeder extends Seeder
             'jm_dokter',
             'um_pembelian_requests',
             'um_pembelian_requests_det',
+            'akre_element_documents',
+            'akre_elements',
+            'akre_files',
+            'akre_documents',
+            'akre_bab_elements',
+            'akre_chapter',
+            'akre_kegiatan',
         ];
 
         foreach ($tables as $table) {
@@ -717,5 +724,261 @@ class DummyDataSeeder extends Seeder
             'created_at' => now()->subDays(1),
             'updated_at' => now()->subDays(1),
         ]);
+
+        // 20. Seed Data Dummy Akreditasi
+        $userAdmin = User::where('email', 'admin@rsba.com')->first();
+        $userSdm   = User::where('email', 'sdm@rsba.com')->first();
+
+        // 20a. Kegiatan Akreditasi
+        $kegiatanId = DB::table('akre_kegiatan')->insertGetId([
+            'uuid'        => \Illuminate\Support\Str::uuid(),
+            'tanggal'     => '2026-07-01',
+            'nama'        => 'Akreditasi RS - Siklus 2026',
+            'standard'    => 'SNARS Edisi 1.1',
+            'lembaga'     => 'KARS',
+            'total_nilai' => 0,
+            'folder_path' => 'akreditasi/2026',
+            'created_by'  => $userAdmin->id ?? 1,
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+
+        // 20b. Chapters (BAB Utama)
+        $chapters = [
+            [
+                'kegiatan_id'    => $kegiatanId,
+                'nama'           => 'Kelompok Standar Pelayanan Berfokus pada Pasien',
+                'singkatan'      => 'KPBP',
+                'deskripsi'      => 'Standar yang mengatur pelayanan langsung kepada pasien di rumah sakit.',
+                'pic_id'         => $userAdmin->id ?? 1,
+                'assesor_id'     => $userSdm->id ?? 1,
+                'total_element'  => 0,
+                'total_nilai'    => 0,
+                'folder_path'    => 'akreditasi/2026/kpbp',
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ],
+            [
+                'kegiatan_id'    => $kegiatanId,
+                'nama'           => 'Kelompok Standar Manajemen Rumah Sakit',
+                'singkatan'      => 'KMRS',
+                'deskripsi'      => 'Standar yang mengatur tata kelola dan manajemen operasional rumah sakit.',
+                'pic_id'         => $userSdm->id ?? 1,
+                'assesor_id'     => $userAdmin->id ?? 1,
+                'total_element'  => 0,
+                'total_nilai'    => 0,
+                'folder_path'    => 'akreditasi/2026/kmrs',
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ],
+        ];
+        DB::table('akre_chapter')->insert($chapters);
+        $chapterIds = DB::table('akre_chapter')->pluck('id')->toArray();
+        [$chapterKpbpId, $chapterKmrsId] = $chapterIds;
+
+        // 20c. Bab & Sub-Bab (akre_bab_elements)
+        // -- BAB 1: Akses ke Rumah Sakit dan Kontinuitas Pelayanan (ARK)
+        $bab1Id = DB::table('akre_bab_elements')->insertGetId([
+            'chapter_id'     => $chapterKpbpId,
+            'no'             => 'A',
+            'nama'           => 'Akses ke Rumah Sakit dan Kontinuitas Pelayanan (ARK)',
+            'deskripsi'      => 'Standar terkait akses pasien ke layanan dan kesinambungan perawatan.',
+            'maksud_tujuan'  => 'Memastikan pasien mendapatkan akses layanan yang tepat dan berkesinambungan.',
+            'bab'            => 'bab',
+            'parent_id'      => null,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        // Sub-Bab ARK
+        $subArk1Id = DB::table('akre_bab_elements')->insertGetId([
+            'chapter_id'     => $chapterKpbpId,
+            'no'             => '1',
+            'nama'           => 'Skrining dan Triase Pasien',
+            'deskripsi'      => 'Proses skrining untuk menentukan kebutuhan pelayanan pasien.',
+            'maksud_tujuan'  => 'Memastikan pasien menerima skrining yang tepat saat pertama kali datang.',
+            'bab'            => 'sub',
+            'parent_id'      => $bab1Id,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        $subArk2Id = DB::table('akre_bab_elements')->insertGetId([
+            'chapter_id'     => $chapterKpbpId,
+            'no'             => '2',
+            'nama'           => 'Registrasi dan Admisi Pasien',
+            'deskripsi'      => 'Proses pendaftaran dan penerimaan pasien rawat inap maupun rawat jalan.',
+            'maksud_tujuan'  => 'Memastikan proses registrasi pasien terstandar dan terdokumentasi.',
+            'bab'            => 'sub',
+            'parent_id'      => $bab1Id,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        // -- BAB 2: Manajemen Sumber Daya Manusia (MSDM)
+        $bab2Id = DB::table('akre_bab_elements')->insertGetId([
+            'chapter_id'     => $chapterKmrsId,
+            'no'             => 'B',
+            'nama'           => 'Manajemen Sumber Daya Manusia (MSDM)',
+            'deskripsi'      => 'Standar terkait pengelolaan SDM klinis dan non-klinis rumah sakit.',
+            'maksud_tujuan'  => 'Memastikan RS memiliki SDM yang kompeten dan cukup untuk mendukung pelayanan.',
+            'bab'            => 'bab',
+            'parent_id'      => null,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        $subMsdm1Id = DB::table('akre_bab_elements')->insertGetId([
+            'chapter_id'     => $chapterKmrsId,
+            'no'             => '1',
+            'nama'           => 'Perencanaan dan Rekrutmen SDM',
+            'deskripsi'      => 'Proses perencanaan kebutuhan dan rekrutmen tenaga kesehatan.',
+            'maksud_tujuan'  => 'Memastikan RS memiliki jumlah dan kualifikasi SDM yang memadai.',
+            'bab'            => 'sub',
+            'parent_id'      => $bab2Id,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        $subMsdm2Id = DB::table('akre_bab_elements')->insertGetId([
+            'chapter_id'     => $chapterKmrsId,
+            'no'             => '2',
+            'nama'           => 'Orientasi dan Pelatihan Staf',
+            'deskripsi'      => 'Program orientasi untuk staf baru dan pelatihan berkelanjutan.',
+            'maksud_tujuan'  => 'Memastikan seluruh staf mendapatkan pelatihan kompetensi yang diperlukan.',
+            'bab'            => 'sub',
+            'parent_id'      => $bab2Id,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        // 20d. Elemen Penilaian (akre_elements)
+        $elements = [
+            // ARK 1 - Skrining
+            [
+                'akre_bab_id'   => $subArk1Id,
+                'nomor'         => '1',
+                'element'       => 'RS menetapkan regulasi tentang skrining pasien baik di dalam maupun di luar RS.',
+                'methode'       => json_encode(['R', 'D']),
+                'kelengkapan'   => 'Regulasi skrining, SOP triase, Dokumen hasil skrining pasien UGD',
+                'target_nilai'  => 10,
+                'nilai'         => 8,
+                'tdd'           => false,
+                'catatan'       => 'Regulasi sudah ada, perlu update SOP triase terbaru',
+                'validated_by'  => $userAdmin->id ?? 1,
+                'is_corection'  => false,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ],
+            [
+                'akre_bab_id'   => $subArk1Id,
+                'nomor'         => '2',
+                'element'       => 'Pasien diskrining sesuai dengan kebutuhan pelayanan sebelum ditetapkan sebagai pasien rawat inap.',
+                'methode'       => json_encode(['W', 'O', 'D']),
+                'kelengkapan'   => 'Formulir skrining awal, RM pasien, Bukti edukasi skrining',
+                'target_nilai'  => 10,
+                'nilai'         => 10,
+                'tdd'           => false,
+                'catatan'       => null,
+                'validated_by'  => $userAdmin->id ?? 1,
+                'is_corection'  => false,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ],
+            // ARK 2 - Registrasi
+            [
+                'akre_bab_id'   => $subArk2Id,
+                'nomor'         => '1',
+                'element'       => 'Ada regulasi tentang penerimaan pasien rawat inap dan pendaftaran pasien rawat jalan.',
+                'methode'       => json_encode(['R', 'D']),
+                'kelengkapan'   => 'Regulasi admisi, SOP pendaftaran, Formulir admisi pasien',
+                'target_nilai'  => 10,
+                'nilai'         => 10,
+                'tdd'           => false,
+                'catatan'       => null,
+                'validated_by'  => $userAdmin->id ?? 1,
+                'is_corection'  => false,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ],
+            [
+                'akre_bab_id'   => $subArk2Id,
+                'nomor'         => '2',
+                'element'       => 'Pasien dan keluarga diberikan informasi tentang pelayanan yang ditawarkan dan biaya.',
+                'methode'       => json_encode(['W', 'D', 'S']),
+                'kelengkapan'   => 'Bukti edukasi pasien, Formulir persetujuan umum, Informasi tarif RS',
+                'target_nilai'  => 10,
+                'nilai'         => 5,
+                'tdd'           => false,
+                'catatan'       => 'Perlu peningkatan dokumentasi edukasi kepada pasien/keluarga',
+                'validated_by'  => null,
+                'is_corection'  => true,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ],
+            // MSDM 1 - Perencanaan
+            [
+                'akre_bab_id'   => $subMsdm1Id,
+                'nomor'         => '1',
+                'element'       => 'RS mempunyai regulasi tentang pengelolaan SDM yang sesuai dengan peraturan perundang-undangan.',
+                'methode'       => json_encode(['R']),
+                'kelengkapan'   => 'Regulasi pengelolaan SDM, Struktur organisasi RS, Uraian jabatan',
+                'target_nilai'  => 10,
+                'nilai'         => 10,
+                'tdd'           => false,
+                'catatan'       => null,
+                'validated_by'  => $userAdmin->id ?? 1,
+                'is_corection'  => false,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ],
+            [
+                'akre_bab_id'   => $subMsdm1Id,
+                'nomor'         => '2',
+                'element'       => 'RS melakukan analisis dan perencanaan kebutuhan SDM secara berkala.',
+                'methode'       => json_encode(['R', 'D', 'W']),
+                'kelengkapan'   => 'Dokumen analisis beban kerja, Rencana kebutuhan SDM tahunan',
+                'target_nilai'  => 10,
+                'nilai'         => 8,
+                'tdd'           => false,
+                'catatan'       => 'Dokumen analisis beban kerja perlu diperbarui untuk tahun berjalan',
+                'validated_by'  => $userSdm->id ?? 1,
+                'is_corection'  => false,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ],
+            // MSDM 2 - Pelatihan
+            [
+                'akre_bab_id'   => $subMsdm2Id,
+                'nomor'         => '1',
+                'element'       => 'Setiap staf baru mengikuti orientasi umum dan orientasi khusus di unit kerja.',
+                'methode'       => json_encode(['D', 'W']),
+                'kelengkapan'   => 'Materi orientasi, Daftar hadir orientasi, Hasil evaluasi orientasi staf baru',
+                'target_nilai'  => 10,
+                'nilai'         => 10,
+                'tdd'           => false,
+                'catatan'       => null,
+                'validated_by'  => $userSdm->id ?? 1,
+                'is_corection'  => false,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ],
+            [
+                'akre_bab_id'   => $subMsdm2Id,
+                'nomor'         => '2',
+                'element'       => 'RS mempunyai program pelatihan dan pendidikan yang berkelanjutan bagi seluruh staf.',
+                'methode'       => json_encode(['R', 'D', 'W']),
+                'kelengkapan'   => 'Program diklat tahunan, Sertifikat pelatihan staf, Laporan realisasi diklat',
+                'target_nilai'  => 10,
+                'nilai'         => null,
+                'tdd'           => false,
+                'catatan'       => 'Belum divalidasi',
+                'validated_by'  => null,
+                'is_corection'  => false,
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ],
+        ];
+        DB::table('akre_elements')->insert($elements);
     }
 }

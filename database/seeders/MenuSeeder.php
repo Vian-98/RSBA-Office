@@ -363,10 +363,19 @@ class MenuSeeder extends Seeder
             [
                 'id' => 40,
                 'nama' => 'Akreditasi',
-                'route' => 'kepegawaian.akreditasi.index',
+                'route' => null,
                 'icon' => 'brand-google-drive',
                 'permission' => ['assesor-akreditasi', 'view-kepegawaian-akreditasi'],
                 'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 64,
+                'nama' => 'Semua Kegiatan',
+                'route' => 'kepegawaian.akreditasi.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-akreditasi'],
+                'parent_id' => 40,
                 'group' => 'sdm',
             ],
             [
@@ -548,13 +557,14 @@ class MenuSeeder extends Seeder
             }
 
             Menu::create([
-                'id' => $menuData['id'],
-                'nama' => $menuData['nama'],
-                'route' => $menuData['route'],
-                'icon' => $menuData['icon'],
-                'permission' => !empty($menuData['permission']) ? $menuData['permission'] : null,
-                'group' => $group,
-                'parent_id' => $menuData['parent_id'],
+                'id'           => $menuData['id'],
+                'nama'         => $menuData['nama'],
+                'route'        => $menuData['route'],
+                'route_params' => $menuData['route_params'] ?? null,
+                'icon'         => $menuData['icon'],
+                'permission'   => !empty($menuData['permission']) ? $menuData['permission'] : null,
+                'group'        => $group,
+                'parent_id'    => $menuData['parent_id'],
             ]);
         }
     }
