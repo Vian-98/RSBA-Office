@@ -49,6 +49,13 @@ class EditIdentitas extends Component
         try {
             $this->form->updateIdentitas();
 
+            // Clear cache for updated employee's user, and current logged-in user
+            $karyawan = $this->form->karyawan;
+            if ($karyawan && $karyawan->user) {
+                \Illuminate\Support\Facades\Cache::forget("navbar-user:" . $karyawan->user->id);
+            }
+            \Illuminate\Support\Facades\Cache::forget("navbar-user:" . auth()->id());
+
             $this->dispatch('updated-karywan');
 
             $this->toast()

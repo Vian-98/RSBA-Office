@@ -76,6 +76,18 @@
                     <dd class="font-medium text-slate-700">{{ $karyawan->nik ?? '-' }}</dd>
                 </div>
                 <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <dt class="text-slate-400">NPWP</dt>
+                    <dd class="font-medium text-slate-700">{{ $karyawan->npwp ?? '-' }}</dd>
+                </div>
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <dt class="text-slate-400">BPJS Kesehatan</dt>
+                    <dd class="font-medium text-slate-700">{{ $karyawan->bpjs_kesehatan ?? '-' }}</dd>
+                </div>
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <dt class="text-slate-400">BPJS Ketenagakerjaan</dt>
+                    <dd class="font-medium text-slate-700">{{ $karyawan->bpjs_tk ?? '-' }}</dd>
+                </div>
+                <div class="flex justify-between border-b border-slate-50 pb-2">
                     <dt class="text-slate-400">Tanggal Masuk</dt>
                     <dd class="font-medium text-slate-700">
                         {{ $karyawan->tgl_masuk ? \Carbon\Carbon::parse($karyawan->tgl_masuk)->translatedFormat('d F Y') : '-' }}

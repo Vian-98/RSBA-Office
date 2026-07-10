@@ -6,7 +6,7 @@
         <div class="ml-auto flex justify-end gap-2">
             <x-ts:button outline color="violet" x-show="history.length === 0 " sm x-on:click="togglePanel('permintaan')">
                 <x-slot:left>
-                    <x-ts:badge color="violet" :text="rand(1, 100)" round light />
+                    <x-ts:badge color="violet" :text="$permintaanCount" round light />
                 </x-slot:left>
                 Permintaan
             </x-ts:button>

@@ -19,7 +19,7 @@
                 <span role="button" x-on:click="$dispatch('open-modal',{id:'modal-lampiran-permintaan-beli'})" class="ml-2 flex flex-row items-center gap-1"> :
                     <x-ts:icon name="tabler.paperclip" class="h-4 w-auto" />
                     <span class="text-indigo-500">
-                        {{ count($PembelianReq->lampirans) }}</span>
+                        {{ count($PembelianReq->lampirans ?? []) }}</span>
                     Lampiran
                 </span>
 

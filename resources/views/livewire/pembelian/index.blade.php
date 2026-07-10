@@ -44,34 +44,57 @@
         </div>
 
 
-        <x-ts:tab :selected="$this->getRequestPembelianProperty ? 'Permintaan' : 'Transaksi'" x-on:navigate="$wire.set('tab',$event.detail.select)">
+        <div x-data="{ activeTab: @entangle('tab') }" class="flex flex-col gap-4">
+            <!-- Tab Headers -->
+            <div class="flex border-b border-gray-200">
+                <button 
+                    type="button"
+                    x-on:click="activeTab = 'Permintaan'"
+                    :class="activeTab === 'Permintaan' ? 'border-indigo-500 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium'"
+                    class="flex items-center gap-2 border-b-2 py-4 px-1 text-sm focus:outline-none transition-all duration-200"
+                >
+                    @if ($this->getRequestPembelianProperty > 0)
+                        <span class="block h-2 w-2 animate-pulse rounded-full bg-red-500 ring-2 ring-red-300"></span>
+                    @endif
+                    Permintaan
+                </button>
 
-            @if ($this->getRequestPembelianProperty)
-                <x-ts:tab.items tab="Permintaan">
-                    <x-slot:left>
-                        <span class="block h-1 w-1 animate-pulse rounded-full bg-red-500 ring-2 ring-red-300"></span>
-                    </x-slot:left>
-
-                    <livewire:Pembelian.Permintaan.ListPermintaanBarang key="list-permintaan-barang" />
-                </x-ts:tab.items>
-            @endif
-
-            <x-ts:tab.items tab="Transaksi">
-                <x-slot:left>
+                <button 
+                    type="button"
+                    x-on:click="activeTab = 'Transaksi'"
+                    :class="activeTab === 'Transaksi' ? 'border-indigo-500 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium'"
+                    class="flex items-center gap-2 border-b-2 py-4 px-1 text-sm focus:outline-none ml-8 transition-all duration-200"
+                >
                     <x-ts:icon name="tabler.invoice" class="h-5 w-5" />
-                </x-slot:left>
+                    Transaksi
+                </button>
 
-                <livewire:Pembelian.TablePembelian key="table-pembelian" />
-            </x-ts:tab.items>
-
-            <x-ts:tab.items tab="Barang">
-                <x-slot:left>
+                <button 
+                    type="button"
+                    x-on:click="activeTab = 'Barang'"
+                    :class="activeTab === 'Barang' ? 'border-indigo-500 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium'"
+                    class="flex items-center gap-2 border-b-2 py-4 px-1 text-sm focus:outline-none ml-8 transition-all duration-200"
+                >
                     <x-ts:icon name="tabler.box" class="h-5 w-5" />
-                </x-slot:left>
+                    Barang
+                </button>
+            </div>
 
-                <livewire:Pembelian.TablePembelianBarang key="table-pembelian-by-barang" />
-            </x-ts:tab.items>
-        </x-ts:tab>
+            <!-- Tab Contents -->
+            <div class="w-full mt-2">
+                <div x-show="activeTab === 'Permintaan'" wire:key="tab-content-permintaan">
+                    <livewire:Pembelian.Permintaan.ListPermintaanBarang key="list-permintaan-barang" />
+                </div>
+
+                <div x-show="activeTab === 'Transaksi'" wire:key="tab-content-transaksi" x-cloak>
+                    <livewire:Pembelian.TablePembelian key="table-pembelian" />
+                </div>
+
+                <div x-show="activeTab === 'Barang'" wire:key="tab-content-barang" x-cloak>
+                    <livewire:Pembelian.TablePembelianBarang key="table-pembelian-by-barang" />
+                </div>
+            </div>
+        </div>
     </div>
 
 

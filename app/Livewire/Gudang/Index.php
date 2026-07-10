@@ -4,6 +4,7 @@ namespace App\Livewire\Gudang;
 
 use App\Traits\AuthorizesFromRoute;
 use Livewire\Attributes\Lazy;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -15,9 +16,18 @@ class Index extends Component
 
     public bool $stats = false;
 
+    #[On('submit-approval-beli-request')]
+    public function refreshBadge()
+    {
+        // re-render the component to update the badge count
+    }
+
     public function render()
     {
         $this->authorizeFromRoute();
-        return view('livewire.gudang.index');
+        
+        $permintaanCount = \App\Models\Gudang\PembelianRequest::where('status', 'pending')->count();
+        
+        return view('livewire.gudang.index', compact('permintaanCount'));
     }
 }

@@ -12,7 +12,7 @@ use Livewire\Component;
 #[Layout('components.layouts.dashboard')]
 class Index extends Component
 {
-    public string $tab;
+    public string $tab = 'sp3';
 
     public function render()
     {

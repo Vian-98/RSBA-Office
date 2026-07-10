@@ -1,5 +1,5 @@
 <div>
-
+    @if ($karyawan)
     <body class="bg-gray-100">
         <div class="mx-auto my-8 max-w-6xl bg-white">
             <div class="flex flex-col md:flex-row">
@@ -167,5 +167,9 @@
             </div>
         </div>
     </body>
-
+    @else
+        <div class="p-8 text-center text-gray-400">
+            Pilih karyawan terlebih dahulu.
+        </div>
+    @endif
 </div>

@@ -115,11 +115,52 @@ class Notif extends Component
             report($e);
         }
 
+        $readNotifs = $user->read_notifications ?? [];
+        foreach ($items as &$item) {
+            $item['is_read'] = in_array($item['id'], $readNotifs);
+        }
+
         $this->notifications = $items;
+    }
+
+    public function markAsRead($id)
+    {
+        $user = Auth::user();
+        if (!$user) return;
+
+        $readNotifs = $user->read_notifications ?? [];
+        if (!in_array($id, $readNotifs)) {
+            $readNotifs[] = $id;
+            $user->read_notifications = $readNotifs;
+            $user->save();
+        }
+
+        $this->loadNotifications();
+        $this->dispatch('notification-updated');
+    }
+
+    public function markAllAsRead()
+    {
+        $user = Auth::user();
+        if (!$user) return;
+
+        $readNotifs = $user->read_notifications ?? [];
+        foreach ($this->notifications as $notif) {
+            if (!in_array($notif['id'], $readNotifs)) {
+                $readNotifs[] = $notif['id'];
+            }
+        }
+
+        $user->read_notifications = $readNotifs;
+        $user->save();
+
+        $this->loadNotifications();
+        $this->dispatch('notification-updated');
     }
 
     public function render()
     {
-        return view('livewire.profile.notif');
+        return view('livewire.profile.notif')
+            ->title('Notifikasi');
     }
 }

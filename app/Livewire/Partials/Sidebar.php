@@ -5,6 +5,7 @@ namespace App\Livewire\Partials;
 use App\Models\Menu;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Isolate;
 use Livewire\Attributes\On;
 
@@ -47,6 +48,7 @@ class Sidebar extends Component
     private function loadMenus(): void
     {
         $allMenus = $this->getPermittedMenus(auth()->id());
+        $allMenus = $this->injectAkreditasiSubMenus($allMenus);
         $this->menus = $this->applySearchFilter($allMenus);
     }
 
@@ -105,12 +107,13 @@ class Sidebar extends Component
                     'submenus'   => $menu->submenus
                         ->sortBy('nama')
                         ->map(fn($sub) => [
-                            'id'         => $sub->id,
-                            'nama'       => $sub->nama,
-                            'route'      => $sub->route ?? '',
-                            'icon'       => $sub->icon ?? '',
-                            'permission' => $sub->permission ?? '',
-                            'group'      => $sub->group?->nama() ?? '',
+                            'id'           => $sub->id,
+                            'nama'         => $sub->nama,
+                            'route'        => $sub->route ?? '',
+                            'route_params' => $sub->route_params ?? [],
+                            'icon'         => $sub->icon ?? '',
+                            'permission'   => $sub->permission ?? '',
+                            'group'        => $sub->group?->nama() ?? '',
                         ])->values()->toArray(),
                 ])
                 ->groupBy('group')
@@ -119,8 +122,62 @@ class Sidebar extends Component
     }
 
     /**
-     * Apply search filter in-memory on already-permitted menus
+     * Inject dynamic akreditasi sub-menus (kegiatan + chapters) from DB
+     * under the Akreditasi parent menu (id = 40)
      */
+    private function injectAkreditasiSubMenus(array $menus): array
+    {
+        $user = Auth::user();
+        $hasAccess = $user?->hasRole('Super-Admin')
+            || $user?->can('view-kepegawaian-akreditasi')
+            || $user?->can('assesor-akreditasi');
+
+        if (!$hasAccess) {
+            return $menus;
+        }
+
+        try {
+            $latestKegiatan = DB::table('akre_kegiatan')
+                ->orderByDesc('tanggal')
+                ->orderByDesc('id')
+                ->first();
+        } catch (\Throwable $e) {
+            return $menus;
+        }
+
+        $dynamicSubMenus = [];
+
+        if ($latestKegiatan) {
+            $dynamicSubMenus[] = [
+                'id'           => 'akre-standar-dinamis',
+                'nama'         => 'Standar Akreditasi',
+                'route'        => 'kepegawaian.akreditasi.chapters',
+                'route_params' => ['uuid' => $latestKegiatan->uuid],
+                'icon'         => '',
+                'permission'   => [],
+                'group'        => 'sdm',
+            ];
+        }
+
+        // Inject into Akreditasi parent (id = 40)
+        foreach ($menus as $group => &$groupMenus) {
+            foreach ($groupMenus as &$menu) {
+                if ((int)$menu['id'] === 40) {
+                    $menu['submenus'] = array_merge(
+                        $menu['submenus'],   // existing: "Semua Kegiatan" (id=64)
+                        $dynamicSubMenus
+                    );
+                    break 2;
+                }
+            }
+        }
+        unset($groupMenus, $menu);
+
+        return $menus;
+    }
+
+
+
     private function applySearchFilter(array $menus): array
     {
         if (empty($this->searchMenu)) {
@@ -191,6 +248,19 @@ class Sidebar extends Component
         }
 
         return null;
+    }
+
+    public function logout(): void
+    {
+        try {
+            Auth::guard('web')->logout();
+            session()->invalidate();
+            session()->regenerateToken();
+
+            $this->redirect(\App\Livewire\Auth\Login::class, navigate: true);
+        } catch (\Throwable $e) {
+            // silent fail
+        }
     }
 
     public function render()

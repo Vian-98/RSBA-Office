@@ -7,6 +7,7 @@ use Livewire\Component;
 use App\Livewire\Auth\Login;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Isolate;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
 use TallStackUi\Traits\Interactions;
 use Illuminate\Support\Facades\Cache;
@@ -27,11 +28,13 @@ class Navbar extends Component
     public $textFoto;
     public $colorFoto;
     public $isLoading = true;
+    public bool $hasUnread = false;
 
     public function mount($title)
     {
         $this->title = $title;
         $this->loadUserData();
+        $this->checkUnreadNotifications();
     }
 
 
@@ -98,6 +101,83 @@ class Navbar extends Component
                 ->error("An error occured {$e}")
                 ->send();
         }
+    }
+
+    public function checkUnreadNotifications()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            $this->hasUnread = false;
+            return;
+        }
+
+        $readNotifs = $user->read_notifications ?? [];
+
+        // 1. Welcome notif
+        if (!in_array('welcome', $readNotifs)) {
+            $this->hasUnread = true;
+            return;
+        }
+
+        // 2. Cuti approvals
+        try {
+            if ($user->hasRole('Super-Admin') || $user->hasRole('Staff-SDM')) {
+                // Pending cuti needing approval
+                $pendingCutis = \App\Models\Surat\SuratCuti::whereIn('status', [\App\Enums\StatusApproval::PENDING, \App\Enums\StatusApproval::WAITING])
+                    ->latest()
+                    ->take(5)
+                    ->pluck('id')
+                    ->map(fn($id) => 'cuti-pending-' . $id)
+                    ->toArray();
+
+                foreach ($pendingCutis as $cid) {
+                    if (!in_array($cid, $readNotifs)) {
+                        $this->hasUnread = true;
+                        return;
+                    }
+                }
+            } else {
+                $myCutis = \App\Models\Surat\SuratCuti::where('karyawan_id', $user->karyawan_id)
+                    ->latest()
+                    ->take(5)
+                    ->pluck('id')
+                    ->map(fn($id) => 'cuti-status-' . $id)
+                    ->toArray();
+
+                foreach ($myCutis as $cid) {
+                    if (!in_array($cid, $readNotifs)) {
+                        $this->hasUnread = true;
+                        return;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        // 3. Maintenance
+        try {
+            if ($user->hasRole('Super-Admin') || $user->hasRole('Bagian-Umum')) {
+                $maintenance = \App\Models\Maintenance\Jadwal::latest()
+                    ->take(5)
+                    ->pluck('id')
+                    ->map(fn($id) => 'maint-' . $id)
+                    ->toArray();
+
+                foreach ($maintenance as $mid) {
+                    if (!in_array($mid, $readNotifs)) {
+                        $this->hasUnread = true;
+                        return;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        $this->hasUnread = false;
+    }
+
+    #[On('notification-updated')]
+    public function refreshUnreadStatus()
+    {
+        $this->checkUnreadNotifications();
     }
 
     public function placeholder()
