@@ -52,12 +52,12 @@
                             
                             <!-- Month & Year Selectors -->
                             <div class="flex items-center gap-1.5">
-                                <select wire:model.live="selectedBulan" class="text-xs rounded-lg border-gray-200 bg-slate-50 py-0.5 px-2 text-slate-700 font-medium focus:border-indigo-500 focus:ring-indigo-500 cursor-pointer">
+                                <select wire:model.live="selectedBulan" class="text-xs rounded-lg border-gray-200 bg-slate-50 py-0.5 pl-2 pr-8 text-slate-700 font-medium focus:border-indigo-500 focus:ring-indigo-500 cursor-pointer">
                                     @for($m = 1; $m <= 12; $m++)
                                         <option value="{{ $m }}">{{ \Carbon\Carbon::create(2026, $m, 1)->translatedFormat('F') }}</option>
                                     @endfor
                                 </select>
-                                <select wire:model.live="selectedTahun" class="text-xs rounded-lg border-gray-200 bg-slate-50 py-0.5 px-2 text-slate-700 font-medium focus:border-indigo-500 focus:ring-indigo-500 cursor-pointer">
+                                <select wire:model.live="selectedTahun" class="text-xs rounded-lg border-gray-200 bg-slate-50 py-0.5 pl-2 pr-8 text-slate-700 font-medium focus:border-indigo-500 focus:ring-indigo-500 cursor-pointer">
                                     @for($y = 2025; $y <= 2027; $y++)
                                         <option value="{{ $y }}">{{ $y }}</option>
                                     @endfor
