@@ -163,7 +163,13 @@
                                     <td class="py-3">
                                         @if(!empty($dev['mappings']))
                                             <span class="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-xs font-medium dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30">
-                                                {{ $dev['mappings'][0]['target_type'] === 'ward_class' ? 'Rawat Inap' : 'Kamar Operasi' }}
+                                                @if($dev['mappings'][0]['target_type'] === 'ward_class')
+                                                    Rawat Inap
+                                                @elseif($dev['mappings'][0]['target_type'] === 'ward_summary')
+                                                    Summary Inap
+                                                @else
+                                                    Kamar Operasi
+                                                @endif
                                             </span>
                                         @else
                                             <span class="text-gray-400 italic">Belum Dimap</span>
@@ -171,7 +177,11 @@
                                     </td>
                                     <td class="py-3 font-medium text-gray-800 dark:text-white">
                                         @if(!empty($dev['mappings']))
-                                            {{ $dev['mappings'][0]['target']['name'] ?? 'Unknown' }}
+                                            @if($dev['mappings'][0]['target_type'] === 'ward_summary')
+                                                Semua Kamar
+                                            @else
+                                                {{ $dev['mappings'][0]['target']['name'] ?? 'Unknown' }}
+                                            @endif
                                         @else
                                             -
                                         @endif
@@ -230,7 +240,8 @@
                         <div>
                             <label class="block text-xs font-semibold text-gray-400 mb-1" for="targetType">Jenis Konten</label>
                             <select wire:model.live="targetType" id="targetType" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 dark:bg-gray-900 dark:border-gray-700 rounded-lg text-sm text-gray-800 dark:text-white focus:outline-none focus:border-sky-500" required>
-                                <option value="ward_class">Ketersediaan Kamar Rawat Inap</option>
+                                <option value="ward_class">Ketersediaan Kamar Rawat Inap (Per Kelas)</option>
+                                <option value="ward_summary">Summary Rawat Inap (Semua Kamar)</option>
                                 <option value="operating_room">Jadwal Kamar Operasi</option>
                             </select>
                         </div>
@@ -247,6 +258,8 @@
                                     @foreach($rooms as $r)
                                         <option value="{{ $r['id'] }}">{{ $r['bpjs_or_code'] }} - {{ $r['name'] }}</option>
                                     @endforeach
+                                @elseif($targetType === 'ward_summary')
+                                    <option value="all">Semua Ruangan</option>
                                 @endif
                             </select>
                         </div>

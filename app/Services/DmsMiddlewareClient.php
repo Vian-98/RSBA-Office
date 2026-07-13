@@ -77,7 +77,7 @@ class DmsMiddlewareClient
         ]);
         
         if (!$response->successful()) {
-            $err = $response->json('error') ?? 'Gagal mendaftarkan monitor.';
+            $err = $response->json('error.message') ?? 'Gagal mendaftarkan monitor.';
             throw new \Exception($err);
         }
 
@@ -106,7 +106,7 @@ class DmsMiddlewareClient
         ]);
 
         if (!$response->successful()) {
-            $err = $response->json('error') ?? 'Gagal memperbarui mapping.';
+            $err = $response->json('error.message') ?? 'Gagal memperbarui mapping.';
             throw new \Exception($err);
         }
 

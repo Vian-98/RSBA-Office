@@ -135,7 +135,7 @@ class DisplayMonitorAdmin extends Component
     {
         $this->validate([
             'selectedDeviceId' => 'required|string',
-            'targetType'       => 'required|string|in:ward_class,operating_room',
+            'targetType'       => 'required|string|in:ward_class,operating_room,ward_summary',
             'targetId'         => 'required|string',
         ]);
 
