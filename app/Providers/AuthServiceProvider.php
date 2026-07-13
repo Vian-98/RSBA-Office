@@ -25,7 +25,24 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(JadwalKerja::class, JadwalKerjaPolicy::class);
 
         Gate::before(function ($user, $ability) {
-            return $user->hasRole('Super-Admin') ? true : null;
+            if ($user->hasRole('Super-Admin')) {
+                return true;
+            }
+
+            if ($user->isKoordinator()) {
+                $allowedAbilities = [
+                    'view-kepegawaian-jadwal-kerja',
+                    'add-kepegawaian-jadwal-kerja',
+                    'edit-kepegawaian-jadwal-kerja',
+                    'delete-kepegawaian-jadwal-kerja',
+                    'view-kepegawaian-absensi',
+                ];
+                if (in_array($ability, $allowedAbilities)) {
+                    return true;
+                }
+            }
+
+            return null;
         });
     }
 }

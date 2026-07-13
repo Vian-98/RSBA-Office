@@ -41,6 +41,7 @@ class Kelola extends Component
             return [
                 'id' => $shift->id,
                 'kode' => $shift->kode,
+                'nama' => $shift->nama,
                 'warna' => $shift->warna ?? '#e2e8f0',
                 'jam_masuk' => $rs->jam_masuk_efektif,
                 'jam_keluar' => $rs->jam_keluar_efektif,
@@ -54,6 +55,8 @@ class Kelola extends Component
         for ($d = 1; $d <= $daysInMonth; $d++) {
             $this->dates[] = Carbon::create($this->jadwalKerja->tahun, $this->jadwalKerja->bulan, $d);
         }
+
+        $this->syncDetails($daysInMonth);
 
         // Group details by Karyawan
         $grouped = $this->jadwalKerja->details->groupBy('karyawan_id');
@@ -76,6 +79,42 @@ class Kelola extends Component
             }
 
             $this->karyawans[] = $row;
+        }
+    }
+
+    private function syncDetails($daysInMonth)
+    {
+        $karyawansInRoom = \App\Models\Sdm\Karyawan::where('ruangan_id', $this->jadwalKerja->ruangan_id)
+            ->whereNull('resign_at')
+            ->get();
+            
+        $existingDetails = $this->jadwalKerja->details;
+        $detailsToInsert = [];
+        
+        foreach ($karyawansInRoom as $karyawan) {
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $dateStr = $this->dates[$d - 1]->format('Y-m-d');
+                $exists = $existingDetails->where('karyawan_id', $karyawan->id)->first(fn($detail) => $detail->tanggal->format('Y-m-d') === $dateStr);
+                
+                if (!$exists) {
+                    $detailsToInsert[] = [
+                        'jadwal_kerja_id' => $this->jadwalKerja->id,
+                        'karyawan_id' => $karyawan->id,
+                        'shift_id' => null,
+                        'tanggal' => $dateStr,
+                        'status_kehadiran' => 'belum_dicek',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+            }
+        }
+        
+        if (!empty($detailsToInsert)) {
+            foreach (array_chunk($detailsToInsert, 500) as $chunk) {
+                JadwalKerjaDetail::insert($chunk);
+            }
+            $this->jadwalKerja->load(['details.karyawan', 'details.shift']);
         }
     }
 

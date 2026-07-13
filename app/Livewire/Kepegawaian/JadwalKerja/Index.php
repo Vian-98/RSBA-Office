@@ -36,9 +36,19 @@ class Index extends Component implements HasForms, HasTable, HasActions
         $query = JadwalKerja::query()
             ->with(['ruangan', 'pembuat']);
 
-        // Jika Anda ingin mempertahankan hak akses, Anda bisa menambah logika pengecekan di sini
-        // Misalnya mengecek apakah user punya wewenang untuk ruangan ini.
-        // Untuk sementara, kita abaikan pengecekan spesifik (semua user yang bisa masuk menu bisa lihat semua jadwal).
+        $user = Auth::user();
+        if ($user) {
+            $ruanganIds = $user->getRuanganKoordinatorIds();
+            // null = Super-Admin/Staff-SDM, akses semua ruangan
+            // [] kosong = tidak punya akses ruangan sama sekali
+            if ($ruanganIds !== null) {
+                if (empty($ruanganIds)) {
+                    $query->whereRaw('0 = 1'); // tidak ada ruangan yg bisa diakses
+                } else {
+                    $query->whereIn('ruangan_id', $ruanganIds);
+                }
+            }
+        }
 
         return $table
             ->query($query)

@@ -13,7 +13,15 @@ trait AuthorizesFromRoute
 
         if (!empty($this->currentRouteName)) return;
 
-        // Ambil dari Referer header — selalu URL halaman asli
+        $currentRoute = request()->route();
+        $routeName = $currentRoute ? $currentRoute->getName() : null;
+
+        if ($routeName && !str_contains($routeName, 'livewire.update')) {
+            $this->currentRouteName = $routeName;
+            return;
+        }
+
+        // Ambil dari Referer header — jika ini request via livewire update
         $referer = request()->header('referer');
 
         if (!$referer) return;
@@ -23,7 +31,7 @@ trait AuthorizesFromRoute
             $route     = app('router')->getRoutes()->match($request);
             $routeName = $route->getName();
 
-            if ($routeName && $routeName !== 'livewire.update') {
+            if ($routeName && !str_contains($routeName, 'livewire.update')) {
                 $this->currentRouteName = $routeName;
             }
         } catch (Exception) {

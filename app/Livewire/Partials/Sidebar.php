@@ -7,6 +7,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Isolate;
+use Livewire\Attributes\On;
 
 #[Isolate]
 class Sidebar extends Component
@@ -22,6 +23,22 @@ class Sidebar extends Component
     public function updatedSearchMenu(): void
     {
         // saat pencarian
+        $this->loadMenus();
+    }
+
+    #[On('updated-role-user')]
+    #[On('updated-permission-user')]
+    #[On('new-role-created')]
+    #[On('new-permission-created')]
+    #[On('menu-updated')]
+    #[On('new-menu-created')]
+    public function refreshMenus(): void
+    {
+        // Hapus cache milik user yang sedang login agar perubahan role/permission langsung berefek di UI-nya
+        cache()->forget('user-sidebar-menu:' . auth()->id());
+        cache()->forget('user-permissions:view:' . auth()->id());
+        cache()->forget('user-sidebar-menu:base');
+        
         $this->loadMenus();
     }
 
@@ -204,6 +221,14 @@ class Sidebar extends Component
             $all = method_exists($user, 'getAllPermissions')
                 ? $user->getAllPermissions()->pluck('name')->toArray()
                 : $user->permissions->pluck('name')->toArray();
+
+            // Tambahkan permission view koordinator jika user adalah koordinator
+            if ($user && $user->isKoordinator()) {
+                $all = array_merge($all, [
+                    'view-kepegawaian-jadwal-kerja',
+                    'view-kepegawaian-absensi',
+                ]);
+            }
 
             return array_values(array_filter($all, fn($p) => str_starts_with($p, 'view')));
         });

@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sdm_bagian_koordinator', function (Blueprint $table) {
+        Schema::create('sdm_ruangan_koordinator', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('bagian_id');
+            $table->unsignedBigInteger('ruangan_id');
             $table->unsignedBigInteger('karyawan_id');
             $table->boolean('aktif')->default(true); // soft-disable tanpa hapus histori
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
-            $table->foreign('bagian_id')->references('id')->on('bagian')->onDelete('cascade');
+            $table->foreign('ruangan_id')->references('id')->on('ruangan')->onDelete('cascade');
             $table->foreign('karyawan_id')->references('id')->on('sdm_karyawan')->onDelete('cascade');
-            $table->unique(['bagian_id', 'karyawan_id'], 'uniq_bagian_koordinator');
+            $table->unique(['ruangan_id', 'karyawan_id'], 'uniq_ruangan_koordinator');
         });
     }
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sdm_bagian_koordinator');
+        Schema::dropIfExists('sdm_ruangan_koordinator');
     }
 };

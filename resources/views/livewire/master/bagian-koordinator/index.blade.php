@@ -2,7 +2,7 @@
 
     <div class="flex w-full flex-row rounded-lg bg-white">
         <div class="ms-auto px-3 py-2">
-            <x-ts:button sm icon="tabler.plus" x-on:click="$dispatch('open-modal', {id:'new-bagian-koordinator'})">
+            <x-ts:button sm icon="tabler.plus" x-on:click="$dispatch('open-modal', {id:'new-ruangan-koordinator'})">
                 Tambah Koordinator
             </x-ts:button>
         </div>
@@ -13,21 +13,20 @@
     </div>
 
     {{-- Modal new --}}
-    <x-filament::modal id="new-bagian-koordinator" width="md" :autofocus="false">
+    <x-filament::modal id="new-ruangan-koordinator" width="md" :autofocus="false">
         <x-slot name="heading">
-            Tambah Koordinator Bagian
+            Tambah Koordinator Ruangan
         </x-slot>
-        <livewire:Master.BagianKoordinator.Add lazy @new-bagian-koordinator-created="$refresh" />
+        <livewire:Master.BagianKoordinator.Add lazy @new-ruangan-koordinator-created="$refresh" />
     </x-filament::modal>
 
     {{-- Modal edit --}}
-    <x-filament::modal id="edit-bagian-koordinator" width="md" :autofocus="false">
+    <x-filament::modal id="edit-ruangan-koordinator" width="md" :autofocus="false">
         <x-slot name="heading">
-            Edit Koordinator Bagian
+            Edit Koordinator Ruangan
         </x-slot>
         @if($editingId)
-            <livewire:Master.BagianKoordinator.Edit lazy :key="$editingId" />
-            <div x-init="$dispatch('load-bagian-koordinator-data', { id: {{ $editingId }} })"></div>
+            <livewire:Master.BagianKoordinator.Edit lazy :id="$editingId" :key="$editingId" />
         @endif
     </x-filament::modal>
 </div>

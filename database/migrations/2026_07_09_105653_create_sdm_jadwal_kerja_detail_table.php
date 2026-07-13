@@ -21,7 +21,7 @@ return new class extends Migration
 
             // Placeholder untuk fase Absensi nanti — dibuat sekarang supaya tidak migration ulang
             $table->enum('status_kehadiran', [
-                'belum_dicek', 'hadir', 'terlambat', 'pulang_cepat', 'tidak_hadir', 'cuti', 'izin',
+                'belum_dicek', 'hadir', 'terlambat', 'pulang_cepat', 'tidak_hadir', 'cuti', 'izin', 'perlu_verifikasi'
             ])->default('belum_dicek');
             $table->timestamp('absen_masuk_at')->nullable();
             $table->timestamp('absen_keluar_at')->nullable();
