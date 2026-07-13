@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             WilayahSeeder::class,
             DummyDataSeeder::class,
             JadwalSeeder::class, // Master shift, aturan jadwal, bagian-shift
+            PayrollSeeder::class,
         ]);
     }
 }
