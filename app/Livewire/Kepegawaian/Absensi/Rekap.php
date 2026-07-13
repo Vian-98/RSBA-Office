@@ -87,12 +87,31 @@ class Rekap extends Component
 
     public function render()
     {
-        $ruangans = Ruangan::orderBy('nama')->get();
-        $karyawans = Karyawan::orderBy('nama')->get();
+        $user = auth()->user();
+        $allowedRuanganIds = $user?->getRuanganKoordinatorIds(); // null = semua, [] = tidak ada
 
-        // 1. Build Base Query without relations to avoid N+1 and Memory Leaks during aggregation
+        // Filter ruangan dropdown berdasarkan akses koordinator
+        $ruangans = $allowedRuanganIds !== null
+            ? Ruangan::whereIn('id', $allowedRuanganIds)->orderBy('nama')->get()
+            : Ruangan::orderBy('nama')->get();
+
+        // Filter karyawan dropdown berdasarkan ruangan yang bisa diakses
+        $karyawans = $allowedRuanganIds !== null
+            ? Karyawan::whereIn('ruangan_id', $allowedRuanganIds)->orderBy('nama')->get()
+            : Karyawan::orderBy('nama')->get();
+
+        // 1. Build Base Query
         $baseQuery = JadwalKerjaDetail::query()
             ->whereNotNull('status_kehadiran');
+
+        // Enforce ruangan scope for koordinator
+        if ($allowedRuanganIds !== null) {
+            if (empty($allowedRuanganIds)) {
+                $baseQuery->whereRaw('0 = 1');
+            } else {
+                $baseQuery->whereHas('jadwalKerja', fn($q) => $q->whereIn('ruangan_id', $allowedRuanganIds));
+            }
+        }
 
         if ($this->mode === 'bulanan') {
             $baseQuery->whereMonth('tanggal', $this->bulan)

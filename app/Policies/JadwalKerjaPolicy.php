@@ -24,7 +24,8 @@ class JadwalKerjaPolicy
             return true;
         }
 
-        return ($user->karyawan->ruangan_id ?? 0) === $jadwalKerja->ruangan_id;
+        $ruanganIds = $user->getRuanganKoordinatorIds();
+        return $ruanganIds !== null && in_array($jadwalKerja->ruangan_id, $ruanganIds);
     }
 
     public function publish(User $user, JadwalKerja $jadwalKerja): bool
@@ -37,7 +38,8 @@ class JadwalKerjaPolicy
             return true;
         }
 
-        return ($user->karyawan->ruangan_id ?? 0) === $jadwalKerja->ruangan_id;
+        $ruanganIds = $user->getRuanganKoordinatorIds();
+        return $ruanganIds !== null && in_array($jadwalKerja->ruangan_id, $ruanganIds);
     }
 
     public function approveTukar(User $user, JadwalTukar $jadwalTukar): bool
@@ -52,6 +54,7 @@ class JadwalKerjaPolicy
 
         // Restrict based on the ruangan of the schedule details being swapped
         $ruanganIdDetail = $jadwalTukar->detailPemohon?->jadwalKerja?->ruangan_id;
-        return ($user->karyawan->ruangan_id ?? 0) === $ruanganIdDetail;
+        $ruanganIds = $user->getRuanganKoordinatorIds();
+        return $ruanganIds !== null && in_array($ruanganIdDetail, $ruanganIds);
     }
 }

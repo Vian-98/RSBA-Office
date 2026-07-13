@@ -2,6 +2,7 @@
 
 namespace App\Models\Sdm;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Ruangan;
 
@@ -19,5 +20,10 @@ class RuanganKoordinator extends Model
     public function karyawan()
     {
         return $this->belongsTo(Karyawan::class, 'karyawan_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

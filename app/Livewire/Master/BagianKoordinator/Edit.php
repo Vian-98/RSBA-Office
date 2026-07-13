@@ -7,6 +7,7 @@ use Livewire\Component;
 use App\Models\Sdm\RuanganKoordinator;
 use App\Models\Ruangan;
 use App\Models\Sdm\Karyawan;
+use App\Models\User;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\On;
 use TallStackUi\Traits\Interactions;
@@ -20,23 +21,37 @@ class Edit extends Component
 
     public $ruangan_id;
     public $karyawan_id;
+    public $user_id;
     public $aktif;
 
     public function mount($id)
     {
-        $this->recordId = $id;
-        $record = RuanganKoordinator::findOrFail($id);
-        $this->ruangan_id = $record->ruangan_id;
+        $this->recordId  = $id;
+        $record          = RuanganKoordinator::findOrFail($id);
+        $this->ruangan_id  = $record->ruangan_id;
         $this->karyawan_id = $record->karyawan_id;
-        $this->aktif = $record->aktif;
+        $this->user_id     = $record->user_id;
+        $this->aktif       = $record->aktif;
+    }
+
+    /**
+     * Jika karyawan diganti, auto-suggest user baru
+     */
+    public function updatedKaryawanId($value)
+    {
+        if ($value) {
+            $user = User::where('karyawan_id', $value)->first();
+            $this->user_id = $user?->id;
+        }
     }
 
     public function rules()
     {
         return [
-            'ruangan_id' => 'required|exists:ruangan,id',
+            'ruangan_id'  => 'required|exists:ruangan,id',
             'karyawan_id' => 'required|exists:sdm_karyawan,id',
-            'aktif' => 'boolean'
+            'user_id'     => 'nullable|exists:users,id',
+            'aktif'       => 'boolean',
         ];
     }
 
@@ -59,43 +74,20 @@ class Edit extends Component
         }
 
         try {
+            // Hapus cache untuk user lama jika user berubah
+            $oldUserId = $record->user_id;
+
             $record->update([
-                'ruangan_id' => $this->ruangan_id,
+                'ruangan_id'  => $this->ruangan_id,
                 'karyawan_id' => $this->karyawan_id,
-                'aktif' => $this->aktif,
+                'user_id'     => $this->user_id ?: null,
+                'aktif'       => $this->aktif,
             ]);
 
-            $karyawan = \App\Models\Sdm\Karyawan::with('user')->find($this->karyawan_id);
-            if ($karyawan && $karyawan->user && $this->aktif) {
-                $permissions = [
-                    'view-kepegawaian-jadwal-kerja',
-                    'add-kepegawaian-jadwal-kerja',
-                    'edit-kepegawaian-jadwal-kerja',
-                    'delete-kepegawaian-jadwal-kerja',
-                ];
-                $karyawan->user->givePermissionTo($permissions);
-                
-                // Update their ruangan_id to match the coordinated room!
-                $karyawan->update(['ruangan_id' => $this->ruangan_id]);
-
-                \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $karyawan->user->id);
-                \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $karyawan->user->id);
-            } elseif ($karyawan && $karyawan->user && !$this->aktif) {
-                if (!$karyawan->ruanganKoordinasi()->exists()) {
-                    $permissions = [
-                        'view-kepegawaian-jadwal-kerja',
-                        'add-kepegawaian-jadwal-kerja',
-                        'edit-kepegawaian-jadwal-kerja',
-                        'delete-kepegawaian-jadwal-kerja',
-                    ];
-                    foreach ($permissions as $perm) {
-                        if ($karyawan->user->hasPermissionTo($perm)) {
-                            $karyawan->user->revokePermissionTo($perm);
-                        }
-                    }
-                }
-                \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $karyawan->user->id);
-                \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $karyawan->user->id);
+            // Bersihkan cache sidebar untuk user lama dan baru
+            foreach (array_unique(array_filter([$oldUserId, $this->user_id])) as $uid) {
+                \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $uid);
+                \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $uid);
             }
 
             $this->dispatch('ruangan-koordinator-updated');
@@ -110,8 +102,9 @@ class Edit extends Component
     public function render()
     {
         return view('livewire.master.bagian-koordinator.edit', [
-            'ruanganOptions' => Ruangan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'ruanganOptions'  => Ruangan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
             'karyawanOptions' => Karyawan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'userOptions'     => User::with('karyawan')->get()->map(fn($u) => ['value' => $u->id, 'label' => $u->email . ($u->karyawan ? ' — ' . $u->karyawan->nama : '')])->toArray(),
         ]);
     }
 }

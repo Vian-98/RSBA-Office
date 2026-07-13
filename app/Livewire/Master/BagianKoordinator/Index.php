@@ -36,10 +36,11 @@ class Index extends Component implements HasForms, HasTable, HasActions
     public function table(Table $table): Table
     {
         return $table
-            ->query(RuanganKoordinator::query()->with(['ruangan', 'karyawan']))
+            ->query(RuanganKoordinator::query()->with(['ruangan', 'karyawan', 'user']))
             ->columns([
                 TextColumn::make('ruangan.nama')->label('Ruangan')->searchable()->sortable(),
                 TextColumn::make('karyawan.nama')->label('Koordinator (Karyawan)')->searchable()->sortable(),
+                TextColumn::make('user.email')->label('Akun Login')->placeholder('-')->searchable()->sortable(),
                 IconColumn::make('aktif')->boolean(),
             ])
             ->recordActions([

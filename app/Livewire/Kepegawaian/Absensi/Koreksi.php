@@ -108,12 +108,30 @@ class Koreksi extends Component
 
     public function render()
     {
-        $ruangans  = Ruangan::orderBy('nama')->get();
-        $karyawans = Karyawan::orderBy('nama')->get();
+        $user = auth()->user();
+        $allowedRuanganIds = $user?->getRuanganKoordinatorIds(); // null = semua, [] = tidak ada
 
-        // Base query — koreksi mode shows only records that need attention
+        // Filter dropdown berdasarkan akses koordinator
+        $ruangans  = $allowedRuanganIds !== null
+            ? Ruangan::whereIn('id', $allowedRuanganIds)->orderBy('nama')->get()
+            : Ruangan::orderBy('nama')->get();
+
+        $karyawans = $allowedRuanganIds !== null
+            ? Karyawan::whereIn('ruangan_id', $allowedRuanganIds)->orderBy('nama')->get()
+            : Karyawan::orderBy('nama')->get();
+
+        // Base query
         $baseQuery = JadwalKerjaDetail::query()
             ->whereNotNull('status_kehadiran');
+
+        // Enforce ruangan scope for koordinator
+        if ($allowedRuanganIds !== null) {
+            if (empty($allowedRuanganIds)) {
+                $baseQuery->whereRaw('0 = 1');
+            } else {
+                $baseQuery->whereHas('jadwalKerja', fn($q) => $q->whereIn('ruangan_id', $allowedRuanganIds));
+            }
+        }
 
         if ($this->mode === 'bulanan') {
             $baseQuery->whereMonth('tanggal', $this->bulan)

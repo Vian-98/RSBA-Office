@@ -37,9 +37,17 @@ class Index extends Component implements HasForms, HasTable, HasActions
             ->with(['ruangan', 'pembuat']);
 
         $user = Auth::user();
-        if ($user && !$user->hasRole(['Super-Admin', 'Staff-SDM'])) {
-            $ruanganId = $user->karyawan->ruangan_id ?? 0;
-            $query->where('ruangan_id', $ruanganId);
+        if ($user) {
+            $ruanganIds = $user->getRuanganKoordinatorIds();
+            // null = Super-Admin/Staff-SDM, akses semua ruangan
+            // [] kosong = tidak punya akses ruangan sama sekali
+            if ($ruanganIds !== null) {
+                if (empty($ruanganIds)) {
+                    $query->whereRaw('0 = 1'); // tidak ada ruangan yg bisa diakses
+                } else {
+                    $query->whereIn('ruangan_id', $ruanganIds);
+                }
+            }
         }
 
         return $table

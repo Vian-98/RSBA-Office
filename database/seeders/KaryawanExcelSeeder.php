@@ -233,11 +233,30 @@ class KaryawanExcelSeeder extends Seeder
                 $user = \App\Models\User::updateOrCreate(
                     ['email' => $emailKoor],
                     [
-                        'password' => \Illuminate\Support\Facades\Hash::make('1234'),
+                        'password'    => \Illuminate\Support\Facades\Hash::make('1234'),
                         'karyawan_id' => $karyawanRecord->id,
                     ]
                 );
-                $user->syncRoles(['Koordinator']);
+
+                // Koordinator adalah tugas tambahan — tetap pakai role 'Guest' (atau role yang sudah dimiliki)
+                if (!$user->roles()->exists()) {
+                    $user->syncRoles(['Guest']);
+                }
+
+                // Cari ruangan koordinasi berdasarkan ruangan_id karyawan saat ini
+                $koordinasiRuangan = \App\Models\Ruangan::find($ruanganId);
+                if ($koordinasiRuangan) {
+                    \App\Models\Sdm\RuanganKoordinator::updateOrCreate(
+                        [
+                            'ruangan_id'  => $koordinasiRuangan->id,
+                            'karyawan_id' => $karyawanRecord->id,
+                        ],
+                        [
+                            'user_id' => $user->id, // link akun login ke tugas koordinator
+                            'aktif'   => true,
+                        ]
+                    );
+                }
             }
         }
 

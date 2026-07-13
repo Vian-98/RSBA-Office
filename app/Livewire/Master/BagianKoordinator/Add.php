@@ -7,6 +7,7 @@ use Livewire\Component;
 use App\Models\Sdm\RuanganKoordinator;
 use App\Models\Ruangan;
 use App\Models\Sdm\Karyawan;
+use App\Models\User;
 use Livewire\Attributes\Lazy;
 use TallStackUi\Traits\Interactions;
 
@@ -17,13 +18,26 @@ class Add extends Component
 
     public $ruangan_id;
     public $karyawan_id;
+    public $user_id = null; // user login yang akan jadi koordinator (opsional)
     public $aktif = true;
 
     protected $rules = [
-        'ruangan_id' => 'required|exists:ruangan,id',
+        'ruangan_id'  => 'required|exists:ruangan,id',
         'karyawan_id' => 'required|exists:sdm_karyawan,id',
-        'aktif' => 'boolean'
+        'user_id'     => 'nullable|exists:users,id',
+        'aktif'       => 'boolean',
     ];
+
+    /**
+     * Jika karyawan dipilih, auto-suggest user yang punya karyawan_id sama
+     */
+    public function updatedKaryawanId($value)
+    {
+        if ($value) {
+            $user = User::where('karyawan_id', $value)->first();
+            $this->user_id = $user?->id;
+        }
+    }
 
     public function submit()
     {
@@ -41,34 +55,24 @@ class Add extends Component
 
         try {
             RuanganKoordinator::create([
-                'ruangan_id' => $this->ruangan_id,
+                'ruangan_id'  => $this->ruangan_id,
                 'karyawan_id' => $this->karyawan_id,
-                'aktif' => $this->aktif,
+                'user_id'     => $this->user_id ?: null,
+                'aktif'       => $this->aktif,
             ]);
 
-            $karyawan = \App\Models\Sdm\Karyawan::with('user')->find($this->karyawan_id);
-            if ($karyawan && $karyawan->user && $this->aktif) {
-                $permissions = [
-                    'view-kepegawaian-jadwal-kerja',
-                    'add-kepegawaian-jadwal-kerja',
-                    'edit-kepegawaian-jadwal-kerja',
-                    'delete-kepegawaian-jadwal-kerja',
-                ];
-                $karyawan->user->givePermissionTo($permissions);
-                
-                // Set the karyawan's ruangan_id to match their coordinated ruangan to ensure proper scoping!
-                $karyawan->update(['ruangan_id' => $this->ruangan_id]);
-
-                \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $karyawan->user->id);
-                \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $karyawan->user->id);
+            // Hapus cache sidebar/permissions user jika ada akun login
+            if ($this->user_id) {
+                \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $this->user_id);
+                \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $this->user_id);
             }
 
             $this->dispatch('new-ruangan-koordinator-created');
             $this->dispatch('close-modal', id: 'new-ruangan-koordinator');
 
             $this->toast()->success('Berhasil', 'Koordinator Ruangan berhasil ditambahkan.')->send();
-            
-            $this->reset(['ruangan_id', 'karyawan_id']);
+
+            $this->reset(['ruangan_id', 'karyawan_id', 'user_id']);
             $this->aktif = true;
         } catch (Throwable $e) {
             $this->toast()->error('Error', 'Failed : ' . $e->getMessage())->send();
@@ -78,8 +82,9 @@ class Add extends Component
     public function render()
     {
         return view('livewire.master.bagian-koordinator.add', [
-            'ruanganOptions' => Ruangan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'ruanganOptions'  => Ruangan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
             'karyawanOptions' => Karyawan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'userOptions'     => User::with('karyawan')->get()->map(fn($u) => ['value' => $u->id, 'label' => $u->email . ($u->karyawan ? ' — ' . $u->karyawan->nama : '')])->toArray(),
         ]);
     }
 }

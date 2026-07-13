@@ -57,7 +57,7 @@ class Home extends Component
                     $this->loadUmumData();
                 } elseif ($user->hasRole('Keuangan')) {
                     $this->loadKeuanganData();
-                } elseif ($user->hasRole('Koordinator')) {
+                } elseif ($user->isKoordinator()) {
                     $this->loadKoordinatorData();
                 } else {
                     $this->loadGuestData();
@@ -124,25 +124,24 @@ class Home extends Component
 
     private function loadKoordinatorData()
     {
-        $karyawan = Auth::user()->karyawan;
-        $ruanganId = $karyawan ? $karyawan->ruangan_id : null;
+        $ruanganIds = Auth::user()->getRuanganKoordinatorIds();
 
-        if ($ruanganId) {
-            $ruangan = \App\Models\Ruangan::find($ruanganId);
-            $namaRuangan = $ruangan ? $ruangan->nama : 'Ruangan';
+        if ($ruanganIds && count($ruanganIds) > 0) {
+            $ruanganNames = \App\Models\Ruangan::whereIn('id', $ruanganIds)->pluck('nama')->toArray();
+            $namaRuangan = implode(', ', $ruanganNames);
             
             $this->stats = [
                 'ruangan_nama' => $namaRuangan,
-                'karyawan_count' => Karyawan::where('ruangan_id', $ruanganId)->count(),
+                'karyawan_count' => Karyawan::whereIn('ruangan_id', $ruanganIds)->count(),
                 'pending_cuti' => SuratCuti::whereIn('status', [StatusApproval::PENDING, StatusApproval::WAITING])
-                    ->whereHas('karyawan', function($q) use ($ruanganId) {
-                        $q->where('ruangan_id', $ruanganId);
+                    ->whereHas('karyawan', function($q) use ($ruanganIds) {
+                        $q->whereIn('ruangan_id', $ruanganIds);
                     })->count(),
             ];
 
             $this->recentCuti = SuratCuti::with('karyawan')
-                ->whereHas('karyawan', function($q) use ($ruanganId) {
-                    $q->where('ruangan_id', $ruanganId);
+                ->whereHas('karyawan', function($q) use ($ruanganIds) {
+                    $q->whereIn('ruangan_id', $ruanganIds);
                 })
                 ->latest()
                 ->take(5)
@@ -150,8 +149,11 @@ class Home extends Component
                 ->toArray();
         } else {
             $this->stats = [
+                'ruangan_nama' => 'Tidak ada ruangan',
                 'karyawan_count' => 0,
+                'pending_cuti' => 0,
             ];
+            $this->recentCuti = [];
         }
     }
 
