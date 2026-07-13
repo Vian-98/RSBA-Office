@@ -163,15 +163,15 @@ class Karyawan extends Model
         return $this->hasMany(SuratCuti::class, 'karyawan_id');
     }
 
-    public function bagianKoordinasi()
+    public function ruanganKoordinasi()
     {
-        return $this->belongsToMany(Bagian::class, 'sdm_bagian_koordinator', 'karyawan_id', 'bagian_id')
+        return $this->belongsToMany(\App\Models\Ruangan::class, 'sdm_ruangan_koordinator', 'karyawan_id', 'ruangan_id')
             ->wherePivot('aktif', true);
     }
 
-    public function isKoordinatorBagian(int $bagianId): bool
+    public function isKoordinatorRuangan(int $ruanganId): bool
     {
-        return $this->bagianKoordinasi()->where('bagian.id', $bagianId)->exists();
+        return $this->ruanganKoordinasi()->where('ruangan.id', $ruanganId)->exists();
     }
 
     public function ruangan()

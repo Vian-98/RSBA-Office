@@ -16,16 +16,42 @@ class JadwalKerjaPolicy
 
     public function kelola(User $user, JadwalKerja $jadwalKerja): bool
     {
-        return $user->can('edit-kepegawaian-jadwal-kerja');
+        if (!$user->can('edit-kepegawaian-jadwal-kerja')) {
+            return false;
+        }
+
+        if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            return true;
+        }
+
+        return ($user->karyawan->ruangan_id ?? 0) === $jadwalKerja->ruangan_id;
     }
 
     public function publish(User $user, JadwalKerja $jadwalKerja): bool
     {
-        return $user->can('edit-kepegawaian-jadwal-kerja');
+        if (!$user->can('edit-kepegawaian-jadwal-kerja')) {
+            return false;
+        }
+
+        if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            return true;
+        }
+
+        return ($user->karyawan->ruangan_id ?? 0) === $jadwalKerja->ruangan_id;
     }
 
     public function approveTukar(User $user, JadwalTukar $jadwalTukar): bool
     {
-        return $user->can('edit-kepegawaian-jadwal-kerja');
+        if (!$user->can('edit-kepegawaian-jadwal-kerja')) {
+            return false;
+        }
+
+        if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            return true;
+        }
+
+        // Restrict based on the ruangan of the schedule details being swapped
+        $ruanganIdDetail = $jadwalTukar->detailPemohon?->jadwalKerja?->ruangan_id;
+        return ($user->karyawan->ruangan_id ?? 0) === $ruanganIdDetail;
     }
 }

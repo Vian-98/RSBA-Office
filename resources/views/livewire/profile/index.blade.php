@@ -58,6 +58,15 @@
                         </div>
                     </div>
 
+                    {{-- Ruangan / Unit --}}
+                    <div class="flex items-start gap-2 py-2.5 border-b border-slate-50">
+                        <x-tabler-door class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                        <div>
+                            <p class="text-xs text-slate-400">Ruangan / Unit</p>
+                            <p class="font-medium text-slate-700">{{ $this->karyawan->ruangan->nama ?? '-' }}</p>
+                        </div>
+                    </div>
+
                     {{-- Status --}}
                     <div class="flex items-start gap-2 py-2.5 border-b border-slate-50">
                         <x-tabler-shield-check class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />

@@ -41,6 +41,7 @@ class Kelola extends Component
             return [
                 'id' => $shift->id,
                 'kode' => $shift->kode,
+                'nama' => $shift->nama,
                 'warna' => $shift->warna ?? '#e2e8f0',
                 'jam_masuk' => $rs->jam_masuk_efektif,
                 'jam_keluar' => $rs->jam_keluar_efektif,

@@ -74,7 +74,7 @@
                                         <select wire:model.defer="state.{{ $detail->id }}" class="w-full text-xs rounded border-gray-300 focus:border-primary-500 focus:ring-primary-500 p-1">
                                             <option value="">LIBUR</option>
                                             @foreach($shiftOptions as $shift)
-                                                <option value="{{ $shift['id'] }}" title="{{ $shift['jam_masuk'] }} - {{ $shift['jam_keluar'] }}">{{ $shift['kode'] }}</option>
+                                                <option value="{{ $shift['id'] }}" title="{{ $shift['jam_masuk'] }} - {{ $shift['jam_keluar'] }}">{{ $shift['nama'] }}</option>
                                             @endforeach
                                         </select>
                                     @endif

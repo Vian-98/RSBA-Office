@@ -24,10 +24,19 @@ class RoleSeeder extends Seeder
         $keuangan = Role::firstOrCreate(['name' => 'Keuangan']);
         $administrasi = Role::firstOrCreate(['name' => 'Administrasi']);
         $guest = Role::firstOrCreate(['name' => 'Guest']);
+        $koordinator = Role::firstOrCreate(['name' => 'Koordinator']);
 
         // Fetch all permissions currently in database
         $allPermissions = Permission::all()->pluck('name')->toArray();
         $commonPermissions = ['view-dashboard', 'view-dashboard-kamar', 'view-profile-jadwal-tugas-saya'];
+        
+        // Sync Koordinator permissions (can view and edit jadwal)
+        $koordinatorPermissions = [
+            'view-kepegawaian-jadwal-kerja',
+            'add-kepegawaian-jadwal-kerja',
+            'edit-kepegawaian-jadwal-kerja'
+        ];
+        $koordinator->syncPermissions(array_unique(array_merge($koordinatorPermissions, $commonPermissions)));
 
         // 1. SDM permissions
         $sdmKeywords = ['kepegawaian', 'karyawan', 'dokter', 'cuti', 'sp3', 'jasmed', 'akreditasi', 'verifikasi', 'tanda-tangan-digital', 'export-karyawan', 'bagian', 'jabatan', 'ruangan', 'spesialis', 'surat', 'gaji', 'view-master'];

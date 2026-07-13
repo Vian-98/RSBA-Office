@@ -370,7 +370,7 @@ class MenuSeeder extends Seeder
                 'group' => 'sdm',
             ],
             [
-                'id' => 64,
+                'id' => 41,
                 'nama' => 'Semua Kegiatan',
                 'route' => 'kepegawaian.akreditasi.index',
                 'icon' => null,

@@ -303,7 +303,7 @@ class DummyDataSeeder extends Seeder
         DB::table('sdm_karyawan')->insert($dummyPegawai);
 
         // --- Create User for Perawat UGD 1 ---
-        $karyawanPerawat = Karyawan::where('nip', '21220175')->first(); // Afrizal
+        $karyawanPerawat = Karyawan::where('nip', '22210264')->first(); // Arif Pamungkas
         if ($karyawanPerawat) {
             $userPerawat = User::updateOrCreate(
                 ['email' => 'perawat@rsba.com'],

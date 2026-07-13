@@ -4,8 +4,8 @@ namespace App\Livewire\Master\BagianKoordinator;
 
 use Throwable;
 use Livewire\Component;
-use App\Models\Sdm\BagianKoordinator;
-use App\Models\Sdm\Bagian;
+use App\Models\Sdm\RuanganKoordinator;
+use App\Models\Ruangan;
 use App\Models\Sdm\Karyawan;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\On;
@@ -18,15 +18,15 @@ class Edit extends Component
 
     public ?int $recordId = null;
 
-    public $bagian_id;
+    public $ruangan_id;
     public $karyawan_id;
     public $aktif;
 
     public function mount($id)
     {
         $this->recordId = $id;
-        $record = BagianKoordinator::findOrFail($id);
-        $this->bagian_id = $record->bagian_id;
+        $record = RuanganKoordinator::findOrFail($id);
+        $this->ruangan_id = $record->ruangan_id;
         $this->karyawan_id = $record->karyawan_id;
         $this->aktif = $record->aktif;
     }
@@ -34,7 +34,7 @@ class Edit extends Component
     public function rules()
     {
         return [
-            'bagian_id' => 'required|exists:bagian,id',
+            'ruangan_id' => 'required|exists:ruangan,id',
             'karyawan_id' => 'required|exists:sdm_karyawan,id',
             'aktif' => 'boolean'
         ];
@@ -45,22 +45,22 @@ class Edit extends Component
         $this->aktif = filter_var($this->aktif, FILTER_VALIDATE_BOOLEAN);
         $this->validate();
 
-        $record = BagianKoordinator::findOrFail($this->recordId);
+        $record = RuanganKoordinator::findOrFail($this->recordId);
 
-        if ($record->bagian_id != $this->bagian_id || $record->karyawan_id != $this->karyawan_id) {
-            $exists = BagianKoordinator::where('bagian_id', $this->bagian_id)
+        if ($record->ruangan_id != $this->ruangan_id || $record->karyawan_id != $this->karyawan_id) {
+            $exists = RuanganKoordinator::where('ruangan_id', $this->ruangan_id)
                 ->where('karyawan_id', $this->karyawan_id)
                 ->exists();
 
             if ($exists) {
-                $this->toast()->error('Error', 'Karyawan tersebut sudah ditugaskan sebagai koordinator di bagian ini.')->send();
+                $this->toast()->error('Error', 'Karyawan tersebut sudah ditugaskan sebagai koordinator di ruangan ini.')->send();
                 return;
             }
         }
 
         try {
             $record->update([
-                'bagian_id' => $this->bagian_id,
+                'ruangan_id' => $this->ruangan_id,
                 'karyawan_id' => $this->karyawan_id,
                 'aktif' => $this->aktif,
             ]);
@@ -74,10 +74,14 @@ class Edit extends Component
                     'delete-kepegawaian-jadwal-kerja',
                 ];
                 $karyawan->user->givePermissionTo($permissions);
+                
+                // Update their ruangan_id to match the coordinated room!
+                $karyawan->update(['ruangan_id' => $this->ruangan_id]);
+
                 \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $karyawan->user->id);
                 \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $karyawan->user->id);
             } elseif ($karyawan && $karyawan->user && !$this->aktif) {
-                if (!$karyawan->bagianKoordinasi()->exists()) {
+                if (!$karyawan->ruanganKoordinasi()->exists()) {
                     $permissions = [
                         'view-kepegawaian-jadwal-kerja',
                         'add-kepegawaian-jadwal-kerja',
@@ -94,10 +98,10 @@ class Edit extends Component
                 \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $karyawan->user->id);
             }
 
-            $this->dispatch('bagian-koordinator-updated');
-            $this->dispatch('close-modal', id: 'edit-bagian-koordinator');
+            $this->dispatch('ruangan-koordinator-updated');
+            $this->dispatch('close-modal', id: 'edit-ruangan-koordinator');
 
-            $this->toast()->success('Berhasil', 'Koordinator Bagian berhasil diperbarui.')->send();
+            $this->toast()->success('Berhasil', 'Koordinator Ruangan berhasil diperbarui.')->send();
         } catch (Throwable $e) {
             $this->toast()->error('Error', 'Failed : ' . $e->getMessage())->send();
         }
@@ -106,7 +110,7 @@ class Edit extends Component
     public function render()
     {
         return view('livewire.master.bagian-koordinator.edit', [
-            'bagianOptions' => Bagian::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'ruanganOptions' => Ruangan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
             'karyawanOptions' => Karyawan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
         ]);
     }
