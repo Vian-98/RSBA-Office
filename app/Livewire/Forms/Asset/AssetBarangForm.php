@@ -127,31 +127,43 @@ class AssetBarangForm extends Form
         $mainNo = 1;
         $subNo = 1;
         if ($last) {
-            [$_, $_, $lastNo] = explode('/', $last->kode);
+            // Gunakan regex untuk mengambil angka terakhir (contoh: 0001 atau 0001.001)
+            if (preg_match('/(\d+)(?:\.(\d+))?$/', $last->kode, $matches)) {
+                $lastNo = $matches[1];
+                
+                // bukan asset sub
+                $mainNo = (int)$lastNo + 1;
 
-            // bukan asset sub
-            $mainNo = (int)$lastNo + 1;
-
-            // jika ini adalah sub asset ,atau part dari asset utamas
-            if ($this->main) {
-                $lastSub = explode('.', $lastNo);
-                if (count($lastSub) > 1) {
-                    $lastSubNo = $lastSub[1];
-                    $subNo = (int)$lastSubNo + 1;
+                // jika ini adalah sub asset ,atau part dari asset utama
+                if ($this->main) {
+                    if (isset($matches[2])) {
+                        $subNo = (int)$matches[2] + 1;
+                    }
+                    
+                    // Jika sub asset, maka nomor utama tetap sama
+                    $mainNo = (int)$lastNo;
                 }
-
-                // Jika sub asset, maka nomor utama tetap sama
-                $mainNo = (int)$lastSub[0];
+            } else {
+                // Fallback jika format lama sama sekali tidak mengandung angka di akhir
+                $mainNo = 2;
             }
         }
 
-        // buat nomor jadi 4 digit
-        $mainNo = str_pad($mainNo, 4, '0', STR_PAD_LEFT);
+        // buat nomor jadi 3 digit sesuai contoh
+        $mainNo = str_pad($mainNo, 3, '0', STR_PAD_LEFT);
         // buat nomor sub asset jadi 3 digit
         $subNo = str_pad($subNo, 3, '0', STR_PAD_LEFT);
 
         $nomor =  $this->main ? $mainNo . '.' . $subNo : $mainNo;
-        // return string formated kode
-        return $prefix . '/' . $bulan . date('y', strtotime($tahun)) . '/' . $nomor;
+        
+        // Membuat singkatan ruangan (contoh: "Unit Gawat Darurat" -> "UGD")
+        $namaRuangan = $assetBarang->ruangan->nama ?? '';
+        $singkatanRuangan = collect(explode(' ', $namaRuangan))
+            ->filter()
+            ->map(fn($word) => strtoupper(substr($word, 0, 1)))
+            ->join('');
+
+        // return string formated kode (Contoh: AST-ATK-UGD-001)
+        return 'AST-' . $prefix . '-' . $singkatanRuangan . '-' . $nomor;
     }
 }

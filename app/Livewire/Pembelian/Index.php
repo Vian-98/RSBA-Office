@@ -22,7 +22,7 @@ class Index extends Component
     public $state;
 
     public $tab = 'Permintaan';
-    public bool $stats = false;
+
 
 
     #[Computed]

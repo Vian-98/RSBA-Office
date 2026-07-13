@@ -34,13 +34,8 @@
 
     {{-- Table List Pembelian --}}
     <div x-show="panelActive === 'main'" class="w-full">
-        <div class="w-full rounded-md border-2 border-white p-1" x-data="{ showStats: false, refreshKey: Date.now() }">
-            <x-ts:toggle sm @click='showStats = !showStats; refreshKey = Date.now()' label="Stats" />
-
-            <div x-show="showStats">
-                <livewire:pembelian.stats x-bind:key="'stats'" />
-                {{-- x-bind:key="'stats-' + refreshKey" --}}
-            </div>
+        <div class="w-full rounded-md border-2 border-white p-1">
+            <livewire:pembelian.stats x-bind:key="'stats'" />
         </div>
 
 

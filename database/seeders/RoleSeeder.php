@@ -26,6 +26,8 @@ class RoleSeeder extends Seeder
         $guest = Role::firstOrCreate(['name' => 'Guest']);
         // Role 'Koordinator' dihapus — koordinator kini merupakan tugas tambahan
         // yang di-assign via tabel sdm_ruangan_koordinator, bukan role Spatie
+        $staffBedah = Role::firstOrCreate(['name' => 'Staff-Bedah']);
+        $staffUgd = Role::firstOrCreate(['name' => 'Staff-UGD']);
 
         // Fetch all permissions currently in database
         $allPermissions = Permission::all()->pluck('name')->toArray();
@@ -84,5 +86,9 @@ class RoleSeeder extends Seeder
 
         // 5. Guest permissions
         $guest->syncPermissions($commonPermissions);
+        
+        // 6. Bedah & UGD basic permissions
+        $staffBedah->syncPermissions($commonPermissions);
+        $staffUgd->syncPermissions($commonPermissions);
     }
 }

@@ -19,10 +19,10 @@ class Catat extends Component
     public ?AssetBarang $assetBarang;
 
     public $statusOptions = [
-        'baik' => 'Baik',
-        'diperbaiki' => 'Perbaikan',
-        'rusak' => 'Rusak',
-        'hilang' => 'Hilang',
+        ['label' => 'Baik', 'value' => 'baik'],
+        ['label' => 'Perbaikan', 'value' => 'diperbaiki'],
+        ['label' => 'Rusak', 'value' => 'rusak'],
+        ['label' => 'Hilang', 'value' => 'hilang'],
     ];
 
     public function mount($id)
