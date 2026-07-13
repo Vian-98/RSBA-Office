@@ -3,8 +3,8 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div class="flex items-center gap-3">
-                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 border border-amber-100">
-                    <x-ts:icon name="tabler.pencil-check" class="w-5 h-5 text-amber-500" />
+                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100">
+                    <x-ts:icon name="tabler.pencil-check" class="w-5 h-5 text-indigo-500" />
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-gray-800">Koreksi Absensi</h3>
@@ -12,12 +12,12 @@
                 </div>
             </div>
             @if($totalPerluVerifikasi > 0)
-                <span class="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold px-3 py-1.5 rounded-full">
-                    <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span class="flex items-center gap-1.5 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                    <span class="inline-block w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
                     {{ $totalPerluVerifikasi }} rekaman perlu verifikasi
                 </span>
             @else
-                <span class="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                <span class="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full">
                     <x-ts:icon name="tabler.circle-check" class="w-3.5 h-3.5" />
                     Semua absensi sudah terverifikasi
                 </span>
@@ -104,13 +104,13 @@
                     wire:model.live="filter_status" 
                     :options="[
                         ['label' => 'Semua Status', 'value' => ''],
-                        ['label' => '⚠ Perlu Verifikasi', 'value' => 'perlu_verifikasi'],
-                        ['label' => '✓ Hadir', 'value' => 'hadir'],
-                        ['label' => '⏰ Terlambat', 'value' => 'terlambat'],
-                        ['label' => '⬅ Pulang Cepat', 'value' => 'pulang_cepat'],
-                        ['label' => '✗ Tidak Hadir', 'value' => 'tidak_hadir'],
-                        ['label' => '🏖 Cuti', 'value' => 'cuti'],
-                        ['label' => '📋 Izin', 'value' => 'izin'],
+                        ['label' => 'Perlu Verifikasi', 'value' => 'perlu_verifikasi'],
+                        ['label' => 'Hadir', 'value' => 'hadir'],
+                        ['label' => 'Terlambat', 'value' => 'terlambat'],
+                        ['label' => 'Pulang Cepat', 'value' => 'pulang_cepat'],
+                        ['label' => 'Tidak Hadir', 'value' => 'tidak_hadir'],
+                        ['label' => 'Cuti', 'value' => 'cuti'],
+                        ['label' => 'Izin', 'value' => 'izin'],
                     ]"
                     select="label:label|value:value"
                 />
@@ -121,7 +121,7 @@
     {{-- Karyawan Cards Grid --}}
     @if(count($rekapKaryawan) === 0)
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-            <x-ts:icon name="tabler.mood-happy" class="w-14 h-14 mx-auto mb-3 text-green-300" />
+            <x-ts:icon name="tabler.circle-check" class="w-14 h-14 mx-auto mb-3 text-green-300" />
             <h4 class="text-base font-semibold text-gray-700 mb-1">Tidak ada data untuk dikoreksi</h4>
             <p class="text-sm text-gray-400">Ubah filter atau pilih bulan/tahun yang lain</p>
         </div>
@@ -136,7 +136,7 @@
                 @endphp
 
                 <div 
-                    class="bg-white rounded-xl shadow-sm border transition-all duration-200 {{ $needsAttention ? 'border-amber-200 shadow-amber-50' : 'border-gray-100' }}"
+                    class="bg-white rounded-xl shadow-sm border transition-all duration-200 {{ $needsAttention ? 'border-red-200' : 'border-gray-100' }}"
                     wire:key="karyawan-card-{{ $kId }}"
                 >
                     {{-- Card Header --}}
@@ -148,7 +148,7 @@
                         <div class="flex items-center gap-3">
                             {{-- Avatar --}}
                             <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm 
-                                {{ $needsAttention ? 'bg-amber-100 text-amber-700' : 'bg-indigo-50 text-indigo-600' }}">
+                                {{ $needsAttention ? 'bg-red-100 text-red-700' : 'bg-indigo-50 text-indigo-600' }}">
                                 {{ strtoupper(substr($karyawan->nama ?? '-', 0, 1)) }}
                             </div>
                             
@@ -156,8 +156,8 @@
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span class="font-semibold text-gray-900 text-sm truncate">{{ $karyawan->nama ?? '-' }}</span>
                                     @if($needsAttention)
-                                        <span class="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
-                                            ⚠ Butuh perhatian
+                                        <span class="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-700">
+                                            Butuh perhatian
                                         </span>
                                     @endif
                                 </div>
@@ -178,22 +178,25 @@
                         {{-- Mini Stats Row --}}
                         <div class="flex gap-2 mt-3 flex-wrap">
                             @if($rk['hadir'] > 0)
-                                <span class="text-[11px] bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 rounded-full font-medium">✓ Hadir: {{ $rk['hadir'] }}</span>
+                                <span class="text-[11px] bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">Hadir: {{ $rk['hadir'] }}</span>
                             @endif
                             @if($rk['terlambat'] > 0)
-                                <span class="text-[11px] bg-yellow-50 text-yellow-700 border border-yellow-100 px-2 py-0.5 rounded-full font-medium">⏰ Telat: {{ $rk['terlambat'] }}</span>
+                                <span class="text-[11px] bg-yellow-50 text-yellow-800 border border-yellow-200 px-2 py-0.5 rounded-full font-medium">Terlambat: {{ $rk['terlambat'] }}</span>
+                            @endif
+                            @if($rk['pulang_cepat'] > 0)
+                                <span class="text-[11px] bg-yellow-50 text-yellow-800 border border-yellow-200 px-2 py-0.5 rounded-full font-medium">Pulang Cepat: {{ $rk['pulang_cepat'] }}</span>
                             @endif
                             @if($rk['tidak_hadir'] > 0)
-                                <span class="text-[11px] bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full font-medium">✗ Alpha: {{ $rk['tidak_hadir'] }}</span>
+                                <span class="text-[11px] bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-full font-medium">Tidak Hadir: {{ $rk['tidak_hadir'] }}</span>
                             @endif
                             @if($rk['cuti'] > 0)
-                                <span class="text-[11px] bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full font-medium">🏖 Cuti: {{ $rk['cuti'] }}</span>
+                                <span class="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-medium">Cuti: {{ $rk['cuti'] }}</span>
                             @endif
                             @if($rk['izin'] > 0)
-                                <span class="text-[11px] bg-cyan-50 text-cyan-700 border border-cyan-100 px-2 py-0.5 rounded-full font-medium">📋 Izin: {{ $rk['izin'] }}</span>
+                                <span class="text-[11px] bg-cyan-50 text-cyan-800 border border-cyan-200 px-2 py-0.5 rounded-full font-medium">Izin: {{ $rk['izin'] }}</span>
                             @endif
                             @if($rk['perlu_verifikasi'] > 0)
-                                <span class="text-[11px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold animate-pulse">⚠ Verifikasi: {{ $rk['perlu_verifikasi'] }}</span>
+                                <span class="text-[11px] bg-red-100 text-red-700 border border-red-300 px-2 py-0.5 rounded-full font-bold">Verifikasi: {{ $rk['perlu_verifikasi'] }}</span>
                             @endif
                         </div>
                     </button>
@@ -210,12 +213,12 @@
                                 @foreach($detailRows as $rec)
                                     @php
                                         $statusColor = match($rec->status_kehadiran?->value ?? '') {
-                                            'hadir' => 'bg-green-50 border-green-100',
-                                            'terlambat', 'pulang_cepat' => 'bg-yellow-50 border-yellow-100',
-                                            'tidak_hadir' => 'bg-red-50 border-red-100',
-                                            'cuti', 'izin' => 'bg-blue-50 border-blue-100',
-                                            'perlu_verifikasi' => 'bg-amber-50 border-amber-200',
-                                            default => 'bg-gray-50 border-gray-100',
+                                            'hadir'                      => 'bg-green-50 border-green-200',
+                                            'terlambat', 'pulang_cepat' => 'bg-yellow-50 border-yellow-200',
+                                            'tidak_hadir'                => 'bg-red-50 border-red-200',
+                                            'cuti', 'izin'              => 'bg-blue-50 border-blue-200',
+                                            'perlu_verifikasi'           => 'bg-slate-50 border-slate-300',
+                                            default                      => 'bg-gray-50 border-gray-200',
                                         };
                                     @endphp
                                     <div class="rounded-lg border {{ $statusColor }} p-3 flex items-center gap-3" wire:key="rec-{{ $rec->id }}">
@@ -254,14 +257,14 @@
                                                 @if($rec->absen_masuk_at || $rec->absen_keluar_at)
                                                     <span class="text-indigo-600 font-semibold">
                                                         {{ $rec->absen_masuk_at ? \Carbon\Carbon::parse($rec->absen_masuk_at)->format('H:i') : '--:--' }}
-                                                        →
+                                                        &rarr;
                                                         {{ $rec->absen_keluar_at ? \Carbon\Carbon::parse($rec->absen_keluar_at)->format('H:i') : '--:--' }}
                                                     </span>
                                                 @else
                                                     <span class="text-gray-400 italic">Tidak ada rekaman finger</span>
                                                 @endif
                                                 @if($rec->catatan)
-                                                    <span class="ml-2 text-gray-400 italic truncate max-w-[120px] inline-block align-middle" title="{{ $rec->catatan }}">• {{ $rec->catatan }}</span>
+                                                    <span class="ml-2 text-gray-500 truncate max-w-[120px] inline-block align-middle" title="{{ $rec->catatan }}">· {{ $rec->catatan }}</span>
                                                 @endif
                                             </div>
                                         </div>
@@ -282,8 +285,8 @@
                                                 wire:click="editRecord({{ $rec->id }})"
                                                 class="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-colors
                                                     {{ ($rec->status_kehadiran?->value === 'perlu_verifikasi') 
-                                                        ? 'bg-amber-500 border-amber-600 text-white hover:bg-amber-600' 
-                                                        : 'bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50' }}"
+                                                        ? 'bg-red-600 border-red-700 text-white hover:bg-red-700' 
+                                                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50' }}"
                                             >
                                                 <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                 Koreksi
@@ -305,7 +308,7 @@
             @php $rec = App\Models\Sdm\JadwalKerjaDetail::with(['karyawan','shift'])->find($editingRecordId); @endphp
             @if($rec)
                 {{-- Karyawan Info --}}
-                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100 mb-2">
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 mb-2">
                     <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700 text-sm">
                         {{ strtoupper(substr($rec->karyawan->nama ?? '-', 0, 1)) }}
                     </div>
@@ -314,7 +317,7 @@
                         <div class="text-xs text-gray-500">
                             {{ \Carbon\Carbon::parse($rec->tanggal)->translatedFormat('l, d F Y') }}
                             @if($rec->shift)
-                                · Shift {{ $rec->shift->kode }}: {{ substr($rec->shift->jam_masuk,0,5) }}–{{ substr($rec->shift->jam_keluar,0,5) }}
+                                &middot; Shift {{ $rec->shift->kode }}: {{ substr($rec->shift->jam_masuk,0,5) }}–{{ substr($rec->shift->jam_keluar,0,5) }}
                             @endif
                         </div>
                     </div>
@@ -326,13 +329,13 @@
                         wire:model="editStatus" 
                         :options="[
                             ['label' => 'Belum Dicek', 'value' => 'belum_dicek'],
-                            ['label' => '✓ Hadir (Tepat Waktu)', 'value' => 'hadir'],
-                            ['label' => '⏰ Terlambat', 'value' => 'terlambat'],
-                            ['label' => '⬅ Pulang Cepat', 'value' => 'pulang_cepat'],
-                            ['label' => '✗ Tidak Hadir (Alfa)', 'value' => 'tidak_hadir'],
-                            ['label' => '🏖 Cuti', 'value' => 'cuti'],
-                            ['label' => '📋 Izin', 'value' => 'izin'],
-                            ['label' => '⚠ Perlu Verifikasi', 'value' => 'perlu_verifikasi'],
+                            ['label' => 'Hadir (Tepat Waktu)', 'value' => 'hadir'],
+                            ['label' => 'Terlambat', 'value' => 'terlambat'],
+                            ['label' => 'Pulang Cepat', 'value' => 'pulang_cepat'],
+                            ['label' => 'Tidak Hadir (Alfa)', 'value' => 'tidak_hadir'],
+                            ['label' => 'Cuti', 'value' => 'cuti'],
+                            ['label' => 'Izin', 'value' => 'izin'],
+                            ['label' => 'Perlu Verifikasi', 'value' => 'perlu_verifikasi'],
                         ]"
                         select="label:label|value:value"
                     />
