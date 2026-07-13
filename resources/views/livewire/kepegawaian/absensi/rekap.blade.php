@@ -164,105 +164,112 @@
             </div>
         </div>
 
-        <!-- Daily Attendance Log Details with Correction Buttons -->
-        <div class="mt-8 border-t border-gray-100 pt-6">
+        <!-- Daily Attendance Log Details with Correction Buttons (Collapsible) -->
+        <div x-data="{ showLogs: false }" class="mt-8 border-t border-gray-100 pt-6">
             <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
+                <button type="button" @click="showLogs = !showLogs" class="flex items-center gap-2 text-left hover:opacity-80 transition-opacity focus:outline-none group">
                     <x-ts:icon name="tabler.list-details" class="w-5 h-5 text-indigo-500" />
-                    <h4 class="text-md font-semibold text-gray-700">Rincian Log Harian & Koreksi Absensi</h4>
-                </div>
+                    <h4 class="text-md font-semibold text-gray-700 select-none">Rincian Log Harian & Koreksi Absensi</h4>
+                    <!-- Dynamic Chevron -->
+                    <svg class="w-4 h-4 text-gray-400 transition-transform duration-300 transform group-hover:text-indigo-500" :class="showLogs ? 'rotate-180 text-indigo-500' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
                 <span class="text-xs text-gray-500 bg-slate-100 py-1 px-2.5 rounded-full font-medium">Total: {{ $records->total() }} hari log</span>
             </div>
-            <div class="overflow-x-auto rounded-lg border border-gray-200">
-                <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3">Tanggal</th>
-                            <th scope="col" class="px-6 py-3">Nama Karyawan</th>
-                            <th scope="col" class="px-6 py-3 text-center">Shift</th>
-                            <th scope="col" class="px-6 py-3 text-center">Jam Kerja (Shift)</th>
-                            <th scope="col" class="px-6 py-3 text-center">Jam Aktual (Finger)</th>
-                            <th scope="col" class="px-6 py-3 text-center">Status</th>
-                            <th scope="col" class="px-6 py-3">Catatan / Alasan</th>
-                            <th scope="col" class="px-6 py-3 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($records as $r)
-                            <tr class="bg-white border-b hover:bg-gray-50">
-                                <td class="px-6 py-4 font-semibold text-gray-900 text-xs">
-                                    {{ \Carbon\Carbon::parse($r->tanggal)->translatedFormat('d M Y') }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900 text-xs">{{ $r->karyawan->nama ?? '-' }}</div>
-                                    <div class="text-[10px] text-gray-400">PIN: {{ $r->karyawan->pin_absen ?? '-' }}</div>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if($r->shift)
-                                        <span class="px-2 py-0.5 text-[10px] font-semibold rounded text-slate-800" style="background-color: {{ $r->shift->warna ?? '#e2e8f0' }}">
-                                            {{ $r->shift->kode }}
-                                        </span>
-                                    @else
-                                        <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-gray-200 text-gray-700">
-                                            LIBUR
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-center text-xs">
-                                    @if($r->shift)
-                                        {{ substr($r->shift->jam_masuk, 0, 5) }} - {{ substr($r->shift->jam_keluar, 0, 5) }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-center text-xs">
-                                    @if($r->absen_masuk_at || $r->absen_keluar_at)
-                                        <span class="text-indigo-600 font-semibold">
-                                            {{ $r->absen_masuk_at ? \Carbon\Carbon::parse($r->absen_masuk_at)->format('H:i') : '--:--' }}
-                                        </span>
-                                        -
-                                        <span class="text-indigo-600 font-semibold">
-                                            {{ $r->absen_keluar_at ? \Carbon\Carbon::parse($r->absen_keluar_at)->format('H:i') : '--:--' }}
-                                        </span>
-                                    @else
-                                        <span class="text-gray-400 italic">Tidak ada absen</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if($r->status_kehadiran)
-                                        <x-ts:badge :color="$r->status_kehadiran->color()" text="{{ $r->status_kehadiran->nama() }}" xs />
-                                    @else
-                                        <x-ts:badge color="gray" text="Belum Dicek" xs />
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-xs text-gray-600 max-w-xs truncate" title="{{ $r->catatan }}">
-                                    {{ $r->catatan ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <x-ts:button wire:click="editRecord({{ $r->id }})" sm color="indigo" variant="outline" class="!py-1">Koreksi</x-ts:button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8" class="px-6 py-8 text-center text-gray-500">
-                                    Tidak ada log kehadiran harian untuk kriteria pencarian ini.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
             
-            <!-- Pagination for daily logs -->
-            <div class="mt-4">
-                {{ $records->links(data: ['pageName' => 'dailyPage']) }}
+            <div x-show="showLogs" x-transition x-cloak class="mt-4">
+                <div class="overflow-x-auto rounded-lg border border-gray-200">
+                    <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Tanggal</th>
+                                <th scope="col" class="px-6 py-3">Nama Karyawan</th>
+                                <th scope="col" class="px-6 py-3 text-center">Shift</th>
+                                <th scope="col" class="px-6 py-3 text-center">Jam Kerja (Shift)</th>
+                                <th scope="col" class="px-6 py-3 text-center">Jam Aktual (Finger)</th>
+                                <th scope="col" class="px-6 py-3 text-center">Status</th>
+                                <th scope="col" class="px-6 py-3">Catatan / Alasan</th>
+                                <th scope="col" class="px-6 py-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($records as $r)
+                                <tr class="bg-white border-b hover:bg-gray-50">
+                                    <td class="px-6 py-4 font-semibold text-gray-900 text-xs">
+                                        {{ \Carbon\Carbon::parse($r->tanggal)->translatedFormat('d M Y') }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="font-semibold text-gray-900 text-xs">{{ $r->karyawan->nama ?? '-' }}</div>
+                                        <div class="text-[10px] text-gray-400">PIN: {{ $r->karyawan->pin_absen ?? '-' }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        @if($r->shift)
+                                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded text-slate-800" style="background-color: {{ $r->shift->warna ?? '#e2e8f0' }}">
+                                                {{ $r->shift->kode }}
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-gray-200 text-gray-700">
+                                                LIBUR
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-xs">
+                                        @if($r->shift)
+                                            {{ substr($r->shift->jam_masuk, 0, 5) }} - {{ substr($r->shift->jam_keluar, 0, 5) }}
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-xs">
+                                        @if($r->absen_masuk_at || $r->absen_keluar_at)
+                                            <span class="text-indigo-600 font-semibold">
+                                                {{ $r->absen_masuk_at ? \Carbon\Carbon::parse($r->absen_masuk_at)->format('H:i') : '--:--' }}
+                                            </span>
+                                            -
+                                            <span class="text-indigo-600 font-semibold">
+                                                {{ $r->absen_keluar_at ? \Carbon\Carbon::parse($r->absen_keluar_at)->format('H:i') : '--:--' }}
+                                            </span>
+                                        @else
+                                            <span class="text-gray-400 italic">Tidak ada absen</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        @if($r->status_kehadiran)
+                                            <x-ts:badge :color="$r->status_kehadiran->color()" text="{{ $r->status_kehadiran->nama() }}" xs />
+                                        @else
+                                            <x-ts:badge color="gray" text="Belum Dicek" xs />
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-xs text-gray-600 max-w-xs truncate" title="{{ $r->catatan }}">
+                                        {{ $r->catatan ?? '-' }}
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <x-ts:button wire:click="editRecord({{ $r->id }})" sm color="indigo" variant="outline" class="!py-1">Koreksi</x-ts:button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                        Tidak ada log kehadiran harian untuk kriteria pencarian ini.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination for daily logs -->
+                <div class="mt-4">
+                    {{ $records->links(data: ['pageName' => 'dailyPage']) }}
+                </div>
             </div>
         </div>
 
     </x-ts:card>
 
     <!-- Modal Koreksi Absensi Manual -->
-    <x-ts:modal wire:model="showEditModal" title="Koreksi Absensi Manual (SDM)" size="md">
+    <x-ts:modal wire="showEditModal" title="Koreksi Absensi Manual (SDM)" size="md">
         @if($editingRecordId)
             <div class="flex flex-col gap-4 py-2">
                 <x-ts:select.styled 

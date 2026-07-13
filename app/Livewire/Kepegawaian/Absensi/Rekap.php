@@ -64,10 +64,13 @@ class Rekap extends Component
     {
         $record = JadwalKerjaDetail::findOrFail($this->editingRecordId);
         
+        $absenMasuk = $this->editAbsenMasuk ? Carbon::parse($this->editAbsenMasuk)->format('Y-m-d H:i:s') : null;
+        $absenKeluar = $this->editAbsenKeluar ? Carbon::parse($this->editAbsenKeluar)->format('Y-m-d H:i:s') : null;
+
         $record->update([
             'status_kehadiran' => $this->editStatus ?: 'belum_dicek',
-            'absen_masuk_at' => $this->editAbsenMasuk ?: null,
-            'absen_keluar_at' => $this->editAbsenKeluar ?: null,
+            'absen_masuk_at' => $absenMasuk,
+            'absen_keluar_at' => $absenKeluar,
             'catatan' => $this->editCatatan ?: null,
             'updated_by' => auth()->id() ?? 1,
         ]);
