@@ -25,10 +25,7 @@
 
     <div x-show="panelActive === 'main'" class="flex flex-col gap-2">
         <div class="rounded-md border-2 border-white p-1">
-            <x-ts:toggle sm wire:model.live.debounce='stats' label="Stats" />
-            @if ($stats)
-                <livewire:Gudang.stats :key="Str::random()" />
-            @endif
+            <livewire:Gudang.stats :key="Str::random()" />
         </div>
         <div class="w-full rounded-lg bg-white p-4">
             <livewire:Gudang.TableGudang key="table-gudang" />

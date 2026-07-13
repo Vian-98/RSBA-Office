@@ -24,10 +24,17 @@ class RoleSeeder extends Seeder
         $keuangan = Role::firstOrCreate(['name' => 'Keuangan']);
         $administrasi = Role::firstOrCreate(['name' => 'Administrasi']);
         $guest = Role::firstOrCreate(['name' => 'Guest']);
+        // Role 'Koordinator' dihapus — koordinator kini merupakan tugas tambahan
+        // yang di-assign via tabel sdm_ruangan_koordinator, bukan role Spatie
+        $staffBedah = Role::firstOrCreate(['name' => 'Staff-Bedah']);
+        $staffUgd = Role::firstOrCreate(['name' => 'Staff-UGD']);
 
         // Fetch all permissions currently in database
         $allPermissions = Permission::all()->pluck('name')->toArray();
         $commonPermissions = ['view-dashboard', 'view-dashboard-kamar', 'view-profile-jadwal-tugas-saya'];
+        
+        // (Koordinator tidak lagi memerlukan permission khusus via Role)
+
 
         // 1. SDM permissions
         $sdmKeywords = ['kepegawaian', 'karyawan', 'dokter', 'cuti', 'sp3', 'jasmed', 'akreditasi', 'verifikasi', 'tanda-tangan-digital', 'export-karyawan', 'bagian', 'jabatan', 'ruangan', 'spesialis', 'surat', 'gaji', 'view-master'];
@@ -79,5 +86,9 @@ class RoleSeeder extends Seeder
 
         // 5. Guest permissions
         $guest->syncPermissions($commonPermissions);
+        
+        // 6. Bedah & UGD basic permissions
+        $staffBedah->syncPermissions($commonPermissions);
+        $staffUgd->syncPermissions($commonPermissions);
     }
 }

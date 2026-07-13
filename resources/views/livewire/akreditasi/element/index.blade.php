@@ -24,7 +24,7 @@
                 Files
             </x-ts:button>
 
-            <x-filament::modal id="modal-akre-arsip-files" width="w-full" :close-by-escaping="false" :close-by-clicking-away="false" slide-over>
+            <x-filament::modal id="modal-akre-arsip-files" width="7xl" :close-by-escaping="false" :close-by-clicking-away="false" slide-over>
                 <x-slot:heading>
                     Pencarian Files
                 </x-slot:heading>

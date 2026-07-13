@@ -179,46 +179,122 @@ class DummyDataSeeder extends Seeder
         $dummyPegawai = [];
         $kategoriKerja = \App\Enums\KategoriKerja::class;
         
-        // 8 Pegawai UGD (Semua SHIFT)
-        for ($i = 1; $i <= 8; $i++) {
-            $dummyPegawai[] = [
-                'nip' => 'UGD' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                'nik' => '320' . rand(1000000000000, 9999999999999),
-                'nama' => 'Perawat UGD ' . $i,
-                'ruangan_id' => $ruanganUgd,
-                'kategori_kerja' => 'shift', // Enum
-                'tgl_lahir' => '1995-01-01', 'hp' => '0812' . rand(10000000, 99999999),
-                'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => 'Alamat ' . $i,
-                'agama' => 'islam', 'status' => 'tetap', 'tgl_masuk' => '2022-01-01', 'cuti' => 12,
-                'created_at' => now(), 'updated_at' => now(),
-            ];
-        }
+        $karyawanAbsensi = [
+            ['nip' => '21220175', 'nama' => 'Afrizal'],
+            ['nip' => '22200233', 'nama' => 'Rosiana'],
+            ['nip' => '21220077', 'nama' => 'Agustina'],
+            ['nip' => '22210264', 'nama' => 'Arif Pamungkas'],
+            ['nip' => '21220131', 'nama' => 'Dwi Septiana'],
+            ['nip' => '21220082', 'nama' => 'Leni Kristina'],
+            ['nip' => '22200240', 'nama' => 'Farouk Alfero'],
+            ['nip' => '21220189', 'nama' => 'Maya Kurniawati'],
+            ['nip' => '21220087', 'nama' => 'Nurma novianti'],
+            ['nip' => '21220133', 'nama' => 'Risnawati'],
+            ['nip' => '21220118', 'nama' => 'Rurin Astiar'],
+            ['nip' => '21190039', 'nama' => 'Mira Novita'],
+            ['nip' => '21220134', 'nama' => 'Septian Riadi'],
+            ['nip' => '22220327', 'nama' => 'Zirki Orlanda'],
+            ['nip' => '21220083', 'nama' => 'Etik Nurhayati'],
+            ['nip' => '21220132', 'nama' => 'Herdinan'],
+            ['nip' => '22190203', 'nama' => 'I Ketut Kariawan'],
+            ['nip' => '21220171', 'nama' => 'Rahmad Arifin'],
+            ['nip' => '21220085', 'nama' => 'Rini Alamia'],
+            ['nip' => '22220312', 'nama' => 'Yeni Erawati'],
+            ['nip' => '21220119', 'nama' => 'Titin'],
+            ['nip' => '21220090', 'nama' => 'Andi Apriyasyah'],
+            ['nip' => '21080013', 'nama' => 'Jhon Aziz'],
+            ['nip' => '21220092', 'nama' => 'Budi Setia Utomo'],
+            ['nip' => '21220129', 'nama' => 'Dian'],
+            ['nip' => '21190054', 'nama' => 'Desky Hendra'],
+            ['nip' => '21220108', 'nama' => 'Fitria Eka'],
+            ['nip' => '22230337', 'nama' => 'Ahmad Efendri'],
+            ['nip' => '21220112', 'nama' => 'Martina Eka'],
+            ['nip' => '21080004', 'nama' => 'Afridawati'],
+            ['nip' => '24230005', 'nama' => 'Riska Absari'],
+            ['nip' => '21190067', 'nama' => 'Era Zulfia'],
+            ['nip' => '22220309', 'nama' => 'M Rizki Genio'],
+            ['nip' => '22220323', 'nama' => 'Rohida'],
+            ['nip' => '21190056', 'nama' => 'Sisi Natalia'],
+            ['nip' => '22210269', 'nama' => 'Rolly Alvares'],
+            ['nip' => '22200243', 'nama' => 'Yulia Atika'],
+            ['nip' => '22200241', 'nama' => 'Siti Setiani'],
+            ['nip' => '22220324', 'nama' => 'Wahyu Putri'],
+            ['nip' => '22190214', 'nama' => 'Fakhri'],
+            ['nip' => '21220165', 'nama' => 'Dea'],
+            ['nip' => '22200245', 'nama' => 'Fahri Ramadona'],
+            ['nip' => '21220149', 'nama' => 'Fera'],
+            ['nip' => '21220183', 'nama' => 'Jefta'],
+            ['nip' => '21220168', 'nama' => 'Lay Rizka'],
+            ['nip' => '21220191', 'nama' => 'Vilandari'],
+            ['nip' => '21220190', 'nama' => 'Nur Khotinah'],
+            ['nip' => '21220117', 'nama' => 'Rischa Pratiwi'],
+            ['nip' => '21190029', 'nama' => 'Yuniati'],
+            ['nip' => '22220326', 'nama' => 'Yunita Shara'],
+            ['nip' => '21220138', 'nama' => 'Suci Yuliansari'],
+            ['nip' => '22140040', 'nama' => 'Dwi Ariyanti'],
+            ['nip' => '22220311', 'nama' => 'Andri Darmawan'],
+            ['nip' => '22220316', 'nama' => 'Dhyas'],
+            ['nip' => '22200232', 'nama' => 'Enjelina'],
+            ['nip' => '22210265', 'nama' => 'Erlina'],
+            ['nip' => '21220155', 'nama' => 'Mega Mustika'],
+            ['nip' => '21220182', 'nama' => 'Rio Ardi Prayoga'],
+            ['nip' => '22210274', 'nama' => 'Oktaria'],
+            ['nip' => '22220319', 'nama' => 'Nailul'],
+            ['nip' => '21220089', 'nama' => 'Yanti Fitria'],
+            ['nip' => '22210268', 'nama' => 'Yoga Erixa'],
+            ['nip' => '22190201', 'nama' => 'Selvy Sari'],
+            ['nip' => '22200246', 'nama' => 'Aditya'],
+            ['nip' => '21220076', 'nama' => 'Marlena'],
+            ['nip' => '22220315', 'nama' => 'Dandy'],
+            ['nip' => '21220120', 'nama' => 'Tri Ayu R'],
+            ['nip' => '22210258', 'nama' => 'Desi Nur Fitri'],
+            ['nip' => '22200235', 'nama' => 'Gilda Puspita'],
+            ['nip' => '22190199', 'nama' => 'Meilinda'],
+            ['nip' => '21220172', 'nama' => 'Raluki'],
+            ['nip' => '21220156', 'nama' => 'Qory'],
+            ['nip' => '22210267', 'nama' => 'Ratnasari'],
+            ['nip' => '22190202', 'nama' => 'Susilo Sudarman'],
+            ['nip' => '21220158', 'nama' => 'Siti Rohima'],
+            ['nip' => '21220157', 'nama' => 'Septi Dwi Ariyawati'],
+            ['nip' => '22210262', 'nama' => 'Arief Ginanjar'],
+            ['nip' => '22210266', 'nama' => 'Zamayra'],
+            ['nip' => '22200234', 'nama' => 'Ike Teresia'],
+            ['nip' => '22200239', 'nama' => 'Anggita Dwi Puspitarini'],
+            ['nip' => '22210260', 'nama' => 'Juliati'],
+            ['nip' => '21220185', 'nama' => 'Fentri'],
+            ['nip' => '22220321', 'nama' => 'Nopa'],
+            ['nip' => '21220115', 'nama' => 'Rendi Prayoga'],
+            ['nip' => '22190206', 'nama' => 'Vania Rachmania'],
+            ['nip' => '21220146', 'nama' => 'Junarispep'],
+            ['nip' => '21220080', 'nama' => 'Herliza'],
+            ['nip' => '21220169', 'nama' => 'Fitrirahma'],
+            ['nip' => '21080016', 'nama' => 'Munawaroh'],
+            ['nip' => '21080007', 'nama' => 'Cecilia'],
+            ['nip' => '21220121', 'nama' => 'Yunidha'],
+            ['nip' => '21220107', 'nama' => 'Feli Handayani'],
+            ['nip' => '21220091', 'nama' => 'Feni Fransina'],
+            ['nip' => '21220125', 'nama' => 'Evi Septiyani'],
+            ['nip' => '21220127', 'nama' => 'Rina Okawinda'],
+            ['nip' => '21220101', 'nama' => 'Siska Vertika'],
+            ['nip' => '21220113', 'nama' => 'Neng Safitri'],
+            ['nip' => '21220143', 'nama' => 'Raliyan'],
+            ['nip' => '24230006', 'nama' => 'Tuti Alawiyah'],
+            ['nip' => '21190028', 'nama' => 'Sucipto'],
+        ];
 
-        // 6 Pegawai Poli Anak (Campuran REGULER dan SHIFT)
-        for ($i = 1; $i <= 6; $i++) {
+        foreach ($karyawanAbsensi as $index => $k) {
+            $rId = $ruanganUgd;
+            if ($index % 3 == 1) $rId = $ruanganPoliAnak;
+            if ($index % 3 == 2) $rId = $ruanganMelati;
+            
             $dummyPegawai[] = [
-                'nip' => 'POL' . str_pad($i, 3, '0', STR_PAD_LEFT),
+                'nip' => $k['nip'],
                 'nik' => '320' . rand(1000000000000, 9999999999999),
-                'nama' => 'Perawat Poli Anak ' . $i,
-                'ruangan_id' => $ruanganPoliAnak,
-                'kategori_kerja' => $i <= 2 ? 'reguler' : 'shift', // 2 reguler, 4 shift
+                'nama' => $k['nama'],
+                'ruangan_id' => $rId,
+                'kategori_kerja' => 'shift', // shift
                 'tgl_lahir' => '1995-01-01', 'hp' => '0812' . rand(10000000, 99999999),
-                'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => 'Alamat ' . $i,
-                'agama' => 'islam', 'status' => 'tetap', 'tgl_masuk' => '2022-01-01', 'cuti' => 12,
-                'created_at' => now(), 'updated_at' => now(),
-            ];
-        }
-
-        // 6 Pegawai Melati (Semua SHIFT)
-        for ($i = 1; $i <= 6; $i++) {
-            $dummyPegawai[] = [
-                'nip' => 'MLT' . str_pad($i, 3, '0', STR_PAD_LEFT),
-                'nik' => '320' . rand(1000000000000, 9999999999999),
-                'nama' => 'Perawat Inap Melati ' . $i,
-                'ruangan_id' => $ruanganMelati,
-                'kategori_kerja' => 'shift',
-                'tgl_lahir' => '1995-01-01', 'hp' => '0812' . rand(10000000, 99999999),
-                'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => 'Alamat ' . $i,
+                'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => 'Alamat ' . $index,
                 'agama' => 'islam', 'status' => 'tetap', 'tgl_masuk' => '2022-01-01', 'cuti' => 12,
                 'created_at' => now(), 'updated_at' => now(),
             ];
@@ -227,7 +303,7 @@ class DummyDataSeeder extends Seeder
         DB::table('sdm_karyawan')->insert($dummyPegawai);
 
         // --- Create User for Perawat UGD 1 ---
-        $karyawanPerawat = Karyawan::where('nip', 'UGD001')->first();
+        $karyawanPerawat = Karyawan::where('nip', '22210264')->first(); // Arif Pamungkas
         if ($karyawanPerawat) {
             $userPerawat = User::updateOrCreate(
                 ['email' => 'perawat@rsba.com'],

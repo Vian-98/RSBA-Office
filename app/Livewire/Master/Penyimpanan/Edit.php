@@ -16,12 +16,31 @@ class Edit extends Component
 
     public ?BarangPenyimpanan $penyimpanan;
     public string $nama = '', $deskripsi = '';
+    public $lemaris = [];
 
     public function mount($id)
     {
         $this->penyimpanan = BarangPenyimpanan::findOrFail($id);
         $this->nama = $this->penyimpanan?->nama ?? '';
         $this->deskripsi = $this->penyimpanan?->deskripsi ?? '';
+        
+        $this->lemaris = $this->penyimpanan->lemaris->map(function ($lemari) {
+            return [
+                'id' => $lemari->id,
+                'nama_lemari' => $lemari->nama_lemari
+            ];
+        })->toArray();
+    }
+
+    public function addLemari()
+    {
+        $this->lemaris[] = ['id' => null, 'nama_lemari' => ''];
+    }
+
+    public function removeLemari($index)
+    {
+        unset($this->lemaris[$index]);
+        $this->lemaris = array_values($this->lemaris);
     }
 
     function submit()
@@ -35,8 +54,27 @@ class Edit extends Component
         try {
             $this->penyimpanan->update([
                 'nama' => $this->nama,
-                'deskripsi' => $this->deskripsi,
+                'deskripsi' => $this->deskripsi ?? '',
             ]);
+
+            // Sync Lemari
+            $lemariIds = collect($this->lemaris)->pluck('id')->filter()->toArray();
+            $this->penyimpanan->lemaris()->whereNotIn('id', $lemariIds)->delete();
+
+            foreach ($this->lemaris as $lemari) {
+                if (!empty(trim($lemari['nama_lemari']))) {
+                    if ($lemari['id']) {
+                        $this->penyimpanan->lemaris()->where('id', $lemari['id'])->update([
+                            'nama_lemari' => $lemari['nama_lemari']
+                        ]);
+                    } else {
+                        $this->penyimpanan->lemaris()->create([
+                            'nama_lemari' => $lemari['nama_lemari']
+                        ]);
+                    }
+                }
+            }
+
             DB::commit();
 
             $this->dispatch('penyimpanan-updated');

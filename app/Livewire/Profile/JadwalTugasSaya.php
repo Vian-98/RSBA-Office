@@ -10,7 +10,7 @@ use Livewire\Component;
 use Livewire\Attributes\Title;
 use TallStackUi\Traits\Interactions;
 
-#[Title('Jadwal Tugas Saya')]
+#[Title('Jadwal Kerja Saya')]
 class JadwalTugasSaya extends Component
 {
     use Interactions;

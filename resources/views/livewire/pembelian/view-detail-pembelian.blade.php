@@ -57,7 +57,7 @@
         </div>
 
         {{-- modal view lampiran --}}
-        <x-filament::modal id="modal-view-lampiran-pembelian" width="w-full" :close-by-escaping="true" :close-button="true">
+        <x-filament::modal id="modal-view-lampiran-pembelian" width="7xl" :close-by-escaping="true" :close-button="true">
             <x-slot:heading></x-slot:heading>
             <livewire:Pembelian.ViewLampiran :lampirans="$pembelian->lampirans" />
         </x-filament::modal>

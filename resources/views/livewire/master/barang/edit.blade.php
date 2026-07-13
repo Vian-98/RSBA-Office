@@ -32,6 +32,34 @@
                 <x-ts:checkbox sm label="Consumable" wire:model.defer='bhp' />
                 <span class="text-xs font-thin italic text-gray-400">Checklist jika barang BHP.</span>
             </div>
+            
+            <!-- Satuan Konversi -->
+            <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <div class="mb-2 flex items-center justify-between">
+                    <h4 class="text-sm font-semibold text-gray-700">Satuan Konversi (Opsional)</h4>
+                    <x-ts:button sm type="button" outline x-on:click="$wire.addKonversi()">Tambah Satuan</x-ts:button>
+                </div>
+                
+                @if (count($konversiSatuans) > 0)
+                    <div class="flex flex-col gap-2">
+                        @foreach ($konversiSatuans as $index => $konversi)
+                            <div class="flex items-center gap-2">
+                                <div class="w-1/2">
+                                    <x-ts:select.styled wire:model.defer="konversiSatuans.{{ $index }}.satuan_id" placeholder="Pilih Satuan" searchable :options="$satuanOptions" select="label:nama|value:id" />
+                                </div>
+                                <div class="w-1/3">
+                                    <x-ts:number wire:model.defer="konversiSatuans.{{ $index }}.rasio" placeholder="Rasio" type="number" min="1" />
+                                </div>
+                                <div>
+                                    <x-ts:button sm type="button" color="red" outline x-on:click="$wire.removeKonversi({{ $index }})">Hapus</x-ts:button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <span class="text-xs font-thin italic text-gray-400">Belum ada satuan konversi ditambahkan.</span>
+                @endif
+            </div>
         </div>
 
         <div class="ml-auto flex justify-end gap-2">

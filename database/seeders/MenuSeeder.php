@@ -15,7 +15,6 @@ class MenuSeeder extends Seeder
     {
         \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         Menu::truncate();
-        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         $menus = [
             [
@@ -38,8 +37,8 @@ class MenuSeeder extends Seeder
             ],
             [
                 'id' => 3,
-                'nama' => 'Dashboard Kamar',
-                'route' => 'dashboard.kamar',
+                'nama' => 'Display Monitor',
+                'route' => 'dashboard.display-monitor.admin',
                 'icon' => 'bed',
                 'permission' => ['view-dashboard-kamar'],
                 'parent_id' => 1,
@@ -370,7 +369,7 @@ class MenuSeeder extends Seeder
                 'group' => 'sdm',
             ],
             [
-                'id' => 64,
+                'id' => 41,
                 'nama' => 'Semua Kegiatan',
                 'route' => 'kepegawaian.akreditasi.index',
                 'icon' => null,
@@ -425,11 +424,29 @@ class MenuSeeder extends Seeder
             ],
             [
                 'id' => 48,
-                'nama' => 'Golongan',
-                'route' => null,
+                'nama' => 'Tunjangan Golongan',
+                'route' => 'kepegawaian.master.tunjangan-golongan.index',
                 'icon' => null,
-                'permission' => [],
-                'parent_id' => 12,
+                'permission' => ['view-kepegawaian-master-tunjangan-golongan'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 65,
+                'nama' => 'Tunjangan Lain-Lain',
+                'route' => 'kepegawaian.master.tunjangan-lain.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-tunjangan-lain'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 66,
+                'nama' => 'Tunjangan Jabatan',
+                'route' => 'kepegawaian.master.tunjangan-jabatan.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-tunjangan-jabatan'],
+                'parent_id' => 53,
                 'group' => 'sdm',
             ],
             [
@@ -462,10 +479,19 @@ class MenuSeeder extends Seeder
             [
                 'id' => 53,
                 'nama' => 'Penggajian',
-                'route' => 'kepegawaian.gaji.index',
+                'route' => null,
                 'icon' => 'moneybag',
-                'permission' => ['view-kepegawaian-gaji-index', 'add-kepegawaian-gaji-index', 'edit-kepegawaian-gaji-index', 'delete-kepegawaian-gaji-index'],
+                'permission' => [],
                 'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 531,
+                'nama' => 'Daftar Gaji',
+                'route' => 'kepegawaian.gaji.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-gaji-index', 'add-kepegawaian-gaji-index', 'edit-kepegawaian-gaji-index', 'delete-kepegawaian-gaji-index'],
+                'parent_id' => 53,
                 'group' => 'sdm',
             ],
             [
@@ -499,7 +525,7 @@ class MenuSeeder extends Seeder
             ],
             [
                 'id' => 56,
-                'nama' => 'Jadwal Tugas Saya',
+                'nama' => 'Jadwal Kerja Saya',
                 'route' => 'profile.jadwal-tugas-saya',
                 'icon' => null,
                 'permission' => ['view-profile-jadwal-tugas-saya'],
@@ -507,38 +533,20 @@ class MenuSeeder extends Seeder
                 'group' => 'sdm',
             ],
             [
-                'id' => 60,
-                'nama' => 'Master Shift',
-                'route' => 'kepegawaian.master.jadwal-shift.index',
+                'id' => 64,
+                'nama' => 'Kontrol Absensi',
+                'route' => 'kepegawaian.absensi.index',
                 'icon' => null,
-                'permission' => ['view-kepegawaian-master-jadwal-shift'],
+                'permission' => ['view-kepegawaian-absensi'],
                 'parent_id' => 57,
                 'group' => 'sdm',
             ],
             [
-                'id' => 61,
-                'nama' => 'Aturan Jadwal',
-                'route' => 'kepegawaian.master.jadwal-aturan.index',
+                'id' => 67,
+                'nama' => 'Konfigurasi Jadwal',
+                'route' => 'kepegawaian.konfigurasi-jadwal.index',
                 'icon' => null,
-                'permission' => ['view-kepegawaian-master-jadwal-aturan'],
-                'parent_id' => 57,
-                'group' => 'sdm',
-            ],
-            [
-                'id' => 62,
-                'nama' => 'Shift per Ruangan',
-                'route' => 'kepegawaian.master.ruangan-shift.index',
-                'icon' => null,
-                'permission' => ['view-kepegawaian-master-ruangan-shift'],
-                'parent_id' => 57,
-                'group' => 'sdm',
-            ],
-            [
-                'id' => 63,
-                'nama' => 'Koordinator',
-                'route' => 'kepegawaian.master.bagian-koordinator.index',
-                'icon' => null,
-                'permission' => ['view-kepegawaian-master-bagian-koordinator'],
+                'permission' => ['view-kepegawaian-konfigurasi-jadwal'],
                 'parent_id' => 57,
                 'group' => 'sdm',
             ],
@@ -567,5 +575,7 @@ class MenuSeeder extends Seeder
                 'parent_id'    => $menuData['parent_id'],
             ]);
         }
+
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
     }
 }

@@ -213,4 +213,42 @@
         </div>
 
     </div>
+
+    <!-- Kehadiran Harian (Absensi) -->
+    <div class="mt-8">
+        <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <x-tabler-clock class="h-6 w-6 text-indigo-500" />
+            Kehadiran Hari Ini ({{ date('d M Y') }})
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
+                <p class="text-xs text-gray-500 font-semibold mb-1">HADIR</p>
+                <p class="text-2xl font-bold text-green-600">{{ $absensiStats['hadir'] }}</p>
+            </div>
+            <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
+                <p class="text-xs text-gray-500 font-semibold mb-1">TERLAMBAT</p>
+                <p class="text-2xl font-bold text-yellow-600">{{ $absensiStats['terlambat'] }}</p>
+            </div>
+            <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
+                <p class="text-xs text-gray-500 font-semibold mb-1">PULANG CEPAT</p>
+                <p class="text-2xl font-bold text-orange-500">{{ $absensiStats['pulang_cepat'] }}</p>
+            </div>
+            <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
+                <p class="text-xs text-gray-500 font-semibold mb-1">TIDAK HADIR</p>
+                <p class="text-2xl font-bold text-red-600">{{ $absensiStats['tidak_hadir'] }}</p>
+            </div>
+            <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
+                <p class="text-xs text-gray-500 font-semibold mb-1">CUTI</p>
+                <p class="text-2xl font-bold text-blue-500">{{ $absensiStats['cuti'] }}</p>
+            </div>
+            <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
+                <p class="text-xs text-gray-500 font-semibold mb-1">IZIN</p>
+                <p class="text-2xl font-bold text-indigo-500">{{ $absensiStats['izin'] }}</p>
+            </div>
+            <div class="bg-white border rounded-xl p-4 text-center shadow-sm">
+                <p class="text-xs text-gray-500 font-semibold mb-1">PERLU VERIFIKASI</p>
+                <p class="text-2xl font-bold text-gray-600">{{ $absensiStats['perlu_verifikasi'] }}</p>
+            </div>
+        </div>
+    </div>
 </div>

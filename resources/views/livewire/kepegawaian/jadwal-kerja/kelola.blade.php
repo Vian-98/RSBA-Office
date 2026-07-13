@@ -58,21 +58,25 @@
                             </td>
                             @for($d = 1; $d <= count($dates); $d++)
                                 @php
-                                    $detail = $karyawan['details'][$d];
+                                    $detail = $karyawan['details'][$d] ?? null;
                                 @endphp
                                 <td class="border border-gray-200 p-1 min-w-[100px] align-top {{ $dates[$d-1]->isWeekend() ? 'bg-red-50/30' : '' }}">
-                                    @if($isReadOnly)
+                                    @if(!$detail)
+                                        <div class="w-full text-center p-1 rounded text-xs font-semibold text-gray-400 bg-gray-50 border border-dashed border-gray-300">
+                                            N/A
+                                        </div>
+                                    @elseif($isReadOnly)
                                         <div class="w-full text-center p-1 rounded text-xs font-semibold"
                                              style="background-color: {{ $detail->shift->warna ?? '#f3f4f6' }}">
                                             {{ $detail->shift->kode ?? 'LIBUR' }}
                                         </div>
                                     @else
-                                            <select wire:model.defer="state.{{ $detail->id }}" class="w-full text-xs rounded border-gray-300 focus:border-primary-500 focus:ring-primary-500 p-1">
-                                                <option value="">LIBUR</option>
-                                                @foreach($shiftOptions as $shift)
-                                                    <option value="{{ $shift['id'] }}">{{ $shift['kode'] }} ({{ $shift['jam_masuk'] }}-{{ $shift['jam_keluar'] }})</option>
-                                                @endforeach
-                                            </select>
+                                        <select wire:model.defer="state.{{ $detail->id }}" class="w-full text-xs rounded border-gray-300 focus:border-primary-500 focus:ring-primary-500 p-1">
+                                            <option value="">LIBUR</option>
+                                            @foreach($shiftOptions as $shift)
+                                                <option value="{{ $shift['id'] }}" title="{{ $shift['jam_masuk'] }} - {{ $shift['jam_keluar'] }}">{{ $shift['nama'] }}</option>
+                                            @endforeach
+                                        </select>
                                     @endif
                                 </td>
                             @endfor

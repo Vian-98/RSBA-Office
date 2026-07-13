@@ -94,11 +94,7 @@
     <div x-show="!transaksiPanel" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" class="flex flex-col gap-2">
         {{-- stats --}}
         <div class="w-full rounded-md border-2 border-white p-1">
-            <x-ts:toggle sm wire:model.live.debounce='stats' label="Stats" />
-            @if ($stats)
-                {{-- Stats Pembelian --}}
-                <livewire:Distribusi.Stats :key="Str::random()" />
-            @endif
+            <livewire:Distribusi.Stats :key="Str::random()" />
         </div>
         {{-- end stats --}}
 

@@ -145,7 +145,15 @@ class Generate extends Component
             'label' => (string) $y
         ])->toArray();
 
-        $ruanganOptions = \App\Models\Ruangan::where('is_active', true)->select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray();
+        $user = Auth::user();
+        $ruanganQuery = \App\Models\Ruangan::where('is_active', true);
+        
+        if ($user && !$user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            $ruanganId = $user->karyawan->ruangan_id ?? 0;
+            $ruanganQuery->where('id', $ruanganId);
+        }
+
+        $ruanganOptions = $ruanganQuery->select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray();
 
         return view('livewire.kepegawaian.jadwal-kerja.generate', [
             'ruanganOptions' => $ruanganOptions,

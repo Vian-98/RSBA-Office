@@ -5,6 +5,7 @@ namespace App\Livewire\Laporan\Kepegawaian;
 use App\Models\Sdm\Karyawan;
 use App\Models\Sdm\Bagian;
 use App\Models\Surat\SuratCuti;
+use App\Models\Sdm\JadwalKerjaDetail;
 use App\Traits\AuthorizesFromRoute;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -15,10 +16,12 @@ class Index extends Component
     use AuthorizesFromRoute;
 
     public array $stats = [];
+    public array $absensiStats = [];
 
     public function mount()
     {
         $this->loadStats();
+        $this->loadStatsAbsensi();
     }
 
     private function loadStats()
@@ -67,6 +70,27 @@ class Index extends Component
             'active_cuti' => $activeCuti,
             'education' => $educationCounts,
             'bagian' => $bagianStats,
+        ];
+    }
+
+    private function loadStatsAbsensi()
+    {
+        // Distribusi status kehadiran hari ini
+        $today = date('Y-m-d');
+        $kehadiranHariIni = JadwalKerjaDetail::where('tanggal', $today)
+            ->selectRaw('status_kehadiran, count(*) as count')
+            ->groupBy('status_kehadiran')
+            ->pluck('count', 'status_kehadiran')
+            ->toArray();
+            
+        $this->absensiStats = [
+            'hadir' => $kehadiranHariIni['hadir'] ?? 0,
+            'terlambat' => $kehadiranHariIni['terlambat'] ?? 0,
+            'pulang_cepat' => $kehadiranHariIni['pulang_cepat'] ?? 0,
+            'tidak_hadir' => $kehadiranHariIni['tidak_hadir'] ?? 0,
+            'cuti' => $kehadiranHariIni['cuti'] ?? 0,
+            'izin' => $kehadiranHariIni['izin'] ?? 0,
+            'perlu_verifikasi' => $kehadiranHariIni['perlu_verifikasi'] ?? 0,
         ];
     }
 
