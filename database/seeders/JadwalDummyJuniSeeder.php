@@ -75,7 +75,7 @@ class JadwalDummyJuniSeeder extends Seeder
                         if ($date->dayOfWeekIso >= 1 && $date->dayOfWeekIso <= 5) {
                             // Cari shift khusus kantor atau default REGULER
                             $officeShift = DB::table('sdm_jadwal_shift')
-                                ->where('ruangan_id', $ruangan->id)
+                                ->whereIn('id', $roomShifts)
                                 ->where('kode', 'like', 'P08%')
                                 ->first();
                             $shiftId = $officeShift ? $officeShift->id : $regulerShiftId;
