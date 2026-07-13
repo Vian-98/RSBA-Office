@@ -14,7 +14,7 @@ class Index extends Component
 {
     use AuthorizesFromRoute;
 
-    public bool $stats = false;
+
 
     #[On('submit-approval-beli-request')]
     public function refreshBadge()

@@ -5,6 +5,7 @@ namespace App\Models\Gudang;
 use App\Models\Master\Barang;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Master\BarangPenyimpanan;
+use App\Models\Master\BarangPenyimpananLemari;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -21,6 +22,11 @@ class Stok extends Model
     function penyimpanan(): BelongsTo
     {
         return $this->belongsTo(BarangPenyimpanan::class, 'penyimpanan_id', 'id');
+    }
+
+    function lemari(): BelongsTo
+    {
+        return $this->belongsTo(BarangPenyimpananLemari::class, 'lemari_id', 'id');
     }
 
     function penerimaanDet(): BelongsTo

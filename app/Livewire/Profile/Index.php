@@ -8,6 +8,7 @@ use App\Models\Sdm\Karyawan;
 use Livewire\Attributes\Lazy;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -31,6 +32,12 @@ class Index extends Component
     function mount()
     {
         $this->user = Auth::user();
+    }
+
+    #[On('updated-karywan')]
+    public function refreshProfile()
+    {
+        // Triggers re-render and re-evaluates the computed 'karyawan' property.
     }
 
 

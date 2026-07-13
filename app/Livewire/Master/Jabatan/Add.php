@@ -19,11 +19,13 @@ class Add extends Component
     public $atasan;
     public $kode_surat;
     public $bagian;
+    public $tunjangan_jabatan = 0;
     public $atasan_options;
     public $bagian_options;
 
     protected $rules = [
-        'nama' => 'required|string'
+        'nama' => 'required|string',
+        'tunjangan_jabatan' => 'nullable|numeric|min:0',
     ];
 
     function mount()
@@ -42,7 +44,8 @@ class Add extends Component
                 'nama' => $this->nama,
                 'kode_surat' => $this->kode_surat ?? null,
                 'parent_id' => $this->atasan ?? null,
-                'bagian_id' => $this->bagian ?? null
+                'bagian_id' => $this->bagian ?? null,
+                'tunjangan_jabatan' => $this->tunjangan_jabatan ?: 0,
             ];
             Jabatan::create($data);
 

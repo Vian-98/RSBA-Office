@@ -11,6 +11,8 @@
             <x-ts:input wire:model.defer="kode_surat" placeholder="Kode Surat" />
 
             <x-ts:select.styled wire:model.defer='bagian' searchable :options="$bagian_options" placeholder="Bagian" select="label:nama|value:id" />
+
+            <x-ts:input label="Tunjangan Jabatan" wire:model.defer="tunjangan_jabatan" type="number" prefix="Rp" placeholder="0" />
         </div>
 
         <div class="flex justify-end gap-2 pt-4">

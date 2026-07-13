@@ -23,7 +23,10 @@ Route::middleware('auth')
 Route::prefix('dashboard')
     ->name('dashboard.')
     ->group(function () {
-        Route::get('/kamar', App\Livewire\Dashboard\Kamar::class)->name('kamar');
+        // Admin Panel URL
+        Route::middleware(['auth'])
+            ->get('/display-monitor/admin', App\Livewire\Dashboard\DisplayMonitorAdmin::class)
+            ->name('display-monitor.admin');
     });
 
 
