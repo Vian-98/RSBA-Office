@@ -222,6 +222,14 @@ class Sidebar extends Component
                 ? $user->getAllPermissions()->pluck('name')->toArray()
                 : $user->permissions->pluck('name')->toArray();
 
+            // Tambahkan permission view koordinator jika user adalah koordinator
+            if ($user && $user->isKoordinator()) {
+                $all = array_merge($all, [
+                    'view-kepegawaian-jadwal-kerja',
+                    'view-kepegawaian-absensi',
+                ]);
+            }
+
             return array_values(array_filter($all, fn($p) => str_starts_with($p, 'view')));
         });
     }
