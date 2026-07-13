@@ -21,6 +21,19 @@ class Add extends Component
         'deskripsi' => 'required|string'
     ];
 
+    public $lemaris = [];
+
+    public function addLemari()
+    {
+        $this->lemaris[] = ['nama_lemari' => ''];
+    }
+
+    public function removeLemari($index)
+    {
+        unset($this->lemaris[$index]);
+        $this->lemaris = array_values($this->lemaris);
+    }
+
     public function submit()
     {
         $this->validate();
@@ -29,9 +42,17 @@ class Add extends Component
         try {
             $data = [
                 'nama' => $this->nama,
-                'deskripsi' => $this->deskripsi
+                'deskripsi' => $this->deskripsi ?? ''
             ];
-            BarangPenyimpanan::create($data);
+            $penyimpanan = BarangPenyimpanan::create($data);
+
+            foreach ($this->lemaris as $lemari) {
+                if (!empty(trim($lemari['nama_lemari']))) {
+                    $penyimpanan->lemaris()->create([
+                        'nama_lemari' => $lemari['nama_lemari']
+                    ]);
+                }
+            }
 
             DB::commit();
 

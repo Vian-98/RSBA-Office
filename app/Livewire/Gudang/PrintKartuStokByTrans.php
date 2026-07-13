@@ -26,9 +26,7 @@ class PrintKartuStokByTrans extends Component
     public function mutasi_stok()
     {
         return StokMutasi::with([
-            'stoks' => function ($query) {
-                $query->where('is_open', 1);
-            },
+            'stoks',
             'stoks.penerimaanDet'
         ])
             ->where('barang_id', $this->barang->id)
