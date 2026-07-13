@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <!-- Welcome Header Section -->
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 shadow-lg text-white">
+    <div class="relative overflow-hidden rounded-2xl p-8 shadow-lg text-white" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);">
         <div class="absolute right-0 top-0 -mr-20 -mt-20 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl"></div>
         <div class="absolute bottom-0 left-0 -ml-20 -mb-20 h-80 w-80 rounded-full bg-purple-500/10 blur-3xl"></div>
 
@@ -73,30 +73,30 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 w-full md:w-auto flex-grow max-w-5xl">
                     <!-- Hadir (Tepat Waktu) -->
                     <div class="rounded-xl bg-emerald-50/50 border border-emerald-100/50 p-4 text-center">
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">Tepat Waktu</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Tepat Waktu</span>
                         <h4 class="text-2xl font-bold text-emerald-800 mt-1">{{ $rekapAbsen['hadir'] }}</h4>
-                        <p class="text-[10px] text-emerald-500 font-medium">Hari</p>
+                        <p class="text-[10px] text-emerald-600 font-semibold">Hari</p>
                     </div>
 
                     <!-- Terlambat -->
                     <div class="rounded-xl bg-amber-50/50 border border-amber-100/50 p-4 text-center">
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-amber-600">Terlambat</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Terlambat</span>
                         <h4 class="text-2xl font-bold text-amber-800 mt-1">{{ $rekapAbsen['terlambat'] }}</h4>
-                        <p class="text-[10px] text-amber-500 font-medium">{{ $rekapAbsen['menit_terlambat'] }} Menit</p>
+                        <p class="text-[10px] text-amber-600 font-semibold">{{ $rekapAbsen['menit_terlambat'] }} Menit</p>
                     </div>
 
                     <!-- Pulang Cepat -->
                     <div class="rounded-xl bg-orange-50/50 border border-orange-100/50 p-4 text-center">
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-600 font-bold">Pulang Cepat</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-orange-700">Pulang Cepat</span>
                         <h4 class="text-2xl font-bold text-orange-800 mt-1">{{ $rekapAbsen['pulang_cepat'] }}</h4>
-                        <p class="text-[10px] text-orange-500 font-medium">{{ $rekapAbsen['menit_pulang_cepat'] }} Menit</p>
+                        <p class="text-[10px] text-orange-600 font-semibold">{{ $rekapAbsen['menit_pulang_cepat'] }} Menit</p>
                     </div>
 
                     <!-- Lembur -->
                     <div class="rounded-xl bg-indigo-50/50 border border-indigo-100/50 p-4 text-center">
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 font-bold">Lembur</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-700">Lembur</span>
                         <h4 class="text-2xl font-bold text-indigo-800 mt-1">{{ $rekapAbsen['menit_lembur'] }}</h4>
-                        <p class="text-[10px] text-indigo-500 font-medium">
+                        <p class="text-[10px] text-indigo-600 font-semibold">
                             @if($rekapAbsen['menit_lembur'] >= 60)
                                 {{ floor($rekapAbsen['menit_lembur'] / 60) }}j {{ $rekapAbsen['menit_lembur'] % 60 }}m
                             @else
@@ -107,16 +107,16 @@
 
                     <!-- Cuti / Izin -->
                     <div class="rounded-xl bg-sky-50/50 border border-sky-100/50 p-4 text-center">
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-sky-600">Cuti & Izin</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-sky-700">Cuti & Izin</span>
                         <h4 class="text-2xl font-bold text-sky-800 mt-1">{{ $rekapAbsen['cuti_izin'] }}</h4>
-                        <p class="text-[10px] text-sky-500 font-medium">Hari</p>
+                        <p class="text-[10px] text-sky-600 font-semibold">Hari</p>
                     </div>
 
                     <!-- Alpa / Tidak Hadir -->
                     <div class="rounded-xl bg-rose-50/50 border border-rose-100/50 p-4 text-center">
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-rose-600 font-bold">Mangkir / Alpa</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-700">Mangkir / Alpa</span>
                         <h4 class="text-2xl font-bold text-rose-800 mt-1">{{ $rekapAbsen['tidak_hadir'] }}</h4>
-                        <p class="text-[10px] text-rose-500 font-medium">Hari</p>
+                        <p class="text-[10px] text-rose-600 font-semibold">Hari</p>
                     </div>
                 </div>
             </div>
