@@ -3,6 +3,7 @@
 namespace App\Livewire\Kepegawaian\Absensi;
 
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\Title;
 use App\Models\Sdm\JadwalKerjaDetail;
 use App\Models\Sdm\Karyawan;
@@ -15,6 +16,7 @@ use TallStackUi\Traits\Interactions;
 class Rekap extends Component
 {
     use Interactions;
+    use WithPagination;
 
     public $bulan;
     public $tahun;
@@ -30,6 +32,14 @@ class Rekap extends Component
     public $editAbsenKeluar = '';
     public $editCatatan = '';
     public $showEditModal = false;
+
+    // Reset pagination when filter updates
+    public function updatedRuanganId() { $this->resetPage('dailyPage'); }
+    public function updatedKaryawanId() { $this->resetPage('dailyPage'); }
+    public function updatedTanggalSpesifik() { $this->resetPage('dailyPage'); }
+    public function updatedMode() { $this->resetPage('dailyPage'); }
+    public function updatedBulan() { $this->resetPage('dailyPage'); }
+    public function updatedTahun() { $this->resetPage('dailyPage'); }
 
     public function editRecord($id)
     {
@@ -77,34 +87,32 @@ class Rekap extends Component
         $ruangans = Ruangan::orderBy('nama')->get();
         $karyawans = Karyawan::orderBy('nama')->get();
 
-        $query = JadwalKerjaDetail::query()
-            ->with(['karyawan', 'shift', 'karyawan.ruangan', 'jadwalKerja', 'jadwalKerja.ruangan'])
+        // 1. Build Base Query without relations to avoid N+1 and Memory Leaks during aggregation
+        $baseQuery = JadwalKerjaDetail::query()
             ->whereNotNull('status_kehadiran');
 
         if ($this->mode === 'bulanan') {
-            $query->whereMonth('tanggal', $this->bulan)
-                  ->whereYear('tanggal', $this->tahun);
+            $baseQuery->whereMonth('tanggal', $this->bulan)
+                      ->whereYear('tanggal', $this->tahun);
         } else {
             if ($this->tanggal_spesifik) {
-                $query->whereDate('tanggal', $this->tanggal_spesifik);
+                $baseQuery->whereDate('tanggal', $this->tanggal_spesifik);
             } else {
-                $query->whereDate('tanggal', date('Y-m-d'));
+                $baseQuery->whereDate('tanggal', date('Y-m-d'));
             }
         }
 
         if ($this->ruangan_id) {
-            $query->whereHas('jadwalKerja', function ($q) {
+            $baseQuery->whereHas('jadwalKerja', function ($q) {
                 $q->where('ruangan_id', $this->ruangan_id);
             });
         }
 
         if ($this->karyawan_id) {
-            $query->where('karyawan_id', $this->karyawan_id);
+            $baseQuery->where('karyawan_id', $this->karyawan_id);
         }
 
-        $records = $query->orderBy('tanggal', 'desc')->get();
-
-        // Aggregation logic
+        // 2. Memory-efficient Overall Summary Aggregation
         $summary = [
             'hadir' => 0,
             'terlambat' => 0,
@@ -115,18 +123,35 @@ class Rekap extends Component
             'perlu_verifikasi' => 0,
         ];
 
-        // Also aggregate per Karyawan for the table view
-        $rekapKaryawan = [];
+        $summaryRaw = (clone $baseQuery)
+            ->select('status_kehadiran', DB::raw('count(*) as total'))
+            ->groupBy('status_kehadiran')
+            ->get();
 
-        foreach ($records as $r) {
-            $val = $r->status_kehadiran->value ?? $r->status_kehadiran;
-            if (isset($summary[$val])) {
-                $summary[$val]++;
+        foreach ($summaryRaw as $row) {
+            $statusVal = $row->status_kehadiran instanceof \App\Enums\StatusKehadiran 
+                ? $row->status_kehadiran->value 
+                : $row->status_kehadiran;
+            if (isset($summary[$statusVal])) {
+                $summary[$statusVal] = (int) $row->total;
             }
+        }
 
-            if (!isset($rekapKaryawan[$r->karyawan_id])) {
-                $rekapKaryawan[$r->karyawan_id] = [
-                    'karyawan' => $r->karyawan,
+        // 3. Memory-efficient Per-Employee Summary Aggregation
+        $rekapRaw = (clone $baseQuery)
+            ->select('karyawan_id', 'status_kehadiran', DB::raw('count(*) as total'))
+            ->groupBy('karyawan_id', 'status_kehadiran')
+            ->get();
+
+        $rekapKaryawan = [];
+        foreach ($rekapRaw as $row) {
+            $kId = $row->karyawan_id;
+            $statusVal = $row->status_kehadiran instanceof \App\Enums\StatusKehadiran 
+                ? $row->status_kehadiran->value 
+                : $row->status_kehadiran;
+
+            if (!isset($rekapKaryawan[$kId])) {
+                $rekapKaryawan[$kId] = [
                     'hadir' => 0,
                     'terlambat' => 0,
                     'pulang_cepat' => 0,
@@ -136,10 +161,24 @@ class Rekap extends Component
                     'perlu_verifikasi' => 0,
                 ];
             }
-            if (isset($rekapKaryawan[$r->karyawan_id][$val])) {
-                $rekapKaryawan[$r->karyawan_id][$val]++;
+            if (isset($rekapKaryawan[$kId][$statusVal])) {
+                $rekapKaryawan[$kId][$statusVal] = (int) $row->total;
             }
         }
+
+        // Eager-hydrate Karyawan models in a single query
+        $karyawanIds = array_keys($rekapKaryawan);
+        $karyawansMap = Karyawan::whereIn('id', $karyawanIds)->get()->keyBy('id');
+        foreach ($rekapKaryawan as $kId => &$rk) {
+            $rk['karyawan'] = $karyawansMap->get($kId);
+        }
+        unset($rk);
+
+        // 4. Paginated Daily Records (limited to 15 per page to save memory)
+        $records = (clone $baseQuery)
+            ->with(['karyawan', 'shift', 'karyawan.ruangan', 'jadwalKerja', 'jadwalKerja.ruangan'])
+            ->orderBy('tanggal', 'desc')
+            ->paginate(15, ['*'], 'dailyPage');
 
         return view('livewire.kepegawaian.absensi.rekap', [
             'ruangans' => $ruangans,

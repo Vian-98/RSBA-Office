@@ -171,7 +171,7 @@
                     <x-ts:icon name="tabler.list-details" class="w-5 h-5 text-indigo-500" />
                     <h4 class="text-md font-semibold text-gray-700">Rincian Log Harian & Koreksi Absensi</h4>
                 </div>
-                <span class="text-xs text-gray-500 bg-slate-100 py-1 px-2.5 rounded-full font-medium">Total: {{ $records->count() }} hari log</span>
+                <span class="text-xs text-gray-500 bg-slate-100 py-1 px-2.5 rounded-full font-medium">Total: {{ $records->total() }} hari log</span>
             </div>
             <div class="overflow-x-auto rounded-lg border border-gray-200">
                 <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
@@ -251,6 +251,11 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- Pagination for daily logs -->
+            <div class="mt-4">
+                {{ $records->links(data: ['pageName' => 'dailyPage']) }}
             </div>
         </div>
 
