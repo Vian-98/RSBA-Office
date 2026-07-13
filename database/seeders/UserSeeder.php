@@ -15,6 +15,8 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+
         // Rename old admin@admin.com user to admin@rsba.com if it exists to prevent constraint violations
         $oldAdmin = User::where('email', 'admin@admin.com')->first();
         if ($oldAdmin) {
@@ -136,5 +138,7 @@ class UserSeeder extends Seeder
             // Assign role safely
             $user->syncRoles([$u['role']]);
         }
+
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
     }
 }

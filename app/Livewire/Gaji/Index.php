@@ -9,6 +9,9 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 use TallStackUi\Traits\Interactions;
+use Illuminate\Support\Facades\DB;
+use App\Services\PayrollCalculator;
+use Carbon\Carbon;
 
 #[Title('Penggajian')]
 class Index extends Component
@@ -19,10 +22,58 @@ class Index extends Component
 
     public string $search = '';
     public string $bagianFilter = '';
+    public string $periode = ''; // YYYY-MM
 
-    // Modal state
+    // Modal state for Slip View
     public bool $isOpenModal = false;
     public ?array $selectedSlip = null;
+
+    // Modal state for Payroll Input
+    public bool $isInputModalOpen = false;
+    public ?int $selectedKaryawanId = null;
+    public ?Karyawan $selectedKaryawan = null;
+
+    // Payroll Input Form Fields
+    public $form_gaji_pokok = 0;
+    public $form_tunjangan_tetap = 0;
+    public $form_tunjangan_absensi = 0; // Tj. Kehadiran
+    public $form_tunjangan_jabatan = 0;
+    public $form_tunjangan_shift = 0;
+    public $form_tunjangan_radiologi = 0;
+    public $form_tunjangan_lain = 0; // Automatically calculated sum of other allowances
+    public $form_uang_lembur = 0;
+    public $form_tunjangan_hari_raya = 0;
+    
+    public $form_potongan_absensi = 0;
+    public $form_potongan_cash_bon = 0;
+    public $form_potongan_obat = 0;
+    public $form_potongan_lain = 0;
+    public $form_potongan_bank = 0;
+    
+    public int $form_bpjs_keluarga_tambahan = 0;
+
+    // Dynamic 25% UMK allocations
+    public array $form_umk_allocations = [];
+
+    // Dynamic "Tunjangan Lain-Lain" items list (for Jabatan, THR overrides, etc. bulanan)
+    public array $form_tunjangan_lain_items = [];
+    
+    // Add item form state
+    public ?int $temp_allowance_type_id = null;
+    public $temp_allowance_nominal = 0;
+
+    // Calculated fields (Live Preview)
+    public $calc_bpjs_kes = 0;
+    public $calc_bpjs_tk = 0;
+    public $calc_pph21 = 0;
+    public $calc_total_gaji = 0;
+    public $calc_total_potongan = 0;
+    public $calc_gaji_bersih = 0;
+
+    public function mount()
+    {
+        $this->periode = now()->format('Y-m');
+    }
 
     public function updatingSearch(): void
     {
@@ -34,6 +85,357 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatingPeriode(): void
+    {
+        $this->resetPage();
+    }
+
+    // Runs automatically whenever a form property is updated
+    public function updated($name)
+    {
+        if (str_starts_with($name, 'form_')) {
+            $this->recalculate();
+        }
+    }
+
+    // Dynamic allowances actions
+    public function addTunjanganLain()
+    {
+        $this->validate([
+            'temp_allowance_type_id' => 'required|exists:sdm_payroll_allowance_types,id',
+            'temp_allowance_nominal' => 'required|numeric|min:1',
+        ], [
+            'temp_allowance_type_id.required' => 'Jenis tunjangan harus dipilih.',
+            'temp_allowance_nominal.required' => 'Nominal harus diisi.',
+            'temp_allowance_nominal.min' => 'Nominal harus lebih dari 0.',
+        ]);
+
+        // Check if already added
+        foreach ($this->form_tunjangan_lain_items as $item) {
+            if ($item['allowance_type_id'] === (int) $this->temp_allowance_type_id) {
+                $this->toast()->error('Gagal !', 'Jenis tunjangan ini sudah ditambahkan. Silakan edit atau hapus item yang ada.')->send();
+                return;
+            }
+        }
+
+        $typeName = DB::table('sdm_payroll_allowance_types')
+            ->where('id', $this->temp_allowance_type_id)
+            ->value('nama');
+
+        $this->form_tunjangan_lain_items[] = [
+            'allowance_type_id' => (int) $this->temp_allowance_type_id,
+            'nama' => $typeName,
+            'nominal' => (double) $this->temp_allowance_nominal,
+        ];
+
+        // Reset temporary input
+        $this->temp_allowance_type_id = null;
+        $this->temp_allowance_nominal = 0;
+
+        $this->recalculate();
+        
+        $this->toast()->success('Berhasil !', 'Tunjangan lain-lain berhasil ditambahkan ke daftar.')->send();
+    }
+
+    public function removeTunjanganLain(int $index)
+    {
+        if (isset($this->form_tunjangan_lain_items[$index])) {
+            unset($this->form_tunjangan_lain_items[$index]);
+            $this->form_tunjangan_lain_items = array_values($this->form_tunjangan_lain_items);
+            $this->recalculate();
+            $this->toast()->success('Berhasil !', 'Tunjangan lain-lain dihapus dari daftar.')->send();
+        }
+    }
+
+    private function recalculate()
+    {
+        // 1. Sum dynamic 25% UMK allocations
+        $tTetap = 0.0;
+        $tAbsen = 0.0;
+        foreach ($this->form_umk_allocations as $alloc) {
+            if ($alloc['is_absensi']) {
+                $tAbsen += (double) $alloc['nominal'];
+            } else {
+                $tTetap += (double) $alloc['nominal'];
+            }
+        }
+        
+        $baseCalculator = PayrollCalculator::calculate($this->selectedKaryawan);
+        $this->form_tunjangan_tetap = $tTetap + $baseCalculator['tunjangan_golongan_value'];
+        $this->form_tunjangan_absensi = $tAbsen;
+
+        // 2. Sum dynamic other allowances
+        $sumTunjanganLain = 0.0;
+        foreach ($this->form_tunjangan_lain_items as $item) {
+            $sumTunjanganLain += (double) $item['nominal'];
+        }
+        $this->form_tunjangan_lain = $sumTunjanganLain;
+
+        // 3. Total Earnings
+        $totalEarnings = (double) $this->form_gaji_pokok +
+            (double) $this->form_tunjangan_tetap +
+            (double) $this->form_tunjangan_absensi +
+            (double) $this->form_tunjangan_jabatan +
+            (double) $this->form_tunjangan_shift +
+            (double) $this->form_tunjangan_radiologi +
+            (double) $this->form_tunjangan_lain +
+            (double) $this->form_uang_lembur +
+            (double) $this->form_tunjangan_hari_raya;
+
+        // 4. BPJS & PPh21 calculations
+        $deductions = PayrollCalculator::calculateDeductions(
+            $this->form_gaji_pokok,
+            $this->form_tunjangan_tetap,
+            $totalEarnings,
+            $this->form_bpjs_keluarga_tambahan
+        );
+
+        $this->calc_bpjs_kes = $deductions['potongan_bpjs_kes'];
+        $this->calc_bpjs_tk = $deductions['potongan_bpjs_tk'];
+        $this->calc_pph21 = $deductions['potongan_pph21'];
+
+        // 5. Total Deductions
+        $this->calc_total_potongan = (double) $this->form_potongan_absensi +
+            (double) $this->form_potongan_cash_bon +
+            (double) $this->form_potongan_obat +
+            (double) $this->form_potongan_lain +
+            (double) $this->calc_bpjs_kes +
+            (double) $this->calc_bpjs_tk;
+
+        $this->calc_total_gaji = $totalEarnings;
+
+        // 6. Net Salary
+        $this->calc_gaji_bersih = $this->calc_total_gaji - 
+            $this->calc_total_potongan - 
+            (double) $this->calc_pph21 - 
+            (double) $this->form_potongan_bank;
+    }
+
+    public function openInputModal(int $karyawanId)
+    {
+        $karyawan = Karyawan::with(['jabatan.bagian'])->findOrFail($karyawanId);
+        $this->selectedKaryawanId = $karyawanId;
+        $this->selectedKaryawan = $karyawan;
+
+        // Reset lists
+        $this->form_tunjangan_lain_items = [];
+        $this->form_umk_allocations = [];
+        $this->temp_allowance_type_id = null;
+        $this->temp_allowance_nominal = 0;
+
+        // Check if slip already exists for this period
+        $slip = DB::table('sdm_payroll_slips')
+            ->where('karyawan_id', $karyawanId)
+            ->where('periode', $this->periode)
+            ->first();
+
+        if ($slip) {
+            // Load from database
+            $this->form_gaji_pokok = (int) $slip->gaji_pokok;
+            $this->form_tunjangan_tetap = (int) $slip->tunjangan_tetap;
+            $this->form_tunjangan_absensi = (int) $slip->tunjangan_absensi;
+            $this->form_tunjangan_jabatan = (int) $slip->tunjangan_jabatan;
+            $this->form_tunjangan_shift = (int) $slip->tunjangan_shift;
+            $this->form_tunjangan_radiologi = (int) $slip->tunjangan_radiologi;
+            $this->form_tunjangan_lain = (int) $slip->tunjangan_lain;
+            $this->form_uang_lembur = (int) $slip->uang_lembur;
+            $this->form_tunjangan_hari_raya = (int) $slip->tunjangan_hari_raya;
+            
+            $this->form_potongan_absensi = (int) $slip->potongan_absensi;
+            $this->form_potongan_cash_bon = (int) $slip->potongan_cash_bon;
+            $this->form_potongan_obat = (int) $slip->potongan_obat;
+            $this->form_potongan_lain = (int) $slip->potongan_lain;
+            $this->form_potongan_bank = (int) $slip->potongan_bank;
+            
+            $this->form_bpjs_keluarga_tambahan = (int) $slip->bpjs_keluarga_tambahan;
+
+            // Load UMK allocations from DB
+            $dbSlipAllocs = DB::table('sdm_payroll_slip_allocations')
+                ->join('sdm_payroll_allowance_allocations', 'sdm_payroll_slip_allocations.allowance_allocation_id', '=', 'sdm_payroll_allowance_allocations.id')
+                ->where('sdm_payroll_slip_allocations.payroll_slip_id', $slip->id)
+                ->select('sdm_payroll_slip_allocations.allowance_allocation_id', 'sdm_payroll_allowance_allocations.nama', 'sdm_payroll_allowance_allocations.persen', 'sdm_payroll_allowance_allocations.is_absensi', 'sdm_payroll_slip_allocations.nominal')
+                ->get();
+
+            foreach ($dbSlipAllocs as $item) {
+                $this->form_umk_allocations[] = [
+                    'allowance_allocation_id' => $item->allowance_allocation_id,
+                    'nama' => $item->nama,
+                    'persen' => (double) $item->persen,
+                    'is_absensi' => (bool) $item->is_absensi,
+                    'nominal' => (double) $item->nominal,
+                ];
+            }
+
+            // Fallback load allocations if DB table was empty
+            if (empty($this->form_umk_allocations)) {
+                $base = PayrollCalculator::calculate($karyawan);
+                $this->form_umk_allocations = $base['allocations_breakdown'];
+            }
+
+            // Load dynamic other allowances from DB
+            $dbItems = DB::table('sdm_payroll_slip_allowances')
+                ->join('sdm_payroll_allowance_types', 'sdm_payroll_slip_allowances.allowance_type_id', '=', 'sdm_payroll_allowance_types.id')
+                ->where('sdm_payroll_slip_allowances.payroll_slip_id', $slip->id)
+                ->select('sdm_payroll_slip_allowances.allowance_type_id', 'sdm_payroll_allowance_types.nama', 'sdm_payroll_slip_allowances.nominal')
+                ->get();
+
+            foreach ($dbItems as $dbItem) {
+                $this->form_tunjangan_lain_items[] = [
+                    'allowance_type_id' => $dbItem->allowance_type_id,
+                    'nama' => $dbItem->nama,
+                    'nominal' => (double) $dbItem->nominal,
+                ];
+            }
+        } else {
+            // Calculate base defaults
+            $base = PayrollCalculator::calculate($karyawan);
+            $this->form_gaji_pokok = $base['gaji_pokok'];
+            $this->form_tunjangan_tetap = $base['tunjangan_tetap'];
+            $this->form_tunjangan_absensi = $base['tunjangan_absensi'];
+            $this->form_tunjangan_jabatan = $base['tunjangan_jabatan'];
+            $this->form_umk_allocations = $base['allocations_breakdown'];
+
+            // Reset inputs to 0
+            $this->form_tunjangan_shift = 0;
+            $this->form_tunjangan_radiologi = 0;
+            $this->form_tunjangan_lain = 0;
+            $this->form_uang_lembur = 0;
+            $this->form_tunjangan_hari_raya = 0;
+            
+            $this->form_potongan_absensi = 0;
+            $this->form_potongan_cash_bon = 0;
+            $this->form_potongan_obat = 0;
+            $this->form_potongan_lain = 0;
+            $this->form_potongan_bank = 0;
+            
+            $this->form_bpjs_keluarga_tambahan = 0;
+        }
+
+        $this->recalculate();
+        $this->isInputModalOpen = true;
+    }
+
+    public function closeInputModal()
+    {
+        $this->isInputModalOpen = false;
+        $this->selectedKaryawanId = null;
+        $this->selectedKaryawan = null;
+        $this->form_tunjangan_lain_items = [];
+        $this->form_umk_allocations = [];
+    }
+
+    public function savePayroll()
+    {
+        $this->validate([
+            'form_gaji_pokok' => 'required|numeric|min:0',
+            'form_tunjangan_tetap' => 'required|numeric|min:0',
+            'form_tunjangan_absensi' => 'required|numeric|min:0',
+            'form_tunjangan_jabatan' => 'required|numeric|min:0',
+            'form_tunjangan_shift' => 'required|numeric|min:0',
+            'form_tunjangan_radiologi' => 'required|numeric|min:0',
+            'form_tunjangan_lain' => 'required|numeric|min:0',
+            'form_uang_lembur' => 'required|numeric|min:0',
+            'form_tunjangan_hari_raya' => 'required|numeric|min:0',
+            'form_potongan_absensi' => 'required|numeric|min:0',
+            'form_potongan_cash_bon' => 'required|numeric|min:0',
+            'form_potongan_obat' => 'required|numeric|min:0',
+            'form_potongan_lain' => 'required|numeric|min:0',
+            'form_potongan_bank' => 'required|numeric|min:0',
+            'form_bpjs_keluarga_tambahan' => 'required|integer|min:0',
+        ]);
+
+        $this->recalculate();
+
+        DB::beginTransaction();
+        try {
+            // 1. Insert/Update Gaji Slip
+            DB::table('sdm_payroll_slips')->updateOrInsert(
+                [
+                    'karyawan_id' => $this->selectedKaryawanId,
+                    'periode' => $this->periode
+                ],
+                [
+                    'gaji_pokok' => $this->form_gaji_pokok,
+                    'tunjangan_tetap' => $this->form_tunjangan_tetap,
+                    'tunjangan_absensi' => $this->form_tunjangan_absensi,
+                    'tunjangan_jabatan' => $this->form_tunjangan_jabatan,
+                    'tunjangan_shift' => $this->form_tunjangan_shift,
+                    'tunjangan_radiologi' => $this->form_tunjangan_radiologi,
+                    'tunjangan_lain' => $this->form_tunjangan_lain,
+                    'uang_lembur' => $this->form_uang_lembur,
+                    'tunjangan_hari_raya' => $this->form_tunjangan_hari_raya,
+                    'potongan_absensi' => $this->form_potongan_absensi,
+                    'potongan_cash_bon' => $this->form_potongan_cash_bon,
+                    'potongan_obat' => $this->form_potongan_obat,
+                    'potongan_bpjs_kes' => $this->calc_bpjs_kes,
+                    'potongan_bpjs_tk' => $this->calc_bpjs_tk,
+                    'potongan_lain' => $this->form_potongan_lain,
+                    'potongan_pph21' => $this->calc_pph21,
+                    'potongan_bank' => $this->form_potongan_bank,
+                    'bpjs_keluarga_tambahan' => $this->form_bpjs_keluarga_tambahan,
+                    'total_gaji' => $this->calc_total_gaji,
+                    'total_potongan' => $this->calc_total_potongan,
+                    'gaji_bersih' => $this->calc_gaji_bersih,
+                    'created_by' => auth()->id(),
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+
+            // Get slip ID
+            $insertedSlip = DB::table('sdm_payroll_slips')
+                ->where('karyawan_id', $this->selectedKaryawanId)
+                ->where('periode', $this->periode)
+                ->first();
+
+            if ($insertedSlip) {
+                // Save dynamic UMK allocations to DB
+                DB::table('sdm_payroll_slip_allocations')
+                    ->where('payroll_slip_id', $insertedSlip->id)
+                    ->delete();
+
+                foreach ($this->form_umk_allocations as $alloc) {
+                    DB::table('sdm_payroll_slip_allocations')->insert([
+                        'payroll_slip_id' => $insertedSlip->id,
+                        'allowance_allocation_id' => $alloc['allowance_allocation_id'],
+                        'nominal' => $alloc['nominal'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                // Delete old other allowances
+                DB::table('sdm_payroll_slip_allowances')
+                    ->where('payroll_slip_id', $insertedSlip->id)
+                    ->delete();
+
+                // Save new other allowances
+                foreach ($this->form_tunjangan_lain_items as $item) {
+                    DB::table('sdm_payroll_slip_allowances')->insert([
+                        'payroll_slip_id' => $insertedSlip->id,
+                        'allowance_type_id' => $item['allowance_type_id'],
+                        'nominal' => $item['nominal'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            $this->toast()
+                ->success('Berhasil !', 'Slip gaji karyawan berhasil disimpan.')
+                ->send();
+            
+            $this->closeInputModal();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $this->toast()
+                ->error('Gagal !', 'Error: ' . $e->getMessage())
+                ->send();
+        }
+    }
+
     public function viewSlip(int $karyawanId): void
     {
         $karyawan = Karyawan::with(['jabatan.bagian'])->find($karyawanId);
@@ -41,22 +443,108 @@ class Index extends Component
             return;
         }
 
-        $calc = $this->calculateSalary($karyawan);
-        $this->selectedSlip = [
-            'id' => $karyawan->id,
-            'nama' => $karyawan->full_nama,
-            'nip' => $karyawan->nip,
-            'status' => $karyawan->status->nama(),
-            'jabatan' => $calc['jabatan_nama'],
-            'bagian' => $calc['bagian_nama'],
-            'gaji_pokok' => $calc['gaji_pokok'],
-            'tunjangan' => $calc['tunjangan'],
-            'bpjs_kes' => $calc['bpjs_kes'],
-            'bpjs_ket' => $calc['bpjs_ket'],
-            'pajak' => $calc['pajak'],
-            'gaji_bersih' => $calc['gaji_bersih'],
-            'periode' => CarbonTranslate(now(), 'F Y'),
-        ];
+        // Get saved slip or build draft
+        $slip = DB::table('sdm_payroll_slips')
+            ->where('karyawan_id', $karyawanId)
+            ->where('periode', $this->periode)
+            ->first();
+
+        if ($slip) {
+            $latestJab = $karyawan->jabatan->first();
+            $jabName = $latestJab ? $latestJab->nama : '-';
+            $bagName = $latestJab && $latestJab->bagian ? $latestJab->bagian->nama : '-';
+
+            // Get dynamic allowance details
+            $breakdown = DB::table('sdm_payroll_slip_allowances')
+                ->join('sdm_payroll_allowance_types', 'sdm_payroll_slip_allowances.allowance_type_id', '=', 'sdm_payroll_allowance_types.id')
+                ->where('sdm_payroll_slip_allowances.payroll_slip_id', $slip->id)
+                ->select('sdm_payroll_allowance_types.nama', 'sdm_payroll_slip_allowances.nominal')
+                ->get()
+                ->toArray();
+
+            // Get dynamic UMK allocation details to list them on the slip
+            $allocsList = DB::table('sdm_payroll_slip_allocations')
+                ->join('sdm_payroll_allowance_allocations', 'sdm_payroll_slip_allocations.allowance_allocation_id', '=', 'sdm_payroll_allowance_allocations.id')
+                ->where('sdm_payroll_slip_allocations.payroll_slip_id', $slip->id)
+                ->select('sdm_payroll_allowance_allocations.nama', 'sdm_payroll_allowance_allocations.is_absensi', 'sdm_payroll_slip_allocations.nominal')
+                ->get();
+
+            $this->selectedSlip = [
+                'id' => $karyawan->id,
+                'nama' => $karyawan->full_nama,
+                'nip' => $karyawan->nip,
+                'status' => $karyawan->status->nama(),
+                'jabatan' => $jabName,
+                'bagian' => $bagName,
+                'gaji_pokok' => $slip->gaji_pokok,
+                'tunjangan_tetap' => $slip->tunjangan_tetap,
+                'tunjangan_absensi' => $slip->tunjangan_absensi,
+                'tunjangan_jabatan' => $slip->tunjangan_jabatan,
+                'tunjangan_shift' => $slip->tunjangan_shift,
+                'tunjangan_radiologi' => $slip->tunjangan_radiologi,
+                'tunjangan_lain' => $slip->tunjangan_lain,
+                'tunjangan_lain_items' => $breakdown,
+                'allocations_list' => $allocsList,
+                'uang_lembur' => $slip->uang_lembur,
+                'tunjangan_hari_raya' => $slip->tunjangan_hari_raya,
+                'potongan_absensi' => $slip->potongan_absensi,
+                'potongan_cash_bon' => $slip->potongan_cash_bon,
+                'potongan_obat' => $slip->potongan_obat,
+                'bpjs_kes' => $slip->potongan_bpjs_kes,
+                'bpjs_ket' => $slip->potongan_bpjs_tk,
+                'potongan_lain' => $slip->potongan_lain,
+                'pajak' => $slip->potongan_pph21,
+                'potongan_bank' => $slip->potongan_bank,
+                'gaji_bersih' => $slip->gaji_bersih,
+                'total_gaji' => $slip->total_gaji,
+                'total_potongan' => $slip->total_potongan,
+                'periode' => \Carbon\Carbon::parse($this->periode . '-01')->translatedFormat('F Y'),
+            ];
+        } else {
+            // Draft calculation
+            $base = PayrollCalculator::calculate($karyawan);
+            $totalPendapatan = $base['gaji_pokok'] + $base['tunjangan_tetap'] + $base['tunjangan_absensi'] + $base['tunjangan_jabatan'];
+            $deductions = PayrollCalculator::calculateDeductions($base['gaji_pokok'], $base['tunjangan_tetap'], $totalPendapatan, 0);
+
+            $latestJab = $karyawan->jabatan->first();
+            $jabName = $latestJab ? $latestJab->nama : '-';
+            $bagName = $latestJab && $latestJab->bagian ? $latestJab->bagian->nama : '-';
+
+            $totalPotongan = $deductions['potongan_bpjs_kes'] + $deductions['potongan_bpjs_tk'];
+            $gajiBersih = $totalPendapatan - $totalPotongan - $deductions['potongan_pph21'];
+
+            $this->selectedSlip = [
+                'id' => $karyawan->id,
+                'nama' => $karyawan->full_nama,
+                'nip' => $karyawan->nip,
+                'status' => $karyawan->status->nama(),
+                'jabatan' => $jabName,
+                'bagian' => $bagName,
+                'gaji_pokok' => $base['gaji_pokok'],
+                'tunjangan_tetap' => $base['tunjangan_tetap'],
+                'tunjangan_absensi' => $base['tunjangan_absensi'],
+                'tunjangan_jabatan' => $base['tunjangan_jabatan'],
+                'tunjangan_shift' => 0.0,
+                'tunjangan_radiologi' => 0.0,
+                'tunjangan_lain' => 0.0,
+                'tunjangan_lain_items' => [],
+                'allocations_list' => $base['allocations_breakdown'],
+                'uang_lembur' => 0.0,
+                'tunjangan_hari_raya' => 0.0,
+                'potongan_absensi' => 0.0,
+                'potongan_cash_bon' => 0.0,
+                'potongan_obat' => 0.0,
+                'bpjs_kes' => $deductions['potongan_bpjs_kes'],
+                'bpjs_ket' => $deductions['potongan_bpjs_tk'],
+                'potongan_lain' => 0.0,
+                'pajak' => $deductions['potongan_pph21'],
+                'potongan_bank' => 0.0,
+                'gaji_bersih' => $gajiBersih,
+                'total_gaji' => $totalPendapatan,
+                'total_potongan' => $totalPotongan,
+                'periode' => \Carbon\Carbon::parse($this->periode . '-01')->translatedFormat('F Y') . ' (DRAFT)',
+            ];
+        }
         $this->isOpenModal = true;
     }
 
@@ -64,54 +552,6 @@ class Index extends Component
     {
         $this->isOpenModal = false;
         $this->selectedSlip = null;
-    }
-
-    private function calculateSalary(Karyawan $karyawan): array
-    {
-        // 1. Basic Salary by Status
-        $gajiPokok = match ($karyawan->status?->value) {
-            'tetap' => 5000000,
-            'kontrak' => 3500000,
-            'mitra' => 4500000,
-            'bantuan' => 3000000,
-            'magang' => 2000000,
-            default => 3000000,
-        };
-
-        // 2. Allowance by Jabatan
-        $jabName = 'Staff';
-        $bagName = 'Umum';
-        $latestJab = $karyawan->jabatan->first();
-        if ($latestJab) {
-            $jabName = $latestJab->nama;
-            $bagName = optional($latestJab->bagian)->nama ?? 'Umum';
-        }
-
-        $tunjangan = match ($jabName) {
-            'Direktur Utama' => 15000000,
-            'Kepala Bagian SDM', 'Kepala Bagian Umum', 'Kepala Bagian Keuangan' => 5000000,
-            'Staff Pelaksana SDM', 'Staff Pelaksana Umum', 'Staff Pelaksana Keuangan' => 1500000,
-            default => 500000,
-        };
-
-        // 3. Deductions
-        $bpjsKes = 150000;
-        $bpjsKet = 100000;
-        $pajak = round(0.05 * ($gajiPokok + $tunjangan));
-
-        // 4. Net Salary
-        $gajiBersih = ($gajiPokok + $tunjangan) - ($bpjsKes + $bpjsKet + $pajak);
-
-        return [
-            'jabatan_nama' => $jabName,
-            'bagian_nama' => $bagName,
-            'gaji_pokok' => $gajiPokok,
-            'tunjangan' => $tunjangan,
-            'bpjs_kes' => $bpjsKes,
-            'bpjs_ket' => $bpjsKet,
-            'pajak' => $pajak,
-            'gaji_bersih' => $gajiBersih,
-        ];
     }
 
     public function sendEmail(int $karyawanId): void
@@ -128,14 +568,47 @@ class Index extends Component
             return;
         }
 
-        $calc = $this->calculateSalary($karyawan);
+        // Get saved slip or calculated draft
+        $slip = DB::table('sdm_payroll_slips')
+            ->where('karyawan_id', $karyawanId)
+            ->where('periode', $this->periode)
+            ->first();
+
+        if ($slip) {
+            $calc = [
+                'gaji_pokok' => $slip->gaji_pokok,
+                'tunjangan' => $slip->tunjangan_tetap + $slip->tunjangan_absensi + $slip->tunjangan_jabatan + $slip->tunjangan_shift + $slip->tunjangan_radiologi + $slip->tunjangan_lain + $slip->uang_lembur + $slip->tunjangan_hari_raya,
+                'bpjs_kes' => $slip->potongan_bpjs_kes,
+                'bpjs_ket' => $slip->potongan_bpjs_tk,
+                'pajak' => $slip->potongan_pph21 + $slip->potongan_bank,
+                'gaji_bersih' => $slip->gaji_bersih,
+                'bagian_nama' => $karyawan->jabatan->first() && $karyawan->jabatan->first()->bagian ? $karyawan->jabatan->first()->bagian->nama : 'Umum',
+                'jabatan_nama' => $karyawan->jabatan->first() ? $karyawan->jabatan->first()->nama : 'Staff',
+            ];
+        } else {
+            $base = PayrollCalculator::calculate($karyawan);
+            $totalPendapatan = $base['gaji_pokok'] + $base['tunjangan_tetap'] + $base['tunjangan_absensi'] + $base['tunjangan_jabatan'];
+            $deductions = PayrollCalculator::calculateDeductions($base['gaji_pokok'], $base['tunjangan_tetap'], $totalPendapatan, 0);
+
+            $calc = [
+                'gaji_pokok' => $base['gaji_pokok'],
+                'tunjangan' => $base['tunjangan_tetap'] + $base['tunjangan_absensi'] + $base['tunjangan_jabatan'],
+                'bpjs_kes' => $deductions['potongan_bpjs_kes'],
+                'bpjs_ket' => $deductions['potongan_bpjs_tk'],
+                'pajak' => $deductions['potongan_pph21'],
+                'gaji_bersih' => $totalPendapatan - ($deductions['potongan_bpjs_kes'] + $deductions['potongan_bpjs_tk']) - $deductions['potongan_pph21'],
+                'bagian_nama' => $karyawan->jabatan->first() && $karyawan->jabatan->first()->bagian ? $karyawan->jabatan->first()->bagian->nama : 'Umum',
+                'jabatan_nama' => $karyawan->jabatan->first() ? $karyawan->jabatan->first()->nama : 'Staff',
+            ];
+        }
+
         $slipData = [
             'nama' => $karyawan->full_nama,
             'nip' => $karyawan->nip,
             'status' => $karyawan->status->nama(),
             'jabatan' => $calc['jabatan_nama'],
             'bagian' => $calc['bagian_nama'],
-            'periode' => CarbonTranslate(now(), 'F Y'),
+            'periode' => \Carbon\Carbon::parse($this->periode . '-01')->translatedFormat('F Y'),
             'gaji_pokok' => $calc['gaji_pokok'],
             'tunjangan' => $calc['tunjangan'],
             'bpjs_kes' => $calc['bpjs_kes'],
@@ -171,22 +644,49 @@ class Index extends Component
 
         $karyawans = $query->paginate(10);
 
-        // Transform collection to append calculated salary
+        // Transform collection to append calculated salary or database record
         $karyawans->getCollection()->transform(function ($karyawan) {
-            $calc = $this->calculateSalary($karyawan);
-            $karyawan->calculated_salary = $calc;
+            // Check if slip is already inputted in DB
+            $slip = DB::table('sdm_payroll_slips')
+                ->where('karyawan_id', $karyawan->id)
+                ->where('periode', $this->periode)
+                ->first();
+
+            if ($slip) {
+                $karyawan->payroll_status = 'generated';
+                $karyawan->calculated_salary = [
+                    'gaji_pokok' => $slip->gaji_pokok,
+                    'tunjangan' => $slip->tunjangan_tetap + $slip->tunjangan_absensi + $slip->tunjangan_jabatan + $slip->tunjangan_shift + $slip->tunjangan_radiologi + $slip->tunjangan_lain + $slip->uang_lembur + $slip->tunjangan_hari_raya,
+                    'gaji_bersih' => $slip->gaji_bersih,
+                    'bagian_nama' => $karyawan->jabatan->first() && $karyawan->jabatan->first()->bagian ? $karyawan->jabatan->first()->bagian->nama : 'Umum',
+                    'jabatan_nama' => $karyawan->jabatan->first() ? $karyawan->jabatan->first()->nama : 'Staff',
+                ];
+            } else {
+                $karyawan->payroll_status = 'pending';
+                $base = PayrollCalculator::calculate($karyawan);
+                $totalPendapatan = $base['gaji_pokok'] + $base['tunjangan_tetap'] + $base['tunjangan_absensi'] + $base['tunjangan_jabatan'];
+                $deductions = PayrollCalculator::calculateDeductions($base['gaji_pokok'], $base['tunjangan_tetap'], $totalPendapatan, 0);
+                $totalPotongan = $deductions['potongan_bpjs_kes'] + $deductions['potongan_bpjs_tk'];
+                $gajiBersih = $totalPendapatan - $totalPotongan - $deductions['potongan_pph21'];
+
+                $karyawan->calculated_salary = [
+                    'gaji_pokok' => $base['gaji_pokok'],
+                    'tunjangan' => $base['tunjangan_tetap'] + $base['tunjangan_absensi'] + $base['tunjangan_jabatan'],
+                    'gaji_bersih' => $gajiBersih,
+                    'bagian_nama' => $karyawan->jabatan->first() && $karyawan->jabatan->first()->bagian ? $karyawan->jabatan->first()->bagian->nama : 'Umum',
+                    'jabatan_nama' => $karyawan->jabatan->first() ? $karyawan->jabatan->first()->nama : 'Staff',
+                ];
+            }
             return $karyawan;
         });
+
+        // Get allowance types for dropdown
+        $allowanceTypes = DB::table('sdm_payroll_allowance_types')->orderBy('nama', 'asc')->get();
 
         return view('livewire.gaji.index', [
             'karyawans' => $karyawans,
             'bagians' => Bagian::all(),
+            'allowanceTypes' => $allowanceTypes,
         ]);
     }
-}
-
-// Simple Carbon translated format helper
-function CarbonTranslate($carbonDate, $format)
-{
-    return \Carbon\Carbon::parse($carbonDate)->translatedFormat($format);
 }

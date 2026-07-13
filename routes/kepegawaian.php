@@ -95,6 +95,24 @@ Route::prefix('master')
             ->group(function () {
                 Route::get('/', App\Livewire\Master\JadwalAturan\Index::class)->name('index');
             });
+
+        Route::prefix('tunjangan-golongan')
+            ->name('tunjangan-golongan.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\TunjanganGolongan\Index::class)->name('index');
+            });
+
+        Route::prefix('tunjangan-lain')
+            ->name('tunjangan-lain.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\TunjanganLain\Index::class)->name('index');
+            });
+
+        Route::prefix('tunjangan-jabatan')
+            ->name('tunjangan-jabatan.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\TunjanganJabatan\Index::class)->name('index');
+            });
     });
 
 

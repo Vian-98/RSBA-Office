@@ -15,7 +15,6 @@ class MenuSeeder extends Seeder
     {
         \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         Menu::truncate();
-        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         $menus = [
             [
@@ -425,11 +424,29 @@ class MenuSeeder extends Seeder
             ],
             [
                 'id' => 48,
-                'nama' => 'Golongan',
-                'route' => null,
+                'nama' => 'Tunjangan Golongan',
+                'route' => 'kepegawaian.master.tunjangan-golongan.index',
                 'icon' => null,
-                'permission' => [],
-                'parent_id' => 12,
+                'permission' => ['view-kepegawaian-master-tunjangan-golongan'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 65,
+                'nama' => 'Tunjangan Lain-Lain',
+                'route' => 'kepegawaian.master.tunjangan-lain.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-tunjangan-lain'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 66,
+                'nama' => 'Tunjangan Jabatan',
+                'route' => 'kepegawaian.master.tunjangan-jabatan.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-tunjangan-jabatan'],
+                'parent_id' => 53,
                 'group' => 'sdm',
             ],
             [
@@ -462,10 +479,19 @@ class MenuSeeder extends Seeder
             [
                 'id' => 53,
                 'nama' => 'Penggajian',
-                'route' => 'kepegawaian.gaji.index',
+                'route' => null,
                 'icon' => 'moneybag',
-                'permission' => ['view-kepegawaian-gaji-index', 'add-kepegawaian-gaji-index', 'edit-kepegawaian-gaji-index', 'delete-kepegawaian-gaji-index'],
+                'permission' => [],
                 'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 531,
+                'nama' => 'Daftar Gaji',
+                'route' => 'kepegawaian.gaji.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-gaji-index', 'add-kepegawaian-gaji-index', 'edit-kepegawaian-gaji-index', 'delete-kepegawaian-gaji-index'],
+                'parent_id' => 53,
                 'group' => 'sdm',
             ],
             [
@@ -516,7 +542,7 @@ class MenuSeeder extends Seeder
                 'group' => 'sdm',
             ],
             [
-                'id' => 66,
+                'id' => 67,
                 'nama' => 'Konfigurasi Jadwal',
                 'route' => 'kepegawaian.konfigurasi-jadwal.index',
                 'icon' => null,
@@ -549,5 +575,7 @@ class MenuSeeder extends Seeder
                 'parent_id'    => $menuData['parent_id'],
             ]);
         }
+
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
     }
 }
