@@ -9,16 +9,62 @@ use App\Models\Sdm\Karyawan;
 use App\Models\Ruangan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use TallStackUi\Traits\Interactions;
 
 #[Title('Rekap Absensi')]
 class Rekap extends Component
 {
+    use Interactions;
+
     public $bulan;
     public $tahun;
     public $ruangan_id = null;
     public $karyawan_id = null;
     public $tanggal_spesifik = null;
     public $mode = 'bulanan'; // 'bulanan', 'harian'
+
+    // Properties for Manual Correction
+    public $editingRecordId = null;
+    public $editStatus = '';
+    public $editAbsenMasuk = '';
+    public $editAbsenKeluar = '';
+    public $editCatatan = '';
+    public $showEditModal = false;
+
+    public function editRecord($id)
+    {
+        $record = JadwalKerjaDetail::findOrFail($id);
+        $this->editingRecordId = $id;
+        $this->editStatus = $record->status_kehadiran instanceof \App\Enums\StatusKehadiran 
+            ? $record->status_kehadiran->value 
+            : $record->status_kehadiran;
+        
+        $this->editAbsenMasuk = $record->absen_masuk_at 
+            ? Carbon::parse($record->absen_masuk_at)->format('Y-m-d\TH:i') 
+            : '';
+        $this->editAbsenKeluar = $record->absen_keluar_at 
+            ? Carbon::parse($record->absen_keluar_at)->format('Y-m-d\TH:i') 
+            : '';
+            
+        $this->editCatatan = $record->catatan;
+        $this->showEditModal = true;
+    }
+
+    public function saveCorrection()
+    {
+        $record = JadwalKerjaDetail::findOrFail($this->editingRecordId);
+        
+        $record->update([
+            'status_kehadiran' => $this->editStatus ?: 'belum_dicek',
+            'absen_masuk_at' => $this->editAbsenMasuk ?: null,
+            'absen_keluar_at' => $this->editAbsenKeluar ?: null,
+            'catatan' => $this->editCatatan ?: null,
+            'updated_by' => auth()->id() ?? 1,
+        ]);
+
+        $this->showEditModal = false;
+        $this->toast()->success('Berhasil', 'Koreksi absensi berhasil disimpan.')->send();
+    }
 
     public function mount()
     {
