@@ -84,6 +84,20 @@ class DmsMiddlewareClient
         return true;
     }
 
+    public function updateDisplay(string $displayId, string $name): bool
+    {
+        $response = $this->request()->put("/displays/{$displayId}", [
+            'name' => $name,
+        ]);
+        
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal mengubah nama monitor.';
+            throw new \Exception($err);
+        }
+
+        return true;
+    }
+
     public function updateMapping(string $deviceId, string $targetType, string $targetId): bool
     {
         $response = $this->request()->put("/displays/{$deviceId}/mapping", [

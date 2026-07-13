@@ -83,6 +83,10 @@ class DisplayMonitorAdmin extends Component
         $this->errorMessage   = '';
     }
 
+    // Edit form
+    public string $editDisplayId = '';
+    public string $editDeviceName = '';
+
     public function registerDevice(DmsMiddlewareClient $client): void
     {
         $this->validate([
@@ -94,6 +98,33 @@ class DisplayMonitorAdmin extends Component
             $client->registerDisplay(strtoupper($this->displayId), $this->deviceName);
             $this->successMessage = "Perangkat monitor {$this->displayId} berhasil terdaftar!";
             $this->reset(['displayId', 'deviceName']);
+            $this->loadData($client);
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    public function editDevice(string $displayId, string $currentName): void
+    {
+        $this->editDisplayId = $displayId;
+        $this->editDeviceName = $currentName;
+    }
+
+    public function cancelEdit(): void
+    {
+        $this->reset(['editDisplayId', 'editDeviceName']);
+    }
+
+    public function updateDevice(DmsMiddlewareClient $client): void
+    {
+        $this->validate([
+            'editDeviceName' => 'required|string|max:255',
+        ]);
+
+        try {
+            $client->updateDisplay($this->editDisplayId, $this->editDeviceName);
+            $this->successMessage = "Nama perangkat {$this->editDisplayId} berhasil diubah!";
+            $this->reset(['editDisplayId', 'editDeviceName']);
             $this->loadData($client);
         } catch (\Exception $e) {
             $this->errorMessage = $e->getMessage();

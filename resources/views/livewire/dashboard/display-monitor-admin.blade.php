@@ -133,7 +133,26 @@
                             @forelse($devices as $dev)
                                 <tr class="border-b border-gray-50 dark:border-gray-700/30 hover:bg-gray-50/50 dark:hover:bg-gray-900/10">
                                     <td class="py-3 font-mono"><code>{{ $dev['display_id'] }}</code></td>
-                                    <td class="py-3 font-semibold text-gray-800 dark:text-white">{{ $dev['name'] }}</td>
+                                    <td class="py-3 font-semibold text-gray-800 dark:text-white">
+                                        @if($editDisplayId === $dev['display_id'])
+                                            <div class="flex items-center gap-2">
+                                                <input wire:model="editDeviceName" wire:keydown.enter="updateDevice" type="text" class="px-2 py-1 w-full min-w-[150px] bg-gray-50 border border-gray-200 dark:bg-gray-900 dark:border-gray-700 rounded text-sm text-gray-800 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500">
+                                                <button wire:click="updateDevice" class="text-emerald-600 hover:text-emerald-700" title="Simpan">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                                </button>
+                                                <button wire:click="cancelEdit" class="text-rose-600 hover:text-rose-700" title="Batal">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <div class="flex items-center gap-2 group">
+                                                <span>{{ $dev['name'] }}</span>
+                                                <button wire:click="editDevice('{{ $dev['display_id'] }}', '{{ $dev['name'] }}')" class="opacity-0 group-hover:opacity-100 text-sky-500 hover:text-sky-600 transition-opacity" title="Ubah Nama">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td class="py-3">
                                         @if(($dev['status'] ?? 'offline') === 'online')
                                             <span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full text-xs font-medium dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30">Online</span>
