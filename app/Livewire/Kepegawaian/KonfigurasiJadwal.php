@@ -15,6 +15,11 @@ class KonfigurasiJadwal extends Component
     #[Url]
     public $tab = 'aturan-jadwal';
 
+    protected function buildPermission(): string
+    {
+        return 'view-kepegawaian-konfigurasi-jadwal';
+    }
+
     public function render()
     {
         $this->authorizeFromRoute();

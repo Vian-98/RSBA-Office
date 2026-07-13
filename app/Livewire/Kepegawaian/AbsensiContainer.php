@@ -15,6 +15,11 @@ class AbsensiContainer extends Component
     #[Url]
     public $tab = 'kontrol';
 
+    protected function buildPermission(): string
+    {
+        return 'view-kepegawaian-absensi';
+    }
+
     public function render()
     {
         $this->authorizeFromRoute();
