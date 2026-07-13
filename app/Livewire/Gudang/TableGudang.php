@@ -74,8 +74,10 @@ class TableGudang extends Component implements HasTable, HasForms, HasActions
                 TextColumn::make('tgl_terakhir_masuk')
                     ->label('Terakhir Masuk')
                     ->getStateUsing(
-                        fn($record) => $record->stoks->max('penerimaanDet.penerimaan.tanggal')
-                            ? Carbon::parse($record->stoks->max('penerimaanDet.penerimaan.tanggal'))->diffForHumans()
+                        fn($record) => $record->stoks->max('penerimaanDet.penerimaan.created_at')
+                            ? Carbon::parse($record->stoks->max('penerimaanDet.penerimaan.created_at'))
+                                ->timezone('Asia/Jakarta')
+                                ->format('H:i d/m/Y')
                             : 'Belum pernah beli barang ini.'
                     ),
 
