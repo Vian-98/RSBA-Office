@@ -72,14 +72,7 @@ class DummyDataSeeder extends Seeder
         Schema::enableForeignKeyConstraints();
 
         // 4. Seed Ruangan
-        $ruangans = [
-            ['nama' => 'UGD', 'is_active' => 1, 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Poli Anak', 'is_active' => 1, 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Poli Bedah', 'is_active' => 1, 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Ruang Rawat Inap Melati', 'is_active' => 1, 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Gudang Farmasi Utama', 'is_active' => 1, 'created_at' => now(), 'updated_at' => now()],
-        ];
-        DB::table('ruangan')->insert($ruangans);
+        $this->call(RuanganDummySeeder::class);
         $ruanganIds = DB::table('ruangan')->pluck('id')->toArray();
 
         // 5. Seed Bagian
@@ -171,10 +164,11 @@ class DummyDataSeeder extends Seeder
         DB::table('sdm_kary_jabatan')->insert($karyawanJabatans);
 
         // --- Tambahan: Dummy Pegawai Ruangan untuk UGD dan Poli Anak ---
-        // UGD: id 1, Poli Anak: id 2 (asumsi berdasarkan urutan insert Ruangan di line 63)
-        $ruanganUgd = $ruanganIds[0] ?? 1;
-        $ruanganPoliAnak = $ruanganIds[1] ?? 2;
-        $ruanganMelati = $ruanganIds[3] ?? 4;
+        // Cari ID ruangan berdasarkan nama agar tidak tergantung pada urutan array
+        $ruanganUgd = DB::table('ruangan')->where('nama', 'like', '%UGD%')->value('id') 
+            ?? (DB::table('ruangan')->where('nama', 'like', '%IGD%')->value('id') ?? 1);
+        $ruanganPoliAnak = DB::table('ruangan')->where('nama', 'like', '%Poli Anak%')->value('id') ?? 2;
+        $ruanganMelati = DB::table('ruangan')->where('nama', 'like', '%Melati%')->value('id') ?? 4;
         
         $dummyPegawai = [];
         $kategoriKerja = \App\Enums\KategoriKerja::class;
