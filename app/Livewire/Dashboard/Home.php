@@ -187,6 +187,8 @@ class Home extends Component
         $totalHadir = 0;
         $totalTerlambat = 0;
         $menitTerlambat = 0;
+        $totalPulangCepat = 0;
+        $menitPulangCepat = 0;
         $menitLembur = 0;
         $totalCutiIzin = 0;
         $totalTidakHadir = 0;
@@ -227,6 +229,12 @@ class Home extends Component
                         $menitTerlambat += abs((int) $matches[1]);
                     }
                     break;
+                case \App\Enums\StatusKehadiran::PULANG_CEPAT:
+                    $totalPulangCepat++;
+                    if (preg_match('/Pulang cepat (-?\d+) menit/i', $d->catatan, $matches)) {
+                        $menitPulangCepat += abs((int) $matches[1]);
+                    }
+                    break;
                 case \App\Enums\StatusKehadiran::CUTI:
                 case \App\Enums\StatusKehadiran::IZIN:
                     $totalCutiIzin++;
@@ -240,9 +248,9 @@ class Home extends Component
             }
         }
 
-        $totalSudahLewat = $totalHadir + $totalTerlambat + $totalCutiIzin + $totalTidakHadir;
+        $totalSudahLewat = $totalHadir + $totalTerlambat + $totalPulangCepat + $totalCutiIzin + $totalTidakHadir;
         $persenKehadiran = $totalSudahLewat > 0 
-            ? round((($totalHadir + $totalTerlambat) / $totalSudahLewat) * 100) 
+            ? round((($totalHadir + $totalTerlambat + $totalPulangCepat) / $totalSudahLewat) * 100) 
             : 100;
 
         // Mendapatkan nama bulan lokalisasi Indonesia
@@ -255,6 +263,8 @@ class Home extends Component
             'hadir' => $totalHadir,
             'terlambat' => $totalTerlambat,
             'menit_terlambat' => $menitTerlambat,
+            'pulang_cepat' => $totalPulangCepat,
+            'menit_pulang_cepat' => $menitPulangCepat,
             'menit_lembur' => $menitLembur,
             'cuti_izin' => $totalCutiIzin,
             'tidak_hadir' => $totalTidakHadir,

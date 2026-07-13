@@ -70,7 +70,7 @@
                 </div>
                 
                 <!-- Right: Stats Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full md:w-auto flex-grow max-w-4xl">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 w-full md:w-auto flex-grow max-w-5xl">
                     <!-- Hadir (Tepat Waktu) -->
                     <div class="rounded-xl bg-emerald-50/50 border border-emerald-100/50 p-4 text-center">
                         <span class="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">Tepat Waktu</span>
@@ -83,6 +83,13 @@
                         <span class="text-[10px] font-semibold uppercase tracking-wider text-amber-600">Terlambat</span>
                         <h4 class="text-2xl font-bold text-amber-800 mt-1">{{ $rekapAbsen['terlambat'] }}</h4>
                         <p class="text-[10px] text-amber-500 font-medium">{{ $rekapAbsen['menit_terlambat'] }} Menit</p>
+                    </div>
+
+                    <!-- Pulang Cepat -->
+                    <div class="rounded-xl bg-orange-50/50 border border-orange-100/50 p-4 text-center">
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-600 font-bold">Pulang Cepat</span>
+                        <h4 class="text-2xl font-bold text-orange-800 mt-1">{{ $rekapAbsen['pulang_cepat'] }}</h4>
+                        <p class="text-[10px] text-orange-500 font-medium">{{ $rekapAbsen['menit_pulang_cepat'] }} Menit</p>
                     </div>
 
                     <!-- Lembur -->
