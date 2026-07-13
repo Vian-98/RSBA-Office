@@ -377,3 +377,22 @@
         </div>
     @endif
 </div>
+
+{{-- Background auto-refresh: calls refreshData() every 20 seconds —
+     only when tab is visible, uses Livewire 3's event dispatch. --}}
+@push('script')
+<script>
+document.addEventListener('livewire:initialized', function () {
+    const refreshInterval = setInterval(function () {
+        if (document.visibilityState === 'visible') {
+            Livewire.dispatch('display-status-changed');
+        }
+    }, 20000);
+
+    document.addEventListener('livewire:navigating', function () {
+        clearInterval(refreshInterval);
+    }, { once: true });
+});
+</script>
+@endpush
+

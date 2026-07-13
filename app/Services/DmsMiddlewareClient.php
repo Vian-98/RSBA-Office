@@ -25,8 +25,8 @@ class DmsMiddlewareClient
     {
         return Cache::remember('dms_api_token', 3600, function () {
             try {
-                $response = Http::post("{$this->baseUrl}/api/v1/auth/login", [
-                    'email' => $this->email,
+                $response = Http::timeout(5)->post("{$this->baseUrl}/api/v1/auth/login", [
+                    'email'    => $this->email,
                     'password' => $this->password,
                 ]);
 
@@ -56,7 +56,7 @@ class DmsMiddlewareClient
             }
         }
 
-        return Http::withToken($token)->baseUrl("{$this->baseUrl}/api/v1");
+        return Http::timeout(5)->withToken($token)->baseUrl("{$this->baseUrl}/api/v1");
     }
 
     public function getDisplays(): array
