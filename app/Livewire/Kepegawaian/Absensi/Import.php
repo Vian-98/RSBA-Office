@@ -17,20 +17,24 @@ class Import extends Component
     use WithFileUploads, Interactions;
 
     public $file;
+    public $filePath = null;
     public $previewData = null;
     public $isProcessing = false;
 
     public function updatedFile()
     {
         $this->validate([
-            'file' => 'required|mimes:xlsx,xls|max:5120',
+            'file' => 'required|mimes:xlsx,xls|max:10240', // Maksimal 10MB
         ]);
 
         $this->isProcessing = true;
 
         try {
+            // Simpan file secara lokal
+            $this->filePath = $this->file->store('absensi-temp');
+
             $import = new AbsensiImport();
-            Excel::import($import, $this->file);
+            Excel::import($import, \Illuminate\Support\Facades\Storage::path($this->filePath));
             
             if ($import->totalBaris === 0) {
                 $this->toast()->error('Gagal', 'File kosong atau format tidak sesuai.')->send();
@@ -44,7 +48,6 @@ class Import extends Component
                 'periode_akhir' => $import->periodeAkhir,
                 'total_baris' => $import->totalBaris,
                 'anomali' => $import->anomaliCount,
-                'parsed_data' => $import->parsedData,
             ];
 
         } catch (\Exception $e) {
@@ -57,10 +60,15 @@ class Import extends Component
 
     public function prosesImport()
     {
-        if (!$this->previewData) return;
+        if (!$this->previewData || !$this->filePath) return;
 
         DB::beginTransaction();
         try {
+            // Baca ulang file dari path penyimpanan
+            $import = new AbsensiImport();
+            Excel::import($import, \Illuminate\Support\Facades\Storage::path($this->filePath));
+            $parsedData = $import->parsedData;
+
             $log = AbsensiImportLog::create([
                 'nama_file' => $this->file->getClientOriginalName(),
                 'periode_awal' => $this->previewData['periode_awal'],
@@ -71,7 +79,6 @@ class Import extends Component
                 'diunggah_oleh' => auth()->id(),
             ]);
 
-            $parsedData = $this->previewData['parsed_data'];
             $matchedCount = 0;
             $unmatchedCount = 0;
 
@@ -92,6 +99,9 @@ class Import extends Component
             foreach (array_chunk($parsedData, 200) as $chunk) {
                 AbsensiStaging::insert($chunk);
             }
+
+            // Hapus file temp setelah berhasil di-import
+            \Illuminate\Support\Facades\Storage::delete($this->filePath);
 
             DB::commit();
 

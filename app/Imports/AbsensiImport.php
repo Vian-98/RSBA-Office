@@ -22,7 +22,7 @@ class AbsensiImport implements ToCollection
     {
         // Skip first 6 rows (header & metadata)
         $dataRows = $rows->slice(6);
-        $karyawanList = Karyawan::pluck('id', 'nip')->toArray(); // Buat mapping nip => id
+        $karyawanList = Karyawan::whereNotNull('pin_absen')->pluck('id', 'pin_absen')->toArray(); // Buat mapping pin_absen => id
 
         foreach ($dataRows as $row) {
             // Cek apakah baris kosong (kolom employee ID = 0 / kosong)

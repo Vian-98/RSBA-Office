@@ -11,6 +11,10 @@ use App\Enums\StatusKehadiran;
 
 class KalkulasiKehadiranService
 {
+    protected static array $cutiCache = [];
+    protected static array $shiftCache = [];
+    protected static array $ruanganShiftCache = [];
+
     /**
      * Hitung status kehadiran berdasarkan data staging dan shift
      *
@@ -25,25 +29,48 @@ class KalkulasiKehadiranService
     public function hitungStatus($karyawanId, $tanggal, $clockIn, $clockOut, $shiftId, $ruanganId)
     {
         // 1. Cek Surat Cuti / Izin (Prioritas Tertinggi)
-        // Kita asumsikan Cuti mencakup rentang tgl_mulai s/d tgl_akhir dengan status approved
-        $cuti = SuratCuti::where('karyawan_id', $karyawanId)
-            ->where('status', 'approved')
-            ->where(function ($q) use ($tanggal) {
-                $q->whereDate('tgl_mulai', '<=', $tanggal)
-                  ->whereDate('tgl_akhir', '>=', $tanggal);
-            })
-            ->first();
+        if (!isset(self::$cutiCache[$karyawanId])) {
+            self::$cutiCache[$karyawanId] = SuratCuti::where('karyawan_id', $karyawanId)
+                ->where('status', 'approved')
+                ->get()
+                ->toArray();
+        }
+        
+        $cuti = null;
+        foreach (self::$cutiCache[$karyawanId] as $c) {
+            $tglMulai = substr($c['tgl_mulai'], 0, 10);
+            $tglAkhir = substr($c['tgl_akhir'], 0, 10);
+            if ($tanggal >= $tglMulai && $tanggal <= $tglAkhir) {
+                $cuti = $c;
+                break;
+            }
+        }
 
         if ($cuti) {
-            // Karena tabel cuti tidak punya kolom pembeda tegas antara cuti/izin (hanya urgensi/jenis),
-            // secara default kita anggap CUTI. Bisa disesuaikan nanti dengan relasi jenis_cuti.
             return [
                 'status' => StatusKehadiran::CUTI,
-                'catatan' => 'Cuti/Izin resmi (' . $cuti->no_surat . ')'
+                'catatan' => 'Cuti/Izin resmi (' . ($cuti['no_surat'] ?? '') . ')'
             ];
         }
 
-        // 2. Cek apakah Clock In & Clock Out kosong
+        // 2. Cek apakah tidak ada shift scheduled (LIBUR)
+        if (!$shiftId) {
+            // Jika tidak ada shift dan tidak ada absen: ini hari libur biasa (TETAP LIBUR/TIDAK PERLU ABSEN)
+            if (empty($clockIn) && empty($clockOut)) {
+                return [
+                    'status' => StatusKehadiran::BELUM_DICEK,
+                    'catatan' => null
+                ];
+            }
+            
+            // Jika tidak ada shift tapi ternyata ada absen: hadir di hari libur
+            return [
+                'status' => StatusKehadiran::HADIR,
+                'catatan' => 'Hadir tanpa jadwal shift (Lembur/Tugas Tambahan).'
+            ];
+        }
+
+        // 3. Cek apakah Clock In & Clock Out kosong (dan ada shift terjadwal)
         if (empty($clockIn) && empty($clockOut)) {
             return [
                 'status' => StatusKehadiran::PERLU_VERIFIKASI,
@@ -51,16 +78,11 @@ class KalkulasiKehadiranService
             ];
         }
 
-        // 3. Cek Shift 
-        if (!$shiftId) {
-            // Hadir di hari libur (tidak ada shift terikat)
-            return [
-                'status' => StatusKehadiran::HADIR,
-                'catatan' => 'Hadir tanpa jadwal shift.'
-            ];
+        $jadwalShift = null;
+        if (!isset(self::$shiftCache[$shiftId])) {
+            self::$shiftCache[$shiftId] = JadwalShift::find($shiftId);
         }
-
-        $jadwalShift = JadwalShift::find($shiftId);
+        $jadwalShift = self::$shiftCache[$shiftId];
         
         if (!$jadwalShift) {
              return [
@@ -74,9 +96,14 @@ class KalkulasiKehadiranService
         $toleransi = $jadwalShift->toleransi_telat_menit ?? 0;
 
         if ($ruanganId) {
-            $ruanganShift = RuanganShift::where('ruangan_id', $ruanganId)
-                                        ->where('shift_id', $shiftId)
-                                        ->first();
+            $key = "{$ruanganId}_{$shiftId}";
+            if (!isset(self::$ruanganShiftCache[$key])) {
+                self::$ruanganShiftCache[$key] = RuanganShift::where('ruangan_id', $ruanganId)
+                                            ->where('shift_id', $shiftId)
+                                            ->first();
+            }
+            $ruanganShift = self::$ruanganShiftCache[$key];
+            
             if ($ruanganShift) {
                 $jamMasukEfektifStr = $ruanganShift->jam_masuk_efektif ?? $jamMasukEfektifStr;
                 $jamKeluarEfektifStr = $ruanganShift->jam_keluar_efektif ?? $jamKeluarEfektifStr;
@@ -136,7 +163,7 @@ class KalkulasiKehadiranService
             // Hitung Terlambat
             if ($actualIn && $actualIn->greaterThan($jamMasukBatas)) {
                 $status = StatusKehadiran::TERLAMBAT;
-                $diffMenit = $actualIn->diffInMinutes($jamMasukBatas);
+                $diffMenit = abs($actualIn->diffInMinutes($jamMasukBatas));
                 $catatan[] = 'Terlambat ' . $diffMenit . ' menit';
             }
 
@@ -145,7 +172,7 @@ class KalkulasiKehadiranService
                 if ($status === StatusKehadiran::HADIR) {
                     $status = StatusKehadiran::PULANG_CEPAT;
                 }
-                $diffMenit = $jamKeluarBatas->diffInMinutes($actualOut);
+                $diffMenit = abs($jamKeluarBatas->diffInMinutes($actualOut));
                 $catatan[] = 'Pulang cepat ' . $diffMenit . ' menit';
             }
         }

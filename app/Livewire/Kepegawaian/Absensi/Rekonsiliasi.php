@@ -76,6 +76,8 @@ class Rekonsiliasi extends Component
 
     public function commitKeJadwal()
     {
+        set_time_limit(180);
+
         $stagings = AbsensiStaging::where('import_batch_id', $this->batchId)
             ->where('status_matching', 'matched')
             ->get();
@@ -85,17 +87,30 @@ class Rekonsiliasi extends Component
             return;
         }
 
+        // Optimization: Fetch all details in one query and group by karyawan_id . '_' . tanggal
+        $karyawanIds = $stagings->pluck('karyawan_id')->unique()->toArray();
+        $startDate = $stagings->min('tanggal');
+        $endDate = $stagings->max('tanggal');
+
+        $details = JadwalKerjaDetail::whereIn('karyawan_id', $karyawanIds)
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->with('jadwalKerja')
+            ->get()
+            ->groupBy(function($item) {
+                $tanggalStr = $item->tanggal instanceof \Carbon\Carbon 
+                    ? $item->tanggal->format('Y-m-d') 
+                    : substr($item->tanggal, 0, 10);
+                return $item->karyawan_id . '_' . $tanggalStr;
+            });
+
         $service = new KalkulasiKehadiranService();
         $berhasil = 0;
 
         DB::beginTransaction();
         try {
             foreach ($stagings as $staging) {
-                // Cari JadwalKerjaDetail yang sesuai
-                $detail = JadwalKerjaDetail::where('karyawan_id', $staging->karyawan_id)
-                    ->where('tanggal', $staging->tanggal)
-                    ->with('jadwalKerja') // untuk get ruangan_id
-                    ->first();
+                $key = $staging->karyawan_id . '_' . $staging->tanggal->format('Y-m-d');
+                $detail = isset($details[$key]) ? $details[$key]->first() : null;
 
                 if ($detail) {
                     $ruanganId = $detail->jadwalKerja ? $detail->jadwalKerja->ruangan_id : null;
