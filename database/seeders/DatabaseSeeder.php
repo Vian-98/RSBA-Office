@@ -23,6 +23,9 @@ class DatabaseSeeder extends Seeder
             WilayahSeeder::class,
             DummyDataSeeder::class,
             JadwalSeeder::class, // Master shift, aturan jadwal, bagian-shift
+            KaryawanExcelSeeder::class, // Import 299 karyawan & buat tugas koordinator sdm
+            SkenarioTriRahayuSeeder::class, // Skenario absensi tes Tri Rahayu
+            JadwalDummyJuniSeeder::class, // Generate draf jadwal kerja Juni 2026
         ]);
     }
 }

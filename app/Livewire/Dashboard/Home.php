@@ -251,7 +251,7 @@ class Home extends Component
         $totalSudahLewat = $totalHadir + $totalTerlambat + $totalPulangCepat + $totalCutiIzin + $totalTidakHadir;
         $persenKehadiran = $totalSudahLewat > 0 
             ? round((($totalHadir + $totalTerlambat + $totalPulangCepat) / $totalSudahLewat) * 100) 
-            : 100;
+            : 0;
 
         // Mendapatkan nama bulan lokalisasi Indonesia
         $dateObj = \Carbon\Carbon::create($currentYear, $currentMonth, 1);

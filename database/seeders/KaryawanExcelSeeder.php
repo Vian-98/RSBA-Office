@@ -15,7 +15,7 @@ class KaryawanExcelSeeder extends Seeder
      */
     public function run(): void
     {
-        $inputFileName = 'E:/rsba/Absen 08 s.d 09 Jun.xlsx';
+        $inputFileName = database_path('seeders/files/Absen 08 s.d 09 Jun.xlsx');
 
         if (!file_exists($inputFileName)) {
             $this->command->error("File Excel tidak ditemukan: {$inputFileName}");
