@@ -15,3 +15,5 @@ Schedule::command('cuti:reset')
     ->runInBackground() //jalankan di background
     ->appendOutputTo(storage_path('logs/cuti-reset.log'))
     ->description('Reset cuti tahunan berdasarkan tgl masuk karyawan');
+
+

@@ -38,8 +38,8 @@ class MenuSeeder extends Seeder
             ],
             [
                 'id' => 3,
-                'nama' => 'Dashboard Kamar',
-                'route' => 'dashboard.kamar',
+                'nama' => 'Display Monitor',
+                'route' => 'dashboard.display-monitor.admin',
                 'icon' => 'bed',
                 'permission' => ['view-dashboard-kamar'],
                 'parent_id' => 1,
