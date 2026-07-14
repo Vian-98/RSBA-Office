@@ -7,6 +7,7 @@ use App\Models\Sdm\Bagian;
 use App\Traits\AuthorizesFromRoute;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use TallStackUi\Traits\Interactions;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,12 @@ class Index extends Component
 
     public string $search = '';
     public string $bagianFilter = '';
+    
+    #[Url]
     public string $periode = ''; // YYYY-MM
+    public ?string $carriedOverFromPeriode = null;
+    public int $calculatedLateMinutes = 0;
+    public int $calculatedOvertimeMinutes = 0;
 
     // Modal state for Slip View
     public bool $isOpenModal = false;
@@ -69,10 +75,19 @@ class Index extends Component
     public $calc_total_gaji = 0;
     public $calc_total_potongan = 0;
     public $calc_gaji_bersih = 0;
+    
+    public bool $isLocked = false;
 
     public function mount()
     {
-        $this->periode = now()->format('Y-m');
+        if (empty($this->periode)) {
+            $this->periode = now()->format('Y-m');
+        }
+
+        $this->isLocked = DB::table('sdm_payroll_period_locks')
+            ->where('periode', $this->periode)
+            ->where('is_approved', true)
+            ->exists();
     }
 
     public function updatingSearch(): void
@@ -211,6 +226,70 @@ class Index extends Component
             (double) $this->form_potongan_bank;
     }
 
+    private function calculateAttendanceStats(int $karyawanId): array
+    {
+        if (empty($this->periode)) {
+            return ['late_minutes' => 0, 'overtime_minutes' => 0];
+        }
+
+        try {
+            $parsedDate = Carbon::parse($this->periode . '-01');
+            $bulan = $parsedDate->month;
+            $tahun = $parsedDate->year;
+        } catch (\Exception $e) {
+            return ['late_minutes' => 0, 'overtime_minutes' => 0];
+        }
+
+        $details = DB::table('sdm_jadwal_kerja_detail')
+            ->where('karyawan_id', $karyawanId)
+            ->whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->get();
+
+        $toleransiTelat = (int) (DB::table('sdm_payroll_settings')->where('key', 'toleransi_telat_menit')->value('value') ?: 0);
+        $lateMinutes = 0;
+        $overtimeMinutes = 0;
+
+        foreach ($details as $d) {
+            // Lateness
+            if ($d->status_kehadiran && strtolower($d->status_kehadiran) === 'terlambat' && $d->catatan) {
+                if (preg_match('/Terlambat (-?\d+) menit/i', $d->catatan, $matches)) {
+                    $mins = abs((int) $matches[1]);
+                    if ($mins > $toleransiTelat) {
+                        $lateMinutes += $mins;
+                    }
+                }
+            }
+
+            // Overtime (Lembur)
+            if ($d->shift_id && $d->absen_keluar_at) {
+                $shift = DB::table('sdm_jadwal_shift')->where('id', $d->shift_id)->first();
+                if ($shift) {
+                    $jamKeluar = $shift->jam_keluar;
+                    $tglKeluar = Carbon::parse($d->tanggal);
+                    if ($shift->lintas_hari) {
+                        $tglKeluar->addDay();
+                    }
+                    try {
+                        $scheduledOut = Carbon::parse($tglKeluar->format('Y-m-d') . ' ' . $jamKeluar);
+                        $actualOut = Carbon::parse($d->absen_keluar_at);
+
+                        if ($actualOut->greaterThan($scheduledOut)) {
+                            $overtimeMinutes += abs($actualOut->diffInMinutes($scheduledOut));
+                        }
+                    } catch (\Exception $e) {
+                        // ignore invalid parsed dates
+                    }
+                }
+            }
+        }
+
+        return [
+            'late_minutes' => $lateMinutes,
+            'overtime_minutes' => $overtimeMinutes,
+        ];
+    }
+
     public function openInputModal(int $karyawanId)
     {
         $karyawan = Karyawan::with(['jabatan.bagian'])->findOrFail($karyawanId);
@@ -223,6 +302,17 @@ class Index extends Component
         $this->temp_allowance_type_id = null;
         $this->temp_allowance_nominal = 0;
 
+        // Calculate attendance stats & pre-fill auto-calculated parameters
+        $stats = $this->calculateAttendanceStats($karyawanId);
+        $this->calculatedLateMinutes = $stats['late_minutes'];
+        $this->calculatedOvertimeMinutes = $stats['overtime_minutes'];
+
+        $rateLate = (double) DB::table('sdm_payroll_settings')->where('key', 'potongan_telat_per_menit')->value('value') ?: 0;
+        $rateOvertime = (double) DB::table('sdm_payroll_settings')->where('key', 'tarif_lembur_per_menit')->value('value') ?: 0;
+
+        $autoPotonganAbsensi = (int) ($this->calculatedLateMinutes * $rateLate);
+        $autoUangLembur = (int) ($this->calculatedOvertimeMinutes * $rateOvertime);
+
         // Check if slip already exists for this period
         $slip = DB::table('sdm_payroll_slips')
             ->where('karyawan_id', $karyawanId)
@@ -230,6 +320,8 @@ class Index extends Component
             ->first();
 
         if ($slip) {
+            $this->carriedOverFromPeriode = null;
+
             // Load from database
             $this->form_gaji_pokok = (int) $slip->gaji_pokok;
             $this->form_tunjangan_tetap = (int) $slip->tunjangan_tetap;
@@ -287,28 +379,70 @@ class Index extends Component
                 ];
             }
         } else {
-            // Calculate base defaults
+            // Calculate base defaults (recalculated automatically)
             $base = PayrollCalculator::calculate($karyawan);
             $this->form_gaji_pokok = $base['gaji_pokok'];
-            $this->form_tunjangan_tetap = $base['tunjangan_tetap'];
-            $this->form_tunjangan_absensi = $base['tunjangan_absensi'];
             $this->form_tunjangan_jabatan = $base['tunjangan_jabatan'];
             $this->form_umk_allocations = $base['allocations_breakdown'];
 
-            // Reset inputs to 0
-            $this->form_tunjangan_shift = 0;
-            $this->form_tunjangan_radiologi = 0;
-            $this->form_tunjangan_lain = 0;
-            $this->form_uang_lembur = 0;
-            $this->form_tunjangan_hari_raya = 0;
-            
-            $this->form_potongan_absensi = 0;
-            $this->form_potongan_cash_bon = 0;
-            $this->form_potongan_obat = 0;
-            $this->form_potongan_lain = 0;
-            $this->form_potongan_bank = 0;
-            
-            $this->form_bpjs_keluarga_tambahan = 0;
+            // Query employee's last slip from previous periods
+            $lastSlip = DB::table('sdm_payroll_slips')
+                ->where('karyawan_id', $karyawanId)
+                ->where('periode', '<', $this->periode)
+                ->orderBy('periode', 'desc')
+                ->first();
+
+            if ($lastSlip) {
+                $this->carriedOverFromPeriode = $lastSlip->periode;
+
+                // Copy routine variables
+                $this->form_tunjangan_shift = (int) $lastSlip->tunjangan_shift;
+                $this->form_tunjangan_radiologi = (int) $lastSlip->tunjangan_radiologi;
+                $this->form_bpjs_keluarga_tambahan = (int) $lastSlip->bpjs_keluarga_tambahan;
+
+                // Reset manual/variable deductions per month requirements
+                $this->form_potongan_absensi = $autoPotonganAbsensi;
+                $this->form_potongan_cash_bon = 0;
+                $this->form_potongan_obat = 0;
+                $this->form_potongan_lain = 0;
+                $this->form_potongan_bank = 0;
+
+                // Set auto-calculated variables and reset THR
+                $this->form_uang_lembur = $autoUangLembur;
+                $this->form_tunjangan_hari_raya = 0;
+
+                // Load dynamic other allowances from that last slip
+                $dbItems = DB::table('sdm_payroll_slip_allowances')
+                    ->join('sdm_payroll_allowance_types', 'sdm_payroll_slip_allowances.allowance_type_id', '=', 'sdm_payroll_allowance_types.id')
+                    ->where('sdm_payroll_slip_allowances.payroll_slip_id', $lastSlip->id)
+                    ->select('sdm_payroll_slip_allowances.allowance_type_id', 'sdm_payroll_allowance_types.nama', 'sdm_payroll_slip_allowances.nominal')
+                    ->get();
+
+                foreach ($dbItems as $dbItem) {
+                    $this->form_tunjangan_lain_items[] = [
+                        'allowance_type_id' => $dbItem->allowance_type_id,
+                        'nama' => $dbItem->nama,
+                        'nominal' => (double) $dbItem->nominal,
+                    ];
+                }
+            } else {
+                $this->carriedOverFromPeriode = null;
+
+                // Reset inputs to 0 / Auto-calculations
+                $this->form_tunjangan_shift = 0;
+                $this->form_tunjangan_radiologi = 0;
+                $this->form_tunjangan_lain = 0;
+                $this->form_uang_lembur = $autoUangLembur;
+                $this->form_tunjangan_hari_raya = 0;
+                
+                $this->form_potongan_absensi = $autoPotonganAbsensi;
+                $this->form_potongan_cash_bon = 0;
+                $this->form_potongan_obat = 0;
+                $this->form_potongan_lain = 0;
+                $this->form_potongan_bank = 0;
+                
+                $this->form_bpjs_keluarga_tambahan = 0;
+            }
         }
 
         $this->recalculate();
@@ -322,10 +456,16 @@ class Index extends Component
         $this->selectedKaryawan = null;
         $this->form_tunjangan_lain_items = [];
         $this->form_umk_allocations = [];
+        $this->carriedOverFromPeriode = null;
     }
 
     public function savePayroll()
     {
+        if (DB::table('sdm_payroll_period_locks')->where('periode', $this->periode)->where('is_approved', true)->exists()) {
+            $this->toast()->error('Gagal !', 'Periode ini telah disetujui dan terkunci. Data tidak dapat diubah.')->send();
+            return;
+        }
+
         $this->validate([
             'form_gaji_pokok' => 'required|numeric|min:0',
             'form_tunjangan_tetap' => 'required|numeric|min:0',
