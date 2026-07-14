@@ -341,25 +341,7 @@ class TransaksiBeliLangsung extends Component
                 ]);
 
                 // 03.04 Mutasi Stok
-                StokMutasi::insert(
-                    [
-                        "stok_id" => $stok->id,
-                        "barang_id" => $dets->barang_id,
-                        "jenis_mutasi" => 'PEMBELIAN',
-                        "jumlah" => $jumlahBase,
-                        "multiplier" => 1,
-                        "stok_sebelum" => 0,
-                        "stok_sesudah" => $jumlahBase,
-                        "keterangan" => 'Pembelian No. ' . $pembelian->no,
-                        "referensi_type" => Pembelian::class,
-                        "referensi_id" => $pembelian->id,
-                        "created_by" => auth()->id(),
-                        "is_posted" => 1,
-                        "is_reversed" => 0,
-                        "created_at" => now(),
-                        "updated_at" => now()
-                    ]
-                );
+                $this->createMutasiPembelian($stok, $dets, $pembelian, $jumlahBase);
             }
             // Update permintaan details
             if (!empty($this->selectedPermintaan)) {
@@ -386,6 +368,40 @@ class TransaksiBeliLangsung extends Component
         }
     }
 
+
+    /**
+     * Catat mutasi stok untuk transaksi pembelian langsung.
+     * stok_sebelum = 0 karena ini adalah baris stok (batch) baru yang baru pertama kali dibuat.
+     */
+    private function createMutasiPembelian(
+        object $stok,
+        object $dets,
+        object $pembelian,
+        int $jumlahBase
+    ): void {
+        $keterangan = sprintf(
+            'Pembelian Langsung No. %s | Barang ID: %d | Qty: %d',
+            $pembelian->no,
+            $dets->barang_id,
+            $jumlahBase
+        );
+
+        StokMutasi::create([
+            'stok_id'       => $stok->id,
+            'barang_id'     => $dets->barang_id,
+            'jenis_mutasi'  => 'PEMBELIAN',
+            'jumlah'        => $jumlahBase,
+            'multiplier'    => 1,
+            'stok_sebelum'  => 0,          // Batch stok baru, belum pernah ada sebelumnya
+            'stok_sesudah'  => $jumlahBase,
+            'keterangan'    => $keterangan,
+            'referensi_type' => PembelianDetail::class,
+            'referensi_id'  => $dets->id,
+            'created_by'    => auth()->id(),
+            'is_posted'     => 1,
+            'is_reversed'   => 0,
+        ]);
+    }
 
     // generate nomor
     // urutan nomor berganti setiap tahun
