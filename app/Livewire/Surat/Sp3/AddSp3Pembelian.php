@@ -280,6 +280,13 @@ class AddSp3Pembelian extends Component
                 ]
             );
 
+            // Update status pembayaran PO karena SP3 otomatis disetujui (manual sign)
+            \App\Models\Gudang\Pembelian::where('sp3_id', $suratSp3->id)
+                ->update([
+                    'status_pembayaran' => 'lunas',
+                    'tgl_pembayaran' => now()->format('Y-m-d')
+                ]);
+
             // return
             $this->suratSp3 = $suratSp3;
             DB::commit();

@@ -11,7 +11,6 @@ use Livewire\Component;
 use Filament\Tables\Table;
 use App\Exports\OpnameHasil;
 use App\Models\Gudang\OpnameStok;
-use App\Models\Gudang\StokMutasi;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use TallStackUi\Traits\Interactions;
@@ -189,27 +188,6 @@ class TablePelaksanaan extends Component implements HasTable, HasForms, HasActio
         }
     }
 
-    private function mutasi(int $opname_id)
-    {
-
-        DB::beginTransaction();
-        try {
-            $opnameData = OpnameStokDetail::where('opname_id', $opname_id)
-                ->where('selisih', '!=', 0)
-                ->get();
-
-            foreach ($opnameData as $data) {
-                StokMutasi::insert([
-                    'barang_id' => $data->barang_id,
-                ]);
-            }
-
-            DB::commit();
-        } catch (Throwable $e) {
-
-            DB::rollBack();
-        }
-    }
 
     public function render()
     {

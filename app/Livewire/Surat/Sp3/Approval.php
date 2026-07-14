@@ -124,11 +124,20 @@ class Approval extends Component
             $data['signature_hash'] = $signature['data_hash']; //adding hash to data
 
             SuratSp3Approval::create($data);
-            $this->suratSp3->update(
-                [
-                    'status' => $this->status === 'manual' ? 'approved' : $this->status
-                ]
-            );
+            $finalStatus = $this->status === 'manual' ? 'approved' : $this->status;
+            
+            $this->suratSp3->update([
+                'status' => $finalStatus
+            ]);
+
+            // Update status pembayaran PO jika SP3 disetujui
+            if (in_array($finalStatus, ['approved', 'disetujui'])) {
+                \App\Models\Gudang\Pembelian::where('sp3_id', $this->suratSp3->id)
+                    ->update([
+                        'status_pembayaran' => 'lunas',
+                        'tgl_pembayaran' => now()->format('Y-m-d')
+                    ]);
+            }
 
             DB::commit();
             $this->dispatch('update-approval');
