@@ -14,6 +14,12 @@ class WilayahSeeder extends Seeder
     public function run(): void
     {
         $path = 'public/wilayah.sql';
+
+        // Increase max_allowed_packet globally to handle the large SQL file (~2.7MB)
+        DB::statement("SET GLOBAL max_allowed_packet = 16777216"); // 16MB
+        // Reconnect so the new global value takes effect for this session
+        DB::reconnect();
+
         DB::unprepared(file_get_contents($path));
         $this->command->info('Wilayah table seeded!');
     }
