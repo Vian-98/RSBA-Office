@@ -154,4 +154,44 @@ class DmsMiddlewareClient
         $response = $this->request()->post('/sync/schedules');
         return $response->successful();
     }
+
+    public function getInpatientRooms(): array
+    {
+        try {
+            $response = $this->request()->get('/inpatient-rooms');
+            return $response->successful() ? (array) ($response->json('data') ?? []) : [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    public function createInpatientRoom(array $data): array
+    {
+        $response = $this->request()->post('/inpatient-rooms', $data);
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal membuat ruangan baru.';
+            throw new \Exception($err);
+        }
+        return (array) $response->json('data');
+    }
+
+    public function updateInpatientRoom(string $id, array $data): array
+    {
+        $response = $this->request()->put("/inpatient-rooms/{$id}", $data);
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal memperbarui ruangan.';
+            throw new \Exception($err);
+        }
+        return (array) $response->json('data');
+    }
+
+    public function deleteInpatientRoom(string $id): bool
+    {
+        $response = $this->request()->delete("/inpatient-rooms/{$id}");
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal menghapus ruangan.';
+            throw new \Exception($err);
+        }
+        return true;
+    }
 }

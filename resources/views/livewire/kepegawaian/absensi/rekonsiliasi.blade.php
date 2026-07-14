@@ -22,7 +22,7 @@
                     </svg>
                     <div>
                         <p class="font-semibold text-indigo-900">Sedang Memproses Rekonsiliasi Absensi...</p>
-                        <p class="text-xs text-indigo-700 mt-0.5">Sistem sedang menghitung status kehadiran, keterlambatan, dan mencatat jam absen finger karyawan ke Jadwal Kerja.</p>
+                        <p class="text-xs text-indigo-700 mt-0.5">Sistem sedang menghitung status kehadiran, keterlambatan, dan mencatat jam absen mesin karyawan ke Jadwal Kerja.</p>
                     </div>
                 </div>
             </x-ts:alert>
