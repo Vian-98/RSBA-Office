@@ -10,9 +10,10 @@
         </x-slot:header>
 
         <!-- Filters -->
-        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-5">
+        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-6">
             <div>
                 <x-ts:select.styled 
+                    wire:key="filter-mode-select"
                     label="Mode Rekap" 
                     wire:model.live="mode" 
                     :options="[
@@ -26,6 +27,7 @@
             @if($mode === 'bulanan')
                 <div>
                     <x-ts:select.styled 
+                        wire:key="filter-bulan-select"
                         label="Bulan" 
                         wire:model.live="bulan" 
                         :options="[
@@ -47,13 +49,10 @@
                 </div>
                 <div>
                     <x-ts:select.styled 
+                        wire:key="filter-tahun-select"
                         label="Tahun" 
                         wire:model.live="tahun" 
-                        :options="[
-                            ['label' => '2025', 'value' => 2025],
-                            ['label' => '2026', 'value' => 2026],
-                            ['label' => '2027', 'value' => 2027],
-                        ]"
+                        :options="collect(range(date('Y') + 1, 2008))->map(fn($y) => ['label' => (string)$y, 'value' => $y])->toArray()"
                         select="label:label|value:value"
                     />
                 </div>
@@ -65,6 +64,7 @@
 
             <div>
                 <x-ts:select.styled 
+                    wire:key="filter-ruangan-select"
                     label="Ruangan (Bagian)" 
                     wire:model.live="ruangan_id" 
                     :options="$ruangans->map(fn($r) => ['label' => $r->nama, 'value' => $r->id])->toArray()"
@@ -76,6 +76,7 @@
             
             <div>
                 <x-ts:select.styled 
+                    wire:key="filter-karyawan-select"
                     label="Karyawan" 
                     wire:model.live="karyawan_id" 
                     :options="$karyawans->map(fn($k) => ['label' => $k->full_nama, 'value' => $k->id])->toArray()"
@@ -84,44 +85,84 @@
                     searchable
                 />
             </div>
+
+            <div>
+                <x-ts:select.styled 
+                    wire:key="filter-status-select"
+                    label="Status" 
+                    wire:model.live="statusFilter" 
+                    :options="[
+                        ['label' => 'Semua Status', 'value' => ''],
+                        ['label' => 'Belum Dicek / LIBUR', 'value' => 'belum_dicek'],
+                        ['label' => 'Hadir', 'value' => 'hadir'],
+                        ['label' => 'Terlambat', 'value' => 'terlambat'],
+                        ['label' => 'Pulang Cepat', 'value' => 'pulang_cepat'],
+                        ['label' => 'Tidak Hadir', 'value' => 'tidak_hadir'],
+                        ['label' => 'Cuti', 'value' => 'cuti'],
+                        ['label' => 'Izin', 'value' => 'izin'],
+                        ['label' => 'Perlu Verifikasi', 'value' => 'perlu_verifikasi']
+                    ]"
+                    select="label:label|value:value"
+                    placeholder="Semua Status"
+                />
+            </div>
         </div>
 
         <!-- Summary Cards -->
         <div class="grid grid-cols-2 gap-4 mb-6 md:grid-cols-7">
-            <div class="p-4 text-center rounded-lg bg-green-50 border border-green-100">
-                <div class="text-sm text-green-600 font-medium">Hadir</div>
-                <div class="text-2xl font-bold text-green-700">{{ $summary['hadir'] }}</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'hadir' ? '' : 'hadir' }}')" class="p-4 text-center rounded-lg bg-green-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'hadir' ? 'border-green-500 ring-2 ring-green-200' : 'border-green-100' }}">
+                <div class="text-sm text-green-600 font-medium select-none">Hadir</div>
+                <div class="text-2xl font-bold text-green-700 select-none">{{ $summary['hadir'] }}</div>
             </div>
-            <div class="p-4 text-center rounded-lg bg-yellow-50 border border-yellow-100">
-                <div class="text-sm text-yellow-600 font-medium">Terlambat</div>
-                <div class="text-2xl font-bold text-yellow-700">{{ $summary['terlambat'] }}</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'terlambat' ? '' : 'terlambat' }}')" class="p-4 text-center rounded-lg bg-yellow-50 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'terlambat' ? 'border-yellow-500 ring-2 ring-yellow-200' : 'border-yellow-100' }}">
+                <div>
+                    <div class="text-sm text-yellow-600 font-medium select-none">Terlambat</div>
+                    <div class="text-2xl font-bold text-yellow-700 select-none">{{ $summary['terlambat'] }}</div>
+                </div>
+                @if($summary['menit_terlambat'] > 0)
+                    <div class="text-xs text-yellow-600 font-semibold mt-1 select-none">({{ $summary['menit_terlambat'] }} mnt)</div>
+                @endif
             </div>
-            <div class="p-4 text-center rounded-lg bg-orange-50 border border-orange-100">
-                <div class="text-sm text-orange-600 font-medium">Pulang Cepat</div>
-                <div class="text-2xl font-bold text-orange-700">{{ $summary['pulang_cepat'] }}</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'pulang_cepat' ? '' : 'pulang_cepat' }}')" class="p-4 text-center rounded-lg bg-orange-50 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'pulang_cepat' ? 'border-orange-500 ring-2 ring-orange-200' : 'border-orange-100' }}">
+                <div>
+                    <div class="text-sm text-orange-600 font-medium select-none">Pulang Cepat</div>
+                    <div class="text-2xl font-bold text-orange-700 select-none">{{ $summary['pulang_cepat'] }}</div>
+                </div>
+                @if($summary['menit_pulang_cepat'] > 0)
+                    <div class="text-xs text-orange-600 font-semibold mt-1 select-none">({{ $summary['menit_pulang_cepat'] }} mnt)</div>
+                @endif
             </div>
-            <div class="p-4 text-center rounded-lg bg-red-50 border border-red-100">
-                <div class="text-sm text-red-600 font-medium">Tidak Hadir</div>
-                <div class="text-2xl font-bold text-red-700">{{ $summary['tidak_hadir'] }}</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'tidak_hadir' ? '' : 'tidak_hadir' }}')" class="p-4 text-center rounded-lg bg-red-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'tidak_hadir' ? 'border-red-500 ring-2 ring-red-200' : 'border-red-100' }}">
+                <div class="text-sm text-red-600 font-medium select-none">Tidak Hadir</div>
+                <div class="text-2xl font-bold text-red-700 select-none">{{ $summary['tidak_hadir'] }}</div>
             </div>
-            <div class="p-4 text-center rounded-lg bg-blue-50 border border-blue-100">
-                <div class="text-sm text-blue-600 font-medium">Cuti</div>
-                <div class="text-2xl font-bold text-blue-700">{{ $summary['cuti'] }}</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'cuti' ? '' : 'cuti' }}')" class="p-4 text-center rounded-lg bg-blue-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'cuti' ? 'border-blue-500 ring-2 ring-blue-200' : 'border-blue-100' }}">
+                <div class="text-sm text-blue-600 font-medium select-none">Cuti</div>
+                <div class="text-2xl font-bold text-blue-700 select-none">{{ $summary['cuti'] }}</div>
             </div>
-            <div class="p-4 text-center rounded-lg bg-cyan-50 border border-cyan-100">
-                <div class="text-sm text-cyan-600 font-medium">Izin</div>
-                <div class="text-2xl font-bold text-cyan-700">{{ $summary['izin'] }}</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'izin' ? '' : 'izin' }}')" class="p-4 text-center rounded-lg bg-cyan-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'izin' ? 'border-cyan-500 ring-2 ring-cyan-200' : 'border-cyan-100' }}">
+                <div class="text-sm text-cyan-600 font-medium select-none">Izin</div>
+                <div class="text-2xl font-bold text-cyan-700 select-none">{{ $summary['izin'] }}</div>
             </div>
-            <div class="p-4 text-center rounded-lg bg-gray-50 border border-gray-200">
-                <div class="text-sm text-gray-600 font-medium">Perlu Verifikasi</div>
-                <div class="text-2xl font-bold text-gray-700">{{ $summary['perlu_verifikasi'] }}</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'perlu_verifikasi' ? '' : 'perlu_verifikasi' }}')" class="p-4 text-center rounded-lg bg-gray-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'perlu_verifikasi' ? 'border-gray-500 ring-2 ring-gray-300' : 'border-gray-200' }}">
+                <div class="text-sm text-gray-600 font-medium select-none">Perlu Verifikasi</div>
+                <div class="text-2xl font-bold text-gray-700 select-none">{{ $summary['perlu_verifikasi'] }}</div>
             </div>
         </div>
 
         <!-- Data Table (Summary per Karyawan or Detailed List) -->
-        <div class="mt-8">
-            <h4 class="mb-4 text-md font-semibold text-gray-700">Rincian per Karyawan</h4>
-            <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <div x-data="{ showSummary: true }" class="mt-8">
+            <div class="flex items-center gap-2 mb-4">
+                <button type="button" @click="showSummary = !showSummary" class="flex items-center gap-2 text-left hover:opacity-80 transition-opacity focus:outline-none group">
+                    <h4 class="text-md font-semibold text-gray-700 select-none">Rincian per Karyawan</h4>
+                    <!-- Dynamic Chevron -->
+                    <svg class="w-4 h-4 text-gray-400 transition-transform duration-300 transform group-hover:text-indigo-500" :class="showSummary ? 'rotate-180 text-indigo-500' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div x-show="showSummary" x-transition x-cloak class="overflow-x-auto rounded-lg border border-gray-200">
                 <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                         <tr>
@@ -142,8 +183,26 @@
                                     {{ $rk['karyawan']->full_nama ?? '-' }}
                                 </td>
                                 <td class="px-6 py-4 text-center font-semibold text-green-600">{{ $rk['hadir'] }}</td>
-                                <td class="px-6 py-4 text-center">{{ $rk['terlambat'] > 0 ? $rk['terlambat'] : '-' }}</td>
-                                <td class="px-6 py-4 text-center">{{ $rk['pulang_cepat'] > 0 ? $rk['pulang_cepat'] : '-' }}</td>
+                                <td class="px-6 py-4 text-center">
+                                    @if($rk['terlambat'] > 0)
+                                        <span class="font-semibold">{{ $rk['terlambat'] }}</span>
+                                        @if($rk['menit_terlambat'] > 0)
+                                            <div class="text-xs text-gray-500 font-normal">({{ $rk['menit_terlambat'] }} mnt)</div>
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    @if($rk['pulang_cepat'] > 0)
+                                        <span class="font-semibold">{{ $rk['pulang_cepat'] }}</span>
+                                        @if($rk['menit_pulang_cepat'] > 0)
+                                            <div class="text-xs text-gray-500 font-normal">({{ $rk['menit_pulang_cepat'] }} mnt)</div>
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 text-center">{{ $rk['tidak_hadir'] > 0 ? $rk['tidak_hadir'] : '-' }}</td>
                                 <td class="px-6 py-4 text-center">{{ $rk['cuti'] > 0 ? $rk['cuti'] : '-' }}</td>
                                 <td class="px-6 py-4 text-center">{{ $rk['izin'] > 0 ? $rk['izin'] : '-' }}</td>
@@ -168,7 +227,6 @@
         <div x-data="{ showLogs: false }" class="mt-8 border-t border-gray-100 pt-6">
             <div class="flex items-center justify-between mb-4">
                 <button type="button" @click="showLogs = !showLogs" class="flex items-center gap-2 text-left hover:opacity-80 transition-opacity focus:outline-none group">
-                    <x-ts:icon name="tabler.list-details" class="w-5 h-5 text-indigo-500" />
                     <h4 class="text-md font-semibold text-gray-700 select-none">Rincian Log Harian & Koreksi Absensi</h4>
                     <!-- Dynamic Chevron -->
                     <svg class="w-4 h-4 text-gray-400 transition-transform duration-300 transform group-hover:text-indigo-500" :class="showLogs ? 'rotate-180 text-indigo-500' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -188,7 +246,30 @@
                                 <th scope="col" class="px-6 py-3 text-center">Shift</th>
                                 <th scope="col" class="px-6 py-3 text-center">Jam Kerja (Shift)</th>
                                 <th scope="col" class="px-6 py-3 text-center">Jam Aktual (Mesin)</th>
-                                <th scope="col" class="px-6 py-3 text-center">Status</th>
+                                <th scope="col" class="px-6 py-3 text-center">
+                                    <div class="flex items-center justify-center">
+                                        <x-ts:dropdown position="bottom-end">
+                                            <x-slot:action>
+                                                <button type="button" x-on:click="show = !show" class="flex items-center justify-center gap-1 text-xs font-semibold uppercase text-gray-700 hover:text-indigo-600 transition-colors focus:outline-none select-none">
+                                                    <span>STATUS</span>
+                                                    @if($statusFilter)
+                                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                                                    @endif
+                                                    <x-ts:icon name="tabler.filter" class="w-3.5 h-3.5 text-gray-400 hover:text-indigo-600" />
+                                                </button>
+                                            </x-slot:action>
+                                            <x-ts:dropdown.items text="Semua Status" wire:click="$set('statusFilter', '')" class="{{ $statusFilter === '' ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}" />
+                                            <x-ts:dropdown.items text="Belum Dicek / LIBUR" wire:click="$set('statusFilter', 'belum_dicek')" class="{{ $statusFilter === 'belum_dicek' ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}" />
+                                            <x-ts:dropdown.items text="Hadir" wire:click="$set('statusFilter', 'hadir')" class="{{ $statusFilter === 'hadir' ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}" />
+                                            <x-ts:dropdown.items text="Terlambat" wire:click="$set('statusFilter', 'terlambat')" class="{{ $statusFilter === 'terlambat' ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}" />
+                                            <x-ts:dropdown.items text="Pulang Cepat" wire:click="$set('statusFilter', 'pulang_cepat')" class="{{ $statusFilter === 'pulang_cepat' ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}" />
+                                            <x-ts:dropdown.items text="Tidak Hadir" wire:click="$set('statusFilter', 'tidak_hadir')" class="{{ $statusFilter === 'tidak_hadir' ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}" />
+                                            <x-ts:dropdown.items text="Cuti" wire:click="$set('statusFilter', 'cuti')" class="{{ $statusFilter === 'cuti' ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}" />
+                                            <x-ts:dropdown.items text="Izin" wire:click="$set('statusFilter', 'izin')" class="{{ $statusFilter === 'izin' ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}" />
+                                            <x-ts:dropdown.items text="Perlu Verifikasi" wire:click="$set('statusFilter', 'perlu_verifikasi')" class="{{ $statusFilter === 'perlu_verifikasi' ? 'font-bold text-indigo-600 bg-indigo-50' : '' }}" />
+                                        </x-ts:dropdown>
+                                    </div>
+                                </th>
                                 <th scope="col" class="px-6 py-3">Catatan / Alasan</th>
                                 <th scope="col" class="px-6 py-3 text-center">Aksi</th>
                             </tr>
@@ -236,9 +317,13 @@
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         @if($r->status_kehadiran)
-                                            <x-ts:badge :color="$r->status_kehadiran->color()" text="{{ $r->status_kehadiran->nama() }}" xs />
+                                            <button type="button" wire:click="$set('statusFilter', '{{ $r->status_kehadiran->value }}')" class="hover:opacity-80 transition-opacity focus:outline-none select-none">
+                                                <x-ts:badge :color="$r->status_kehadiran->color()" text="{{ $r->status_kehadiran->nama() }}" xs />
+                                            </button>
                                         @else
-                                            <x-ts:badge color="gray" text="Belum Dicek" xs />
+                                            <button type="button" wire:click="$set('statusFilter', 'belum_dicek')" class="hover:opacity-80 transition-opacity focus:outline-none select-none">
+                                                <x-ts:badge color="gray" text="Belum Dicek" xs />
+                                            </button>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-xs text-gray-600 max-w-xs truncate" title="{{ $r->catatan }}">

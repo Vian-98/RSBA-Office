@@ -58,7 +58,7 @@
                                     @endfor
                                 </select>
                                 <select wire:model.live="selectedTahun" class="text-xs rounded-lg border-gray-200 bg-slate-50 py-0.5 pl-2 pr-8 text-slate-700 font-medium focus:border-indigo-500 focus:ring-indigo-500 cursor-pointer">
-                                    @for($y = 2025; $y <= 2027; $y++)
+                                    @for($y = date('Y') + 1; $y >= 2008; $y--)
                                         <option value="{{ $y }}">{{ $y }}</option>
                                     @endfor
                                 </select>
@@ -114,7 +114,7 @@
 
                     <!-- Alpa / Tidak Hadir -->
                     <div class="rounded-xl bg-rose-50/50 border border-rose-100/50 p-4 text-center">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-700">Mangkir / Alpa</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-700">Tidak Hadir</span>
                         <h4 class="text-2xl font-bold text-rose-800 mt-1">{{ $rekapAbsen['tidak_hadir'] }}</h4>
                         <p class="text-[10px] text-rose-600 font-semibold">Hari</p>
                     </div>

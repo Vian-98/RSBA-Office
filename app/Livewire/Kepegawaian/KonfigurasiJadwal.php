@@ -15,14 +15,30 @@ class KonfigurasiJadwal extends Component
     #[Url]
     public $tab = 'aturan-jadwal';
 
-    protected function buildPermission(): string
+    public function mount()
     {
-        return 'view-kepegawaian-konfigurasi-jadwal';
+        // Cek jika tab koordinator diakses oleh non-admin/non-sdm, kembalikan ke default
+        if ($this->tab === 'koordinator' && !auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            $this->tab = 'aturan-jadwal';
+        }
+    }
+
+    public function updatedTab($value)
+    {
+        if ($value === 'koordinator' && !auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            $this->tab = 'aturan-jadwal';
+        }
     }
 
     public function render()
     {
-        $this->authorizeFromRoute();
+        // Izinkan semua koordinator, Staff-SDM, dan Super-Admin
+        abort_unless(
+            auth()->user()?->isKoordinator(),
+            403,
+            "Anda tidak memiliki hak akses ke halaman Konfigurasi Jadwal."
+        );
+
         return view('livewire.kepegawaian.konfigurasi-jadwal');
     }
 }

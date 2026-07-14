@@ -54,7 +54,7 @@
                             </span>
                         @elseif($status === \App\Enums\StatusKehadiran::TIDAK_HADIR)
                             <span class="px-2 py-0.5 text-2xs font-semibold rounded bg-red-100 text-red-800 border border-red-200">
-                                ALPA / MANGKIR
+                                TIDAK HADIR
                             </span>
                         @elseif($detail->shift_id)
                             <span class="px-2 py-0.5 text-2xs font-semibold rounded text-slate-800" style="background-color: {{ $detail->shift->warna ?? '#e2e8f0' }}">

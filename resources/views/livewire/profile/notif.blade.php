@@ -91,7 +91,7 @@
                             </div>
                             <p class="mt-1 text-2xs text-slate-600 leading-relaxed">{{ $notif['message'] }}</p>
                             @if(isset($notif['route']) && Route::has($notif['route']))
-                                <a href="{{ route($notif['route']) }}" class="mt-2 inline-flex items-center gap-0.5 text-3xs font-bold {{ $colors['text'] }} hover:underline">
+                                <a href="{{ route($notif['route'], $notif['route_params'] ?? []) }}" class="mt-2 inline-flex items-center gap-0.5 text-3xs font-bold {{ $colors['text'] }} hover:underline">
                                     Buka Halaman
                                     <svg class="h-2.5 w-2.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />

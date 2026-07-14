@@ -18,11 +18,13 @@
                     class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
                     Aturan Jadwal
                 </button>
-                <button @click="tab = 'koordinator'"
-                    :class="tab === 'koordinator' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
-                    class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
-                    Koordinator
-                </button>
+                @if(auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM']))
+                    <button @click="tab = 'koordinator'"
+                        :class="tab === 'koordinator' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
+                        class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                        Koordinator
+                    </button>
+                @endif
                 <button @click="tab = 'master-shift'"
                     :class="tab === 'master-shift' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
                     class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
@@ -35,9 +37,11 @@
             <div x-show="tab === 'aturan-jadwal'" x-cloak>
                 @livewire('master.jadwal-aturan.index')
             </div>
-            <div x-show="tab === 'koordinator'" x-cloak>
-                @livewire('master.bagian-koordinator.index')
-            </div>
+            @if(auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM']))
+                <div x-show="tab === 'koordinator'" x-cloak>
+                    @livewire('master.bagian-koordinator.index')
+                </div>
+            @endif
             <div x-show="tab === 'master-shift'" x-cloak>
                 @livewire('master.jadwal-shift.index')
             </div>

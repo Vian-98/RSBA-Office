@@ -143,7 +143,8 @@ Route::prefix('laporan')
 Route::prefix('gaji')
     ->name('gaji.')
     ->group(function () {
-        Route::get('/', App\Livewire\Gaji\Index::class)->name('index');
+        Route::get('/', App\Livewire\Gaji\Rekap\Index::class)->name('index');
+        Route::get('/detail', App\Livewire\Gaji\Index::class)->name('detail');
     });
 
 Route::prefix('akreditasi')

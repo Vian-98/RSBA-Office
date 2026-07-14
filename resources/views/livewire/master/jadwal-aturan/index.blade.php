@@ -26,8 +26,7 @@
             Edit Aturan Bagian
         </x-slot>
         @if($editingId)
-            <livewire:Master.JadwalAturan.Edit lazy :key="$editingId" />
-            <div x-init="$dispatch('load-jadwal-aturan-data', { id: {{ $editingId }} })"></div>
+            <livewire:Master.JadwalAturan.Edit lazy :key="$editingId" :id="$editingId" />
         @endif
     </x-filament::modal>
 </div>

@@ -151,7 +151,7 @@ class Navbar extends Component
                     }
                 }
             }
-        } catch (\Throwable $e) {}
+        } catch (Throwable $e) {}
 
         // 3. Maintenance
         try {
@@ -169,7 +169,7 @@ class Navbar extends Component
                     }
                 }
             }
-        } catch (\Throwable $e) {}
+        } catch (Throwable $e) {}
 
         $this->hasUnread = false;
     }

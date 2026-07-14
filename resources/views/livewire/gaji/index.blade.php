@@ -5,7 +5,25 @@
             <h1 class="text-2xl font-bold tracking-tight text-slate-800">Sistem Penggajian (Payroll)</h1>
             <p class="text-sm text-slate-500">Kelola dan cetak slip gaji karyawan RSBA berdasarkan status kepegawaian, jabatan, dan variabel bulanan.</p>
         </div>
+        <div class="flex items-center gap-2">
+            <x-ts:button href="{{ route('kepegawaian.gaji.index') }}" flat color="slate" class="text-xs font-bold bg-white border border-slate-200">
+                <x-tabler-arrow-left class="h-4 w-4 mr-1.5" />
+                Kembali ke Rekap
+            </x-ts:button>
+        </div>
     </div>
+
+    @if($isLocked)
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 flex items-center gap-3">
+            <div class="rounded-lg bg-emerald-500/10 p-2 text-emerald-700">
+                <x-tabler-lock class="h-5 w-5" />
+            </div>
+            <div class="text-xs font-medium">
+                <span class="font-bold block text-emerald-900 mb-0.5">Periode Terkunci & Disetujui</span>
+                Seluruh data slip gaji pada periode <b>{{ \Carbon\Carbon::parse($periode . '-01')->translatedFormat('F Y') }}</b> telah disetujui oleh manajemen dan terkunci. Data tidak dapat diedit atau ditambah.
+            </div>
+        </div>
+    @endif
 
     <!-- Filters Panel -->
     <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-2xs">
@@ -81,20 +99,34 @@
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
-                                    @if($karyawan->payroll_status === 'generated')
-                                        <x-ts:button flat color="indigo" class="text-xs font-bold" wire:click="viewSlip({{ $karyawan->id }})">
-                                            <x-tabler-file-text class="h-4 w-4" />
-                                            Slip
-                                        </x-ts:button>
-                                        <x-ts:button flat color="amber" class="text-xs font-bold" wire:click="openInputModal({{ $karyawan->id }})">
-                                            <x-tabler-edit class="h-4 w-4" />
-                                            Edit
-                                        </x-ts:button>
+                                    @if($isLocked)
+                                        @if($karyawan->payroll_status === 'generated')
+                                            <x-ts:button flat color="indigo" class="text-xs font-bold" wire:click="viewSlip({{ $karyawan->id }})">
+                                                <x-tabler-file-text class="h-4 w-4" />
+                                                Slip
+                                            </x-ts:button>
+                                        @else
+                                            <span class="text-xs font-semibold text-slate-400 flex items-center gap-1">
+                                                <x-tabler-lock class="h-3.5 w-3.5" />
+                                                Terkunci
+                                            </span>
+                                        @endif
                                     @else
-                                        <x-ts:button flat color="emerald" class="text-xs font-bold" wire:click="openInputModal({{ $karyawan->id }})">
-                                            <x-tabler-plus class="h-4 w-4" />
-                                            Input Gaji
-                                        </x-ts:button>
+                                        @if($karyawan->payroll_status === 'generated')
+                                            <x-ts:button flat color="indigo" class="text-xs font-bold" wire:click="viewSlip({{ $karyawan->id }})">
+                                                <x-tabler-file-text class="h-4 w-4" />
+                                                Slip
+                                            </x-ts:button>
+                                            <x-ts:button flat color="amber" class="text-xs font-bold" wire:click="openInputModal({{ $karyawan->id }})">
+                                                <x-tabler-edit class="h-4 w-4" />
+                                                Edit
+                                            </x-ts:button>
+                                        @else
+                                            <x-ts:button flat color="emerald" class="text-xs font-bold" wire:click="openInputModal({{ $karyawan->id }})">
+                                                <x-tabler-plus class="h-4 w-4" />
+                                                Input Gaji
+                                            </x-ts:button>
+                                        @endif
                                     @endif
                                 </div>
                             </td>
@@ -142,6 +174,15 @@
                     </div>
                 </div>
 
+                @if($carriedOverFromPeriode)
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 shadow-2xs flex items-start gap-3">
+                        <x-tabler-alert-circle class="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                            <span class="font-bold">Info Salin Data:</span> Data pada form ini otomatis disalin dari slip gaji periode <span class="font-bold">{{ \Carbon\Carbon::parse($carriedOverFromPeriode . '-01')->translatedFormat('F Y') }}</span>. Silakan periksa dan sesuaikan sebelum disimpan.
+                        </div>
+                    </div>
+                @endif
+
                 <form wire:submit.prevent="savePayroll" class="space-y-5">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Left Panel: Pendapatan -->
@@ -156,7 +197,7 @@
                                 <x-ts:input label="Tunjangan Shift" wire:model.live.debounce.500ms="form_tunjangan_shift" type="number" prefix="Rp" />
                                 <x-ts:input label="Tunjangan Radiologi" wire:model.live.debounce.500ms="form_tunjangan_radiologi" type="number" prefix="Rp" />
                                 <x-ts:input label="Tunjangan Lain-Lain (Total)" wire:model.defer="form_tunjangan_lain" type="number" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-700" />
-                                <x-ts:input label="Uang Lembur" wire:model.live.debounce.500ms="form_uang_lembur" type="number" prefix="Rp" />
+                                <x-ts:input label="Uang Lembur" wire:model.live.debounce.500ms="form_uang_lembur" type="number" prefix="Rp" hint="Terhitung otomatis: {{ $calculatedOvertimeMinutes }} menit lembur" />
                                 <x-ts:input label="Tunjangan Hari Raya" wire:model.live.debounce.500ms="form_tunjangan_hari_raya" type="number" prefix="Rp" />
 
                                 <!-- Rincian Alokasi UMK (25%) Preview -->
@@ -232,7 +273,7 @@
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block pb-1 border-b border-slate-100">Komponen Potongan & Pajak (-)</span>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <x-ts:input label="Potongan Absensi" wire:model.live.debounce.500ms="form_potongan_absensi" type="number" prefix="Rp" />
+                                <x-ts:input label="Potongan Absensi" wire:model.live.debounce.500ms="form_potongan_absensi" type="number" prefix="Rp" hint="Terhitung otomatis: {{ $calculatedLateMinutes }} menit terlambat" />
                                 <x-ts:input label="Cash Bon" wire:model.live.debounce.500ms="form_potongan_cash_bon" type="number" prefix="Rp" />
                                 <x-ts:input label="Potongan Obat / Rawat" wire:model.live.debounce.500ms="form_potongan_obat" type="number" prefix="Rp" />
                                 <x-ts:input label="Potongan Lain-Lain" wire:model.live.debounce.500ms="form_potongan_lain" type="number" prefix="Rp" />
@@ -274,10 +315,17 @@
                     </div>
 
                     <div class="flex justify-end gap-2 pt-2">
-                        <x-ts:button type="button" flat color="slate" wire:click="closeInputModal">Batal</x-ts:button>
-                        <x-ts:button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm px-6">
-                            Simpan Data Gaji
-                        </x-ts:button>
+                        <x-ts:button type="button" flat color="slate" wire:click="closeInputModal">{{ $isLocked ? 'Tutup' : 'Batal' }}</x-ts:button>
+                        @if(!$isLocked)
+                            <x-ts:button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm px-6">
+                                Simpan Data Gaji
+                            </x-ts:button>
+                        @else
+                            <span class="inline-flex items-center gap-1 rounded-lg px-4 py-2 text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200">
+                                <x-tabler-lock class="h-3.5 w-3.5" />
+                                Terbaca Saja
+                            </span>
+                        @endif
                     </div>
                 </form>
             </div>
@@ -643,10 +691,10 @@
             printWindow.document.write('  .bg-indigo-50\\/60 { background-color: #f0f9ff !important; color: #075985 !important; }');
             printWindow.document.write('  .bg-slate-50\\/50 { background-color: #f8fafc !important; }');
             printWindow.document.write('}');
-            printWindow.document.write('</style>');
-            printWindow.document.write('</head><body>');
+            printWindow.document.write('<\/style>');
+            printWindow.document.write('<\/head><body>');
             printWindow.document.write(printContents);
-            printWindow.document.write('</body></html>');
+            printWindow.document.write('<\/body><\/html>');
             printWindow.document.close();
 
             setTimeout(function() {
