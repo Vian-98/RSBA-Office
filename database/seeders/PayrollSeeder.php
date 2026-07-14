@@ -17,6 +17,9 @@ class PayrollSeeder extends Seeder
             ['key' => 'umk', 'value' => '3000000', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'persen_tunjangan_tetap', 'value' => '80', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'persen_tunjangan_absensi', 'value' => '20', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'potongan_telat_per_menit', 'value' => '1000', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'tarif_lembur_per_menit', 'value' => '2000', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'toleransi_telat_menit', 'value' => '0', 'created_at' => now(), 'updated_at' => now()],
         ];
 
         foreach ($settings as $setting) {

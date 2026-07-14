@@ -19,6 +19,14 @@ class DigitalSignatureService
     private const TEMP_DIR_PREFIX = 'app/temp/certs/';
     private const DISK_DIR_STORE = 'certs';
 
+    /**
+     * Get the openssl binary path from env, fallback to 'openssl' in PATH.
+     */
+    private function opensslBin(): string
+    {
+        return env('OPENSSL_BIN', 'openssl');
+    }
+
     protected string $country = "ID";
     protected string $state = "Lampung";
     protected string $local = "Bandar Lampung";
@@ -357,7 +365,8 @@ class DigitalSignatureService
      */
     private function execSSLPrivateKey(array $paths): void
     {
-        shell_exec("openssl genrsa -out {$paths['privateKey']} " . self::DEFAULT_KEY_SIZE);
+        $bin = $this->opensslBin();
+        shell_exec("\"{$bin}\" genrsa -out {$paths['privateKey']} " . self::DEFAULT_KEY_SIZE);
 
         if (!file_exists($paths['privateKey']) || filesize($paths['privateKey']) === 0) {
             throw new Exception("Tidak berhasil membuat private key file.");
@@ -369,7 +378,8 @@ class DigitalSignatureService
      */
     private function execSSLCsr(array $paths, string $subject): void
     {
-        shell_exec("openssl req -new -key {$paths['privateKey']} -out {$paths['csr']} -subj '{$subject}'");
+        $bin = $this->opensslBin();
+        shell_exec("\"{$bin}\" req -new -key {$paths['privateKey']} -out {$paths['csr']} -subj '{$subject}'");
 
         if (!file_exists($paths['csr']) || filesize($paths['csr']) === 0) {
             throw new Exception("Tidak berhasil membuat CSR file.");
@@ -385,7 +395,8 @@ class DigitalSignatureService
         $configFile = $paths['configFile'] ?? sys_get_temp_dir() . '/openssl_v3.cnf';
         $this->createSSLv3ConfigFile($configFile, $sanDomains);
 
-        shell_exec("openssl x509 -req -days {$expiryDays} -in {$paths['csr']} -signkey {$paths['privateKey']} -out {$paths['cert']} -extfile {$configFile} -extensions v3_req");
+        $bin = $this->opensslBin();
+        shell_exec("\"{$bin}\" x509 -req -days {$expiryDays} -in {$paths['csr']} -signkey {$paths['privateKey']} -out {$paths['cert']} -extfile {$configFile} -extensions v3_req");
 
         if (!file_exists($paths['cert']) || filesize($paths['cert']) === 0) {
             throw new Exception("Tidak berhasil membuat X.509 sertifikat.");
@@ -397,7 +408,8 @@ class DigitalSignatureService
      */
     private function execPKCS12(array $paths, string $password): void
     {
-        shell_exec("openssl pkcs12 -export -out {$paths['p12']} -inkey {$paths['privateKey']} -in {$paths['cert']} -password pass:{$password}");
+        $bin = $this->opensslBin();
+        shell_exec("\"{$bin}\" pkcs12 -export -out {$paths['p12']} -inkey {$paths['privateKey']} -in {$paths['cert']} -password pass:{$password}");
 
         if (!file_exists($paths['p12']) || filesize($paths['p12'] === 0)) {
             throw new Exception("Gagal membuat file PCKS#12");

@@ -16,7 +16,7 @@
          :class="isCollapsed && isAboveBreakpoint ? 'w-20' : 'w-72'"
          class="relative scrollbar-hidden flex flex-col justify-between h-full bg-white shadow-xl border-r border-slate-100 transition-all duration-300 ease-in-out overflow-x-hidden">
         
-        <div class="flex flex-col gap-6 overflow-y-auto overflow-x-hidden scrollbar-hidden py-6">
+        <div id="sidebar-scroll-container" class="flex flex-col gap-6 overflow-y-auto overflow-x-hidden scrollbar-hidden py-6">
             {{-- logo --}}
             <div class="flex items-center px-6 transition-all duration-300"
                  :class="isCollapsed && isAboveBreakpoint ? 'justify-center' : 'justify-start gap-3'">
@@ -160,5 +160,21 @@
 
             }
         }
+    </script>
+    <script>
+        function initSidebarScroll() {
+            const container = document.getElementById('sidebar-scroll-container');
+            if (container) {
+                const savedScroll = sessionStorage.getItem('sidebar-scroll-top');
+                if (savedScroll) {
+                    container.scrollTop = parseInt(savedScroll, 10);
+                }
+                container.addEventListener('scroll', () => {
+                    sessionStorage.setItem('sidebar-scroll-top', container.scrollTop);
+                });
+            }
+        }
+        document.addEventListener('DOMContentLoaded', initSidebarScroll);
+        document.addEventListener('livewire:navigated', initSidebarScroll);
     </script>
 @endpush
