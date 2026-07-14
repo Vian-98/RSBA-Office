@@ -71,7 +71,7 @@ class Kelola extends Component
             ];
 
             foreach ($details as $detail) {
-                $day = Carbon::parse($detail->tanggal)->day;
+                $day = $detail->tanggal->day;
                 $row['details'][$day] = $detail;
                 
                 // Init state
@@ -89,12 +89,20 @@ class Kelola extends Component
             ->get();
             
         $existingDetails = $this->jadwalKerja->details;
+        
+        // Build a fast lookup map of existing details (karyawan_id => array of dates)
+        $existingMap = [];
+        foreach ($existingDetails as $detail) {
+            $dateStr = $detail->tanggal->format('Y-m-d');
+            $existingMap[$detail->karyawan_id][$dateStr] = true;
+        }
+        
         $detailsToInsert = [];
         
         foreach ($karyawansInRoom as $karyawan) {
             for ($d = 1; $d <= $daysInMonth; $d++) {
                 $dateStr = $this->dates[$d - 1]->format('Y-m-d');
-                $exists = $existingDetails->where('karyawan_id', $karyawan->id)->first(fn($detail) => $detail->tanggal->format('Y-m-d') === $dateStr);
+                $exists = isset($existingMap[$karyawan->id][$dateStr]);
                 
                 if (!$exists) {
                     $detailsToInsert[] = [

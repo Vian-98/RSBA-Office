@@ -58,7 +58,8 @@ class RuanganDummySeeder extends Seeder
                 'Ruang Isolasi',
                 'Ruang Perawatan Anak',
                 'Ruang Perawatan Bedah',
-                'Ruang Perawatan Penyakit Dalam'
+                'Ruang Perawatan Penyakit Dalam',
+                'Ruang Rawat Inap Melati'
             ],
             'Penunjang Medis' => [
                 'Laboratorium',
@@ -79,6 +80,7 @@ class RuanganDummySeeder extends Seeder
                 'Instalasi IT',
                 'Instalasi Pemeliharaan Sarana (IPSRS)',
                 'Gudang Logistik & Farmasi',
+                'Gudang Farmasi Utama',
                 'CSSD (Sterilisasi Sentral)',
                 'Laundry / Binatu',
                 'Sanitasi & Pengolahan Limbah'
