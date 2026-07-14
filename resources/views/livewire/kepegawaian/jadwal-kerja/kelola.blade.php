@@ -32,15 +32,28 @@
         <livewire:Kepegawaian.JadwalKerja.Riwayat />
     </x-filament::modal>
 
-    <div class="rounded-lg bg-white p-4 shadow-sm w-full overflow-x-auto">
+    {{-- Wrapper dengan batasan tinggi maks dan tanpa padding horizontal (py-4) agar teks yang tergeser ke kiri tersembunyi dengan sempurna --}}
+    <div class="rounded-lg bg-white py-4 shadow-sm w-full overflow-auto max-h-[70vh] border border-gray-200">
         <form wire:submit.prevent="save">
-            <table class="min-w-max w-full border-collapse border border-gray-200 text-sm">
+            <table class="border-collapse border border-gray-200 text-sm table-fixed" style="width: {{ 300 + count($dates) * 85 }}px;">
+                <colgroup>
+                    <col style="width: 200px;">
+                    <col style="width: 100px;">
+                    @foreach($dates as $date)
+                        <col style="width: 85px;">
+                    @endforeach
+                </colgroup>
                 <thead>
                     <tr class="bg-gray-100 text-gray-700">
-                        <th class="border border-gray-200 p-2 text-left sticky left-0 z-10 bg-gray-100 min-w-[200px]">Karyawan</th>
-                        <th class="border border-gray-200 p-2 text-center bg-gray-100 min-w-[100px]">Kategori</th>
+                        {{-- Header Karyawan: Sticky di atas (z-30) dan di kiri (left-0) --}}
+                        <th class="border border-gray-200 p-2 text-left sticky top-0 left-0 z-30 bg-gray-100 min-w-[200px] w-[200px] max-w-[200px]">Karyawan</th>
+                        
+                        {{-- Header Kategori: Sticky di atas (z-30) dan di kiri (left-[200px]) --}}
+                        <th class="border-y border-gray-200 border-l border-r-2 border-r-slate-300 p-2 text-center sticky top-0 left-[200px] z-30 bg-gray-100 min-w-[100px] w-[100px] max-w-[100px]">Kategori</th>
+                        
                         @foreach($dates as $date)
-                            <th class="border border-gray-200 p-2 text-center {{ $date->isWeekend() ? 'text-red-500' : '' }}">
+                            {{-- Header Tanggal: Sticky di atas saja (z-20) --}}
+                            <th class="border border-gray-200 p-2 text-center sticky top-0 z-20 bg-gray-100 {{ $date->isWeekend() ? 'text-red-500 bg-red-50' : '' }} min-w-[85px] w-[85px] max-w-[85px]">
                                 <div>{{ $date->format('D') }}</div>
                                 <div>{{ $date->format('d') }}</div>
                             </th>
@@ -50,17 +63,21 @@
                 <tbody>
                     @foreach($karyawans as $karyawan)
                         <tr class="hover:bg-gray-50">
-                            <td class="border border-gray-200 p-2 sticky left-0 z-10 bg-white font-medium text-gray-800">
+                            {{-- Kolom Karyawan: Sticky di kiri (left-0, z-10) --}}
+                            <td class="border border-gray-200 p-2 sticky left-0 z-10 bg-white font-medium text-gray-800 min-w-[200px] w-[200px] max-w-[200px] truncate" title="{{ $karyawan['nama'] }}">
                                 {{ $karyawan['nama'] }}
                             </td>
-                            <td class="border border-gray-200 p-2 text-center text-xs text-gray-500 bg-white">
+                            
+                            {{-- Kolom Kategori: Sticky di kiri (left-[200px], z-10) dengan pembatas garis tebal --}}
+                            <td class="border-y border-gray-200 border-l border-r-2 border-r-slate-300 p-2 text-center text-xs text-gray-500 bg-white sticky left-[200px] z-10 min-w-[100px] w-[100px] max-w-[100px] truncate" title="{{ $karyawan['kategori'] }}">
                                 {{ $karyawan['kategori'] }}
                             </td>
+                            
                             @for($d = 1; $d <= count($dates); $d++)
                                 @php
                                     $detail = $karyawan['details'][$d] ?? null;
                                 @endphp
-                                <td class="border border-gray-200 p-1 min-w-[100px] align-top {{ $dates[$d-1]->isWeekend() ? 'bg-red-50/30' : '' }}">
+                                <td class="border border-gray-200 p-1 min-w-[85px] w-[85px] max-w-[85px] align-top {{ $dates[$d-1]->isWeekend() ? 'bg-red-50/30' : '' }}">
                                     @if(!$detail)
                                         <div class="w-full text-center p-1 rounded text-xs font-semibold text-gray-400 bg-gray-50 border border-dashed border-gray-300">
                                             N/A

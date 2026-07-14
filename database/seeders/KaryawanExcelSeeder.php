@@ -15,7 +15,7 @@ class KaryawanExcelSeeder extends Seeder
      */
     public function run(): void
     {
-        $inputFileName = 'E:/rsba/Absen 08 s.d 09 Jun.xlsx';
+        $inputFileName = database_path('seeders/files/Absen 08 s.d 09 Jun.xlsx');
 
         if (!file_exists($inputFileName)) {
             $this->command->error("File Excel tidak ditemukan: {$inputFileName}");
@@ -179,8 +179,9 @@ class KaryawanExcelSeeder extends Seeder
                 $ruanganId = $ruanganTarget ? $ruanganTarget->id : $ruanganId;
                 $isCoordinator = true;
                 $emailKoor = 'koor_ugd@rsba.com';
-            } elseif ($pinAbsenStr === '22230383') { // Fika Erisandy -> IGD
-                $ruanganTarget = \App\Models\Ruangan::where('nama', 'like', '%IGD%')->first();
+            } elseif ($pinAbsenStr === '22230383') { // Fika Erisandy -> IGD (UGD)
+                $ruanganTarget = \App\Models\Ruangan::where('nama', 'like', '%IGD%')->first()
+                    ?? \App\Models\Ruangan::where('nama', 'like', '%UGD%')->first();
                 $ruanganId = $ruanganTarget ? $ruanganTarget->id : $ruanganId;
                 $isCoordinator = true;
                 $emailKoor = 'koor_igd@rsba.com';
