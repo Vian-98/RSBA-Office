@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             KaryawanExcelSeeder::class, // Import 299 karyawan & buat tugas koordinator sdm
             SkenarioTriRahayuSeeder::class, // Skenario absensi tes Tri Rahayu
             JadwalDummyJuniSeeder::class, // Generate draf jadwal kerja Juni 2026
+            JadwalDuaTahunSeeder::class, // Generate jadwal dan absensi 2023 - 2024
         ]);
     }
 }

@@ -73,7 +73,7 @@ class KalkulasiKehadiranService
         // 3. Cek apakah Clock In & Clock Out kosong (dan ada shift terjadwal)
         if (empty($clockIn) && empty($clockOut)) {
             return [
-                'status' => StatusKehadiran::PERLU_VERIFIKASI,
+                'status' => StatusKehadiran::TIDAK_HADIR,
                 'catatan' => 'Tidak ada rekaman jam mesin.'
             ];
         }

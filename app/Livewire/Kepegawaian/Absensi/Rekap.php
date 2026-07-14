@@ -24,6 +24,7 @@ class Rekap extends Component
     public $karyawan_id = null;
     public $tanggal_spesifik = null;
     public $mode = 'bulanan'; // 'bulanan', 'harian'
+    public $statusFilter = '';
 
     // Properties for Manual Correction
     public $editingRecordId = null;
@@ -40,6 +41,7 @@ class Rekap extends Component
     public function updatedMode() { $this->resetPage('dailyPage'); }
     public function updatedBulan() { $this->resetPage('dailyPage'); }
     public function updatedTahun() { $this->resetPage('dailyPage'); }
+    public function updatedStatusFilter() { $this->resetPage('dailyPage'); }
 
     public function editRecord($id)
     {
@@ -134,35 +136,21 @@ class Rekap extends Component
             $baseQuery->where('karyawan_id', $this->karyawan_id);
         }
 
-        // 2. Memory-efficient Overall Summary Aggregation
+        // 2. Memory-efficient Overall Summary & Per-Employee Aggregation
         $summary = [
             'hadir' => 0,
             'terlambat' => 0,
+            'menit_terlambat' => 0,
             'pulang_cepat' => 0,
+            'menit_pulang_cepat' => 0,
             'tidak_hadir' => 0,
             'cuti' => 0,
             'izin' => 0,
             'perlu_verifikasi' => 0,
         ];
 
-        $summaryRaw = (clone $baseQuery)
-            ->select('status_kehadiran', DB::raw('count(*) as total'))
-            ->groupBy('status_kehadiran')
-            ->get();
-
-        foreach ($summaryRaw as $row) {
-            $statusVal = $row->status_kehadiran instanceof \App\Enums\StatusKehadiran 
-                ? $row->status_kehadiran->value 
-                : $row->status_kehadiran;
-            if (isset($summary[$statusVal])) {
-                $summary[$statusVal] = (int) $row->total;
-            }
-        }
-
-        // 3. Memory-efficient Per-Employee Summary Aggregation
         $rekapRaw = (clone $baseQuery)
-            ->select('karyawan_id', 'status_kehadiran', DB::raw('count(*) as total'))
-            ->groupBy('karyawan_id', 'status_kehadiran')
+            ->select('karyawan_id', 'status_kehadiran', 'catatan')
             ->get();
 
         $rekapKaryawan = [];
@@ -172,19 +160,46 @@ class Rekap extends Component
                 ? $row->status_kehadiran->value 
                 : $row->status_kehadiran;
 
+            if (isset($summary[$statusVal])) {
+                $summary[$statusVal]++;
+            }
+
+            // Parse minutes from catatan
+            $menit = 0;
+            if ($statusVal === 'terlambat' && $row->catatan) {
+                if (preg_match('/Terlambat (-?\d+) menit/i', $row->catatan, $matches)) {
+                    $menit = abs((int) $matches[1]);
+                    $summary['menit_terlambat'] += $menit;
+                }
+            } elseif ($statusVal === 'pulang_cepat' && $row->catatan) {
+                if (preg_match('/Pulang cepat (-?\d+) menit/i', $row->catatan, $matches)) {
+                    $menit = abs((int) $matches[1]);
+                    $summary['menit_pulang_cepat'] += $menit;
+                }
+            }
+
             if (!isset($rekapKaryawan[$kId])) {
                 $rekapKaryawan[$kId] = [
                     'hadir' => 0,
                     'terlambat' => 0,
+                    'menit_terlambat' => 0,
                     'pulang_cepat' => 0,
+                    'menit_pulang_cepat' => 0,
                     'tidak_hadir' => 0,
                     'cuti' => 0,
                     'izin' => 0,
                     'perlu_verifikasi' => 0,
                 ];
             }
+
             if (isset($rekapKaryawan[$kId][$statusVal])) {
-                $rekapKaryawan[$kId][$statusVal] = (int) $row->total;
+                $rekapKaryawan[$kId][$statusVal]++;
+            }
+
+            if ($statusVal === 'terlambat') {
+                $rekapKaryawan[$kId]['menit_terlambat'] += $menit;
+            } elseif ($statusVal === 'pulang_cepat') {
+                $rekapKaryawan[$kId]['menit_pulang_cepat'] += $menit;
             }
         }
 
@@ -197,7 +212,12 @@ class Rekap extends Component
         unset($rk);
 
         // 4. Paginated Daily Records (limited to 15 per page to save memory)
-        $records = (clone $baseQuery)
+        $recordsQuery = clone $baseQuery;
+        if ($this->statusFilter) {
+            $recordsQuery->where('status_kehadiran', $this->statusFilter);
+        }
+
+        $records = $recordsQuery
             ->with(['karyawan', 'shift', 'karyawan.ruangan', 'jadwalKerja', 'jadwalKerja.ruangan'])
             ->orderBy('tanggal', 'desc')
             ->paginate(15, ['*'], 'dailyPage');

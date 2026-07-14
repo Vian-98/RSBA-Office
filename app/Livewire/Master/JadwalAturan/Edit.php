@@ -18,6 +18,13 @@ class Edit extends Component
 
     public ?JadwalAturan $record;
 
+    public function mount($id = null)
+    {
+        if ($id) {
+            $this->loadData($id);
+        }
+    }
+
     public $bagian_id;
     public $kode;
     public $nilai;

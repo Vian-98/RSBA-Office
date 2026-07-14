@@ -51,7 +51,7 @@ class JadwalTugasSaya extends Component
             'label' => date('F', mktime(0, 0, 0, $m, 1))
         ])->toArray();
 
-        $tahunOptions = collect(range(date('Y') - 1, date('Y') + 1))->map(fn($y) => [
+        $tahunOptions = collect(range(date('Y') + 1, 2008))->map(fn($y) => [
             'value' => $y,
             'label' => (string) $y
         ])->toArray();

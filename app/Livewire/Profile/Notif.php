@@ -115,6 +115,48 @@ class Notif extends Component
             report($e);
         }
 
+        // 4. Pelanggaran Aturan Jadwal Kerja (Untuk Koordinator Ruangan, Staff-SDM, & Super-Admin)
+        try {
+            $aturanService = app(\App\Services\AturanJadwalService::class);
+            $query = \App\Models\Sdm\JadwalKerja::with(['ruangan']);
+
+            if (!$user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+                // Jika koordinator ruangan biasa, hanya ambil ruangan yang dikoordinasikan
+                $ruanganIds = $user->getRuanganKoordinatorIds();
+                if (!empty($ruanganIds)) {
+                    $query->whereIn('ruangan_id', $ruanganIds);
+                } else {
+                    $query->whereRaw('1=0');
+                }
+            }
+
+            // Ambil jadwal yang aktif (tidak terkunci) dalam 60 hari terakhir
+            $activeSchedules = $query->where('status', '!=', \App\Enums\StatusJadwalKerja::LOCKED)
+                ->where('created_at', '>=', now()->subDays(60))
+                ->get();
+
+            foreach ($activeSchedules as $sched) {
+                $violations = $aturanService->checkViolations($sched);
+                if (!empty($violations)) {
+                    $totalViolations = count($violations);
+                    $sample = $violations[0]['message'];
+                    
+                    $items[] = [
+                        'id' => 'jadwal-violation-' . $sched->id . '-' . $totalViolations,
+                        'type' => 'danger',
+                        'icon' => 'tabler.exclamation-circle',
+                        'title' => 'Pelanggaran Aturan Jadwal: ' . ($sched->ruangan->nama ?? 'Ruangan'),
+                        'message' => "Ada {$totalViolations} pelanggaran pada jadwal " . \Carbon\Carbon::create($sched->tahun, $sched->bulan, 1)->translatedFormat('F Y') . ". Contoh: {$sample}",
+                        'time' => $sched->updated_at->diffForHumans(),
+                        'route' => 'kepegawaian.jadwal-kerja.kelola',
+                        'route_params' => ['id' => $sched->id]
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         $readNotifs = $user->read_notifications ?? [];
         foreach ($items as &$item) {
             $item['is_read'] = in_array($item['id'], $readNotifs);
