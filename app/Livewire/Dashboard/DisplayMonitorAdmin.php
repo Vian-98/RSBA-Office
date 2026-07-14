@@ -27,10 +27,20 @@ class DisplayMonitorAdmin extends Component
     public string $errorMessage = '';
 
     // Cached API data — loaded once on mount(), refreshed only on demand
-    public array $devices   = [];
-    public array $wards     = [];
-    public array $rooms     = [];
-    public array $auditLogs = [];
+    public array $devices        = [];
+    public array $wards          = [];
+    public array $rooms          = [];
+    public array $inpatientRooms = [];
+    public array $auditLogs      = [];
+
+    // Inpatient Room form
+    public string $editingRoomId = '';
+    public string $roomCode = '';
+    public string $roomName = '';
+    public string $roomFloor = '';
+    public string $roomBuilding = '';
+    public int $roomBedTotal = 0;
+    public int $roomBedOccupied = 0;
 
     /**
      * Load all data from Middleware once when the component first mounts.
@@ -46,10 +56,11 @@ class DisplayMonitorAdmin extends Component
      */
     protected function loadData(DmsMiddlewareClient $client): void
     {
-        $this->devices   = $client->getDisplays();
-        $this->wards     = $client->getWards();
-        $this->rooms     = $client->getRooms();
-        $this->auditLogs = $client->getAuditLogs();
+        $this->devices        = $client->getDisplays();
+        $this->wards          = $client->getWards();
+        $this->rooms          = $client->getRooms();
+        $this->inpatientRooms = $client->getInpatientRooms();
+        $this->auditLogs      = $client->getAuditLogs();
     }
 
     /**
@@ -66,6 +77,7 @@ class DisplayMonitorAdmin extends Component
             'devices'         => $this->devices,
             'wards'           => $this->wards,
             'rooms'           => $this->rooms,
+            'inpatientRooms'  => $this->inpatientRooms,
             'auditLogs'       => $this->auditLogs,
             'totalMonitors'   => $totalMonitors,
             'onlineMonitors'  => $onlineMonitors,
@@ -135,7 +147,7 @@ class DisplayMonitorAdmin extends Component
     {
         $this->validate([
             'selectedDeviceId' => 'required|string',
-            'targetType'       => 'required|string|in:ward_class,operating_room,ward_summary',
+            'targetType'       => 'required|string|in:ward_class,operating_room,ward_summary,inpatient_room',
             'targetId'         => 'required|string',
         ]);
 
@@ -184,5 +196,73 @@ class DisplayMonitorAdmin extends Component
     public function refreshData(DmsMiddlewareClient $client): void
     {
         $this->loadData($client);
+    }
+
+    public function saveInpatientRoom(DmsMiddlewareClient $client): void
+    {
+        $this->validate([
+            'roomCode' => 'required|string|max:50',
+            'roomName' => 'required|string|max:255',
+            'roomFloor' => 'required|string|max:50',
+            'roomBuilding' => 'required|string|max:255',
+            'roomBedTotal' => 'required|integer|min:0',
+            'roomBedOccupied' => 'required|integer|min:0',
+        ]);
+
+        $available = max(0, $this->roomBedTotal - $this->roomBedOccupied);
+
+        $payload = [
+            'room_code' => strtoupper($this->roomCode),
+            'name' => $this->roomName,
+            'floor' => $this->roomFloor,
+            'building' => $this->roomBuilding,
+            'bed_total' => $this->roomBedTotal,
+            'bed_occupied' => $this->roomBedOccupied,
+            'bed_available' => $available,
+        ];
+
+        try {
+            if ($this->editingRoomId) {
+                $client->updateInpatientRoom($this->editingRoomId, $payload);
+                $this->successMessage = "Ruangan {$this->roomName} berhasil diperbarui!";
+            } else {
+                $client->createInpatientRoom($payload);
+                $this->successMessage = "Ruangan {$this->roomName} berhasil dibuat!";
+            }
+            $this->resetRoomForm();
+            $this->loadData($client);
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    public function editInpatientRoom(string $id): void
+    {
+        $room = collect($this->inpatientRooms)->firstWhere('id', $id);
+        if ($room) {
+            $this->editingRoomId = $room['id'];
+            $this->roomCode = $room['room_code'];
+            $this->roomName = $room['name'];
+            $this->roomFloor = $room['floor'];
+            $this->roomBuilding = $room['building'];
+            $this->roomBedTotal = $room['bed_total'];
+            $this->roomBedOccupied = $room['bed_occupied'];
+        }
+    }
+
+    public function deleteInpatientRoom(DmsMiddlewareClient $client, string $id): void
+    {
+        try {
+            $client->deleteInpatientRoom($id);
+            $this->successMessage = "Ruangan berhasil dihapus!";
+            $this->loadData($client);
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    public function resetRoomForm(): void
+    {
+        $this->reset(['editingRoomId', 'roomCode', 'roomName', 'roomFloor', 'roomBuilding', 'roomBedTotal', 'roomBedOccupied']);
     }
 }
