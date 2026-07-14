@@ -187,7 +187,7 @@
                                 <th scope="col" class="px-6 py-3">Nama Karyawan</th>
                                 <th scope="col" class="px-6 py-3 text-center">Shift</th>
                                 <th scope="col" class="px-6 py-3 text-center">Jam Kerja (Shift)</th>
-                                <th scope="col" class="px-6 py-3 text-center">Jam Aktual (Finger)</th>
+                                <th scope="col" class="px-6 py-3 text-center">Jam Aktual (Mesin)</th>
                                 <th scope="col" class="px-6 py-3 text-center">Status</th>
                                 <th scope="col" class="px-6 py-3">Catatan / Alasan</th>
                                 <th scope="col" class="px-6 py-3 text-center">Aksi</th>
@@ -292,7 +292,7 @@
                 
                 <x-ts:input type="datetime-local" label="Jam Keluar Aktual" wire:model="editAbsenKeluar" />
                 
-                <x-ts:input label="Catatan / Alasan Koreksi" wire:model="editCatatan" placeholder="Contoh: Lupa scan finger, Hadir tugas luar" />
+                <x-ts:input label="Catatan / Alasan Koreksi" wire:model="editCatatan" placeholder="Contoh: Lupa scan mesin absensi, Hadir tugas luar" />
             </div>
             
             <x-slot:footer>

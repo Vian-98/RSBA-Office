@@ -162,7 +162,12 @@ class Rekonsiliasi extends Component
             ]);
 
             DB::commit();
-            $this->toast()->success('Sukses', "$berhasil data berhasil di-commit ke Jadwal Kerja.")->send();
+            $this->toast()
+                ->success('Sukses', "$berhasil data berhasil di-commit ke Jadwal Kerja.")
+                ->flash()
+                ->send();
+
+            return redirect()->route('kepegawaian.absensi.index');
 
         } catch (\Exception $e) {
             DB::rollBack();
