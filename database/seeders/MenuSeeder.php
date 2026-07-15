@@ -495,15 +495,6 @@ class MenuSeeder extends Seeder
                 'group' => 'sdm',
             ],
             [
-                'id' => 532,
-                'nama' => 'Kelola Gaji Staf',
-                'route' => 'kepegawaian.gaji.detail',
-                'icon' => null,
-                'permission' => ['view-kepegawaian-gaji-detail'],
-                'parent_id' => 53,
-                'group' => 'sdm',
-            ],
-            [
                 'id' => 54,
                 'nama' => 'Pendaftaran',
                 'route' => 'administrasi.registrasi.index',
