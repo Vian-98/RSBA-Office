@@ -43,4 +43,26 @@ class Stok extends Model
     {
         return $this->hasMany(DistribusiDetail::class, 'stok_id', 'id');
     }
+
+    public function getJumlahMasukAktualAttribute()
+    {
+        // Cek apakah stok ini adalah hasil pecahan (punya mutasi TRANSFER_MASUK)
+        $transferMasuk = \App\Models\Gudang\StokMutasi::where('stok_id', $this->id)
+            ->where('jenis_mutasi', 'TRANSFER_MASUK')
+            ->sum('jumlah');
+            
+        if ($transferMasuk > 0) {
+            return $transferMasuk;
+        }
+
+        // Jika stok original, maka jumlah masuk = (Penerimaan Awal) + (TRANSFER_KELUAR)
+        // Note: TRANSFER_KELUAR bernilai negatif, jadi kita tambahkan.
+        $penerimaan = $this->penerimaanDet?->jumlah ?? 0;
+        
+        $transferKeluar = \App\Models\Gudang\StokMutasi::where('stok_id', $this->id)
+            ->where('jenis_mutasi', 'TRANSFER_KELUAR')
+            ->sum('jumlah');
+            
+        return $penerimaan + $transferKeluar;
+    }
 }

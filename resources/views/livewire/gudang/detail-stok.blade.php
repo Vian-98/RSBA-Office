@@ -29,7 +29,7 @@
                         <td class="py-2 px-4">{{ ($stoks->currentPage() - 1) * $stoks->perPage() + $loop->iteration }}</td>
                         <td class="py-2 px-4">{{ $item->id }}</td>
                         <td class="py-2 px-4">{{ $item->penerimaanDet->penerimaan->tanggal }}</td>
-                        <td class="py-2 px-4">{{ $item->penerimaanDet->jumlah }}</td>
+                        <td class="py-2 px-4">{{ $item->jumlah_masuk_aktual }}</td>
                         <td class="py-2 px-4">
                             <div class="flex gap-2 items-center">
                                 <!-- Set Lokasi -->
