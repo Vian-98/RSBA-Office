@@ -158,6 +158,20 @@
                     }
                 },
 
+                // Listen for force collapse/expand from other pages (e.g. opname)
+                initForceListeners() {
+                    window.addEventListener('force-sidebar-collapse', () => {
+                        this.isCollapsed = true
+                    })
+                    window.addEventListener('force-sidebar-expand', () => {
+                        this.isCollapsed = false
+                    })
+                },
+
+                init() {
+                    this.initForceListeners()
+                },
+
             }
         }
     </script>
