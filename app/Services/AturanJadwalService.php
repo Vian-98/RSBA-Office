@@ -101,7 +101,7 @@ class AturanJadwalService
                         if ($consecutiveWork > $maxKerja) {
                             $violations[] = [
                                 'karyawan' => $karyawan->nama,
-                                'tanggal' => $detail->tanggal->format('d M Y'),
+                                'tanggal' => Carbon::parse($detail->tanggal)->format('d M Y'),
                                 'rule' => 'Maks. Hari Kerja Berturut-turut',
                                 'message' => "Staf {$karyawan->nama} terjadwal bekerja {$consecutiveWork} hari berturut-turut melebihi batas {$maxKerja} hari."
                             ];
@@ -120,7 +120,7 @@ class AturanJadwalService
                         if ($consecutiveMalam > $maxMalam) {
                             $violations[] = [
                                 'karyawan' => $karyawan->nama,
-                                'tanggal' => $detail->tanggal->format('d M Y'),
+                                'tanggal' => Carbon::parse($detail->tanggal)->format('d M Y'),
                                 'rule' => 'Maks. Shift Malam Berturut-turut',
                                 'message' => "Staf {$karyawan->nama} terjadwal shift malam {$consecutiveMalam} hari berturut-turut melebihi batas {$maxMalam} hari."
                             ];
@@ -137,8 +137,8 @@ class AturanJadwalService
                     $detail2 = $sortedDetails[$i+1];
 
                     if ($detail1->shift && $detail2->shift) {
-                        $tgl1 = $detail1->tanggal;
-                        $tgl2 = $detail2->tanggal;
+                        $tgl1 = Carbon::parse($detail1->tanggal);
+                        $tgl2 = Carbon::parse($detail2->tanggal);
 
                         $s1 = $detail1->shift;
                         $s2 = $detail2->shift;
@@ -158,9 +158,9 @@ class AturanJadwalService
                             if ($diffHours >= 0 && $diffHours < $minIstirahat) {
                                 $violations[] = [
                                     'karyawan' => $karyawan->nama,
-                                    'tanggal' => $detail2->tanggal->format('d M Y'),
+                                    'tanggal' => $tgl2->format('d M Y'),
                                     'rule' => 'Minimum Jeda Istirahat Antar Shift',
-                                    'message' => "Staf {$karyawan->nama} memiliki jeda istirahat antar shift hanya {$diffHours} jam pada tanggal {$detail2->tanggal->format('d M Y')} (min. {$minIstirahat} jam)."
+                                    'message' => "Staf {$karyawan->nama} memiliki jeda istirahat antar shift hanya {$diffHours} jam pada tanggal " . $tgl2->format('d M Y') . " (min. {$minIstirahat} jam)."
                                 ];
                             }
                         } catch (\Throwable $e) {
