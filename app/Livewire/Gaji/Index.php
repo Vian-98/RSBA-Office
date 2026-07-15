@@ -29,6 +29,7 @@ class Index extends Component
     public ?string $carriedOverFromPeriode = null;
     public int $calculatedLateMinutes = 0;
     public int $calculatedOvertimeMinutes = 0;
+    public int $perPage = 10;
 
     // Modal state for Slip View
     public bool $isOpenModal = false;
@@ -55,6 +56,8 @@ class Index extends Component
     public $form_potongan_obat = 0;
     public $form_potongan_lain = 0;
     public $form_potongan_bank = 0;
+    public $form_potongan_bpjs_kes = 0;
+    public $form_potongan_bpjs_tk = 0;
     
     public int $form_bpjs_keluarga_tambahan = 0;
 
@@ -101,6 +104,11 @@ class Index extends Component
     }
 
     public function updatingPeriode(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPerPage(): void
     {
         $this->resetPage();
     }
@@ -198,17 +206,10 @@ class Index extends Component
             (double) $this->form_tunjangan_hari_raya;
 
         // 4. BPJS & PPh21 calculations
-        $deductions = PayrollCalculator::calculateDeductions(
-            $this->form_gaji_pokok,
-            $this->form_tunjangan_tetap,
-            $totalEarnings,
-            $this->form_bpjs_keluarga_tambahan
-        );
-
-        $this->calc_bpjs_kes = $deductions['potongan_bpjs_kes'];
-        $this->calc_bpjs_tk = $deductions['potongan_bpjs_tk'];
-        $this->calc_pph21 = $deductions['potongan_pph21'];
-
+        $this->calc_bpjs_kes = (double) $this->form_potongan_bpjs_kes;
+        $this->calc_bpjs_tk = (double) $this->form_potongan_bpjs_tk;
+        $this->calc_pph21 = max(0.0, ($totalEarnings - $this->calc_bpjs_kes - $this->calc_bpjs_tk) * 0.05);
+ 
         // 5. Total Deductions
         $this->calc_total_potongan = (double) $this->form_potongan_absensi +
             (double) $this->form_potongan_cash_bon +
@@ -338,6 +339,8 @@ class Index extends Component
             $this->form_potongan_obat = (int) $slip->potongan_obat;
             $this->form_potongan_lain = (int) $slip->potongan_lain;
             $this->form_potongan_bank = (int) $slip->potongan_bank;
+            $this->form_potongan_bpjs_kes = (int) $slip->potongan_bpjs_kes;
+            $this->form_potongan_bpjs_tk = (int) $slip->potongan_bpjs_tk;
             
             $this->form_bpjs_keluarga_tambahan = (int) $slip->bpjs_keluarga_tambahan;
 
@@ -385,6 +388,23 @@ class Index extends Component
             $this->form_tunjangan_jabatan = $base['tunjangan_jabatan'];
             $this->form_umk_allocations = $base['allocations_breakdown'];
 
+            // Sum allocations to calculate correct default deductions
+            $tTetap = 0.0;
+            foreach ($this->form_umk_allocations as $alloc) {
+                if (!$alloc['is_absensi']) {
+                    $tTetap += (double) $alloc['nominal'];
+                }
+            }
+            $tTetap += (double) $base['tunjangan_golongan_value'];
+            $totalEarnings = (double) $this->form_gaji_pokok + $tTetap + (double) $this->form_tunjangan_jabatan;
+
+            $deductions = PayrollCalculator::calculateDeductions(
+                $this->form_gaji_pokok,
+                $tTetap,
+                $totalEarnings,
+                0
+            );
+
             // Query employee's last slip from previous periods
             $lastSlip = DB::table('sdm_payroll_slips')
                 ->where('karyawan_id', $karyawanId)
@@ -406,6 +426,8 @@ class Index extends Component
                 $this->form_potongan_obat = 0;
                 $this->form_potongan_lain = 0;
                 $this->form_potongan_bank = 0;
+                $this->form_potongan_bpjs_kes = (int) $lastSlip->potongan_bpjs_kes;
+                $this->form_potongan_bpjs_tk = (int) $lastSlip->potongan_bpjs_tk;
 
                 // Set auto-calculated variables and reset THR
                 $this->form_uang_lembur = $autoUangLembur;
@@ -442,6 +464,8 @@ class Index extends Component
                 $this->form_potongan_bank = 0;
                 
                 $this->form_bpjs_keluarga_tambahan = 0;
+                $this->form_potongan_bpjs_kes = (int) $deductions['potongan_bpjs_kes'];
+                $this->form_potongan_bpjs_tk = (int) $deductions['potongan_bpjs_tk'];
             }
         }
 
@@ -481,6 +505,8 @@ class Index extends Component
             'form_potongan_obat' => 'required|numeric|min:0',
             'form_potongan_lain' => 'required|numeric|min:0',
             'form_potongan_bank' => 'required|numeric|min:0',
+            'form_potongan_bpjs_kes' => 'required|numeric|min:0',
+            'form_potongan_bpjs_tk' => 'required|numeric|min:0',
             'form_bpjs_keluarga_tambahan' => 'required|integer|min:0',
         ]);
 
@@ -782,7 +808,11 @@ class Index extends Component
             });
         }
 
-        $karyawans = $query->paginate(10);
+        if ($this->perPage === -1) {
+            $karyawans = $query->paginate($query->count() ?: 1);
+        } else {
+            $karyawans = $query->paginate($this->perPage);
+        }
 
         // Transform collection to append calculated salary or database record
         $karyawans->getCollection()->transform(function ($karyawan) {

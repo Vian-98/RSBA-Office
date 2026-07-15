@@ -1,25 +1,44 @@
-<div class="flex flex-col gap-2">
-    <div class="flex flex-row items-center gap-2 font-semibold text-indigo-500">
-        <x-ts:icon name="tabler.file-check" class="w-5" />
-        <span class="text-lg">Verifikasi Surat</span>
+<div class="{{ auth()->check() ? 'w-full' : 'mx-auto max-w-4xl w-full' }}">
+    <!-- Header Card -->
+    <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-xs">
+        <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
+                <x-ts:icon name="tabler.file-check" class="h-5 w-5" />
+            </div>
+            <div>
+                <h1 class="text-sm font-bold text-slate-800">Verifikasi Dokumen Digital</h1>
+                <p class="text-xs text-slate-400">Verifikasi keaslian tanda tangan digital surat keputusan / berkas</p>
+            </div>
+            
+            @if(auth()->check())
+                <div class="ml-auto text-[10px] font-bold uppercase tracking-wider text-indigo-650 bg-indigo-50/50 px-2 py-0.5 rounded border border-indigo-100/50">
+                    Mode Admin
+                </div>
+            @endif
+        </div>
+
+        <!-- Tab Radio Selectors -->
+        <div class="flex items-center gap-4 rounded-xl bg-slate-50 p-2 border border-slate-100 mb-4">
+            <span class="text-2xs font-bold uppercase tracking-wider text-slate-400 pl-2">Tipe Dokumen:</span>
+            <div class="flex gap-4">
+                <x-ts:radio sm wire:model.live.debounce='tab' id="sp3" value="sp3" label="SP3" />
+                <x-ts:radio sm wire:model.live.debounce='tab' id="cuti" value="cuti" label="Cuti" />
+                <x-ts:radio sm wire:model.live.debounce='tab' id="sppd" value="sppd" label="SPPD" />
+            </div>
+        </div>
+
+        <!-- Verify Content Slot -->
+        <div>
+            @if ($tab === 'sp3')
+                <livewire:Surat.Sp3.Verify />
+            @elseif($tab === 'cuti')
+                <livewire:Surat.Cuti.Verify />
+            @else
+                <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50/30 p-8 text-center text-xs text-slate-400">
+                    <x-tabler-info-circle class="h-6 w-6 text-slate-350 mx-auto mb-2" />
+                    Silakan pilih tipe dokumen di atas untuk melakukan verifikasi.
+                </div>
+            @endif
+        </div>
     </div>
-
-
-    <div class="flex flex-row gap-6 rounded-md bg-indigo-50 p-2">
-        <x-ts:radio sm wire:model.live.debounce='tab' id="sp3" value="sp3" label="SP3" />
-        <x-ts:radio sm wire:model.live.debounce='tab' id="cuti" value="cuti" label="Cuti" />
-        <x-ts:radio sm wire:model.live.debounce='tab' id="sppd" value="sppd" label="SPPD" />
-    </div>
-
-    <div class="mt-5 w-full rounded-md bg-gray-100 p-2">
-        @if ($tab === 'sp3')
-            <livewire:Surat.Sp3.Verify />
-        @elseif($tab === 'cuti')
-            <livewire:Surat.Cuti.Verify />
-        @else
-            <span>Click Options</span>
-        @endif
-
-    </div>
-
 </div>
