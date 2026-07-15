@@ -559,6 +559,15 @@ class MenuSeeder extends Seeder
                 'parent_id' => 57,
                 'group' => 'sdm',
             ],
+            [
+                'id' => 68,
+                'nama' => 'Poli Admin',
+                'route' => 'dashboard.poli.admin',
+                'icon' => 'stethoscope',
+                'permission' => ['view-dashboard-poli'],
+                'parent_id' => 1,
+                'group' => null,
+            ],
         ];
 
         foreach ($menus as $menuData) {
