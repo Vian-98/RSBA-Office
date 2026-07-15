@@ -2,8 +2,6 @@
 
 namespace App\Livewire\Profile;
 
-use Livewire\Attributes\Isolate;
-use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
 use App\Models\Surat\SuratCuti;
@@ -11,9 +9,8 @@ use App\Models\Maintenance\Jadwal;
 use App\Models\Surat\SuratSp3;
 use App\Enums\StatusApproval;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
-#[Lazy]
-#[Isolate]
 class Notif extends Component
 {
     public array $notifications = [];
@@ -30,7 +27,20 @@ class Notif extends Component
             return;
         }
 
-        $items = [];
+        $cacheKey = 'notif_user_' . $user->id;
+        $this->notifications = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user) {
+            return $this->buildNotifications($user);
+        });
+
+        // Apply read status (not cached, always fresh)
+        $readNotifs = $user->read_notifications ?? [];
+        foreach ($this->notifications as &$item) {
+            $item['is_read'] = in_array($item['id'], $readNotifs);
+        }
+    }
+
+    protected function buildNotifications($user): array
+    {
 
         // 1. General Welcome
         $items[] = [
@@ -130,12 +140,15 @@ class Notif extends Component
                 }
             }
 
-            // Ambil jadwal yang aktif (tidak terkunci) dalam 60 hari terakhir
+            // Ambil 10 jadwal aktif (tidak terkunci) terupdate dalam 60 hari terakhir
             $activeSchedules = $query->where('status', '!=', \App\Enums\StatusJadwalKerja::LOCKED)
                 ->where('created_at', '>=', now()->subDays(60))
+                ->orderBy('updated_at', 'desc')
+                ->take(10)
                 ->get();
 
             foreach ($activeSchedules as $sched) {
+                /** @var \App\Models\Sdm\JadwalKerja $sched */
                 $violations = $aturanService->checkViolations($sched);
                 if (!empty($violations)) {
                     $totalViolations = count($violations);
@@ -157,12 +170,38 @@ class Notif extends Component
             report($e);
         }
 
-        $readNotifs = $user->read_notifications ?? [];
-        foreach ($items as &$item) {
-            $item['is_read'] = in_array($item['id'], $readNotifs);
+        // 5. Jadwal Kerja Dipublikasikan / Terkunci (Untuk Karyawan)
+        try {
+            if ($user->karyawan_id) {
+                // Ambil jadwal kerja yang dipublikasikan/terkunci dalam 60 hari terakhir yang diikuti karyawan ini
+                $mySchedules = \App\Models\Sdm\JadwalKerja::whereIn('status', [\App\Enums\StatusJadwalKerja::PUBLISHED, \App\Enums\StatusJadwalKerja::LOCKED])
+                    ->whereHas('details', function ($query) use ($user) {
+                        $query->where('karyawan_id', $user->karyawan_id);
+                    })
+                    ->where('updated_at', '>=', now()->subDays(60))
+                    ->with('ruangan')
+                    ->latest('updated_at')
+                    ->take(5)
+                    ->get();
+
+                foreach ($mySchedules as $sched) {
+                    $statusText = $sched->status === \App\Enums\StatusJadwalKerja::PUBLISHED ? 'dipublikasikan' : 'dikunci';
+                    $items[] = [
+                        'id' => 'jadwal-publish-' . $sched->id . '-' . $sched->status->value,
+                        'type' => 'success',
+                        'icon' => 'tabler.calendar',
+                        'title' => 'Jadwal Kerja ' . ($sched->status === \App\Enums\StatusJadwalKerja::PUBLISHED ? 'Dipublikasikan' : 'Terkunci'),
+                        'message' => 'Jadwal kerja Anda untuk periode ' . \Carbon\Carbon::create($sched->tahun, $sched->bulan, 1)->translatedFormat('F Y') . ' di ruangan ' . ($sched->ruangan->nama ?? 'Ruangan') . ' telah ' . $statusText . '.',
+                        'time' => $sched->updated_at->diffForHumans(),
+                        'route' => 'kepegawaian.jadwal-kerja.index',
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
         }
 
-        $this->notifications = $items;
+        return $items;
     }
 
     public function markAsRead($id)
@@ -177,6 +216,7 @@ class Notif extends Component
             $user->save();
         }
 
+        Cache::forget('notif_user_' . $user->id);
         $this->loadNotifications();
         $this->dispatch('notification-updated');
     }
@@ -196,6 +236,7 @@ class Notif extends Component
         $user->read_notifications = $readNotifs;
         $user->save();
 
+        Cache::forget('notif_user_' . $user->id);
         $this->loadNotifications();
         $this->dispatch('notification-updated');
     }

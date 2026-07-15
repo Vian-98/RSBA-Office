@@ -15,10 +15,11 @@
         </x-ts:tab.items>
 
         <x-ts:tab.items tab="Email Aktivasi">
+            <livewire:Profile.EmailAktivasi />
         </x-ts:tab.items>
 
         <x-ts:tab.items tab="Login Session">
-
+            <livewire:Profile.LoginSession />
         </x-ts:tab.items>
     </x-ts:tab>
 </div>

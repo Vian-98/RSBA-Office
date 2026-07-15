@@ -31,7 +31,7 @@ class RoleSeeder extends Seeder
 
         // Fetch all permissions currently in database
         $allPermissions = Permission::all()->pluck('name')->toArray();
-        $commonPermissions = ['view-dashboard', 'view-dashboard-kamar', 'view-profile-jadwal-tugas-saya'];
+        $commonPermissions = ['view-dashboard', 'view-dashboard-kamar', 'view-profile-jadwal-tugas-saya', 'view-dashboard-poli'];
         
         // (Koordinator tidak lagi memerlukan permission khusus via Role)
 

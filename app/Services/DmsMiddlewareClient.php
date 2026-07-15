@@ -194,4 +194,171 @@ class DmsMiddlewareClient
         }
         return true;
     }
+
+    // ──── Polyclinic CRUD ────────────────────────────────────────────────────────
+
+    public function getPolyclinics(): array
+    {
+        try {
+            $response = $this->request()->get('/polyclinics');
+            return $response->successful() ? (array) ($response->json('data') ?? []) : [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    public function createPolyclinic(array $data): array
+    {
+        $response = $this->request()->post('/polyclinics', $data);
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? $response->json('message') ?? 'Gagal membuat poliklinik.';
+            throw new \Exception($err);
+        }
+        return (array) $response->json('data');
+    }
+
+    public function updatePolyclinic(string $id, array $data): array
+    {
+        $response = $this->request()->put("/polyclinics/{$id}", $data);
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal memperbarui poliklinik.';
+            throw new \Exception($err);
+        }
+        return (array) $response->json('data');
+    }
+
+    public function deletePolyclinic(string $id): bool
+    {
+        $response = $this->request()->delete("/polyclinics/{$id}");
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal menghapus poliklinik.';
+            throw new \Exception($err);
+        }
+        return true;
+    }
+
+    // ──── Polyclinic Doctors CRUD ────────────────────────────────────────────────
+
+    public function getPolyclinicDoctors(string $polyId): array
+    {
+        try {
+            $response = $this->request()->get("/polyclinics/{$polyId}/doctors");
+            return $response->successful() ? (array) ($response->json('data') ?? []) : [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    public function createPolyclinicDoctor(string $polyId, array $data): array
+    {
+        $request = $this->request();
+
+        if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
+            $request = $request->attach(
+                'photo',
+                fopen($data['photo']->getPathname(), 'r'),
+                $data['photo']->getClientOriginalName()
+            );
+            unset($data['photo']);
+        }
+
+        $response = $request->post("/polyclinics/{$polyId}/doctors", $data);
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? $response->json('message') ?? 'Gagal menambahkan dokter.';
+            throw new \Exception($err);
+        }
+        return (array) $response->json('data');
+    }
+
+    public function updatePolyclinicDoctor(string $polyId, string $id, array $data): array
+    {
+        $request = $this->request();
+
+        if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
+            $request = $request->attach(
+                'photo',
+                fopen($data['photo']->getPathname(), 'r'),
+                $data['photo']->getClientOriginalName()
+            );
+            unset($data['photo']);
+        }
+
+        // Use POST with _method=PUT to support multipart form data in PHP for updates
+        $data['_method'] = 'PUT';
+
+        $response = $request->post("/polyclinics/{$polyId}/doctors/{$id}", $data);
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? $response->json('message') ?? 'Gagal memperbarui dokter.';
+            throw new \Exception($err);
+        }
+        return (array) $response->json('data');
+    }
+
+    public function deletePolyclinicDoctor(string $polyId, string $id): bool
+    {
+        $response = $this->request()->delete("/polyclinics/{$polyId}/doctors/{$id}");
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal menghapus dokter.';
+            throw new \Exception($err);
+        }
+        return true;
+    }
+
+    // ──── Polyclinic Queue Management ────────────────────────────────────────────
+
+    public function getPolyclinicQueue(string $polyId, ?string $doctorId = null): array
+    {
+        try {
+            $params = [];
+            if ($doctorId) {
+                $params['doctor_id'] = $doctorId;
+            }
+            $response = $this->request()->get("/polyclinics/{$polyId}/queue", $params);
+            return $response->successful() ? (array) ($response->json('data') ?? []) : [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    public function addPatientToQueue(string $polyId, array $data): array
+    {
+        $response = $this->request()->post("/polyclinics/{$polyId}/queue", $data);
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal menambahkan pasien ke antrian.';
+            throw new \Exception($err);
+        }
+        return (array) $response->json('data');
+    }
+
+    public function updateQueueStatus(string $polyId, string $queueId, string $status): array
+    {
+        $response = $this->request()->put("/polyclinics/{$polyId}/queue/{$queueId}/status", [
+            'status' => $status,
+        ]);
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal mengubah status antrian.';
+            throw new \Exception($err);
+        }
+        return (array) $response->json('data');
+    }
+
+    public function requeuePatient(string $polyId, string $queueId): array
+    {
+        $response = $this->request()->post("/polyclinics/{$polyId}/queue/{$queueId}/requeue");
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal memanggil ulang pasien.';
+            throw new \Exception($err);
+        }
+        return (array) $response->json('data');
+    }
+
+    public function deleteQueueEntry(string $polyId, string $queueId): bool
+    {
+        $response = $this->request()->delete("/polyclinics/{$polyId}/queue/{$queueId}");
+        if (!$response->successful()) {
+            $err = $response->json('error.message') ?? 'Gagal menghapus antrian.';
+            throw new \Exception($err);
+        }
+        return true;
+    }
 }
