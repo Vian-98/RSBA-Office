@@ -51,17 +51,42 @@
                             <h2 class="text-lg font-bold text-slate-800">Rekap Absensi Saya</h2>
                             
                             <!-- Month & Year Selectors -->
-                            <div class="flex items-center gap-1.5">
-                                <select wire:model.live="selectedBulan" class="text-xs rounded-lg border-gray-200 bg-slate-50 py-0.5 pl-2 pr-8 text-slate-700 font-medium focus:border-indigo-500 focus:ring-indigo-500 cursor-pointer">
-                                    @for($m = 1; $m <= 12; $m++)
-                                        <option value="{{ $m }}">{{ \Carbon\Carbon::create(2026, $m, 1)->translatedFormat('F') }}</option>
-                                    @endfor
-                                </select>
-                                <select wire:model.live="selectedTahun" class="text-xs rounded-lg border-gray-200 bg-slate-50 py-0.5 pl-2 pr-8 text-slate-700 font-medium focus:border-indigo-500 focus:ring-indigo-500 cursor-pointer">
-                                    @for($y = date('Y') + 1; $y >= 2008; $y--)
-                                        <option value="{{ $y }}">{{ $y }}</option>
-                                    @endfor
-                                </select>
+                            <div class="flex items-center gap-1.5" x-data="{ openBulan: false, openTahun: false }">
+                                <!-- Month Selector Dropdown -->
+                                <div class="relative">
+                                    <button type="button" @click="openBulan = !openBulan" @click.away="openBulan = false"
+                                        class="flex items-center gap-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-700 font-semibold shadow-2xs hover:bg-slate-100 transition-colors duration-200">
+                                        <span>{{ \Carbon\Carbon::create(2026, $selectedBulan, 1)->translatedFormat('F') }}</span>
+                                        <x-tabler-chevron-down class="h-3.5 w-3.5 text-slate-400" />
+                                    </button>
+                                    <div x-show="openBulan" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                                        class="absolute left-0 top-full z-50 mt-1 max-h-48 w-32 overflow-y-auto rounded-lg border border-slate-100 bg-white py-1.5 shadow-lg" style="display: none;">
+                                        @for($m = 1; $m <= 12; $m++)
+                                            <button type="button" wire:click="$set('selectedBulan', {{ $m }})" @click="openBulan = false"
+                                                class="w-full px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition-colors {{ $selectedBulan == $m ? 'bg-indigo-50 text-indigo-600 font-bold' : '' }}">
+                                                {{ \Carbon\Carbon::create(2026, $m, 1)->translatedFormat('F') }}
+                                            </button>
+                                        @endfor
+                                    </div>
+                                </div>
+
+                                <!-- Year Selector Dropdown -->
+                                <div class="relative">
+                                    <button type="button" @click="openTahun = !openTahun" @click.away="openTahun = false"
+                                        class="flex items-center gap-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-700 font-semibold shadow-2xs hover:bg-slate-100 transition-colors duration-200">
+                                        <span>{{ $selectedTahun }}</span>
+                                        <x-tabler-chevron-down class="h-3.5 w-3.5 text-slate-400" />
+                                    </button>
+                                    <div x-show="openTahun" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                                        class="absolute left-0 top-full z-50 mt-1 max-h-48 w-24 overflow-y-auto rounded-lg border border-slate-100 bg-white py-1.5 shadow-lg" style="display: none;">
+                                        @for($y = date('Y') + 1; $y >= 2008; $y--)
+                                            <button type="button" wire:click="$set('selectedTahun', {{ $y }})" @click="openTahun = false"
+                                                class="w-full px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition-colors {{ $selectedTahun == $y ? 'bg-indigo-50 text-indigo-600 font-bold' : '' }}">
+                                                {{ $y }}
+                                            </button>
+                                        @endfor
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <p class="text-xs text-slate-500 mt-1">Periode: <span class="font-semibold text-slate-700">{{ $rekapAbsen['bulan_nama'] }}</span></p>
