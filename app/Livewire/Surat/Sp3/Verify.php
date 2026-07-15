@@ -61,21 +61,28 @@ class Verify extends Component
         }
         $this->surat = $suratApproval->surat;
 
+        // get log from SignatureLogs
+        $log = SignatureLogs::where('data_hash', $signature)->first();
+        if (!$log) {
+            $this->toast()
+                ->error('Invalid', 'Log tanda tangan tidak ditemukan.')
+                ->send();
+            return;
+        }
+
         // get p12 based user approval
         $certs = SignatureCerts::where('user_id', $suratApproval->disetujui)->latest('id')->first();
+        if (!$certs) {
+            $this->toast()
+                ->error('Invalid', 'Sertifikat tidak ditemukan.')
+                ->send();
+            return;
+        }
 
-        $dataToVerify  = json_encode([
-            'surat_sp3_id' => $suratApproval->surat_sp3_id,
-            'disetujui' => $suratApproval->disetujui,
-            'status' => $suratApproval->status,
-            'keterangan' => $suratApproval->keterangan ?? null,
-            'approved_at' => $suratApproval->approved_at,
-        ]);
-
-        // verify signature
+        // verify signature against the original signed data stored in log
         $this->verify = $this->verifySignature(
-            data: $dataToVerify,
-            signature: $suratApproval->signature_hash,
+            data: $log->data,
+            signature: $log->signature,
             publicKey: $certs->public_key
         );
 
@@ -86,16 +93,13 @@ class Verify extends Component
             $this->bgColor = 'red';
         }
         // data surat yanga asli
-        $this->dataSuratAsli = SignatureLogs::where('signature_hash', $signature)->get()
+        $this->dataSuratAsli = SignatureLogs::where('data_hash', $signature)->get()
             ->map(function ($item) {
                 $data = json_decode($item->data);
-                // $data = $item->data;
-                // dd($data, $data->surat_sp3_id);
-
-
+                $signer = \App\Models\User::find($data->disetujui)?->karyawan?->nama ?? 'Sistem';
                 return [
                     'surat_sp3_id' => $data->surat_sp3_id,
-                    'disetujui' => $data->disetujui,
+                    'disetujui' => $signer,
                     'status' => $data->status,
                     'keterangan' => $data->keterangan ?? null,
                     'approved_at' => $data->approved_at,
@@ -124,9 +128,6 @@ class Verify extends Component
             $publicKeyResource,
             OPENSSL_ALGO_SHA256
         );
-
-        // Clean up
-        openssl_free_key($publicKeyResource);
 
         // Handle result
         if ($result === 1) {

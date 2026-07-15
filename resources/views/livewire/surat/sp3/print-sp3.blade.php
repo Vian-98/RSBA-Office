@@ -1,6 +1,6 @@
 <div id="print-sp3" style="width: 100%; margin: 0; padding: 15px; font-family: Arial, sans-serif;">
     <div align="center" class="mb-2">
-        <img src="{{ asset('storage/' . $rs->logo) }}" style="height:60px;">
+        <img src="{{ ($rs && $rs->logo) ? asset('storage/' . $rs->logo) : asset('logo-fallback.png') }}" style="height:60px;">
         <h2 class="bold text-lg uppercase">{{ $rs->nama }}</h2>
         <span class="text-sm">SURAT PERMINTAAN PROSES PEMBAYARAN<br>(Kontrak, Sundries, Material, dll.)</span>
     </div>
