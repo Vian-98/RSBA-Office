@@ -110,11 +110,7 @@ class ApprovalManual extends Component
 
 
                 if (!$signature['status']) {
-                    $this->toast()
-                        ->error('Proses tanda tangan tidak berhasil.', "<i>{$signature['message']}</i>")
-                        ->send();
-
-                    return;
+                    throw new Exception("Proses tanda tangan tidak berhasil: " . $signature['message']);
                 }
 
                 // prepare data update
