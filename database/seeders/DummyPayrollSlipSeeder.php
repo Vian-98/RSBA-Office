@@ -67,7 +67,9 @@ class DummyPayrollSlipSeeder extends Seeder
                     $base['gaji_pokok'],
                     $base['tunjangan_tetap'],
                     $totalEarnings,
-                    $bpjsKeluargaTambahan
+                    $bpjsKeluargaTambahan,
+                    $karyawan,
+                    $m
                 );
                 
                 $bpjsKes = $deductions['potongan_bpjs_kes'];

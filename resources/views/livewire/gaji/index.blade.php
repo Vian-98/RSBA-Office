@@ -491,7 +491,7 @@
                                 <span class="text-slate-800 font-bold">Rp {{ number_format($calc_bpjs_tk, 0, ',', '.') }}</span>
                             </div>
                             <div class="flex justify-between">
-                                <span>PPh Pasal 21 (Pajak 5%)</span>
+                                <span>PPh Pasal 21 (TER / Psl 17)</span>
                                 <span class="text-slate-800 font-bold">Rp {{ number_format($calc_pph21, 0, ',', '.') }}</span>
                             </div>
                         </div>

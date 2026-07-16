@@ -89,13 +89,13 @@ class DummyDataSeeder extends Seeder
         // 6. Seed Jabatan (Needs self-referencing disable/enable)
         Schema::disableForeignKeyConstraints();
         $jabatans = [
-            ['id' => 1, 'nama' => 'Direktur Utama', 'kode_surat' => 'DIR', 'parent_id' => 1, 'bagian_id' => $bagianIds['SDM'], 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 2, 'nama' => 'Kepala Bagian SDM', 'kode_surat' => 'KABAG-SDM', 'parent_id' => 1, 'bagian_id' => $bagianIds['SDM'], 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 3, 'nama' => 'Kepala Bagian Umum', 'kode_surat' => 'KABAG-UM', 'parent_id' => 1, 'bagian_id' => $bagianIds['Umum & Logistik'], 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 4, 'nama' => 'Kepala Bagian Keuangan', 'kode_surat' => 'KABAG-KEU', 'parent_id' => 1, 'bagian_id' => $bagianIds['Keuangan'], 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 5, 'nama' => 'Staff Pelaksana SDM', 'kode_surat' => 'STF-SDM', 'parent_id' => 2, 'bagian_id' => $bagianIds['SDM'], 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 6, 'nama' => 'Staff Pelaksana Umum', 'kode_surat' => 'STF-UM', 'parent_id' => 3, 'bagian_id' => $bagianIds['Umum & Logistik'], 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 7, 'nama' => 'Staff Pelaksana Keuangan', 'kode_surat' => 'STF-KEU', 'parent_id' => 4, 'bagian_id' => $bagianIds['Keuangan'], 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 1, 'nama' => 'Direktur Utama', 'kode_surat' => 'DIR', 'parent_id' => 1, 'bagian_id' => $bagianIds['SDM'], 'tunjangan_jabatan' => 5000000, 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 2, 'nama' => 'Kepala Bagian SDM', 'kode_surat' => 'KABAG-SDM', 'parent_id' => 1, 'bagian_id' => $bagianIds['SDM'], 'tunjangan_jabatan' => 2500000, 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 3, 'nama' => 'Kepala Bagian Umum', 'kode_surat' => 'KABAG-UM', 'parent_id' => 1, 'bagian_id' => $bagianIds['Umum & Logistik'], 'tunjangan_jabatan' => 2500000, 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 4, 'nama' => 'Kepala Bagian Keuangan', 'kode_surat' => 'KABAG-KEU', 'parent_id' => 1, 'bagian_id' => $bagianIds['Keuangan'], 'tunjangan_jabatan' => 2500000, 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 5, 'nama' => 'Staff Pelaksana SDM', 'kode_surat' => 'STF-SDM', 'parent_id' => 2, 'bagian_id' => $bagianIds['SDM'], 'tunjangan_jabatan' => 500000, 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 6, 'nama' => 'Staff Pelaksana Umum', 'kode_surat' => 'STF-UM', 'parent_id' => 3, 'bagian_id' => $bagianIds['Umum & Logistik'], 'tunjangan_jabatan' => 500000, 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 7, 'nama' => 'Staff Pelaksana Keuangan', 'kode_surat' => 'STF-KEU', 'parent_id' => 4, 'bagian_id' => $bagianIds['Keuangan'], 'tunjangan_jabatan' => 500000, 'created_at' => now(), 'updated_at' => now()],
         ];
         DB::table('sdm_jabatan')->insert($jabatans);
         Schema::enableForeignKeyConstraints();
