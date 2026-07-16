@@ -22,7 +22,11 @@ class DummyPayrollSlipSeeder extends Seeder
         }
 
         // Hapus data lama agar tidak duplikat saat di-seed ulang
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        DB::table('sdm_payroll_slip_allocations')->truncate();
+        DB::table('sdm_payroll_slip_allowances')->truncate();
         DB::table('sdm_payroll_slips')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
         $months = [];
         $currentDate = Carbon::parse('2026-07-01');
