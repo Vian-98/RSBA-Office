@@ -38,14 +38,28 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
         $user = Auth::user();
         if ($user) {
-            $ruanganIds = $user->getRuanganKoordinatorIds();
-            // null = Super-Admin/Staff-SDM, akses semua ruangan
-            // [] kosong = tidak punya akses ruangan sama sekali
-            if ($ruanganIds !== null) {
+            if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+                // Super-Admin & Staff-SDM dapat melihat semua ruangan
+            } elseif ($user->isKoordinator()) {
+                // Koordinator: ruangan koordinasi + ruangan sendiri
+                $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
+                $ownRuanganId = $user->karyawan?->ruangan_id;
+                if ($ownRuanganId && !in_array($ownRuanganId, $ruanganIds)) {
+                    $ruanganIds[] = $ownRuanganId;
+                }
+                
                 if (empty($ruanganIds)) {
-                    $query->whereRaw('0 = 1'); // tidak ada ruangan yg bisa diakses
+                    $query->whereRaw('0 = 1');
                 } else {
                     $query->whereIn('ruangan_id', $ruanganIds);
+                }
+            } else {
+                // User biasa: hanya melihat ruangan tempat dia ditugaskan (teman seruangan)
+                $ownRuanganId = $user->karyawan?->ruangan_id;
+                if ($ownRuanganId) {
+                    $query->where('ruangan_id', $ownRuanganId);
+                } else {
+                    $query->whereRaw('0 = 1');
                 }
             }
         }
@@ -65,9 +79,19 @@ class Index extends Component implements HasForms, HasTable, HasActions
             ])
             ->recordActions([
                 Action::make('kelola')
-                    ->label('Kelola')
+                    ->label(fn (JadwalKerja $record): string => 
+                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
+                        (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
+                            ? 'Kelola' 
+                            : 'Lihat'
+                    )
                     ->iconButton()
-                    ->icon('tabler-list-details')
+                    ->icon(fn (JadwalKerja $record): string => 
+                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
+                        (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
+                            ? 'tabler-list-details' 
+                            : 'tabler-eye'
+                    )
                     ->color('primary')
                     ->url(fn (JadwalKerja $record): string => route('kepegawaian.jadwal-kerja.kelola', ['id' => $record->id])),
                 Action::make('delete')
@@ -78,7 +102,11 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     ->requiresConfirmation()
                     ->action(fn (JadwalKerja $record) => $record->delete())
                     ->successNotificationTitle('Jadwal berhasil dihapus')
-                    ->visible(fn (JadwalKerja $record): bool => $record->status === \App\Enums\StatusJadwalKerja::DRAFT),
+                    ->visible(fn (JadwalKerja $record): bool => 
+                        $record->status === \App\Enums\StatusJadwalKerja::DRAFT && 
+                        (Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
+                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? [])))
+                    ),
             ]);
     }
 

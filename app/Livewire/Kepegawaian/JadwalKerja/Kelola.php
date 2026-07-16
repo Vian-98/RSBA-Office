@@ -34,6 +34,32 @@ class Kelola extends Component
             'details.shift'
         ])->findOrFail($id);
 
+        $user = Auth::user();
+        $canView = false;
+        $canManage = false;
+
+        if ($user) {
+            if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+                $canView = true;
+                $canManage = true;
+            } else {
+                $ownRuanganId = $user->karyawan?->ruangan_id;
+                $ruanganIds = $user->isKoordinator() ? ($user->getRuanganKoordinatorIds() ?? []) : [];
+                
+                // Cek hak melihat
+                if ($this->jadwalKerja->ruangan_id === $ownRuanganId || in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
+                    $canView = true;
+                }
+                
+                // Cek hak mengelola (edit)
+                if (in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
+                    $canManage = true;
+                }
+            }
+        }
+
+        abort_unless($canView, 403, 'Anda tidak memiliki akses ke jadwal ruangan ini.');
+
         // Populate valid shifts using service (includes jam override)
         $validShifts = $service->shiftValidUntukRuangan($this->jadwalKerja->ruangan_id);
         $this->shiftOptions = $validShifts->map(function ($rs) {
@@ -48,7 +74,7 @@ class Kelola extends Component
             ];
         })->toArray();
 
-        $this->isReadOnly = $this->jadwalKerja->status === StatusJadwalKerja::LOCKED;
+        $this->isReadOnly = $this->jadwalKerja->status === StatusJadwalKerja::LOCKED || !$canManage;
 
         // Populate dates for header
         $daysInMonth = Carbon::create($this->jadwalKerja->tahun, $this->jadwalKerja->bulan, 1)->daysInMonth;
