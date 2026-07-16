@@ -910,12 +910,20 @@
                     this.rawVal = this.$wire.entangle(propName).live;
                 },
                 get formatted() {
-                    if (this.rawVal === null || this.rawVal === undefined || this.rawVal === '') {
+                    let val = this.rawVal;
+                    if (val === null || val === undefined || val === '') {
                         return '0';
                     }
-                    return Number(this.rawVal).toLocaleString('id-ID');
+                    let num = parseFloat(val);
+                    if (isNaN(num)) {
+                        return '0';
+                    }
+                    return num.toLocaleString('id-ID');
                 },
                 set formatted(val) {
+                    if (typeof val !== 'string') {
+                        val = String(val || '');
+                    }
                     let clean = val.replace(/\D/g, '');
                     this.rawVal = clean ? parseInt(clean) : 0;
                 }
