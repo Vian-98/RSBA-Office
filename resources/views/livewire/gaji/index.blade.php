@@ -361,13 +361,13 @@
                                                 <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $calculatedLateMinutes }} mnt telat</span>
                                             @endif
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_absensi" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_absensi" type="text" prefix="Rp" class="text-xs text-red-600 bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Cash Bon</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_cash_bon" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_cash_bon" type="text" prefix="Rp" class="text-xs text-red-600 bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
                                 
@@ -377,13 +377,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Obat / Rawat</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_obat" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_obat" type="text" prefix="Rp" class="text-xs text-red-600 bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Lain-Lain</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_lain" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_lain" type="text" prefix="Rp" class="text-xs text-red-600 bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
                                 
@@ -393,13 +393,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">BPJS Kesehatan</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_kes" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_kes" type="text" prefix="Rp" class="text-xs text-red-600 bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">BPJS Ketenagakerjaan</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_tk" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_tk" type="text" prefix="Rp" class="text-xs text-red-600 bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
                                 
@@ -409,14 +409,14 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Potongan Bank</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bank" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bank" type="text" prefix="Rp" class="text-xs text-red-600 bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Keluarga Add-on BPJS</span>
                                             <span class="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">+1% / kepala</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_bpjs_keluarga_tambahan" type="number" min="0" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_bpjs_keluarga_tambahan" type="number" min="0" class="text-xs text-red-600 bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
                                     </div>
                                 </div>
 
@@ -436,7 +436,7 @@
                                                 <button type="button" wire:click="resetPph21ToAuto" class="text-[9px] font-bold text-red-600 hover:underline">Reset ke Auto</button>
                                             @endif
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_pph21" type="text" prefix="Rp" class="text-xs text-red-700 font-bold bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_pph21" type="text" prefix="Rp" class="text-xs text-red-600 bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     @if($form_pph21_is_overridden)
                                         <div>
