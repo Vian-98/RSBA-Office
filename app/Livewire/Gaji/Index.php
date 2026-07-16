@@ -123,6 +123,12 @@ class Index extends Component
     public function updated($name)
     {
         if (str_starts_with($name, 'form_')) {
+            $value = $this->{$name};
+            if (is_string($value)) {
+                $cleaned = str_replace('.', '', $value);
+                $this->{$name} = is_numeric($cleaned) ? (double)$cleaned : 0;
+            }
+
             if ($name === 'form_potongan_pph21') {
                 if ((double) $this->form_potongan_pph21 !== (double) $this->form_pph21_calculated) {
                     $this->form_pph21_is_overridden = true;

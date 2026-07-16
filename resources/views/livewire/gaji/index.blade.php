@@ -218,13 +218,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Gaji Pokok (Base)</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_gaji_pokok')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input wire:model.defer="form_gaji_pokok" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Tetap</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_tunjangan_tetap')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input wire:model.defer="form_tunjangan_tetap" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
 
@@ -234,13 +234,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Absensi</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_tunjangan_absensi')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input wire:model.defer="form_tunjangan_absensi" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Jabatan</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_tunjangan_jabatan')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input wire:model.defer="form_tunjangan_jabatan" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
 
@@ -250,13 +250,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Shift</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_tunjangan_shift')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_shift" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Radiologi</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_tunjangan_radiologi')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_radiologi" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
 
@@ -266,7 +266,7 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Lain (Total)</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_tunjangan_lain')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input wire:model.defer="form_tunjangan_lain" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
@@ -275,7 +275,7 @@
                                                 <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $calculatedOvertimeMinutes }} mnt lembur</span>
                                             @endif
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_uang_lembur')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_uang_lembur" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
 
@@ -285,7 +285,7 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Hari Raya</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_tunjangan_hari_raya')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_hari_raya" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div></div>
                                 </div>
@@ -305,7 +305,7 @@
                                             </select>
                                         </div>
                                         <div class="w-full sm:w-40">
-                                            <x-ts:input label="Nominal" x-data="moneyInput('temp_allowance_nominal')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                            <x-ts:input label="Nominal" wire:model.defer="temp_allowance_nominal" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                         </div>
                                         <div>
                                             <x-ts:button type="button" wire:click="addTunjanganLain" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm w-full sm:w-auto">
@@ -361,13 +361,13 @@
                                                 <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $calculatedLateMinutes }} mnt telat</span>
                                             @endif
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_potongan_absensi')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_absensi" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Cash Bon</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_potongan_cash_bon')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_cash_bon" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
                                 
@@ -377,13 +377,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Obat / Rawat</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_potongan_obat')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_obat" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Lain-Lain</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_potongan_lain')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_lain" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
                                 
@@ -393,13 +393,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">BPJS Kesehatan</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_potongan_bpjs_kes')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_kes" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">BPJS Ketenagakerjaan</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_potongan_bpjs_tk')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_tk" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
                                 
@@ -409,7 +409,7 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Potongan Bank</span>
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_potongan_bank')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bank" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
@@ -436,7 +436,7 @@
                                                 <button type="button" wire:click="resetPph21ToAuto" class="text-[9px] font-bold text-red-600 hover:underline">Reset ke Auto</button>
                                             @endif
                                         </div>
-                                        <x-ts:input x-data="moneyInput('form_potongan_pph21')" x-model="formatted" type="text" prefix="Rp" class="text-xs text-red-700 font-bold bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_pph21" type="text" prefix="Rp" class="text-xs text-red-700 font-bold bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                     @if($form_pph21_is_overridden)
                                         <div>
@@ -899,35 +899,5 @@
                 printWindow.close();
             }, 250);
         }
-    </script>
-
-    <!-- Alpine Money Input Formatter -->
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('moneyInput', (propName) => ({
-                rawVal: null,
-                init() {
-                    this.rawVal = this.$wire.entangle(propName).live;
-                },
-                get formatted() {
-                    let val = this.rawVal;
-                    if (val === null || val === undefined || val === '') {
-                        return '0';
-                    }
-                    let num = parseFloat(val);
-                    if (isNaN(num)) {
-                        return '0';
-                    }
-                    return num.toLocaleString('id-ID');
-                },
-                set formatted(val) {
-                    if (typeof val !== 'string') {
-                        val = String(val || '');
-                    }
-                    let clean = val.replace(/\D/g, '');
-                    this.rawVal = clean ? parseInt(clean) : 0;
-                }
-            }));
-        });
     </script>
 </div>
