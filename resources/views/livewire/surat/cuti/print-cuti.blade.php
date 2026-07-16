@@ -1,6 +1,6 @@
 <div id="print-cuti" style="width: 100%; margin: 0; padding: 15px; font-family: Arial, sans-serif;">
     <div align="center" class="mb-2">
-        <img src="{{ asset('storage/' . $rs->logo) }}" style="height:60px;">
+        <img src="{{ ($rs && $rs->logo) ? asset('storage/' . $rs->logo) : asset('logo-fallback.png') }}" style="height:60px;">
         <h2 class="bold uppercase">{{ $rs->nama }}</h2>
         <span class="text-sm">PERMOHONAN PENGAJUAN CUTI</span>
     </div>

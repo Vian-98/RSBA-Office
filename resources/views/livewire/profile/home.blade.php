@@ -3,8 +3,8 @@
     {{-- Welcome banner --}}
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-700 p-6 text-white shadow-lg">
         <div class="relative z-10">
-            <p class="text-sm font-medium text-indigo-100">Selamat datang kembali 👋</p>
-            <h2 class="mt-1 text-2xl font-bold">{{ $karyawan->full_nama }}</h2>
+            <p class="text-xs font-semibold text-indigo-100/80 tracking-wide uppercase">Selamat datang kembali 👋</p>
+            <h2 class="mt-0.5 text-xl font-extrabold tracking-tight">{{ $karyawan->full_nama }}</h2>
             <p class="mt-0.5 text-sm text-indigo-200">{{ $karyawan->jabatan?->first()?->nama ?? 'Belum ada jabatan' }} &bull; {{ $karyawan->status->nama() }}</p>
         </div>
         {{-- Decorative circles --}}

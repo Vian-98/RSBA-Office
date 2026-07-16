@@ -24,8 +24,8 @@
                     Kelola Gaji Karyawan
                 </x-ts:button>
             @endcan
-            <div class="w-48 bg-white rounded-lg shadow-2xs">
-                <x-ts:input wire:model.live="periode" type="month" class="w-full text-sm" />
+            <div class="w-48">
+                <x-month-picker wire:model.live="periode" />
             </div>
         </div>
     </div>
@@ -416,7 +416,7 @@
                 
                 <div class="p-3 bg-indigo-50/50 rounded-lg text-[10px] text-slate-500 border border-indigo-100/50 leading-relaxed">
                     <span class="font-bold text-indigo-700 block mb-0.5">Catatan:</span>
-                    Total persentase dari seluruh alokasi yang ditambahkan harus tepat **100%** agar alokasi tunjangan bernilai pas 25% dari UMK.
+                    Total persentase dari seluruh alokasi yang ditambahkan harus tepat <strong>100%</strong> agar alokasi tunjangan bernilai pas 25% dari UMK.
                 </div>
             </div>
 

@@ -73,7 +73,7 @@ class Verify extends Component
         }
 
         // Get the signed data from logs
-        $log = SignatureLogs::where('signature_hash', $signature)->first();
+        $log = SignatureLogs::where('data_hash', $signature)->first();
         if (!$log) {
             $this->toast()
                 ->error('Invalid', 'Log tanda tangan tidak ditemukan.')
@@ -84,7 +84,7 @@ class Verify extends Component
         // Verify signature against original data in logs
         $this->verify = $this->verifySignature(
             data: $log->data,
-            signature: $signature,
+            signature: $log->signature,
             publicKey: $certs->public_key
         );
 
@@ -124,7 +124,6 @@ class Verify extends Component
             OPENSSL_ALGO_SHA256
         );
 
-        openssl_free_key($publicKeyResource);
 
         if ($result === 1) {
             return true;

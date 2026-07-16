@@ -56,7 +56,7 @@ class Index extends Component
     function updateAvatar()
     {
         $this->validate([
-            'profileTmp' => 'required|image|max:250', // 300kb Max
+            'profileTmp' => 'required|image|max:500', // 500kb Max
         ]);
 
         DB::beginTransaction();

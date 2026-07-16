@@ -27,6 +27,10 @@ Route::prefix('dashboard')
         Route::middleware(['auth'])
             ->get('/display-monitor/admin', App\Livewire\Dashboard\DisplayMonitorAdmin::class)
             ->name('display-monitor.admin');
+
+        Route::middleware(['auth'])
+            ->get('/poli/admin', App\Livewire\Dashboard\PoliAdmin::class)
+            ->name('poli.admin');
     });
 
 

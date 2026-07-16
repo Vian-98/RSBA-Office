@@ -27,6 +27,31 @@ class DigitalSignatureService
         return env('OPENSSL_BIN', 'openssl');
     }
 
+    /**
+     * Get the openssl config path from env or common fallbacks.
+     */
+    private function opensslConf(): ?string
+    {
+        $conf = env('OPENSSL_CONF');
+        if ($conf && file_exists($conf)) {
+            return $conf;
+        }
+        
+        $fallbacks = [
+            'C:/xampp/apache/conf/openssl.cnf',
+            'C:/Program Files/Common Files/SSL/openssl.cnf',
+            'C:/Program Files (x86)/Common Files/SSL/openssl.cnf',
+        ];
+        
+        foreach ($fallbacks as $fb) {
+            if (file_exists($fb)) {
+                return $fb;
+            }
+        }
+        
+        return null;
+    }
+
     protected string $country = "ID";
     protected string $state = "Lampung";
     protected string $local = "Bandar Lampung";
@@ -379,7 +404,18 @@ class DigitalSignatureService
     private function execSSLCsr(array $paths, string $subject): void
     {
         $bin = $this->opensslBin();
-        shell_exec("\"{$bin}\" req -new -key {$paths['privateKey']} -out {$paths['csr']} -subj '{$subject}'");
+        $conf = $this->opensslConf();
+        $configFlag = $conf ? " -config \"" . $conf . "\"" : "";
+        
+        $escapedSubject = str_replace('"', '\"', $subject);
+        
+        if (PHP_OS_FAMILY === 'Windows') {
+            $cmd = "\"{$bin}\" req -new -key {$paths['privateKey']} -out {$paths['csr']} -subj \"{$escapedSubject}\"{$configFlag}";
+        } else {
+            $cmd = "\"{$bin}\" req -new -key {$paths['privateKey']} -out {$paths['csr']} -subj '{$subject}'{$configFlag}";
+        }
+        
+        shell_exec($cmd);
 
         if (!file_exists($paths['csr']) || filesize($paths['csr']) === 0) {
             throw new Exception("Tidak berhasil membuat CSR file.");
