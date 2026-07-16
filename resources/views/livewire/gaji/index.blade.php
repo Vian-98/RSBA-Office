@@ -218,13 +218,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Gaji Pokok (Base)</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_gaji_pokok" type="number" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input x-data="moneyInput('form_gaji_pokok')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Tetap</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_tunjangan_tetap" type="number" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input x-data="moneyInput('form_tunjangan_tetap')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
                                     </div>
                                 </div>
 
@@ -234,13 +234,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Absensi</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_tunjangan_absensi" type="number" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input x-data="moneyInput('form_tunjangan_absensi')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Jabatan</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_tunjangan_jabatan" type="number" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input x-data="moneyInput('form_tunjangan_jabatan')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
                                     </div>
                                 </div>
 
@@ -250,13 +250,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Shift</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_shift" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_tunjangan_shift')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Radiologi</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_radiologi" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_tunjangan_radiologi')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                 </div>
 
@@ -266,7 +266,7 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Lain (Total)</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_tunjangan_lain" type="number" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
+                                        <x-ts:input x-data="moneyInput('form_tunjangan_lain')" x-model="formatted" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
@@ -275,7 +275,7 @@
                                                 <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $calculatedOvertimeMinutes }} mnt lembur</span>
                                             @endif
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_uang_lembur" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_uang_lembur')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                 </div>
 
@@ -285,7 +285,7 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Hari Raya</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_hari_raya" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_tunjangan_hari_raya')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                     <div></div>
                                 </div>
@@ -305,7 +305,7 @@
                                             </select>
                                         </div>
                                         <div class="w-full sm:w-40">
-                                            <x-ts:input label="Nominal" wire:model.defer="temp_allowance_nominal" type="number" prefix="Rp" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                            <x-ts:input label="Nominal" x-data="moneyInput('temp_allowance_nominal')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                         </div>
                                         <div>
                                             <x-ts:button type="button" wire:click="addTunjanganLain" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm w-full sm:w-auto">
@@ -349,7 +349,7 @@
 
                         <!-- Right Panel: Potongan -->
                         <div class="space-y-4">
-                            <span class="text-xs font-bold text-rose-650 uppercase tracking-wider block pb-1 border-b border-rose-150">Komponen Potongan & Pajak (-)</span>
+                            <span class="text-xs font-bold text-red-600 uppercase tracking-wider block pb-1 border-b border-red-200">Komponen Potongan & Pajak (-)</span>
                             
                             <div class="space-y-3">
                                 <!-- Row 1: Absensi & Cash Bon -->
@@ -361,13 +361,13 @@
                                                 <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $calculatedLateMinutes }} mnt telat</span>
                                             @endif
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_absensi" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_potongan_absensi')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Cash Bon</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_cash_bon" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_potongan_cash_bon')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                 </div>
                                 
@@ -377,13 +377,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Obat / Rawat</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_obat" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_potongan_obat')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Lain-Lain</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_lain" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_potongan_lain')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                 </div>
                                 
@@ -393,13 +393,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">BPJS Kesehatan</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_kes" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_potongan_bpjs_kes')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">BPJS Ketenagakerjaan</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_tk" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_potongan_bpjs_tk')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                 </div>
                                 
@@ -409,14 +409,14 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Potongan Bank</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bank" type="number" prefix="Rp" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_potongan_bank')" x-model="formatted" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Keluarga Add-on BPJS</span>
                                             <span class="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">+1% / kepala</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_bpjs_keluarga_tambahan" type="number" min="0" class="text-xs" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_bpjs_keluarga_tambahan" type="number" min="0" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
                                     </div>
                                 </div>
 
@@ -425,7 +425,7 @@
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <div class="flex items-center gap-1.5">
-                                                <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Pajak PPh Pasal 21</span>
+                                                <span class="block text-[10px] font-bold uppercase tracking-wider text-red-600 leading-tight">Pajak PPh Pasal 21</span>
                                                 @if($form_pph21_is_overridden)
                                                     <span class="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">Manual (Override)</span>
                                                 @else
@@ -433,17 +433,17 @@
                                                 @endif
                                             </div>
                                             @if($form_pph21_is_overridden && !$isLocked)
-                                                <button type="button" wire:click="resetPph21ToAuto" class="text-[9px] font-bold text-indigo-650 hover:underline">Reset ke Auto</button>
+                                                <button type="button" wire:click="resetPph21ToAuto" class="text-[9px] font-bold text-red-600 hover:underline">Reset ke Auto</button>
                                             @endif
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_pph21" type="number" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/^0+(?=\d)/, '')" />
+                                        <x-ts:input x-data="moneyInput('form_potongan_pph21')" x-model="formatted" type="text" prefix="Rp" class="text-xs text-red-700 font-bold bg-red-50/20 border-red-200 focus:border-red-500 focus:ring-red-500" :disabled="$isLocked" />
                                     </div>
                                     @if($form_pph21_is_overridden)
                                         <div>
                                             <div class="flex justify-between items-end h-8 mb-1">
-                                                <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Alasan Perubahan Pajak <span class="text-red-500">*</span></span>
+                                                <span class="block text-[10px] font-bold uppercase tracking-wider text-red-500 leading-tight">Alasan Perubahan Pajak <span class="text-red-500">*</span></span>
                                             </div>
-                                            <x-ts:input wire:model="form_pph21_override_reason" type="text" :disabled="$isLocked" placeholder="Wajib diisi, cth: Pajak Natura / Koreksi PTKP" class="text-xs" />
+                                            <x-ts:input wire:model="form_pph21_override_reason" type="text" :disabled="$isLocked" placeholder="Wajib diisi, cth: Pajak Natura / Koreksi PTKP" class="text-xs border-red-250 focus:border-red-500 focus:ring-red-500" />
                                         </div>
                                     @else
                                         <div class="flex flex-col justify-center text-[9px] font-semibold text-slate-400 mt-6 leading-normal">
@@ -899,5 +899,27 @@
                 printWindow.close();
             }, 250);
         }
+    </script>
+
+    <!-- Alpine Money Input Formatter -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('moneyInput', (propName) => ({
+                rawVal: null,
+                init() {
+                    this.rawVal = this.$wire.entangle(propName).live;
+                },
+                get formatted() {
+                    if (this.rawVal === null || this.rawVal === undefined || this.rawVal === '') {
+                        return '0';
+                    }
+                    return Number(this.rawVal).toLocaleString('id-ID');
+                },
+                set formatted(val) {
+                    let clean = val.replace(/\D/g, '');
+                    this.rawVal = clean ? parseInt(clean) : 0;
+                }
+            }));
+        });
     </script>
 </div>
