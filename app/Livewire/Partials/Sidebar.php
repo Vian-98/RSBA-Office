@@ -230,6 +230,13 @@ class Sidebar extends Component
                 ]);
             }
 
+            // Izinkan semua user yang login untuk melihat menu Jadwal Kerja
+            if ($user) {
+                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
+                }
+            }
+
             // Allow users with assigned ruangan to view the asset & pengajuan menu
             if ($user?->karyawan?->ruangan_id) {
                 if (!in_array('view-umum-asset', $permissions)) {
