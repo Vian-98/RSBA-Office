@@ -86,6 +86,7 @@ class Index extends Component
     public $calc_gaji_bersih = 0;
     
     public bool $isLocked = false;
+    public string $periodStatus = 'draft';
 
     public function mount()
     {
@@ -93,10 +94,33 @@ class Index extends Component
             $this->periode = now()->format('Y-m');
         }
 
-        $this->isLocked = DB::table('sdm_payroll_period_locks')
+        $this->refreshLockStatus();
+    }
+
+    private function refreshLockStatus(): void
+    {
+        $lock = DB::table('sdm_payroll_period_locks')
             ->where('periode', $this->periode)
-            ->where('is_approved', true)
-            ->exists();
+            ->first();
+
+        $this->periodStatus = $lock->status ?? 'draft';
+
+        $user = auth()->user();
+        $isOnlyPajak = $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
+        $isSDM = $user->hasRole('Staff-SDM') || $user->hasRole('Super-Admin');
+
+        if ($this->periodStatus === 'approved') {
+            $this->isLocked = true;
+        } elseif ($this->periodStatus === 'review_pajak') {
+            // Pajak can edit during their review, SDM cannot
+            $this->isLocked = !$isOnlyPajak;
+        } elseif ($this->periodStatus === 'review_sdm') {
+            // SDM can view but cannot edit (waiting for finalisasi via rekap)
+            $this->isLocked = true;
+        } else {
+            // draft: SDM can edit, Pajak cannot
+            $this->isLocked = $isOnlyPajak;
+        }
     }
 
     public function updatingSearch(): void
@@ -112,6 +136,11 @@ class Index extends Component
     public function updatingPeriode(): void
     {
         $this->resetPage();
+    }
+
+    public function updatedPeriode(): void
+    {
+        $this->refreshLockStatus();
     }
 
     public function updatingPerPage(): void
@@ -942,10 +971,15 @@ class Index extends Component
         // Get allowance types for dropdown
         $allowanceTypes = DB::table('sdm_payroll_allowance_types')->orderBy('nama', 'asc')->get();
 
+        $user = auth()->user();
+        $isOnlyPajak = $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
+
         return view('livewire.gaji.index', [
             'karyawans' => $karyawans,
             'bagians' => Bagian::all(),
             'allowanceTypes' => $allowanceTypes,
+            'isOnlyPajak' => $isOnlyPajak,
+            'periodStatus' => $this->periodStatus,
         ]);
     }
 }
