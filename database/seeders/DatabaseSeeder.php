@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             DummyDataSeeder::class,
             JadwalSeeder::class, // Master shift, aturan jadwal, bagian-shift
             PayrollSeeder::class,
+            PayrollPph21ReferenceSeeder::class, // PTKP, TER A/B/C, and Article 17 reference tables
             KaryawanExcelSeeder::class, // Import 299 karyawan & buat tugas koordinator sdm
             DummyPayrollSlipSeeder::class, // Generate mock salary slips (February - July 2026)
             SkenarioTriRahayuSeeder::class, // Skenario absensi tes Tri Rahayu

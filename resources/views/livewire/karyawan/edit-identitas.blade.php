@@ -53,7 +53,13 @@
                 <x-ts:select.styled wire:model.lazy='form.jk' placeholder="Kelamin" :options="$jk_options" select="label:label|value:value" />
             </div>
             <div class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.lazy='form.status_pernikahan' placeholder="Status Pernikahan" :options="" :options="$pernikahan_options" select="label:label|value:value" />
+                <x-ts:select.styled wire:model.lazy='form.status_pernikahan' placeholder="Status Pernikahan" :options="$pernikahan_options" select="label:label|value:value" />
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-2 lg:flex-row">
+            <div class="w-full lg:w-1/2">
+                <x-ts:select.styled wire:model.lazy='form.ptkp_status' placeholder="Status PTKP (Pajak PPh 21)" :options="$ptkp_options" select="label:label|value:value" />
             </div>
         </div>
 

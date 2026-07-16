@@ -64,7 +64,7 @@ class EmailAktivasi extends Component
                 'email_verified_at' => null
             ]);
 
-        \Illuminate\Support\Facades\Cache::forget("navbar-user:" . $user->id);
+        Cache::forget("navbar-user:" . $user->id);
 
         $this->loadStatus();
         $this->viewState = 'view';
@@ -122,7 +122,7 @@ class EmailAktivasi extends Component
                 ->update(['email_verified_at' => now()]);
 
             Cache::forget('email_verification_code_' . $user->id);
-            \Illuminate\Support\Facades\Cache::forget("navbar-user:" . $user->id);
+            Cache::forget("navbar-user:" . $user->id);
 
             $this->loadStatus();
             $this->viewState = 'view';
@@ -150,7 +150,7 @@ class EmailAktivasi extends Component
             ->where('id', $user->id)
             ->update(['email_verified_at' => null]);
 
-        \Illuminate\Support\Facades\Cache::forget("navbar-user:" . $user->id);
+        Cache::forget("navbar-user:" . $user->id);
 
         $this->loadStatus();
 
