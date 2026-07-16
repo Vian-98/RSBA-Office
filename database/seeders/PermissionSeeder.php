@@ -104,6 +104,7 @@ class PermissionSeeder extends Seeder
             'view-kepegawaian-laporan',
             'view-kepegawaian-akreditasi',
             'view-kepegawaian-master-cuti',
+            'view-kepegawaian-master-aturan-pajak',
             'view-keuangan-akuntansi-coa',
             'view-keuangan-akuntansi-jurnal-umum',
             'view-keuangan-master-rekanan',

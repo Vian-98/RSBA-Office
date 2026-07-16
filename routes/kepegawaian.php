@@ -113,6 +113,12 @@ Route::prefix('master')
             ->group(function () {
                 Route::get('/', App\Livewire\Master\TunjanganJabatan\Index::class)->name('index');
             });
+
+        Route::prefix('aturan-pajak')
+            ->name('aturan-pajak.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\AturanPajak\Index::class)->name('index');
+            });
     });
 
 
