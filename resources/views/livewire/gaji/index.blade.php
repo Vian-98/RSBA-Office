@@ -206,7 +206,7 @@
                 @endif
 
                 <form wire:submit.prevent="savePayroll" class="space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <!-- Left Panel: Pendapatan -->
                         <div class="space-y-4">
                             <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block pb-1 border-b border-indigo-150">Komponen Pendapatan (+)</span>
@@ -348,7 +348,7 @@
                         </div>
 
                         <!-- Right Panel: Potongan -->
-                        <div class="space-y-4">
+                        <div class="space-y-4 md:pl-10 md:border-l md:border-slate-200">
                             <span class="text-xs font-bold text-red-600 uppercase tracking-wider block pb-1 border-b border-red-200">Komponen Potongan & Pajak (-)</span>
                             
                             <div class="space-y-3">
