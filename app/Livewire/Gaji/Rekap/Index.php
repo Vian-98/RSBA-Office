@@ -301,6 +301,7 @@ class Index extends Component
                 'total_potongan' => $mSlips->sum('total_potongan') + $mSlips->sum('potongan_pph21') + $mSlips->sum('potongan_bank'),
                 'karyawan_count' => $mSlips->count(),
                 'is_approved' => $lock ? (bool)$lock->is_approved : false,
+                'status' => $lock->status ?? 'draft',
                 'sp3_status' => DB::table('surat_sp3')->where('payroll_periode', $m)->value('status'),
             ];
         }
@@ -324,6 +325,10 @@ class Index extends Component
             }
         }
 
+        $user = auth()->user();
+        $isOnlyPajak = $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
+        $isSDM = $user->hasRole('Staff-SDM') || $user->hasRole('Super-Admin');
+
         return view('livewire.gaji.rekap.index', [
             'totalGajiBersih' => $totalGajiBersih,
             'totalPotongan' => $totalPotongan,
@@ -334,6 +339,8 @@ class Index extends Component
             'bagianBreakdown' => $bagianBreakdown,
             'trendMonths' => $trendMonths,
             'insightText' => $insightText,
+            'isOnlyPajak' => $isOnlyPajak,
+            'isSDM' => $isSDM,
         ]);
     }
 
@@ -372,6 +379,74 @@ class Index extends Component
         $this->finalisasiTotalGajiBersih = 0;
     }
 
+    /**
+     * SDM submits draft payroll to Pajak team for review.
+     */
+    public function submitToReviewPajak(string $periode)
+    {
+        $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
+        $currentStatus = $lock->status ?? 'draft';
+
+        if ($currentStatus !== 'draft') {
+            $this->toast()->error('Gagal !', 'Periode ini sudah tidak dalam status draft.')->send();
+            return;
+        }
+
+        DB::table('sdm_payroll_period_locks')->updateOrInsert(
+            ['periode' => $periode],
+            [
+                'status' => 'review_pajak',
+                'is_approved' => false,
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        $this->toast()->success('Berhasil !', 'Payroll periode ' . $periode . ' telah dikirim ke Tim Pajak untuk direview.')->send();
+    }
+
+    /**
+     * Pajak team approves & sends back to SDM for final approval.
+     */
+    public function approveByPajak(string $periode)
+    {
+        $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
+        $currentStatus = $lock->status ?? 'draft';
+
+        if ($currentStatus !== 'review_pajak') {
+            $this->toast()->error('Gagal !', 'Periode ini tidak dalam status review pajak.')->send();
+            return;
+        }
+
+        DB::table('sdm_payroll_period_locks')->where('periode', $periode)->update([
+            'status' => 'review_sdm',
+            'updated_at' => now(),
+        ]);
+
+        $this->toast()->success('Berhasil !', 'Review pajak selesai. Payroll periode ' . $periode . ' telah dikembalikan ke SDM untuk finalisasi.')->send();
+    }
+
+    /**
+     * Pajak team rejects and sends back to SDM draft.
+     */
+    public function rejectByPajak(string $periode)
+    {
+        $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
+        $currentStatus = $lock->status ?? 'draft';
+
+        if ($currentStatus !== 'review_pajak') {
+            $this->toast()->error('Gagal !', 'Periode ini tidak dalam status review pajak.')->send();
+            return;
+        }
+
+        DB::table('sdm_payroll_period_locks')->where('periode', $periode)->update([
+            'status' => 'draft',
+            'updated_at' => now(),
+        ]);
+
+        $this->toast()->warning('Ditolak', 'Data gaji dikembalikan ke SDM untuk diperbaiki.')->send();
+    }
+
     public function submitFinalisasi()
     {
         $this->validate([
@@ -384,19 +459,23 @@ class Index extends Component
             'formSp3JabatanId.required' => 'Pejabat menyetujui wajib dipilih.',
         ]);
 
+        // Ensure status is review_sdm before final approval
+        $lock = DB::table('sdm_payroll_period_locks')->where('periode', $this->finalisasiPeriode)->first();
+        if (!$lock || $lock->status !== 'review_sdm') {
+            $this->toast()->error('Gagal !', 'Periode ini belum mendapat persetujuan dari Tim Pajak.')->send();
+            return;
+        }
+
         DB::beginTransaction();
         try {
-            // 1. Lock period
-            DB::table('sdm_payroll_period_locks')->updateOrInsert(
-                ['periode' => $this->finalisasiPeriode],
-                [
-                    'is_approved' => true,
-                    'approved_by' => auth()->id(),
-                    'approved_at' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
+            // 1. Lock period & set approved status
+            DB::table('sdm_payroll_period_locks')->where('periode', $this->finalisasiPeriode)->update([
+                'is_approved' => true,
+                'status' => 'approved',
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+                'updated_at' => now(),
+            ]);
 
             // 2. Generate automatic SP3 number
             $last = DB::table('surat_sp3')
@@ -469,8 +548,14 @@ class Index extends Component
 
         DB::beginTransaction();
         try {
-            // Delete lock record
-            DB::table('sdm_payroll_period_locks')->where('periode', $periode)->delete();
+            // Reset lock status back to draft instead of deleting
+            DB::table('sdm_payroll_period_locks')->where('periode', $periode)->update([
+                'status' => 'draft',
+                'is_approved' => false,
+                'approved_by' => null,
+                'approved_at' => null,
+                'updated_at' => now(),
+            ]);
 
             // Delete associated SP3 and its details if still pending
             if ($sp3) {
@@ -479,7 +564,7 @@ class Index extends Component
             }
 
             DB::commit();
-            $this->toast()->success('Berhasil !', 'Kunci payroll periode ' . $periode . ' berhasil dibuka. Data kini dapat diedit kembali.')->send();
+            $this->toast()->success('Berhasil !', 'Kunci payroll periode ' . $periode . ' berhasil dibuka. Status dikembalikan ke draft.')->send();
         } catch (\Throwable $e) {
             DB::rollBack();
             $this->toast()->error('Gagal !', 'Error: ' . $e->getMessage())->send();

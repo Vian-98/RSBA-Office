@@ -134,6 +134,9 @@ class Approval extends Component
                 }
             }
 
+            // Sync immediately to docstore
+            app(\App\Services\DocstoreSyncService::class)->syncCuti($this->suratCuti);
+
             DB::commit();
 
             $this->dispatch('surat-cuti-approved');

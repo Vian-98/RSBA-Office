@@ -450,6 +450,15 @@ class MenuSeeder extends Seeder
                 'group' => 'sdm',
             ],
             [
+                'id' => 69,
+                'nama' => 'Aturan Pajak PPh 21',
+                'route' => 'kepegawaian.master.aturan-pajak.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-aturan-pajak'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+            [
                 'id' => 49,
                 'nama' => 'Master',
                 'route' => null,

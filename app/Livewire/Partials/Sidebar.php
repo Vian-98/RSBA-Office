@@ -105,7 +105,7 @@ class Sidebar extends Component
                     'permission' => $menu->permission ?? '',
                     'group'      => $menu->group?->nama() ?? '',
                     'submenus'   => $menu->submenus
-                        ->sortBy('nama')
+                        ->sortBy(fn($sub) => trim($sub->nama) === 'Rekap Bulanan' ? '00_rekap_bulanan' : $sub->nama)
                         ->map(fn($sub) => [
                             'id'           => $sub->id,
                             'nama'         => $sub->nama,
@@ -228,6 +228,13 @@ class Sidebar extends Component
                     'view-kepegawaian-absensi',
                     'view-kepegawaian-konfigurasi-jadwal',
                 ]);
+            }
+
+            // Izinkan semua user yang login untuk melihat menu Jadwal Kerja
+            if ($user) {
+                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
+                }
             }
 
             // Allow users with assigned ruangan to view the asset & pengajuan menu

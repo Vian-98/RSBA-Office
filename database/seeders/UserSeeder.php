@@ -96,6 +96,14 @@ class UserSeeder extends Seeder
                 'role' => 'Staff-UGD',
                 'ruangan_id' => 1, // UGD
             ],
+            [
+                'email' => 'pajak@rsba.com',
+                'nama' => 'Staff Pajak',
+                'nip' => '8888888888',
+                'nik' => '8888888888888888',
+                'role' => 'Pajak',
+                'ruangan_id' => null,
+            ],
         ];
 
         foreach ($usersToSeed as $u) {
