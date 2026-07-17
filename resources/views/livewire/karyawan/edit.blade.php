@@ -6,7 +6,7 @@
         </span>
     </div>
 
-    <div class="mt-4 flex flex-col gap-5 lg:flex-row">
+    <div class="mt-4 flex flex-col gap-5 lg:flex-row lg:items-start">
         {{-- overview --}}
         <div class="flex w-full flex-col rounded-lg bg-white border border-gray-100/75 shadow-sm lg:sticky lg:top-5 lg:w-1/4">
             <div class="flex flex-col items-center justify-center p-6">

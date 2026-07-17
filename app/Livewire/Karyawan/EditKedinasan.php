@@ -59,6 +59,7 @@ class EditKedinasan extends Component
 
         $this->jabatan_options = Jabatan::all();
         $this->jabatan_init = $karyawan->jabatan[0]->id ?? '';
+        $this->ruangan_init = $karyawan->ruangan_id;
     }
 
     public function update()
@@ -67,17 +68,20 @@ class EditKedinasan extends Component
 
         if ($this->form->tgl_status && ($this->form->status != $this->status_init)) {
             $this->updateStatus();
+            $this->status_init = $this->form->status;
         }
 
         // update jabatan
         if ($this->form->tgl_jabatan && ($this->form->jabatan != $this->jabatan_init)) {
             $this->updateJabatan();
+            $this->jabatan_init = $this->form->jabatan;
         }
 
         // update ruangan dan kategori kerja
         $data = [];
         if ($this->form->ruangan !== $this->ruangan_init) {
             $data['ruangan_id'] = empty($this->form->ruangan) ? null : $this->form->ruangan;
+            $this->ruangan_init = $this->form->ruangan;
         }
         
         $data['kategori_kerja'] = $this->form->kategori_kerja;
