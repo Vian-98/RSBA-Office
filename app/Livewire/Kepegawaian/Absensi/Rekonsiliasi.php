@@ -92,6 +92,17 @@ class Rekonsiliasi extends Component
         $startDate = $stagings->min('tanggal');
         $endDate = $stagings->max('tanggal');
 
+        if ($startDate) {
+            $carbonStart = \Carbon\Carbon::parse($startDate);
+            $month = $carbonStart->month;
+            $year = $carbonStart->year;
+            foreach ($karyawanIds as $kId) {
+                if ($kId) {
+                    \App\Models\Sdm\JadwalKerja::ensureEmployeeDetailsExist($kId, $month, $year);
+                }
+            }
+        }
+
         $details = JadwalKerjaDetail::whereIn('karyawan_id', $karyawanIds)
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->with('jadwalKerja')

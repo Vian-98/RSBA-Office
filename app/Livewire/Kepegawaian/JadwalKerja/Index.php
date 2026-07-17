@@ -31,6 +31,141 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
     protected $listeners = ['jadwal-kerja-generated' => '$refresh'];
 
+    public function mount()
+    {
+        $this->autoGenerateRegulerSchedules();
+    }
+
+    public function autoGenerateRegulerSchedules()
+    {
+        $shiftReguler = \App\Models\Sdm\JadwalShift::where('kode', 'REGULER')->where('aktif', true)->first();
+        if (!$shiftReguler) {
+            return;
+        }
+
+        $now = \Carbon\Carbon::now();
+        $targetMonths = [
+            $now,
+            $now->copy()->addMonth()
+        ];
+
+        $karyawans = \App\Models\Sdm\Karyawan::whereNull('resign_at')->get();
+        $grouped = $karyawans->groupBy('ruangan_id');
+
+        $regulerOnlyRuanganIds = [];
+        foreach ($grouped as $ruanganId => $members) {
+            if (!$ruanganId) continue;
+            
+            $allReguler = $members->every(function ($k) {
+                return $k->kategori_kerja === \App\Enums\KategoriKerja::REGULER;
+            });
+
+            if ($allReguler && !$members->isEmpty()) {
+                $regulerOnlyRuanganIds[] = $ruanganId;
+            }
+        }
+
+        if (empty($regulerOnlyRuanganIds)) {
+            return;
+        }
+
+        foreach ($targetMonths as $target) {
+            $month = $target->month;
+            $year = $target->year;
+
+            foreach ($regulerOnlyRuanganIds as $ruanganId) {
+                $exists = \App\Models\Sdm\JadwalKerja::where('ruangan_id', $ruanganId)
+                    ->where('bulan', $month)
+                    ->where('tahun', $year)
+                    ->exists();
+
+                if ($exists) {
+                    continue;
+                }
+
+                \Illuminate\Support\Facades\DB::beginTransaction();
+                try {
+                    $jadwalKerja = \App\Models\Sdm\JadwalKerja::create([
+                        'ruangan_id' => $ruanganId,
+                        'bulan' => $month,
+                        'tahun' => $year,
+                        'status' => \App\Enums\StatusJadwalKerja::PUBLISHED,
+                        'dibuat_oleh' => auth()->id() ?? 1,
+                    ]);
+
+                    $daysInMonth = $target->daysInMonth;
+                    $startDate = \Carbon\Carbon::create($year, $month, 1)->format('Y-m-d');
+                    $endDate = \Carbon\Carbon::create($year, $month, $daysInMonth)->format('Y-m-d');
+
+                    $approvedCutis = \App\Models\Surat\SuratCuti::where('status', 'approved')
+                        ->where(function($q) use ($startDate, $endDate) {
+                            $q->whereBetween('tgl_mulai', [$startDate, $endDate])
+                              ->orWhereBetween('tgl_akhir', [$startDate, $endDate])
+                              ->orWhere(function($sub) use ($startDate, $endDate) {
+                                  $sub->where('tgl_mulai', '<=', $startDate)
+                                      ->where('tgl_akhir', '>=', $endDate);
+                              });
+                        })
+                        ->get();
+
+                    $cutiMap = [];
+                    foreach ($approvedCutis as $sc) {
+                        $dates = json_decode($sc->tgl_cuti, true);
+                        if (is_array($dates)) {
+                            foreach ($dates as $d) {
+                                $cutiMap[$sc->karyawan_id][$d] = [
+                                    'status' => (int)$sc->urgensi_id === 4 ? \App\Enums\StatusKehadiran::IZIN : \App\Enums\StatusKehadiran::CUTI,
+                                    'catatan' => $sc->jenis?->nama . ' resmi (' . $sc->no_surat . ')'
+                                ];
+                            }
+                        }
+                    }
+
+                    $details = [];
+                    $roomMembers = $grouped[$ruanganId];
+                    foreach ($roomMembers as $karyawan) {
+                        for ($d = 1; $d <= $daysInMonth; $d++) {
+                            $date = \Carbon\Carbon::create($year, $month, $d);
+                            $dateStr = $date->format('Y-m-d');
+
+                            $shiftId = null;
+                            if ($date->dayOfWeekIso >= 1 && $date->dayOfWeekIso <= 5) {
+                                $shiftId = $shiftReguler->id;
+                            }
+
+                            $statusKehadiran = 'belum_dicek';
+                            $catatan = null;
+                            $actualShiftId = $shiftId;
+
+                            if (isset($cutiMap[$karyawan->id][$dateStr])) {
+                                $statusKehadiran = $cutiMap[$karyawan->id][$dateStr]['status']->value;
+                                $catatan = $cutiMap[$karyawan->id][$dateStr]['catatan'];
+                                $actualShiftId = null;
+                            }
+
+                            $details[] = [
+                                'jadwal_kerja_id' => $jadwalKerja->id,
+                                'karyawan_id' => $karyawan->id,
+                                'shift_id' => $actualShiftId,
+                                'tanggal' => $dateStr,
+                                'status_kehadiran' => $statusKehadiran,
+                                'catatan' => $catatan,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
+                    }
+
+                    \App\Models\Sdm\JadwalKerjaDetail::insert($details);
+                    \Illuminate\Support\Facades\DB::commit();
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\DB::rollBack();
+                    report($e);
+                }
+            }
+        }
+    }
+
     public function table(Table $table): Table
     {
         $query = JadwalKerja::query()
