@@ -84,6 +84,8 @@ class Index extends Component
     public $calc_total_gaji = 0;
     public $calc_total_potongan = 0;
     public $calc_gaji_bersih = 0;
+    public $calc_golongan = null;
+    public $calc_masa_kerja = 0.0;
     
     public bool $isLocked = false;
     public string $periodStatus = 'draft';
@@ -244,6 +246,8 @@ class Index extends Component
         $baseCalculator = PayrollCalculator::calculate($this->selectedKaryawan);
         $this->form_tunjangan_tetap = $tTetap + $baseCalculator['tunjangan_golongan_value'];
         $this->form_tunjangan_absensi = $tAbsen;
+        $this->calc_golongan = $baseCalculator['golongan'];
+        $this->calc_masa_kerja = $baseCalculator['masa_kerja_tahun'];
 
         // 2. Sum dynamic other allowances
         $sumTunjanganLain = 0.0;
@@ -621,6 +625,8 @@ class Index extends Component
                     'periode' => $this->periode
                 ],
                 [
+                    'golongan' => $this->calc_golongan,
+                    'masa_kerja_tahun' => $this->calc_masa_kerja,
                     'gaji_pokok' => $this->form_gaji_pokok,
                     'tunjangan_tetap' => $this->form_tunjangan_tetap,
                     'tunjangan_absensi' => $this->form_tunjangan_absensi,

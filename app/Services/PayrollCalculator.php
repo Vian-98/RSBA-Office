@@ -48,40 +48,29 @@ class PayrollCalculator
         if ($isTetap) {
             // --- KARYAWAN TETAP ---
             // 1. Determine education row
-            $latestPendidikan = DB::table('sdm_kary_pendidikan')
-                ->where('karyawan_id', $karyawan->id)
-                ->orderBy('tahun_lulus', 'desc')
-                ->first();
+            // Try manual override first (pendidikan_setara directly matches matrix group)
+            if (!empty($karyawan->pendidikan_setara)) {
+                $rowKey = $karyawan->pendidikan_setara;
+            } else {
+                // Fallback to real latest education
+                $latestPendidikan = DB::table('sdm_kary_pendidikan')
+                    ->where('karyawan_id', $karyawan->id)
+                    ->orderBy('tahun_lulus', 'desc')
+                    ->first();
 
-            $tingkat = $latestPendidikan ? $latestPendidikan->tingkat : 'sma';
-            $rowKey = match ($tingkat) {
-                'sd', 'smp', 'sma', 'lain' => 'SMA/SMK',
-                'd3', 'd4' => 'DIII/DIV',
-                's1', 'profesi', 'dokter' => 'SI/Profesi',
-                's2', 's3', 'spesialis' => 'SII',
-                default => 'SMA/SMK',
-            };
+                $tingkat = $latestPendidikan ? $latestPendidikan->tingkat : 'sma';
 
-            // 2. Determine years of service column (step interval: 0, 3, 6, ..., 39)
-            $masaKerjaKeys = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39];
-            $selectedKey = 0;
-            foreach ($masaKerjaKeys as $key) {
-                if ($yearsOfService >= $key) {
-                    $selectedKey = $key;
-                } else {
-                    break;
-                }
+                $rowKey = match ($tingkat) {
+                    'sd', 'smp', 'sma', 'lain' => 'SMA/SMK',
+                    'd3', 'd4' => 'DIII/DIV',
+                    's1', 'profesi', 'dokter' => 'SI/Profesi',
+                    's2', 's3', 'spesialis' => 'SII',
+                    default => 'SMA/SMK',
+                };
             }
 
-            // 3. Matrix lookup for Golongan (1 to 15)
-            $grid = [
-                'SMA/SMK' => [0 => 15, 3 => 15, 6 => 14, 9 => 13, 12 => 12, 15 => 11, 18 => 10, 21 => 9, 24 => 8, 27 => 7, 30 => 6, 33 => 5, 36 => 4, 39 => 3],
-                'DIII/DIV' => [0 => 15, 3 => 14, 6 => 13, 9 => 12, 12 => 11, 15 => 10, 18 => 9, 21 => 8, 24 => 7, 27 => 6, 30 => 5, 33 => 4, 36 => 3, 39 => 2],
-                'SI/Profesi' => [0 => 14, 3 => 13, 6 => 12, 9 => 11, 12 => 10, 15 => 9, 18 => 8, 21 => 7, 24 => 6, 27 => 5, 30 => 4, 33 => 3, 36 => 2, 39 => 1],
-                'SII' => [0 => 13, 3 => 12, 6 => 11, 9 => 10, 12 => 9, 15 => 8, 18 => 7, 21 => 6, 24 => 5, 27 => 4, 30 => 3, 33 => 2, 36 => 1, 39 => 1],
-            ];
-
-            $golonganGrade = $grid[$rowKey][$selectedKey] ?? 15;
+            // 2. Matrix lookup for Golongan (1 to 15) using database
+            $golonganGrade = \App\Models\Sdm\PayrollGolonganMatrix::lookup($rowKey, $yearsOfService);
 
             // 4. Calculate Basic Salary (Gapok) based on Golongan Grade
             // Formula: 75% * UMK * (1 + (15 - Golongan) * 0.05)
@@ -144,6 +133,7 @@ class PayrollCalculator
             'tunjangan_golongan_value' => round($tunjanganGolonganVal),
             'umk' => $umk,
             'allocations_breakdown' => $allocationsBreakdown,
+            'masa_kerja_tahun' => $yearsOfService,
         ];
     }
 
