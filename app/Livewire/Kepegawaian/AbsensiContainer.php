@@ -23,6 +23,11 @@ class AbsensiContainer extends Component
     public function render()
     {
         $this->authorizeFromRoute();
+
+        if ($this->tab === 'rekap' && !auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            $this->tab = 'kontrol';
+        }
+
         return view('livewire.kepegawaian.absensi-container');
     }
 }

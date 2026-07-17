@@ -109,7 +109,7 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-2 gap-4 mb-6 md:grid-cols-7">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
             <div wire:click="$set('statusFilter', '{{ $statusFilter === 'hadir' ? '' : 'hadir' }}')" class="p-4 text-center rounded-lg bg-green-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'hadir' ? 'border-green-500 ring-2 ring-green-200' : 'border-green-100' }}">
                 <div class="text-sm text-green-600 font-medium select-none">Hadir</div>
                 <div class="text-2xl font-bold text-green-700 select-none">{{ $summary['hadir'] }}</div>
@@ -154,15 +154,15 @@
         <div x-data="{ showSummary: true }" class="mt-8">
             <div class="flex items-center gap-2 mb-4">
                 <button type="button" @click="showSummary = !showSummary" class="flex items-center gap-2 text-left hover:opacity-80 transition-opacity focus:outline-none group">
-                    <h4 class="text-md font-semibold text-gray-700 select-none">Rincian per Karyawan</h4>
-                    <!-- Dynamic Chevron -->
-                    <svg class="w-4 h-4 text-gray-400 transition-transform duration-300 transform group-hover:text-indigo-500" :class="showSummary ? 'rotate-180 text-indigo-500' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
+                     <h4 class="text-md font-semibold text-gray-700 select-none">Rincian per Karyawan</h4>
+                     <!-- Dynamic Chevron -->
+                     <svg class="w-4 h-4 text-gray-400 transition-transform duration-300 transform group-hover:text-indigo-500" :class="showSummary ? 'rotate-180 text-indigo-500' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                     </svg>
                 </button>
             </div>
             
-            <div x-show="showSummary" x-transition x-cloak class="overflow-x-auto rounded-lg border border-gray-200">
+            <div x-show="showSummary" x-transition x-cloak class="overflow-x-auto rounded-lg border border-gray-200 pb-36">
                 <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                         <tr>
@@ -174,11 +174,12 @@
                             <th scope="col" class="px-6 py-3 text-center text-blue-600">Cuti</th>
                             <th scope="col" class="px-6 py-3 text-center text-cyan-600">Izin</th>
                             <th scope="col" class="px-6 py-3 text-center text-gray-600">Perlu Verifikasi</th>
+                            <th scope="col" class="px-6 py-3 text-center text-indigo-600 bg-indigo-50/50 pr-12">Kelebihan Jam (Overtime)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($rekapKaryawan as $rk)
-                            <tr class="bg-white border-b hover:bg-gray-50">
+                            <tr wire:key="rekap-karyawan-row-{{ $rk['karyawan']->id }}" class="bg-white border-b hover:bg-gray-50">
                                 <td class="px-6 py-4 font-medium text-gray-900">
                                     {{ $rk['karyawan']->full_nama ?? '-' }}
                                 </td>
@@ -207,10 +208,56 @@
                                 <td class="px-6 py-4 text-center">{{ $rk['cuti'] > 0 ? $rk['cuti'] : '-' }}</td>
                                 <td class="px-6 py-4 text-center">{{ $rk['izin'] > 0 ? $rk['izin'] : '-' }}</td>
                                 <td class="px-6 py-4 text-center">{{ $rk['perlu_verifikasi'] > 0 ? $rk['perlu_verifikasi'] : '-' }}</td>
+                                <td class="px-6 py-4 text-center pr-12">
+                                    @if(($rk['total_overtime_menit'] ?? 0) > 0)
+                                        @php
+                                            $h = floor($rk['total_overtime_menit'] / 60);
+                                            $m = $rk['total_overtime_menit'] % 60;
+                                            $formatted = $h > 0 ? "{$h}j {$m}m" : "{$m}m";
+                                        @endphp
+                                        <div class="inline-flex items-center gap-1.5 justify-center">
+                                            <span class="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-xs select-none">{{ $formatted }}</span>
+                                            <x-ts:dropdown wire:key="rekap-karyawan-ot-dropdown-{{ $rk['karyawan']->id }}" position="bottom-end" width="md">
+                                                <x-slot:action>
+                                                    <button type="button" x-on:click="show = !show" class="text-gray-400 hover:text-indigo-600 transition-colors focus:outline-none">
+                                                        <x-ts:icon name="tabler.info-circle" class="w-4 h-4" />
+                                                    </button>
+                                                </x-slot:action>
+                                                <div class="p-3 text-xs max-h-60 overflow-y-auto select-none text-left w-full">
+                                                    <div class="font-bold text-gray-700 border-b border-gray-100 pb-1.5 mb-2 flex items-center justify-between">
+                                                        <span>Rincian Kelebihan Jam</span>
+                                                        <span class="text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded">{{ $formatted }}</span>
+                                                    </div>
+                                                    <ul class="space-y-2">
+                                                        @foreach($rk['overtime_details'] as $det)
+                                                            <li class="border-b border-slate-100 pb-1.5 last:border-b-0 last:pb-0">
+                                                                <div class="font-semibold text-gray-800 flex items-center gap-1.5">
+                                                                    <span>{{ $det['tanggal'] }}</span>
+                                                                    <span class="text-indigo-600 text-[11px] font-bold">
+                                                                        @php
+                                                                            $dh = floor($det['menit'] / 60);
+                                                                            $dm = $det['menit'] % 60;
+                                                                            echo $dh > 0 ? "({$dh}j {$dm}m)" : "({$dm}m)";
+                                                                        @endphp
+                                                                    </span>
+                                                                </div>
+                                                                @if($det['keterangan'] && $det['keterangan'] !== 'Pulang terlambat')
+                                                                    <div class="text-[10px] text-amber-600 mt-0.5 leading-tight font-medium">{{ $det['keterangan'] }}</div>
+                                                                @endif
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            </x-ts:dropdown>
+                                        </div>
+                                    @else
+                                        <span class="text-gray-300">-</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="9" class="px-6 py-8 text-center text-gray-500">
                                     <div class="flex flex-col items-center justify-center">
                                         <x-ts:icon name="tabler.folder-off" class="w-12 h-12 mb-2 text-gray-300" />
                                         <p>Tidak ada data absensi untuk filter yang dipilih.</p>
@@ -221,6 +268,78 @@
                     </tbody>
                 </table>
             </div>
+            @if($paginatedKaryawans && $paginatedKaryawans->hasPages())
+                <div class="flex flex-col items-center justify-center gap-2 mt-6 pt-4 border-t border-slate-100 bg-white w-full">
+                    <nav class="inline-flex items-center gap-1.5" aria-label="Pagination">
+                        {{-- Previous --}}
+                        @if($paginatedKaryawans->onFirstPage())
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-300 border border-slate-200 select-none cursor-not-allowed">
+                                <x-ts:icon name="tabler.chevron-left" class="w-4 h-4" />
+                            </span>
+                        @else
+                            <button type="button" wire:click="previousPage('rekapKaryawanPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition focus:outline-none">
+                                <x-ts:icon name="tabler.chevron-left" class="w-4 h-4" />
+                            </button>
+                        @endif
+
+                        @php
+                            $currentPage = $paginatedKaryawans->currentPage();
+                            $lastPage = $paginatedKaryawans->lastPage();
+                            $start = max(2, $currentPage - 1);
+                            $end = min($lastPage - 1, $currentPage + 1);
+                        @endphp
+
+                        {{-- Page 1 --}}
+                        @if($currentPage == 1)
+                            <span aria-current="page" class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs border border-indigo-600 select-none">{{ 1 }}</span>
+                        @else
+                            <button type="button" wire:click="gotoPage(1, 'rekapKaryawanPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 font-semibold text-xs border border-slate-200 hover:bg-slate-50 transition focus:outline-none">{{ 1 }}</button>
+                        @endif
+
+                        {{-- Ellipsis --}}
+                        @if($start > 2)
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-400 font-semibold text-xs border border-slate-200 select-none">...</span>
+                        @endif
+
+                        {{-- Sliding Range --}}
+                        @for($page = $start; $page <= $end; $page++)
+                            @if($page == $currentPage)
+                                <span aria-current="page" class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs border border-indigo-600 select-none">{{ $page }}</span>
+                            @else
+                                <button type="button" wire:click="gotoPage({{ $page }}, 'rekapKaryawanPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 font-semibold text-xs border border-slate-200 hover:bg-slate-50 transition focus:outline-none">{{ $page }}</button>
+                            @endif
+                        @endfor
+
+                        {{-- Ellipsis --}}
+                        @if($end < $lastPage - 1)
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-400 font-semibold text-xs border border-slate-200 select-none">...</span>
+                        @endif
+
+                        {{-- Last Page --}}
+                        @if($lastPage > 1)
+                            @if($currentPage == $lastPage)
+                                <span aria-current="page" class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs border border-indigo-600 select-none">{{ $lastPage }}</span>
+                            @else
+                                <button type="button" wire:click="gotoPage({{ $lastPage }}, 'rekapKaryawanPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 font-semibold text-xs border border-slate-200 hover:bg-slate-50 transition focus:outline-none">{{ $lastPage }}</button>
+                            @endif
+                        @endif
+
+                        {{-- Next --}}
+                        @if($paginatedKaryawans->hasMorePages())
+                            <button type="button" wire:click="nextPage('rekapKaryawanPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition focus:outline-none">
+                                <x-ts:icon name="tabler.chevron-right" class="w-4 h-4" />
+                            </button>
+                        @else
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-300 border border-slate-200 select-none cursor-not-allowed">
+                                <x-ts:icon name="tabler.chevron-right" class="w-4 h-4" />
+                            </span>
+                        @endif
+                    </nav>
+                    <p class="text-[11px] text-slate-400 font-medium select-none">
+                        Menampilkan <span class="font-bold text-slate-600">{{ $paginatedKaryawans->firstItem() ?? 0 }}</span> sampai <span class="font-bold text-slate-600">{{ $paginatedKaryawans->lastItem() ?? 0 }}</span> dari <span class="font-bold text-slate-600">{{ $paginatedKaryawans->total() }}</span> Karyawan
+                    </p>
+                </div>
+            @endif
         </div>
 
         <!-- Daily Attendance Log Details with Correction Buttons (Collapsible) -->
@@ -246,6 +365,7 @@
                                 <th scope="col" class="px-6 py-3 text-center">Shift</th>
                                 <th scope="col" class="px-6 py-3 text-center">Jam Kerja (Shift)</th>
                                 <th scope="col" class="px-6 py-3 text-center">Jam Aktual (Mesin)</th>
+                                <th scope="col" class="px-6 py-3 text-center text-indigo-600 bg-indigo-50/20">Overtime</th>
                                 <th scope="col" class="px-6 py-3 text-center">
                                     <div class="flex items-center justify-center">
                                         <x-ts:dropdown position="bottom-end">
@@ -275,48 +395,131 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($records as $r)
-                                <tr class="bg-white border-b hover:bg-gray-50">
-                                    <td class="px-6 py-4 font-semibold text-gray-900 text-xs">
-                                        {{ \Carbon\Carbon::parse($r->tanggal)->translatedFormat('d M Y') }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="font-semibold text-gray-900 text-xs">{{ $r->karyawan->nama ?? '-' }}</div>
-                                        <div class="text-[10px] text-gray-400">PIN: {{ $r->karyawan->pin_absen ?? '-' }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        @if($r->shift)
-                                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded text-slate-800" style="background-color: {{ $r->shift->warna ?? '#e2e8f0' }}">
-                                                {{ $r->shift->kode }}
-                                            </span>
-                                        @else
-                                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-gray-200 text-gray-700">
-                                                LIBUR
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 text-center text-xs">
-                                        @if($r->shift)
-                                            {{ substr($r->shift->jam_masuk, 0, 5) }} - {{ substr($r->shift->jam_keluar, 0, 5) }}
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 text-center text-xs">
-                                        @if($r->absen_masuk_at || $r->absen_keluar_at)
-                                            <span class="text-indigo-600 font-semibold">
-                                                {{ $r->absen_masuk_at ? \Carbon\Carbon::parse($r->absen_masuk_at)->format('H:i') : '--:--' }}
-                                            </span>
-                                            -
-                                            <span class="text-indigo-600 font-semibold">
-                                                {{ $r->absen_keluar_at ? \Carbon\Carbon::parse($r->absen_keluar_at)->format('H:i') : '--:--' }}
-                                            </span>
-                                        @else
-                                            <span class="text-gray-400 italic">Tidak ada absen</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        @if($r->status_kehadiran)
+                             @forelse($records as $r)
+                                 <tr wire:key="daily-record-row-{{ $r->id }}" class="bg-white border-b hover:bg-gray-50">
+                                     <td class="px-6 py-4 font-semibold text-gray-900 text-xs">
+                                         {{ \Carbon\Carbon::parse($r->tanggal)->translatedFormat('d M Y') }}
+                                     </td>
+                                     <td class="px-6 py-4">
+                                         <div class="font-semibold text-gray-900 text-xs">{{ $r->karyawan->nama ?? '-' }}</div>
+                                         <div class="text-[10px] text-gray-400">PIN: {{ $r->karyawan->pin_absen ?? '-' }}</div>
+                                     </td>
+                                     <td class="px-6 py-4 text-center">
+                                         @if($r->shift)
+                                             <span class="px-2 py-0.5 text-[10px] font-semibold rounded text-slate-800" style="background-color: {{ $r->shift->warna ?? '#e2e8f0' }}">
+                                                 {{ $r->shift->kode }}
+                                             </span>
+                                         @else
+                                             <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-gray-200 text-gray-700">
+                                                 LIBUR
+                                             </span>
+                                         @endif
+                                     </td>
+                                     <td class="px-6 py-4 text-center text-xs">
+                                         @if($r->shift)
+                                             {{ substr($r->shift->jam_masuk, 0, 5) }} - {{ substr($r->shift->jam_keluar, 0, 5) }}
+                                         @else
+                                             -
+                                         @endif
+                                     </td>
+                                     <td class="px-6 py-4 text-center text-xs">
+                                         @if($r->absen_masuk_at || $r->absen_keluar_at)
+                                             <span class="text-indigo-600 font-semibold">
+                                                 {{ $r->absen_masuk_at ? \Carbon\Carbon::parse($r->absen_masuk_at)->format('H:i') : '--:--' }}
+                                             </span>
+                                             -
+                                             <span class="text-indigo-600 font-semibold">
+                                                 {{ $r->absen_keluar_at ? \Carbon\Carbon::parse($r->absen_keluar_at)->format('H:i') : '--:--' }}
+                                             </span>
+                                         @else
+                                             <span class="text-gray-400 italic">Tidak ada absen</span>
+                                         @endif
+                                     </td>
+                                     <td class="px-6 py-4 text-center text-xs">
+                                         @if($r->absen_masuk_at && $r->absen_keluar_at)
+                                             @php
+                                                 $dailyOvertime = 0;
+                                                 $isAbsentType = in_array($r->status_kehadiran, [
+                                                     \App\Enums\StatusKehadiran::CUTI,
+                                                     \App\Enums\StatusKehadiran::IZIN,
+                                                     \App\Enums\StatusKehadiran::TIDAK_HADIR
+                                                 ]);
+                                                 if (!$isAbsentType) {
+                                                     $masuk = \Carbon\Carbon::parse($r->absen_masuk_at);
+                                                     $keluar = \Carbon\Carbon::parse($r->absen_keluar_at);
+                                                     if ($r->shift) {
+                                                         $jamKeluar = \Carbon\Carbon::parse($r->shift->jam_keluar);
+                                                         $targetCheckout = \Carbon\Carbon::parse(\Carbon\Carbon::parse($r->tanggal)->format('Y-m-d') . ' ' . $jamKeluar->format('H:i:s'));
+                                                         if ($r->shift->lintas_hari || $jamKeluar->lt(\Carbon\Carbon::parse($r->shift->jam_masuk))) {
+                                                             $targetCheckout->addDay();
+                                                         }
+                                                         if ($keluar->gt($targetCheckout)) {
+                                                             $dailyOvertime = abs($keluar->diffInMinutes($targetCheckout));
+                                                         }
+                                                     } else {
+                                                         $dailyOvertime = abs($keluar->diffInMinutes($masuk));
+                                                     }
+                                                 }
+                                             @endphp
+                                             @if($dailyOvertime > 0)
+                                                 @php
+                                                     $doh = floor($dailyOvertime / 60);
+                                                     $dom = $dailyOvertime % 60;
+                                                     $dailyOvertimeFormatted = $doh > 0 ? "{$doh}j {$dom}m" : "{$dom}m";
+                                                 @endphp
+                                                 <div class="inline-flex items-center gap-1.5 justify-center">
+                                                     <span class="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded text-xs select-none">{{ $dailyOvertimeFormatted }}</span>
+                                                     <x-ts:dropdown wire:key="daily-record-ot-dropdown-{{ $r->id }}" position="bottom-end" width="md">
+                                                         <x-slot:action>
+                                                             <button type="button" x-on:click="show = !show" class="text-gray-400 hover:text-indigo-600 transition-colors focus:outline-none">
+                                                                 <x-ts:icon name="tabler.info-circle" class="w-4 h-4" />
+                                                             </button>
+                                                         </x-slot:action>
+                                                         <div class="p-3 text-xs select-none text-left w-full">
+                                                             <div class="font-bold text-gray-700 border-b border-gray-100 pb-1 mb-2">Rincian Kelebihan Jam</div>
+                                                             <div class="space-y-1 text-gray-600">
+                                                                 <div class="flex justify-between">
+                                                                     <span>Durasi Lembur:</span>
+                                                                     <span class="font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded text-[10px]">{{ $dailyOvertime }} menit</span>
+                                                                 </div>
+                                                                 @if($r->shift)
+                                                                     <div class="flex justify-between border-t border-slate-50 pt-1 mt-1">
+                                                                         <span>Shift:</span>
+                                                                         <span class="font-semibold text-gray-800">{{ $r->shift->kode }} ({{ substr($r->shift->jam_masuk, 0, 5) }}-{{ substr($r->shift->jam_keluar, 0, 5) }})</span>
+                                                                     </div>
+                                                                     <div class="flex justify-between">
+                                                                         <span>Target Keluar:</span>
+                                                                         <span class="font-semibold text-gray-800">
+                                                                             @php
+                                                                                 $jamKeluar = \Carbon\Carbon::parse($r->shift->jam_keluar);
+                                                                                 $targetCheckout = \Carbon\Carbon::parse(\Carbon\Carbon::parse($r->tanggal)->format('Y-m-d') . ' ' . $jamKeluar->format('H:i:s'));
+                                                                                 if ($r->shift->lintas_hari || $jamKeluar->lt(\Carbon\Carbon::parse($r->shift->jam_masuk))) {
+                                                                                     $targetCheckout->addDay();
+                                                                                 }
+                                                                                 echo $targetCheckout->format('d M H:i');
+                                                                             @endphp
+                                                                         </span>
+                                                                     </div>
+                                                                     <div class="flex justify-between">
+                                                                         <span>Aktual Keluar:</span>
+                                                                         <span class="font-semibold text-indigo-600">{{ $r->absen_keluar_at ? \Carbon\Carbon::parse($r->absen_keluar_at)->format('d M H:i') : '-' }}</span>
+                                                                     </div>
+                                                                 @else
+                                                                     <div class="text-amber-600 font-semibold border-t border-slate-50 pt-1 mt-1 text-center">Tugas di hari Libur/OFF</div>
+                                                                 @endif
+                                                             </div>
+                                                         </div>
+                                                     </x-ts:dropdown>
+                                                 </div>
+                                             @else
+                                                 <span class="text-gray-300">-</span>
+                                             @endif
+                                         @else
+                                             <span class="text-gray-300">-</span>
+                                         @endif
+                                     </td>
+                                     <td class="px-6 py-4 text-center">
+                                         @if($r->status_kehadiran)
                                             <button type="button" wire:click="$set('statusFilter', '{{ $r->status_kehadiran->value }}')" class="hover:opacity-80 transition-opacity focus:outline-none select-none">
                                                 <x-ts:badge :color="$r->status_kehadiran->color()" text="{{ $r->status_kehadiran->nama() }}" xs />
                                             </button>
@@ -344,10 +547,78 @@
                     </table>
                 </div>
                 
-                <!-- Pagination for daily logs -->
-                <div class="mt-4">
-                    {{ $records->links(data: ['pageName' => 'dailyPage']) }}
+            @if($records && $records->hasPages())
+                <div class="flex flex-col items-center justify-center gap-2 mt-6 pt-4 border-t border-slate-100 bg-white w-full">
+                    <nav class="inline-flex items-center gap-1.5" aria-label="Pagination">
+                        {{-- Previous --}}
+                        @if($records->onFirstPage())
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-300 border border-slate-200 select-none cursor-not-allowed">
+                                <x-ts:icon name="tabler.chevron-left" class="w-4 h-4" />
+                            </span>
+                        @else
+                            <button type="button" wire:click="previousPage('dailyPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition focus:outline-none">
+                                <x-ts:icon name="tabler.chevron-left" class="w-4 h-4" />
+                            </button>
+                        @endif
+
+                        @php
+                            $currentPageDaily = $records->currentPage();
+                            $lastPageDaily = $records->lastPage();
+                            $startDaily = max(2, $currentPageDaily - 1);
+                            $endDaily = min($lastPageDaily - 1, $currentPageDaily + 1);
+                        @endphp
+
+                        {{-- Page 1 --}}
+                        @if($currentPageDaily == 1)
+                            <span aria-current="page" class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs border border-indigo-600 select-none">{{ 1 }}</span>
+                        @else
+                            <button type="button" wire:click="gotoPage(1, 'dailyPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 font-semibold text-xs border border-slate-200 hover:bg-slate-50 transition focus:outline-none">{{ 1 }}</button>
+                        @endif
+
+                        {{-- Ellipsis --}}
+                        @if($startDaily > 2)
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-400 font-semibold text-xs border border-slate-200 select-none">...</span>
+                        @endif
+
+                        {{-- Sliding Range --}}
+                        @for($page = $startDaily; $page <= $endDaily; $page++)
+                            @if($page == $currentPageDaily)
+                                <span aria-current="page" class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs border border-indigo-600 select-none">{{ $page }}</span>
+                            @else
+                                <button type="button" wire:click="gotoPage({{ $page }}, 'dailyPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 font-semibold text-xs border border-slate-200 hover:bg-slate-50 transition focus:outline-none">{{ $page }}</button>
+                            @endif
+                        @endfor
+
+                        {{-- Ellipsis --}}
+                        @if($endDaily < $lastPageDaily - 1)
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-400 font-semibold text-xs border border-slate-200 select-none">...</span>
+                        @endif
+
+                        {{-- Last Page --}}
+                        @if($lastPageDaily > 1)
+                            @if($currentPageDaily == $lastPageDaily)
+                                <span aria-current="page" class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs border border-indigo-600 select-none">{{ $lastPageDaily }}</span>
+                            @else
+                                <button type="button" wire:click="gotoPage({{ $lastPageDaily }}, 'dailyPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 font-semibold text-xs border border-slate-200 hover:bg-slate-50 transition focus:outline-none">{{ $lastPageDaily }}</button>
+                            @endif
+                        @endif
+
+                        {{-- Next --}}
+                        @if($records->hasMorePages())
+                            <button type="button" wire:click="nextPage('dailyPage')" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition focus:outline-none">
+                                <x-ts:icon name="tabler.chevron-right" class="w-4 h-4" />
+                            </button>
+                        @else
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-300 border border-slate-200 select-none cursor-not-allowed">
+                                <x-ts:icon name="tabler.chevron-right" class="w-4 h-4" />
+                            </span>
+                        @endif
+                    </nav>
+                    <p class="text-[11px] text-slate-400 font-medium select-none">
+                        Menampilkan <span class="font-bold text-slate-600">{{ $records->firstItem() ?? 0 }}</span> sampai <span class="font-bold text-slate-600">{{ $records->lastItem() ?? 0 }}</span> dari <span class="font-bold text-slate-600">{{ $records->total() }}</span> log harian
+                    </p>
                 </div>
+            @endif
             </div>
         </div>
 

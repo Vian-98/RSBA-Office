@@ -54,6 +54,7 @@ class KaryawanForm extends Form
 
     public $ruangan;
     public $kategori_kerja;
+    public $pendidikan_setara;
 
     function mount($karyawan)
     {
@@ -122,6 +123,7 @@ class KaryawanForm extends Form
         $this->dinas = $karyawan->resign ?? '';
         $this->ruangan = $karyawan->ruangan_id;
         $this->kategori_kerja = $karyawan->kategori_kerja?->value ?? 'reguler';
+        $this->pendidikan_setara = $karyawan->pendidikan_setara;
     }
 
     // simpan data

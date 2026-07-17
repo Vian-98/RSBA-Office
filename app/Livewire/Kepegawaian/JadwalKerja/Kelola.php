@@ -25,6 +25,7 @@ class Kelola extends Component
     public $dates = [];
     public $shiftOptions = [];
     public $isReadOnly = false;
+    public $cutiDates = [];
 
     public function mount($id, AturanJadwalService $service)
     {
@@ -33,6 +34,46 @@ class Kelola extends Component
             'details.karyawan',
             'details.shift'
         ])->findOrFail($id);
+
+        $karyawanIds = $this->jadwalKerja->details->pluck('karyawan_id')->unique()->toArray();
+        $approvedCutis = \App\Models\Surat\SuratCuti::whereIn('karyawan_id', $karyawanIds)
+            ->where('status', 'approved')
+            ->get();
+
+        foreach ($approvedCutis as $sc) {
+            $dates = json_decode($sc->tgl_cuti, true);
+            if (is_array($dates)) {
+                foreach ($dates as $d) {
+                    $this->cutiDates["{$sc->karyawan_id}-{$d}"] = $sc->no_surat;
+                }
+            }
+        }
+
+        $user = Auth::user();
+        $canView = false;
+        $canManage = false;
+
+        if ($user) {
+            if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+                $canView = true;
+                $canManage = true;
+            } else {
+                $ownRuanganId = $user->karyawan?->ruangan_id;
+                $ruanganIds = $user->isKoordinator() ? ($user->getRuanganKoordinatorIds() ?? []) : [];
+                
+                // Cek hak melihat
+                if ($this->jadwalKerja->ruangan_id === $ownRuanganId || in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
+                    $canView = true;
+                }
+                
+                // Cek hak mengelola (edit)
+                if (in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
+                    $canManage = true;
+                }
+            }
+        }
+
+        abort_unless($canView, 403, 'Anda tidak memiliki akses ke jadwal ruangan ini.');
 
         // Populate valid shifts using service (includes jam override)
         $validShifts = $service->shiftValidUntukRuangan($this->jadwalKerja->ruangan_id);
@@ -48,7 +89,7 @@ class Kelola extends Component
             ];
         })->toArray();
 
-        $this->isReadOnly = $this->jadwalKerja->status === StatusJadwalKerja::LOCKED;
+        $this->isReadOnly = $this->jadwalKerja->status === StatusJadwalKerja::LOCKED || !$canManage;
 
         // Populate dates for header
         $daysInMonth = Carbon::create($this->jadwalKerja->tahun, $this->jadwalKerja->bulan, 1)->daysInMonth;
@@ -96,6 +137,34 @@ class Kelola extends Component
             $dateStr = $detail->tanggal->format('Y-m-d');
             $existingMap[$detail->karyawan_id][$dateStr] = true;
         }
+
+        $startDate = $this->dates[0]->format('Y-m-d');
+        $endDate = $this->dates[$daysInMonth - 1]->format('Y-m-d');
+
+        // Fetch approved cuti dates
+        $approvedCutis = \App\Models\Surat\SuratCuti::where('status', 'approved')
+            ->where(function($q) use ($startDate, $endDate) {
+                $q->whereBetween('tgl_mulai', [$startDate, $endDate])
+                  ->orWhereBetween('tgl_akhir', [$startDate, $endDate])
+                  ->orWhere(function($sub) use ($startDate, $endDate) {
+                      $sub->where('tgl_mulai', '<=', $startDate)
+                          ->where('tgl_akhir', '>=', $endDate);
+                      });
+            })
+            ->get();
+
+        $cutiMap = [];
+        foreach ($approvedCutis as $sc) {
+            $dates = json_decode($sc->tgl_cuti, true);
+            if (is_array($dates)) {
+                foreach ($dates as $d) {
+                    $cutiMap[$sc->karyawan_id][$d] = [
+                        'status' => (int)$sc->urgensi_id === 4 ? \App\Enums\StatusKehadiran::IZIN : \App\Enums\StatusKehadiran::CUTI,
+                        'catatan' => $sc->jenis?->nama . ' resmi (' . $sc->no_surat . ')'
+                    ];
+                }
+            }
+        }
         
         $detailsToInsert = [];
         
@@ -105,12 +174,21 @@ class Kelola extends Component
                 $exists = isset($existingMap[$karyawan->id][$dateStr]);
                 
                 if (!$exists) {
+                    $statusKehadiran = 'belum_dicek';
+                    $catatan = null;
+
+                    if (isset($cutiMap[$karyawan->id][$dateStr])) {
+                        $statusKehadiran = $cutiMap[$karyawan->id][$dateStr]['status']->value;
+                        $catatan = $cutiMap[$karyawan->id][$dateStr]['catatan'];
+                    }
+
                     $detailsToInsert[] = [
                         'jadwal_kerja_id' => $this->jadwalKerja->id,
                         'karyawan_id' => $karyawan->id,
                         'shift_id' => null,
                         'tanggal' => $dateStr,
-                        'status_kehadiran' => 'belum_dicek',
+                        'status_kehadiran' => $statusKehadiran,
+                        'catatan' => $catatan,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
@@ -140,10 +218,17 @@ class Kelola extends Component
             $logCount = 0;
 
             foreach ($this->state as $detailId => $shiftId) {
-                // Konversi empty string/null/0 ke null
-                $shiftId = empty($shiftId) ? null : (int) $shiftId;
-                
                 $detail = JadwalKerjaDetail::find($detailId);
+                
+                // Force shift to null if they are on approved cuti
+                $dateStr = $detail->tanggal->format('Y-m-d');
+                $isCuti = isset($this->cutiDates["{$detail->karyawan_id}-{$dateStr}"]);
+                if ($isCuti) {
+                    $shiftId = null;
+                } else {
+                    // Konversi empty string/null/0 ke null
+                    $shiftId = empty($shiftId) ? null : (int) $shiftId;
+                }
                 
                 // Cek apakah ada perubahan shift
                 if ($detail->shift_id !== $shiftId) {

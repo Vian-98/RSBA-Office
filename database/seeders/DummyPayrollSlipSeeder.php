@@ -23,6 +23,8 @@ class DummyPayrollSlipSeeder extends Seeder
 
         // Hapus data lama agar tidak duplikat saat di-seed ulang
         \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+        DB::table('sdm_payroll_slip_allocations')->truncate();
+        DB::table('sdm_payroll_slip_allowances')->truncate();
         DB::table('sdm_payroll_pph21_override_logs')->truncate();
         DB::table('sdm_payroll_slips')->truncate();
         \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();

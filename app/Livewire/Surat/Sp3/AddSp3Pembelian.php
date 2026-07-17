@@ -208,6 +208,9 @@ class AddSp3Pembelian extends Component
                 $this->signManual($suratSp3);
             }
 
+            // Sync immediately to docstore
+            app(\App\Services\DocstoreSyncService::class)->syncSp3($suratSp3);
+
             DB::commit();
             $this->dispatch('created-sp3');
 
@@ -234,73 +237,59 @@ class AddSp3Pembelian extends Component
         $data = [
             'surat_sp3_id' => $suratSp3->id,
             'disetujui' => $this->userApprove,
-            'status' => 'manual',
-            'keterangan' => null,
+            'status' => 'approved',  // Manual cetak langsung approved oleh sistem
+            'keterangan' => 'Manual cetak, tanda tangan sistem',
             'approved_at' => now()->toIso8601String(),
         ];
 
-        DB::beginTransaction();
-        try {
-            // ambil data signature user [p12 path] , jika manual, gunakan tanda tangan Super Admin,
-            // Super Admin credential mewakili credential sistem,
-            $user = User::find(1);
-            $certificate = $user->certificate()->latest('id')->first();
-
-            if (!$certificate) {
-                throw new Exception("Tidak memiliki certificate.");
-            }
-
-            // buat signature hash dari p12
-            $dataToSign = json_encode($data);
-
-            $passwordCertificate = null;
-
-            // Proses tanda tangan data
-            $signature = $this->digitalSignatureService->signData(
-                user: $user,
-                data: $dataToSign,
-                password: $passwordCertificate,
-                type: 'persetujuan_sp3',
-                id: $suratSp3->id
-            );
-
-            if (!$signature['status']) {
-                $this->toast()
-                    ->error('Proses tanda tangan tidak berhasil.', "<i>{$signature['message']}</i>")
-                    ->send();
-                return;
-            }
-
-            $data['signature_hash'] = $signature['data_hash']; //adding hash to data
-
-            SuratSp3Approval::create($data);
-            $suratSp3->update(
-                [
-                    'status' => 'approved'
-                ]
-            );
-
-            // Update status pembayaran PO karena SP3 otomatis disetujui (manual sign)
-            \App\Models\Gudang\Pembelian::where('sp3_id', $suratSp3->id)
-                ->update([
-                    'status_pembayaran' => 'lunas',
-                    'tgl_pembayaran' => now()->format('Y-m-d')
-                ]);
-
-            // return
-            $this->suratSp3 = $suratSp3;
-            DB::commit();
-
-            $this->toast()
-                ->success('Berhasil.', "Surat SP3 {$suratSp3->no} berhasil diupdate.")
-                ->send();
-        } catch (Throwable $e) {
-            DB::rollback();
-
-            $this->toast()
-                ->error('Tidak Berhasil.', "Error : {$e->getMessage()}")
-                ->send();
+        // ambil data signature user [p12 path] , jika manual, gunakan tanda tangan Super Admin,
+        // Super Admin credential mewakili credential sistem,
+        $user = User::find(1);
+        if (!$user) {
+            throw new Exception("User Super Admin tidak ditemukan.");
         }
+        $certificate = $user->certificate()->latest('id')->first();
+
+        if (!$certificate) {
+            throw new Exception("Tidak memiliki certificate.");
+        }
+
+        // buat signature hash dari p12
+        $dataToSign = json_encode($data);
+
+        $passwordCertificate = null;
+
+        // Proses tanda tangan data
+        $signature = $this->digitalSignatureService->signData(
+            user: $user,
+            data: $dataToSign,
+            password: $passwordCertificate,
+            type: 'persetujuan_sp3',
+            id: $suratSp3->id
+        );
+
+        if (!$signature['status']) {
+            throw new Exception($signature['message']);
+        }
+
+        $data['signature_hash'] = $signature['data_hash']; //adding hash to data
+
+        SuratSp3Approval::create($data);
+        $suratSp3->update(
+            [
+                'status' => 'approved'
+            ]
+        );
+
+        // Update status pembayaran PO karena SP3 otomatis disetujui (manual sign)
+        \App\Models\Gudang\Pembelian::where('sp3_id', $suratSp3->id)
+            ->update([
+                'status_pembayaran' => 'lunas',
+                'tgl_pembayaran' => now()->format('Y-m-d')
+            ]);
+
+        // return
+        $this->suratSp3 = $suratSp3;
     }
 
     private function createNomor()

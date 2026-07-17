@@ -13,19 +13,19 @@
     <div class="rounded-lg bg-white p-4 shadow-sm" x-data="{ tab: @entangle('tab') }">
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                <button @click="tab = 'aturan-jadwal'"
+                <button wire:click="$set('tab', 'aturan-jadwal')" @click="tab = 'aturan-jadwal'"
                     :class="tab === 'aturan-jadwal' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
                     class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
                     Aturan Jadwal
                 </button>
                 @if(auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM']))
-                    <button @click="tab = 'koordinator'"
+                    <button wire:click="$set('tab', 'koordinator')" @click="tab = 'koordinator'"
                         :class="tab === 'koordinator' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
                         class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
                         Koordinator
                     </button>
                 @endif
-                <button @click="tab = 'master-shift'"
+                <button wire:click="$set('tab', 'master-shift')" @click="tab = 'master-shift'"
                     :class="tab === 'master-shift' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
                     class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
                     Master Shift
@@ -34,23 +34,22 @@
         </div>
 
         <div class="mt-4">
-            <div x-show="tab === 'aturan-jadwal'" x-cloak>
+            @if($tab === 'aturan-jadwal')
                 @livewire('master.jadwal-aturan.index')
-            </div>
-            @if(auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM']))
-                <div x-show="tab === 'koordinator'" x-cloak>
-                    @livewire('master.bagian-koordinator.index')
-                </div>
             @endif
-            <div x-show="tab === 'master-shift'" x-cloak>
+            @if(auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM']))
+                @if($tab === 'koordinator')
+                    @livewire('master.bagian-koordinator.index')
+                @endif
+            @endif
+            @if($tab === 'master-shift')
                 @livewire('master.jadwal-shift.index')
-            </div>
+            @endif
             
             {{-- Hidden tab, accessible only via URL ?tab=shift-ruangan --}}
-            <div x-show="tab === 'shift-ruangan'" x-cloak>
+            @if($tab === 'shift-ruangan')
                 @livewire('master.ruangan-shift.index')
-            </div>
-            </div>
+            @endif
         </div>
     </div>
 </div>

@@ -42,6 +42,11 @@ class AuthServiceProvider extends ServiceProvider
                 }
             }
 
+            // Izinkan semua user biasa yang login untuk melihat/mengakses halaman index jadwal kerja
+            if ($ability === 'view-kepegawaian-jadwal-kerja') {
+                return true;
+            }
+
             return null;
         });
     }

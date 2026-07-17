@@ -171,6 +171,25 @@ class Navbar extends Component
             }
         } catch (Throwable $e) {}
 
+        // 4. Golongan changes (For Super-Admin & Staff-SDM)
+        try {
+            if ($user->hasRole('Super-Admin') || $user->hasRole('Staff-SDM')) {
+                $logs = \Illuminate\Support\Facades\DB::table('sdm_payroll_golongan_logs')
+                    ->latest()
+                    ->take(5)
+                    ->pluck('id')
+                    ->map(fn($id) => 'golongan-change-' . $id)
+                    ->toArray();
+
+                foreach ($logs as $lid) {
+                    if (!in_array($lid, $readNotifs)) {
+                        $this->hasUnread = true;
+                        return;
+                    }
+                }
+            }
+        } catch (Throwable $e) {}
+
         $this->hasUnread = false;
     }
 

@@ -95,7 +95,7 @@
                 </div>
                 
                 <!-- Right: Stats Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 w-full 2xl:w-auto flex-grow max-w-5xl">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full 2xl:w-auto flex-grow max-w-5xl">
                     <!-- Hadir (Tepat Waktu) -->
                     <div class="rounded-xl bg-emerald-50/50 border border-emerald-100/50 p-4 text-center">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Tepat Waktu</span>
@@ -115,19 +115,6 @@
                         <span class="text-[10px] font-bold uppercase tracking-wider text-orange-700">Pulang Cepat</span>
                         <h4 class="text-2xl font-bold text-orange-800 mt-1">{{ $rekapAbsen['pulang_cepat'] }}</h4>
                         <p class="text-[10px] text-orange-600 font-semibold">{{ $rekapAbsen['menit_pulang_cepat'] }} Menit</p>
-                    </div>
-
-                    <!-- Lembur -->
-                    <div class="rounded-xl bg-indigo-50/50 border border-indigo-100/50 p-4 text-center">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-700">Lembur</span>
-                        <h4 class="text-2xl font-bold text-indigo-800 mt-1">{{ $rekapAbsen['menit_lembur'] }}</h4>
-                        <p class="text-[10px] text-indigo-600 font-semibold">
-                            @if($rekapAbsen['menit_lembur'] >= 60)
-                                {{ floor($rekapAbsen['menit_lembur'] / 60) }}j {{ $rekapAbsen['menit_lembur'] % 60 }}m
-                            @else
-                                Menit
-                            @endif
-                        </p>
                     </div>
 
                     <!-- Cuti / Izin -->

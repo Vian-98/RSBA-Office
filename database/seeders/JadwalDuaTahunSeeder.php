@@ -197,12 +197,21 @@ class JadwalDuaTahunSeeder extends Seeder
         $this->command->info("Selesai! Berhasil membuat {$totalHeaderCreated} header Jadwal Kerja selama periode 2023 - 2024.");
     }
 
-    /**
-     * Membangun jam masuk & pulang fiktif secara realistik berdasarkan shift
-     */
     private function generateMockAttendance(Carbon $date, $shift): array
     {
         if (!$shift) {
+            // Hari Libur/OFF: 8% peluang masuk lembur hari libur
+            if (rand(1, 100) <= 8) {
+                $masuk = Carbon::parse($date->format('Y-m-d') . ' ' . sprintf('%02d:%02d:00', rand(7, 9), rand(0, 59)));
+                $durasiJam = rand(4, 8);
+                $keluar = $masuk->copy()->addHours($durasiJam)->addMinutes(rand(0, 59));
+                return [
+                    'status_kehadiran' => 'hadir',
+                    'absen_masuk_at' => $masuk->format('Y-m-d H:i:s'),
+                    'absen_keluar_at' => $keluar->format('Y-m-d H:i:s'),
+                    'catatan' => 'Lembur tugas khusus hari libur.'
+                ];
+            }
             return [
                 'status_kehadiran' => 'belum_dicek',
                 'absen_masuk_at' => null,
@@ -252,12 +261,16 @@ class JadwalDuaTahunSeeder extends Seeder
         }
 
         // Jam Tap Pulang
-        $outRand = rand(1, 10);
-        if ($outRand <= 8) {
-            // Pulang tepat waktu / lembur dikit (1 s.d 30 menit setelah jam shift)
-            $actualOut = $jamKeluar->copy()->addMinutes(rand(1, 30));
-            $isEarly = false;
-            $earlyMinutes = 0;
+        $outRand = rand(1, 100);
+        $isEarly = false;
+        $earlyMinutes = 0;
+
+        if ($outRand <= 25) {
+            // Lembur / Overtime terencana (60 sampai 180 menit setelah jam shift)
+            $actualOut = $jamKeluar->copy()->addMinutes(rand(60, 180));
+        } elseif ($outRand <= 85) {
+            // Pulang tepat waktu / normal (1 s.d 20 menit setelah jam shift)
+            $actualOut = $jamKeluar->copy()->addMinutes(rand(1, 20));
         } else {
             // Pulang Cepat (5 s.d 30 menit lebih awal)
             $earlyMinutes = rand(5, 30);

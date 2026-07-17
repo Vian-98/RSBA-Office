@@ -35,6 +35,8 @@ class EditKedinasan extends Component
     public $dinas;
     public $tgl_dinas;
 
+    public $pendidikan_options = [];
+    public string $auto_pendidikan_label = '';
 
     public function rules(): array
     {
@@ -43,7 +45,8 @@ class EditKedinasan extends Component
             'form.jabatan' => 'required',
             'form.tgl_status' => Rule::requiredIf(fn() => $this->form->status != $this->status_init),
             'form.tgl_jabatan' => Rule::requiredIf(fn() => $this->form->jabatan != $this->jabatan_init),
-            'form.tgl_dinas' => Rule::requiredIf(fn() => $this->form->dinas != $this->dinas_init)
+            'form.tgl_dinas' => Rule::requiredIf(fn() => $this->form->dinas != $this->dinas_init),
+            'form.pendidikan_setara' => 'nullable|string'
         ];
     }
 
@@ -60,6 +63,43 @@ class EditKedinasan extends Component
         $this->jabatan_options = Jabatan::all();
         $this->jabatan_init = $karyawan->jabatan[0]->id ?? '';
         $this->ruangan_init = $karyawan->ruangan_id;
+
+        // Load education options from matrix groups & current auto default
+        $groups = \Illuminate\Support\Facades\DB::table('sdm_payroll_golongan_matrix')
+            ->select('kelompok_pendidikan')
+            ->orderBy('urutan_kelompok', 'asc')
+            ->distinct()
+            ->pluck('kelompok_pendidikan')
+            ->toArray();
+
+        $options = [['value' => '', 'label' => '[Otomatis sesuai Pendidikan Terakhir]']];
+        foreach ($groups as $g) {
+            $options[] = ['value' => $g, 'label' => $g];
+        }
+        $this->pendidikan_options = $options;
+
+        $allPendidikan = \Illuminate\Support\Facades\DB::table('sdm_kary_pendidikan')
+            ->where('karyawan_id', $id)
+            ->get();
+
+        $tingkat = 'sma';
+        $maxScore = 0;
+        $scoreMap = [
+            's2' => 4, 's3' => 4, 'spesialis' => 4,
+            's1' => 3, 'profesi' => 3, 'dokter' => 3,
+            'd3' => 2, 'd4' => 2,
+            'sd' => 1, 'smp' => 1, 'sma' => 1, 'lain' => 1,
+        ];
+
+        foreach ($allPendidikan as $p) {
+            $score = $scoreMap[$p->tingkat] ?? 1;
+            if ($score > $maxScore) {
+                $maxScore = $score;
+                $tingkat = $p->tingkat;
+            }
+        }
+
+        $this->auto_pendidikan_label = \App\Enums\TingkatPendidikan::tryFrom($tingkat)?->nama() ?? 'SMA';
     }
 
     public function update()
@@ -77,7 +117,7 @@ class EditKedinasan extends Component
             $this->jabatan_init = $this->form->jabatan;
         }
 
-        // update ruangan dan kategori kerja
+        // update ruangan, kategori kerja, dan pendidikan terakhir
         $data = [];
         if ($this->form->ruangan !== $this->ruangan_init) {
             $data['ruangan_id'] = empty($this->form->ruangan) ? null : $this->form->ruangan;
@@ -85,6 +125,7 @@ class EditKedinasan extends Component
         }
         
         $data['kategori_kerja'] = $this->form->kategori_kerja;
+        $data['pendidikan_setara'] = empty($this->form->pendidikan_setara) ? null : $this->form->pendidikan_setara;
         
         if (count($data) > 0) {
             Karyawan::where('id', $this->form->karyawan->id)->update($data);
