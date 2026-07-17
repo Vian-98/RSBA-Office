@@ -2,10 +2,11 @@
     <form wire:submit.prevent='submit' class="flex flex-col gap-2" x-data="{
         tglCuti: @entangle('form.tgl_cuti'),
         lamaCuti: @entangle('form.lama_cuti'),
+        jenisCuti: @entangle('form.jenis_cuti'),
         updateLamaCuti(value) {
             this.tglCuti = value;
             this.lamaCuti = this.tglCuti.length;
-        },
+        }
     }">
         <div class="flex w-full flex-col gap-2">
             <span class="text-lg font-semibold text-primary-500">{{ $karyawan?->nama }}</span>
@@ -22,7 +23,7 @@
                 <x-ts:badge color="red" outline class="w-1/2">
                     hari pengajuan cuti
                     <x-slot:left>
-                        <p class="mr-2 text-xl" x-text="lamaCuti"></p>
+                        <p class="mr-2 text-xl" x-text="parseInt(jenisCuti) === 3 ? 90 : lamaCuti"></p>
                     </x-slot:left>
                 </x-ts:badge>
             </div>
@@ -39,7 +40,15 @@
                 select="label:label|value:value" x-on:select="$wire.set('form.jenis_cuti',$event.detail.select.value)">
             </x-ts:select.styled>
 
-            <x-ts:date multiple format="DD MMM" x-on:select="updateLamaCuti($event.detail.date)" :min-date="now()->subDays(-1)" placeholder="Tgl Cuti" hint="Pilih satu per satu tanggal cuti yang diajukan." />
+            @if((int) $form->jenis_cuti === 3)
+                <x-ts:date format="YYYY-MM-DD" wire:model="form.tgl_cuti" :min-date="now()->subDays(-1)" placeholder="Pilih Tanggal Mulai Cuti" wire:key="cuti-melahirkan-start"
+                    hint="Pilih tanggal mulai cuti melahirkan (otomatis diajukan selama 90 hari ke depan).">
+                </x-ts:date>
+            @else
+                <x-ts:date multiple format="DD MMM" wire:model='form.tgl_cuti' x-on:select="updateLamaCuti($event.detail.date)" :min-date="now()->subDays(-1)" placeholder="Tgl Cuti" wire:key="cuti-multiple"
+                    hint="Pilih satu per satu tanggal cuti yang diajukan.">
+                </x-ts:date>
+            @endif
 
             <x-ts:textarea wire:model='form.keterangan' placeholder="Keterangan" />
 

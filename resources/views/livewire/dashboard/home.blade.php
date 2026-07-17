@@ -32,9 +32,9 @@
     @if(!empty($rekapAbsen))
         <!-- Personal Attendance Recap Card -->
         <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex flex-col 2xl:flex-row items-center justify-between gap-6">
                 <!-- Left: Title and Circle Gauge -->
-                <div class="flex items-center gap-6">
+                <div class="flex flex-col sm:flex-row items-center gap-6">
                     <!-- Gauge Circle -->
                     <div class="relative flex items-center justify-center h-24 w-24 flex-shrink-0">
                         <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
@@ -46,8 +46,8 @@
                             <p class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Hadir</p>
                         </div>
                     </div>
-                    <div>
-                        <div class="flex flex-wrap items-center gap-3">
+                    <div class="text-center sm:text-left">
+                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                             <h2 class="text-lg font-bold text-slate-800">Rekap Absensi Saya</h2>
                             
                             <!-- Month & Year Selectors -->
@@ -95,7 +95,7 @@
                 </div>
                 
                 <!-- Right: Stats Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full md:w-auto flex-grow max-w-5xl">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full 2xl:w-auto flex-grow max-w-5xl">
                     <!-- Hadir (Tepat Waktu) -->
                     <div class="rounded-xl bg-emerald-50/50 border border-emerald-100/50 p-4 text-center">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Tepat Waktu</span>

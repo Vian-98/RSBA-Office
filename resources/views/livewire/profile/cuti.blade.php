@@ -74,7 +74,7 @@
             Pengajuan Izin / Cuti
         </x-slot>
 
-        <livewire:Surat.Cuti.Pengajuan :id="$karyawan->id" :key="Str::random()" @created-cuti="$refresh" />
+        <livewire:Surat.Cuti.Pengajuan :id="$karyawan->id" :key="Str::random()" @created-cuti="$dispatch('close-modal', {id: 'new-cuti'}); $refresh" />
     </x-filament::modal>
 
     <x-filament::modal id="view-detil-tanggal" :close-by-clicking-away="false">

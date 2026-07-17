@@ -37,9 +37,11 @@ class ListPermintaan extends Component implements HasTable, HasForms, HasActions
                     ->latest('created_at')
             )
             ->columns([
-                TextColumn::make('id')
-                    ->label('Request ID')
+                TextColumn::make('nomor_tiket')
+                    ->label('No. Tiket')
                     ->searchable()
+                    ->fontFamily('mono')
+                    ->placeholder('-')
                     ->sortable(),
 
                 TextColumn::make('asset.kode')
@@ -98,9 +100,14 @@ class ListPermintaan extends Component implements HasTable, HasForms, HasActions
                             modal: 'modal-apporoval-permintaan',
                             id: $record->getKey()
                         )
+                    ),
 
-                    )
-
+                Action::make('lihat_tiket')
+                    ->iconButton()
+                    ->icon('tabler-ticket')
+                    ->color('primary')
+                    ->url(fn($record) => route('umum.maintenance.ticket.detail', $record->getKey()))
+                    ->openUrlInNewTab(false),
             ]);
     }
 

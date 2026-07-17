@@ -25,6 +25,7 @@ class PrintKartuStokByTrans extends Component
     #[Computed]
     public function mutasi_stok()
     {
+        $runningTotal = 0;
         return StokMutasi::with([
             'stoks',
             'stoks.penerimaanDet'
@@ -44,18 +45,12 @@ class PrintKartuStokByTrans extends Component
     #[Computed]
     public function stokAwal(): int
     {
-        $awal = $this->mutasi_stok[0]->stoks->penerimaanDet->jumlah;
-        return $awal;
-        // $total = 0;
-        // foreach ($this->mutasi_stok as $item) {
-        //     $total += $item->stoks->penerimaanDet->jumlah ?? 0;
-        // }
+        if ($this->mutasi_stok->isEmpty()) {
+            return 0;
+        }
 
-        // return $total;
-        // return $this->mutasi_stok
-        //     ->flatMap(fn($mutasi) => $mutasi->stoks)
-        //     ->flatMap(fn($stok) => collect($stok->penerimaanDet))
-        //     ->sum('jumlah');
+        $awal = $this->mutasi_stok[0]->stoks->penerimaanDet->jumlah ?? 0;
+        return $awal;
     }                       // Sum the jumlah field
 
 

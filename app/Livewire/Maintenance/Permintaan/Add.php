@@ -20,16 +20,16 @@ class Add extends Component
 
     public ?AssetBarang $assetBarang;
 
-    public string $priority = 'normal';
+    public $priority = 'normal';
     public array $priorityPermintaan = [
         ['value' => 'normal', 'label' => 'Normal'],
         ['value' => 'penting', 'label' => 'Urgent'],
         ['value' => 'darurat', 'label' => 'Emergency'],
     ];
 
-    public bool $is_normal = true;
-    public string $note = '';
-    public string $ket_priority = '';
+    public $is_normal = true;
+    public $note = '';
+    public $ket_priority = '';
 
     // lampiran variable
     public $lampirans = [];
@@ -115,7 +115,15 @@ class Add extends Component
             ];
 
             // Create a new maintenance request
-            $this->assetBarang->maintenanceRequests()->create($data);
+            $maintReq = $this->assetBarang->maintenanceRequests()->create($data);
+
+            // Log sistem
+            \App\Models\Maintenance\TicketComment::create([
+                'request_id' => $maintReq->id,
+                'user_id'    => auth()->id(),
+                'body'       => 'Tiket dibuat oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name ?? 'User'),
+                'type'       => 'log',
+            ]);
 
             //update asset status
             $this->assetBarang->update([

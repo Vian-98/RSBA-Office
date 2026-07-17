@@ -97,7 +97,7 @@ class UmumSeeder extends Seeder
         
         for ($i = 1; $i <= 3; $i++) {
             $pembelianId = DB::table('um_pembelian')->insertGetId([
-                'no' => 'PO-DUMMY-' . rand(1000, 9999),
+                'no' => 'PO-D-' . rand(1000, 9999),
                 'tgl' => now()->subDays(rand(1, 10))->format('Y-m-d'),
                 'supplier_id' => $supplierId,
                 'jenis' => 'langsung',

@@ -87,11 +87,39 @@ class Generate extends Component
             ]);
 
             $daysInMonth = Carbon::create($this->tahun, $this->bulan, 1)->daysInMonth;
+            $startDate = Carbon::create($this->tahun, $this->bulan, 1)->format('Y-m-d');
+            $endDate = Carbon::create($this->tahun, $this->bulan, $daysInMonth)->format('Y-m-d');
+
+            // Fetch approved cuti dates
+            $approvedCutis = \App\Models\Surat\SuratCuti::where('status', 'approved')
+                ->where(function($q) use ($startDate, $endDate) {
+                    $q->whereBetween('tgl_mulai', [$startDate, $endDate])
+                      ->orWhereBetween('tgl_akhir', [$startDate, $endDate])
+                      ->orWhere(function($sub) use ($startDate, $endDate) {
+                          $sub->where('tgl_mulai', '<=', $startDate)
+                              ->where('tgl_akhir', '>=', $endDate);
+                      });
+                })
+                ->get();
+
+            $cutiMap = [];
+            foreach ($approvedCutis as $sc) {
+                $dates = json_decode($sc->tgl_cuti, true);
+                if (is_array($dates)) {
+                    foreach ($dates as $d) {
+                        $cutiMap[$sc->karyawan_id][$d] = [
+                            'status' => (int)$sc->urgensi_id === 4 ? \App\Enums\StatusKehadiran::IZIN : \App\Enums\StatusKehadiran::CUTI,
+                            'catatan' => $sc->jenis?->nama . ' resmi (' . $sc->no_surat . ')'
+                        ];
+                    }
+                }
+            }
             
             $details = [];
             foreach ($karyawans as $karyawan) {
                 for ($d = 1; $d <= $daysInMonth; $d++) {
                     $date = Carbon::create($this->tahun, $this->bulan, $d);
+                    $dateStr = $date->format('Y-m-d');
                     
                     $shiftId = null;
                     if ($karyawan->kategori_kerja === KategoriKerja::REGULER && $shiftReguler) {
@@ -101,12 +129,23 @@ class Generate extends Component
                         }
                     }
 
+                    $statusKehadiran = 'belum_dicek';
+                    $catatan = null;
+                    $actualShiftId = $shiftId;
+
+                    if (isset($cutiMap[$karyawan->id][$dateStr])) {
+                        $statusKehadiran = $cutiMap[$karyawan->id][$dateStr]['status']->value;
+                        $catatan = $cutiMap[$karyawan->id][$dateStr]['catatan'];
+                        $actualShiftId = null; // No shift on leave days
+                    }
+
                     $details[] = [
                         'jadwal_kerja_id' => $jadwalKerja->id,
                         'karyawan_id' => $karyawan->id,
-                        'shift_id' => $shiftId,
-                        'tanggal' => $date->format('Y-m-d'),
-                        'status_kehadiran' => 'belum_dicek',
+                        'shift_id' => $actualShiftId,
+                        'tanggal' => $dateStr,
+                        'status_kehadiran' => $statusKehadiran,
+                        'catatan' => $catatan,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];

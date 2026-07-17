@@ -245,6 +245,17 @@ class Add extends Component
                 total_biaya: $totalBiaya
             );
 
+            // Log sistem: Selesai Pekerjaan
+            $reqId = $this->maintenanceWork->jadwal?->maintc_request_id ?? $this->maintenanceWork->jadwal()->first()?->maintc_request_id;
+            if ($reqId) {
+                \App\Models\Maintenance\TicketComment::create([
+                    'request_id' => $reqId,
+                    'user_id'    => auth()->id(),
+                    'body'       => 'Pekerjaan diselesaikan oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name) . ($this->keterangan ? ' dengan catatan: ' . $this->keterangan : '') . ($totalBiaya > 0 ? ' (Biaya: Rp ' . number_format($totalBiaya, 2, ',', '.') . ')' : ''),
+                    'type'       => 'log',
+                ]);
+            }
+
             DB::commit();
 
             $this->dispatch('close-modal', id: 'modal-maintenance-work-add');

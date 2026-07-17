@@ -1,4 +1,4 @@
-<div x-show="isOpen()" class="fixed inset-0 z-50 flex h-screen bg-slate-900 bg-opacity-30 md:static md:bg-transparent">
+<div x-show="isOpen()" class="fixed inset-0 z-50 md:z-30 flex h-screen bg-slate-900 bg-opacity-30 md:static md:bg-transparent">
     
     @php
         $authUser = auth()->user();
@@ -16,7 +16,7 @@
          :class="isCollapsed && isAboveBreakpoint ? 'w-20' : 'w-72'"
          class="relative scrollbar-hidden flex flex-col justify-between h-full bg-white shadow-xl border-r border-slate-100 transition-all duration-300 ease-in-out overflow-x-hidden">
         
-        <div id="sidebar-scroll-container" class="flex flex-col gap-6 overflow-y-auto overflow-x-hidden scrollbar-hidden py-6">
+        <div id="sidebar-scroll-container" class="flex-1 min-h-0 flex flex-col gap-6 overflow-y-auto overflow-x-hidden scrollbar-hidden py-6">
             {{-- logo --}}
             <div class="flex items-center px-6 transition-all duration-300"
                  :class="isCollapsed && isAboveBreakpoint ? 'justify-center' : 'justify-start gap-3'">

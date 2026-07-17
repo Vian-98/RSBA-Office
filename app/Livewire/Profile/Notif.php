@@ -201,6 +201,33 @@ class Notif extends Component
             report($e);
         }
 
+        // 6. Golongan Matrix & Tunjangan Changes (For Super-Admin & Staff-SDM)
+        try {
+            if ($user->hasRole('Super-Admin') || $user->hasRole('Staff-SDM')) {
+                $logs = \Illuminate\Support\Facades\DB::table('sdm_payroll_golongan_logs')
+                    ->join('users', 'sdm_payroll_golongan_logs.user_id', '=', 'users.id')
+                    ->join('sdm_karyawan', 'users.karyawan_id', '=', 'sdm_karyawan.id')
+                    ->select('sdm_payroll_golongan_logs.*', 'sdm_karyawan.nama as nama_user')
+                    ->latest('sdm_payroll_golongan_logs.created_at')
+                    ->take(5)
+                    ->get();
+
+                foreach ($logs as $log) {
+                    $items[] = [
+                        'id' => 'golongan-change-' . $log->id,
+                        'type' => 'danger',
+                        'icon' => 'tabler.alert-triangle',
+                        'title' => 'Perubahan Golongan/Matrix',
+                        'message' => "Golongan/Matrix diubah oleh {$log->nama_user}. [{$log->tipe}] {$log->kunci}: {$log->nilai_lama} -> {$log->nilai_baru}",
+                        'time' => \Carbon\Carbon::parse($log->created_at)->diffForHumans(),
+                        'route' => 'kepegawaian.master.tunjangan-golongan.index',
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return $items;
     }
 

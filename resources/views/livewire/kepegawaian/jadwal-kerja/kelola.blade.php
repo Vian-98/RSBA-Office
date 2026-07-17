@@ -150,6 +150,10 @@
             <span class="w-2.5 h-2.5 rounded-sm bg-slate-200 border border-slate-300"></span>
             <span class="font-bold">LIBUR</span> <span class="text-slate-400">Hari Libur</span>
         </span>
+        <span class="inline-flex items-center gap-1 text-[10px] text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded">
+            <span class="w-2.5 h-2.5 rounded-sm bg-rose-100 border border-rose-200"></span>
+            <span class="font-bold text-rose-700">CUTI</span> <span class="text-slate-400">Cuti / Izin Resmi</span>
+        </span>
         @foreach($shiftOptions as $s)
             @php $sw = autoWarna($s['kode'], $s['warna']); @endphp
             <span class="inline-flex items-center gap-1 text-[10px] bg-slate-50 px-1.5 py-0.5 rounded" title="{{ $s['nama'] }} ({{ substr($s['jam_masuk'],0,5) }}–{{ substr($s['jam_keluar'],0,5) }})">
@@ -202,6 +206,8 @@
                             @for($d = 1; $d <= count($dates); $d++)
                                 @php
                                     $detail = $karyawan['details'][$d] ?? null;
+                                    $dateStr = $dates[$d-1]->format('Y-m-d');
+                                    $cutiNo = $cutiDates["{$karyawan['id']}-{$dateStr}"] ?? null;
                                     if ($detail && $detail->shift) {
                                         $cW = autoWarna($detail->shift->kode, $detail->shift->warna);
                                         $cT = teksCerahGelap($cW);
@@ -214,6 +220,10 @@
                                 <td class="col-tgl border-b border-r border-slate-50 p-0.5 text-center align-middle {{ $dates[$d-1]->isWeekend() ? 'bg-rose-50/20' : '' }}">
                                     @if(!$detail)
                                         <div class="h-6 rounded flex items-center justify-center text-[8px] font-medium text-slate-300 bg-slate-50 border border-dashed border-slate-200">—</div>
+                                    @elseif($cutiNo)
+                                        <div class="h-6 rounded flex items-center justify-center text-[9px] font-bold select-none border border-rose-200 bg-rose-100 text-rose-700" title="Cuti/Izin Resmi ({{ $cutiNo }})">
+                                            CUTI
+                                        </div>
                                     @elseif($isReadOnly)
                                         <div class="h-6 rounded flex items-center justify-center text-[9px] font-bold select-none border border-black/5"
                                              style="background:{{ $cW }};color:{{ $cT }}" title="{{ $cTip }}">
@@ -241,7 +251,7 @@
                                             <span class="cell-label" x-text="l[v]||'LIBUR'"></span>
                                             {{-- Hidden select --}}
                                             <select wire:model.defer="state.{{ $detail->id }}" x-model="v">
-                                                <option value="">✕ LIBUR</option>
+                                                <option value="">LIBUR</option>
                                                 @foreach($shiftOptions as $s)
                                                     <option value="{{ $s['id'] }}">{{ $s['nama'] }} ({{ substr($s['jam_masuk'],0,5) }}–{{ substr($s['jam_keluar'],0,5) }})</option>
                                                 @endforeach
