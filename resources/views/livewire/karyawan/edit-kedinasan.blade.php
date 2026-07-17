@@ -33,6 +33,11 @@
                     ['label' => 'Pekerja Shift', 'value' => 'shift']
                 ]" select="label:label|value:value" />
             </div>
+            
+            <div class="w-full">
+                <x-ts:select.styled wire:model.defer="form.pendidikan_setara" placeholder="Pendidikan Setara (Acuan Golongan)" :options="$pendidikan_options" select="label:label|value:value" />
+                <span class="text-[10px] text-slate-400 mt-1 block">Default saat ini: <strong class="text-indigo-600 font-semibold">{{ $auto_pendidikan_label }}</strong> (Otomatis)</span>
+            </div>
         </div>
 
         <div class="flex justify-end gap-2 pt-4">
