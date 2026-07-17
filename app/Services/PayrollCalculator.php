@@ -52,13 +52,27 @@ class PayrollCalculator
             if (!empty($karyawan->pendidikan_setara)) {
                 $rowKey = $karyawan->pendidikan_setara;
             } else {
-                // Fallback to real latest education
-                $latestPendidikan = DB::table('sdm_kary_pendidikan')
+                // Fallback to real highest education
+                $allPendidikan = DB::table('sdm_kary_pendidikan')
                     ->where('karyawan_id', $karyawan->id)
-                    ->orderBy('tahun_lulus', 'desc')
-                    ->first();
+                    ->get();
 
-                $tingkat = $latestPendidikan ? $latestPendidikan->tingkat : 'sma';
+                $tingkat = 'sma';
+                $maxScore = 0;
+                $scoreMap = [
+                    's2' => 4, 's3' => 4, 'spesialis' => 4,
+                    's1' => 3, 'profesi' => 3, 'dokter' => 3,
+                    'd3' => 2, 'd4' => 2,
+                    'sd' => 1, 'smp' => 1, 'sma' => 1, 'lain' => 1,
+                ];
+
+                foreach ($allPendidikan as $p) {
+                    $score = $scoreMap[$p->tingkat] ?? 1;
+                    if ($score > $maxScore) {
+                        $maxScore = $score;
+                        $tingkat = $p->tingkat;
+                    }
+                }
 
                 $rowKey = match ($tingkat) {
                     'sd', 'smp', 'sma', 'lain' => 'SMA/SMK',

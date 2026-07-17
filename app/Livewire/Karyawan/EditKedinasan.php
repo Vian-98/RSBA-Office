@@ -78,12 +78,28 @@ class EditKedinasan extends Component
         }
         $this->pendidikan_options = $options;
 
-        $latest = \Illuminate\Support\Facades\DB::table('sdm_kary_pendidikan')
+        $allPendidikan = \Illuminate\Support\Facades\DB::table('sdm_kary_pendidikan')
             ->where('karyawan_id', $id)
-            ->orderBy('tahun_lulus', 'desc')
-            ->first();
+            ->get();
 
-        $this->auto_pendidikan_label = $latest ? (\App\Enums\TingkatPendidikan::tryFrom($latest->tingkat)?->nama() ?? 'SMA') : 'SMA';
+        $tingkat = 'sma';
+        $maxScore = 0;
+        $scoreMap = [
+            's2' => 4, 's3' => 4, 'spesialis' => 4,
+            's1' => 3, 'profesi' => 3, 'dokter' => 3,
+            'd3' => 2, 'd4' => 2,
+            'sd' => 1, 'smp' => 1, 'sma' => 1, 'lain' => 1,
+        ];
+
+        foreach ($allPendidikan as $p) {
+            $score = $scoreMap[$p->tingkat] ?? 1;
+            if ($score > $maxScore) {
+                $maxScore = $score;
+                $tingkat = $p->tingkat;
+            }
+        }
+
+        $this->auto_pendidikan_label = \App\Enums\TingkatPendidikan::tryFrom($tingkat)?->nama() ?? 'SMA';
     }
 
     public function update()
