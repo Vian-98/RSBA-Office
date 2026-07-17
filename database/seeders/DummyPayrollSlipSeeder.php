@@ -8,6 +8,8 @@ use App\Services\PayrollCalculator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
+use Illuminate\Support\Facades\Schema;
+
 class DummyPayrollSlipSeeder extends Seeder
 {
     /**
