@@ -32,6 +32,7 @@ class PermintaanApproval extends Component
             'approval' => 'required',
             'jadwal' => $this->approval === 'approved' ? 'required' : 'nullable',
             'teknisi_id' => $this->approval === 'approved' ? 'required' : 'nullable',
+            'priority' => $this->approval === 'approved' ? 'required' : 'nullable',
             'ket_reject' => $this->approval === 'rejected' ? 'required' : 'nullable'
         ];
     }
@@ -60,6 +61,17 @@ class PermintaanApproval extends Component
                 'ket_reject' => $this->ket_reject,
             ]);
 
+            if ($this->approval === 'rejected') {
+                $this->maintenanceRequest->asset->update([
+                    'status' => 'baik',
+                ]);
+                $this->maintenanceRequest->asset->components->each(function ($component) {
+                    $component->update([
+                        'status' => 'baik',
+                    ]);
+                });
+            }
+
             // 02 Add jadwal dan teknisi jika disetujui
             if ($this->approval === 'approved') {
                 $jadwal =  $this->maintenanceRequest->jadwal()->create([
@@ -83,6 +95,29 @@ class PermintaanApproval extends Component
                 $jadwal->teknisi()->createMany(
                     $teknisiMapping
                 );
+
+                // Fetch names of assigned technicians
+                $teknisiNames = \App\Models\User::whereIn('id', $this->teknisi_id)
+                    ->with('karyawan')
+                    ->get()
+                    ->map(fn($u) => $u->karyawan?->nama ?? $u->name)
+                    ->implode(', ');
+
+                // Log approval
+                \App\Models\Maintenance\TicketComment::create([
+                    'request_id' => $this->maintenanceRequest->id,
+                    'user_id'    => auth()->id(),
+                    'body'       => 'Tiket disetujui & dijadwalkan oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name) . ' untuk teknisi: ' . ($teknisiNames ?: '-') . ' pada tanggal ' . \Carbon\Carbon::parse($this->jadwal)->format('d M Y'),
+                    'type'       => 'log',
+                ]);
+            } else {
+                // Log rejection
+                \App\Models\Maintenance\TicketComment::create([
+                    'request_id' => $this->maintenanceRequest->id,
+                    'user_id'    => auth()->id(),
+                    'body'       => 'Tiket ditolak oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name) . ($this->ket_reject ? ' dengan alasan: ' . $this->ket_reject : ''),
+                    'type'       => 'log',
+                ]);
             }
 
             // 03 Commit transaction

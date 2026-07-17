@@ -16,6 +16,11 @@
             <x-ts:tab.items tab="Jadwal">
                 <livewire:Maintenance.ListJadwal :key="'list-jadwal'" />
             </x-ts:tab.items>
+
+            {{-- Tab Tiket Saya: semua orang bisa lihat --}}
+            <x-ts:tab.items tab="Tiket Saya">
+                <livewire:Maintenance.Ticket.MyTickets />
+            </x-ts:tab.items>
         </x-ts:tab>
 
     </div>

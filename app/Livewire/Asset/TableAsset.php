@@ -32,7 +32,7 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
     {
         return $table
             ->query(
-                AssetBarang::with(['barang', 'ruangan', 'barang.kategori'])
+                AssetBarang::with(['barang', 'ruangan', 'barang.kategori', 'maintenanceRequests' => fn($q) => $q->active()])
                     ->withHierarchySort()
                     ->when(
                         !auth()->user()->hasRole('Super-Admin') && !auth()->user()->can('view-umum-asset'),
@@ -113,7 +113,15 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                             ),
                             default => ''
                         }
-                    )
+                    ),
+
+                TextColumn::make('active_ticket')
+                    ->label('Tiket Aktif')
+                    ->getStateUsing(fn($record) => $record->maintenanceRequests->first()?->nomor_tiket)
+                    ->badge()
+                    ->color('warning')
+                    ->fontFamily('mono')
+                    ->placeholder('-'),
             ])
             ->filters([
                 Filter::make('main_asset')
@@ -163,6 +171,25 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                     )
             ])
             ->recordActions([
+                Action::make('maintenance')
+                    ->iconButton()
+                    ->tooltip('Buat Tiket Maintenance')
+                    ->icon('tabler-tools')
+                    ->color('danger')
+                    ->url(fn($record) => route('umum.maintenance.index', ['asset_id' => $record->getKey()]))
+                    ->openUrlInNewTab(false)
+                    ->visible(fn($record) => !$record->maintenanceRequests->count()),
+
+                Action::make('lihat_tiket')
+                    ->iconButton()
+                    ->icon('tabler-ticket')
+                    ->color('warning')
+                    ->url(fn($record) => $record->maintenanceRequests->first()
+                        ? route('umum.maintenance.ticket.detail', $record->maintenanceRequests->first()->id)
+                        : null
+                    )
+                    ->visible(fn($record) => $record->maintenanceRequests->count() > 0),
+
                 Action::make('catat')
                     ->iconButton()
                     ->icon('tabler-library-plus')

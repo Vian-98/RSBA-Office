@@ -8,6 +8,8 @@ use App\Services\PayrollCalculator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
+use Illuminate\Support\Facades\Schema;
+
 class DummyPayrollSlipSeeder extends Seeder
 {
     /**
@@ -22,7 +24,9 @@ class DummyPayrollSlipSeeder extends Seeder
         }
 
         // Hapus data lama agar tidak duplikat saat di-seed ulang
+        Schema::disableForeignKeyConstraints();
         DB::table('sdm_payroll_slips')->truncate();
+        Schema::enableForeignKeyConstraints();
 
         $months = [];
         $currentDate = Carbon::parse('2026-07-01');
