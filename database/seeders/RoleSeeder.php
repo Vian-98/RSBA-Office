@@ -46,7 +46,10 @@ class RoleSeeder extends Seeder
             }
             return false;
         });
-        $staffSdm->syncPermissions(array_unique(array_merge($sdmPermissions, $commonPermissions)));
+        $sdmSyncedPermissions = collect(array_unique(array_merge($sdmPermissions, $commonPermissions)))
+            ->filter(fn($permission) => !str_contains($permission, 'aturan-pajak'))
+            ->toArray();
+        $staffSdm->syncPermissions($sdmSyncedPermissions);
 
         // 2. Umum permissions
         $umumKeywords = ['umum', 'supplier', 'kategori', 'satuan', 'penyimpanan', 'barang', 'pembelian', 'distribusi', 'gudang', 'asset', 'opname', 'maintenance', 'pengajuan', 'laporang'];
@@ -90,5 +93,21 @@ class RoleSeeder extends Seeder
         // 6. Bedah & UGD basic permissions
         $staffBedah->syncPermissions($commonPermissions);
         $staffUgd->syncPermissions($commonPermissions);
+
+        // 7. Pajak permissions
+        $pajakPermissions = [
+            'view-dashboard',
+            'view-dashboard-kamar',
+            'view-dashboard-poli',
+            'view-profile-jadwal-tugas-saya',
+            'view-kepegawaian-gaji',
+            'view-kepegawaian-gaji-index',
+            'view-kepegawaian-gaji-detail',
+            'view-kepegawaian-master-aturan-pajak',
+            'view-kepegawaian-karyawan',
+            'edit-kepegawaian-karyawan',
+        ];
+        $pajakRole = Role::firstOrCreate(['name' => 'Pajak']);
+        $pajakRole->syncPermissions($pajakPermissions);
     }
 }

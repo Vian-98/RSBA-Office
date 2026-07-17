@@ -22,11 +22,12 @@ class DummyPayrollSlipSeeder extends Seeder
         }
 
         // Hapus data lama agar tidak duplikat saat di-seed ulang
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         DB::table('sdm_payroll_slip_allocations')->truncate();
         DB::table('sdm_payroll_slip_allowances')->truncate();
+        DB::table('sdm_payroll_pph21_override_logs')->truncate();
         DB::table('sdm_payroll_slips')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         $months = [];
         $currentDate = Carbon::parse('2026-07-01');
@@ -34,6 +35,7 @@ class DummyPayrollSlipSeeder extends Seeder
             $months[] = $currentDate->copy()->subMonths($i)->format('Y-m');
         }
 
+        /** @var Karyawan $karyawan */
         foreach ($karyawans as $karyawan) {
             $base = PayrollCalculator::calculate($karyawan);
             
@@ -67,7 +69,9 @@ class DummyPayrollSlipSeeder extends Seeder
                     $base['gaji_pokok'],
                     $base['tunjangan_tetap'],
                     $totalEarnings,
-                    $bpjsKeluargaTambahan
+                    $bpjsKeluargaTambahan,
+                    $karyawan,
+                    $m
                 );
                 
                 $bpjsKes = $deductions['potongan_bpjs_kes'];

@@ -1,5 +1,5 @@
 <div class="w-full">
-    {{ $this->table }}
+    {!! $this->table->toHtml() !!}
 
     <x-filament::modal id="modal-detail-sp3" width="max-w-4xl" :autofocus="false">
         <x-slot:heading>SP3</x-slot:heading>

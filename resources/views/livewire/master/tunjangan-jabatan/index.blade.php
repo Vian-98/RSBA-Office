@@ -22,6 +22,12 @@
                 Konfigurasi Tunjangan Jabatan
             </h1>
         </div>
+        <div>
+            <x-ts:button type="button" @click="$dispatch('open-modal', {id: 'new-jabatan'})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm">
+                <x-tabler-plus class="h-4 w-4 mr-1.5" />
+                Tambah Jabatan Baru
+            </x-ts:button>
+        </div>
     </div>
 
     <!-- Main Content Container -->
@@ -71,4 +77,9 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Tambah Jabatan Baru -->
+    <x-ts:modal id="new-jabatan" title="Tambah Jabatan Baru" size="md">
+        @livewire('master.jabatan.add')
+    </x-ts:modal>
 </div>

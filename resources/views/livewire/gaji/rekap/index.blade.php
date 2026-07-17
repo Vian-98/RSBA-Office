@@ -14,10 +14,12 @@
                 <x-tabler-arrow-left class="h-4 w-4 mr-1.5" />
                 Kembali
             </x-ts:button>
+            @if(!$isOnlyPajak)
             <x-ts:button type="button" outline color="indigo" class="text-xs font-bold bg-white border border-indigo-200 text-indigo-600 shadow-sm" x-on:click="$tsui.open.modal('modal-payroll-parameters')">
                 <x-tabler-settings class="h-4 w-4 mr-1.5" />
                 Parameter Payroll
             </x-ts:button>
+            @endif
             @can('view-kepegawaian-gaji-detail')
                 <x-ts:button href="{{ route('kepegawaian.gaji.detail', ['periode' => $periode]) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm">
                     <x-tabler-calculator class="h-4 w-4 mr-1.5" />
@@ -185,10 +187,20 @@
                                         Rp {{ number_format($item['total_gaji_bersih'], 0, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-4 text-center whitespace-nowrap">
-                                        @if($item['is_approved'])
+                                        @if($item['status'] === 'approved')
                                             <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-100">
                                                 <x-tabler-lock class="h-3 w-3" />
                                                 Disetujui
+                                            </span>
+                                        @elseif($item['status'] === 'review_pajak')
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 border border-amber-100">
+                                                <x-tabler-eye-check class="h-3 w-3" />
+                                                Review Pajak
+                                            </span>
+                                        @elseif($item['status'] === 'review_sdm')
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 border border-blue-100">
+                                                <x-tabler-clipboard-check class="h-3 w-3" />
+                                                Review SDM
                                             </span>
                                         @else
                                             <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 border border-slate-200">
@@ -196,49 +208,62 @@
                                                 Draf
                                             </span>
                                         @endif
-                                    </td>
-                                    <td class="px-4 py-4 text-center" @click.stop>
-                                        <div class="flex items-center justify-center gap-2">
+                                    <td class="px-4 py-4 text-center whitespace-nowrap" @click.stop>
+                                        <div class="flex items-center justify-center gap-2 whitespace-nowrap">
                                             @can('view-kepegawaian-gaji-detail')
-                                                <a href="{{ route('kepegawaian.gaji.detail', ['periode' => $item['periode']]) }}" class="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-800 transition-all">
+                                                <a href="{{ route('kepegawaian.gaji.detail', ['periode' => $item['periode']]) }}" class="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-800 transition-all whitespace-nowrap">
                                                     <x-tabler-calculator class="h-3.5 w-3.5" />
-                                                    {{ $item['is_approved'] ? 'Lihat Detail' : 'Kelola Gaji' }}
+                                                    {{ $item['status'] === 'approved' ? 'Lihat Detail' : 'Kelola Gaji' }}
                                                 </a>
                                             @else
                                                 <span class="text-xs text-slate-400 font-medium">Buka Detail</span>
                                             @endcan
 
-                                            @can('approve-kepegawaian-gaji')
-                                                @if($item['is_approved'])
+                                            {{-- SDM Actions --}}
+                                            @if($isSDM)
+                                                @if($item['status'] === 'draft' && $item['karyawan_count'] > 0)
+                                                    {{-- SDM: Kirim ke Pajak --}}
+                                                    <button type="button" wire:click="submitToReviewPajak('{{ $item['periode'] }}')" wire:confirm="Kirim data gaji periode ini ke Tim Pajak untuk direview?" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-100 hover:text-amber-800 transition-all whitespace-nowrap" title="Kirim ke Pajak">
+                                                        <x-tabler-send class="h-4 w-4" />
+                                                    </button>
+                                                @elseif($item['status'] === 'review_pajak')
+                                                    {{-- Waiting for Pajak --}}
+                                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-amber-500 bg-amber-50/50 border border-amber-100 cursor-default whitespace-nowrap" title="Menunggu review dari Tim Pajak">
+                                                        <x-tabler-clock class="h-4 w-4" />
+                                                    </span>
+                                                @elseif($item['status'] === 'review_sdm')
+                                                    {{-- SDM: Finalisasi & SP3 --}}
+                                                    <button type="button" wire:click="openFinalisasiModal('{{ $item['periode'] }}', {{ $item['karyawan_count'] }}, {{ $item['total_potongan'] }}, {{ $item['total_gaji_bersih'] }})" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 transition-all whitespace-nowrap" title="Setujui & Kunci">
+                                                        <x-tabler-lock class="h-4 w-4" />
+                                                    </button>
+                                                @elseif($item['status'] === 'approved')
                                                     @if($item['sp3_status'] === 'approved')
-                                                        {{-- SP3 disetujui Direksi: hanya Super Admin yang bisa buka kunci --}}
                                                         @role('Super-Admin')
-                                                            <button type="button" wire:click="unlockPeriode('{{ $item['periode'] }}')" class="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 hover:text-orange-800 transition-all" title="SP3 sudah disetujui Direksi. Hanya Super Admin yang dapat membuka kunci.">
-                                                                <x-tabler-shield-lock class="h-3.5 w-3.5" />
-                                                                Force Unlock
+                                                            <button type="button" wire:click="unlockPeriode('{{ $item['periode'] }}')" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-orange-600 bg-orange-50 hover:bg-orange-100 hover:text-orange-800 transition-all whitespace-nowrap" title="Force Unlock (SP3 disetujui Direksi)">
+                                                                <x-tabler-shield-lock class="h-4 w-4" />
                                                             </button>
                                                         @else
-                                                            <span class="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-semibold text-slate-400 bg-slate-50 border border-slate-200 cursor-not-allowed" title="SP3 sudah disetujui Direksi. Hanya Super Admin yang dapat membuka kunci.">
-                                                                <x-tabler-lock class="h-3.5 w-3.5" />
-                                                                SP3 Final
+                                                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 bg-slate-50 border border-slate-200 cursor-not-allowed whitespace-nowrap" title="SP3 sudah disetujui Direksi">
+                                                                <x-tabler-lock class="h-4 w-4" />
                                                             </span>
                                                         @endrole
                                                     @else
-                                                        {{-- SP3 pending/rejected atau belum ada: SDM bisa buka kunci untuk revisi --}}
-                                                        <button type="button" wire:click="unlockPeriode('{{ $item['periode'] }}')" class="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 transition-all" title="{{ $item['sp3_status'] === 'rejected' ? 'SP3 ditolak Direksi. Buka kunci untuk merevisi gaji.' : 'Buka kunci periode ini.' }}">
-                                                            <x-tabler-lock-open class="h-3.5 w-3.5" />
-                                                            {{ $item['sp3_status'] === 'rejected' ? 'Revisi Gaji' : 'Buka Kunci' }}
-                                                        </button>
-                                                    @endif
-                                                @else
-                                                    @if($item['karyawan_count'] > 0)
-                                                        <button type="button" wire:click="openFinalisasiModal('{{ $item['periode'] }}', {{ $item['karyawan_count'] }}, {{ $item['total_potongan'] }}, {{ $item['total_gaji_bersih'] }})" class="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 transition-all">
-                                                            <x-tabler-lock class="h-3.5 w-3.5" />
-                                                            Setujui & Kunci
+                                                        <button type="button" wire:click="unlockPeriode('{{ $item['periode'] }}')" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 transition-all whitespace-nowrap" title="{{ $item['sp3_status'] === 'rejected' ? 'SP3 ditolak Direksi. Buka kunci untuk merevisi.' : 'Buka kunci periode ini.' }}">
+                                                            <x-tabler-lock-open class="h-4 w-4" />
                                                         </button>
                                                     @endif
                                                 @endif
-                                            @endcan
+                                            @endif
+
+                                            {{-- Pajak Actions --}}
+                                            @if($isOnlyPajak && $item['status'] === 'review_pajak')
+                                                <button type="button" wire:click="approveByPajak('{{ $item['periode'] }}')" wire:confirm="Setujui data pajak untuk periode ini dan kembalikan ke SDM?" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 transition-all whitespace-nowrap" title="Setujui Pajak">
+                                                    <x-tabler-check class="h-4 w-4" />
+                                                </button>
+                                                <button type="button" wire:click="rejectByPajak('{{ $item['periode'] }}')" wire:confirm="Tolak dan kembalikan ke SDM untuk diperbaiki?" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 transition-all whitespace-nowrap" title="Tolak Pajak (Kembalikan ke SDM)">
+                                                    <x-tabler-x class="h-4 w-4" />
+                                                </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

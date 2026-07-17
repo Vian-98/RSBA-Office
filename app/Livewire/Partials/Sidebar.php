@@ -105,7 +105,7 @@ class Sidebar extends Component
                     'permission' => $menu->permission ?? '',
                     'group'      => $menu->group?->nama() ?? '',
                     'submenus'   => $menu->submenus
-                        ->sortBy('nama')
+                        ->sortBy(fn($sub) => trim($sub->nama) === 'Rekap Bulanan' ? '00_rekap_bulanan' : $sub->nama)
                         ->map(fn($sub) => [
                             'id'           => $sub->id,
                             'nama'         => $sub->nama,

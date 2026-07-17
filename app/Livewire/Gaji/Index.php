@@ -61,6 +61,12 @@ class Index extends Component
     
     public int $form_bpjs_keluarga_tambahan = 0;
 
+    // PPh 21 Override Form Fields
+    public $form_potongan_pph21 = 0;
+    public $form_pph21_calculated = 0;
+    public bool $form_pph21_is_overridden = false;
+    public string $form_pph21_override_reason = '';
+
     // Dynamic 25% UMK allocations
     public array $form_umk_allocations = [];
 
@@ -80,6 +86,7 @@ class Index extends Component
     public $calc_gaji_bersih = 0;
     
     public bool $isLocked = false;
+    public string $periodStatus = 'draft';
 
     public function mount()
     {
@@ -87,10 +94,33 @@ class Index extends Component
             $this->periode = now()->format('Y-m');
         }
 
-        $this->isLocked = DB::table('sdm_payroll_period_locks')
+        $this->refreshLockStatus();
+    }
+
+    private function refreshLockStatus(): void
+    {
+        $lock = DB::table('sdm_payroll_period_locks')
             ->where('periode', $this->periode)
-            ->where('is_approved', true)
-            ->exists();
+            ->first();
+
+        $this->periodStatus = $lock->status ?? 'draft';
+
+        $user = auth()->user();
+        $isOnlyPajak = $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
+        $isSDM = $user->hasRole('Staff-SDM') || $user->hasRole('Super-Admin');
+
+        if ($this->periodStatus === 'approved') {
+            $this->isLocked = true;
+        } elseif ($this->periodStatus === 'review_pajak') {
+            // Pajak can edit during their review, SDM cannot
+            $this->isLocked = !$isOnlyPajak;
+        } elseif ($this->periodStatus === 'review_sdm') {
+            // SDM can view but cannot edit (waiting for finalisasi via rekap)
+            $this->isLocked = true;
+        } else {
+            // draft: SDM can edit, Pajak cannot
+            $this->isLocked = $isOnlyPajak;
+        }
     }
 
     public function updatingSearch(): void
@@ -108,6 +138,11 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatedPeriode(): void
+    {
+        $this->refreshLockStatus();
+    }
+
     public function updatingPerPage(): void
     {
         $this->resetPage();
@@ -117,8 +152,31 @@ class Index extends Component
     public function updated($name)
     {
         if (str_starts_with($name, 'form_')) {
+            $value = $this->{$name};
+            if (is_string($value)) {
+                $cleaned = str_replace('.', '', $value);
+                $this->{$name} = is_numeric($cleaned) ? (double)$cleaned : 0;
+            }
+
+            if ($name === 'form_potongan_pph21') {
+                if ((double) $this->form_potongan_pph21 !== (double) $this->form_pph21_calculated) {
+                    $this->form_pph21_is_overridden = true;
+                } else {
+                    $this->form_pph21_is_overridden = false;
+                    $this->form_pph21_override_reason = '';
+                }
+            }
             $this->recalculate();
         }
+    }
+
+    public function resetPph21ToAuto()
+    {
+        $this->form_pph21_is_overridden = false;
+        $this->form_pph21_override_reason = '';
+        $this->form_potongan_pph21 = $this->form_pph21_calculated;
+        $this->recalculate();
+        $this->toast()->info('Info', 'Nilai PPh 21 dikembalikan ke otomatis (sistem).')->send();
     }
 
     // Dynamic allowances actions
@@ -208,7 +266,24 @@ class Index extends Component
         // 4. BPJS & PPh21 calculations
         $this->calc_bpjs_kes = (double) $this->form_potongan_bpjs_kes;
         $this->calc_bpjs_tk = (double) $this->form_potongan_bpjs_tk;
-        $this->calc_pph21 = max(0.0, ($totalEarnings - $this->calc_bpjs_kes - $this->calc_bpjs_tk) * 0.05);
+
+        $calculatedDeductions = PayrollCalculator::calculateDeductions(
+            (double) $this->form_gaji_pokok,
+            (double) $this->form_tunjangan_tetap,
+            (double) $totalEarnings,
+            (int) $this->form_bpjs_keluarga_tambahan,
+            $this->selectedKaryawan,
+            $this->periode
+        );
+
+        $this->form_pph21_calculated = (double) $calculatedDeductions['potongan_pph21'];
+
+        if ($this->form_pph21_is_overridden) {
+            $this->calc_pph21 = (double) $this->form_potongan_pph21;
+        } else {
+            $this->calc_pph21 = $this->form_pph21_calculated;
+            $this->form_potongan_pph21 = $this->calc_pph21;
+        }
  
         // 5. Total Deductions
         $this->calc_total_potongan = (double) $this->form_potongan_absensi +
@@ -341,6 +416,10 @@ class Index extends Component
             $this->form_potongan_bank = (int) $slip->potongan_bank;
             $this->form_potongan_bpjs_kes = (int) $slip->potongan_bpjs_kes;
             $this->form_potongan_bpjs_tk = (int) $slip->potongan_bpjs_tk;
+            $this->form_potongan_pph21 = (int) $slip->potongan_pph21;
+            $this->form_pph21_calculated = (int) ($slip->pph21_calculated ?? $slip->potongan_pph21);
+            $this->form_pph21_is_overridden = (bool) ($slip->pph21_is_overridden ?? false);
+            $this->form_pph21_override_reason = $slip->pph21_override_reason ?? '';
             
             $this->form_bpjs_keluarga_tambahan = (int) $slip->bpjs_keluarga_tambahan;
 
@@ -402,7 +481,9 @@ class Index extends Component
                 $this->form_gaji_pokok,
                 $tTetap,
                 $totalEarnings,
-                0
+                0,
+                $karyawan,
+                $this->periode
             );
 
             // Query employee's last slip from previous periods
@@ -466,6 +547,10 @@ class Index extends Component
                 $this->form_bpjs_keluarga_tambahan = 0;
                 $this->form_potongan_bpjs_kes = (int) $deductions['potongan_bpjs_kes'];
                 $this->form_potongan_bpjs_tk = (int) $deductions['potongan_bpjs_tk'];
+                $this->form_pph21_is_overridden = false;
+                $this->form_pph21_override_reason = '';
+                $this->form_pph21_calculated = (int) $deductions['potongan_pph21'];
+                $this->form_potongan_pph21 = $this->form_pph21_calculated;
             }
         }
 
@@ -490,7 +575,7 @@ class Index extends Component
             return;
         }
 
-        $this->validate([
+        $rules = [
             'form_gaji_pokok' => 'required|numeric|min:0',
             'form_tunjangan_tetap' => 'required|numeric|min:0',
             'form_tunjangan_absensi' => 'required|numeric|min:0',
@@ -508,9 +593,24 @@ class Index extends Component
             'form_potongan_bpjs_kes' => 'required|numeric|min:0',
             'form_potongan_bpjs_tk' => 'required|numeric|min:0',
             'form_bpjs_keluarga_tambahan' => 'required|integer|min:0',
+            'form_potongan_pph21' => 'required|numeric|min:0',
+        ];
+
+        if ($this->form_pph21_is_overridden) {
+            $rules['form_pph21_override_reason'] = 'required|string|min:5';
+        }
+
+        $this->validate($rules, [
+            'form_pph21_override_reason.required' => 'Alasan perubahan PPh 21 wajib diisi jika nilai pajaknya diubah manual.',
+            'form_pph21_override_reason.min' => 'Alasan perubahan minimal 5 karakter.',
         ]);
 
         $this->recalculate();
+
+        $oldSlip = DB::table('sdm_payroll_slips')
+            ->where('karyawan_id', $this->selectedKaryawanId)
+            ->where('periode', $this->periode)
+            ->first();
 
         DB::beginTransaction();
         try {
@@ -537,6 +637,12 @@ class Index extends Component
                     'potongan_bpjs_tk' => $this->calc_bpjs_tk,
                     'potongan_lain' => $this->form_potongan_lain,
                     'potongan_pph21' => $this->calc_pph21,
+                    'pph21_bruto_bulan' => $this->calc_total_gaji,
+                    'pph21_calculated' => $this->form_pph21_calculated,
+                    'pph21_is_overridden' => $this->form_pph21_is_overridden ? 1 : 0,
+                    'pph21_override_reason' => $this->form_pph21_is_overridden ? $this->form_pph21_override_reason : null,
+                    'pph21_override_by' => $this->form_pph21_is_overridden ? auth()->id() : null,
+                    'pph21_override_at' => $this->form_pph21_is_overridden ? now() : null,
                     'potongan_bank' => $this->form_potongan_bank,
                     'bpjs_keluarga_tambahan' => $this->form_bpjs_keluarga_tambahan,
                     'total_gaji' => $this->calc_total_gaji,
@@ -583,6 +689,18 @@ class Index extends Component
                         'nominal' => $item['nominal'],
                         'created_at' => now(),
                         'updated_at' => now(),
+                    ]);
+                }
+
+                // Save override log if changed
+                if ($this->form_pph21_is_overridden && $oldSlip && (double) $this->calc_pph21 !== (double) $oldSlip->potongan_pph21) {
+                    DB::table('sdm_payroll_pph21_override_logs')->insert([
+                        'payroll_slip_id' => $insertedSlip->id,
+                        'nilai_lama' => $oldSlip->potongan_pph21,
+                        'nilai_baru' => $this->calc_pph21,
+                        'alasan' => $this->form_pph21_override_reason,
+                        'diubah_oleh' => auth()->id(),
+                        'created_at' => now(),
                     ]);
                 }
             }
@@ -670,7 +788,7 @@ class Index extends Component
             // Draft calculation
             $base = PayrollCalculator::calculate($karyawan);
             $totalPendapatan = $base['gaji_pokok'] + $base['tunjangan_tetap'] + $base['tunjangan_absensi'] + $base['tunjangan_jabatan'];
-            $deductions = PayrollCalculator::calculateDeductions($base['gaji_pokok'], $base['tunjangan_tetap'], $totalPendapatan, 0);
+            $deductions = PayrollCalculator::calculateDeductions($base['gaji_pokok'], $base['tunjangan_tetap'], $totalPendapatan, 0, $karyawan, $this->periode);
 
             $latestJab = $karyawan->jabatan->first();
             $jabName = $latestJab ? $latestJab->nama : '-';
@@ -754,7 +872,7 @@ class Index extends Component
         } else {
             $base = PayrollCalculator::calculate($karyawan);
             $totalPendapatan = $base['gaji_pokok'] + $base['tunjangan_tetap'] + $base['tunjangan_absensi'] + $base['tunjangan_jabatan'];
-            $deductions = PayrollCalculator::calculateDeductions($base['gaji_pokok'], $base['tunjangan_tetap'], $totalPendapatan, 0);
+            $deductions = PayrollCalculator::calculateDeductions($base['gaji_pokok'], $base['tunjangan_tetap'], $totalPendapatan, 0, $karyawan, $this->periode);
 
             $calc = [
                 'gaji_pokok' => $base['gaji_pokok'],
@@ -835,7 +953,7 @@ class Index extends Component
                 $karyawan->payroll_status = 'pending';
                 $base = PayrollCalculator::calculate($karyawan);
                 $totalPendapatan = $base['gaji_pokok'] + $base['tunjangan_tetap'] + $base['tunjangan_absensi'] + $base['tunjangan_jabatan'];
-                $deductions = PayrollCalculator::calculateDeductions($base['gaji_pokok'], $base['tunjangan_tetap'], $totalPendapatan, 0);
+                $deductions = PayrollCalculator::calculateDeductions($base['gaji_pokok'], $base['tunjangan_tetap'], $totalPendapatan, 0, $karyawan, $this->periode);
                 $totalPotongan = $deductions['potongan_bpjs_kes'] + $deductions['potongan_bpjs_tk'];
                 $gajiBersih = $totalPendapatan - $totalPotongan - $deductions['potongan_pph21'];
 
@@ -853,10 +971,15 @@ class Index extends Component
         // Get allowance types for dropdown
         $allowanceTypes = DB::table('sdm_payroll_allowance_types')->orderBy('nama', 'asc')->get();
 
+        $user = auth()->user();
+        $isOnlyPajak = $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
+
         return view('livewire.gaji.index', [
             'karyawans' => $karyawans,
             'bagians' => Bagian::all(),
             'allowanceTypes' => $allowanceTypes,
+            'isOnlyPajak' => $isOnlyPajak,
+            'periodStatus' => $this->periodStatus,
         ]);
     }
 }

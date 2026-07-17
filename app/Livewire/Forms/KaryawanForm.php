@@ -42,6 +42,7 @@ class KaryawanForm extends Form
     public $dom_alamat;
     public $bpjs_kesehatan;
     public $bpjs_tk;
+    public $ptkp_status;
 
     public $jabatan;
     public $tgl_jabatan;
@@ -110,6 +111,7 @@ class KaryawanForm extends Form
         $this->dom_alamat = $karyawan->dom_alamat;
         $this->bpjs_kesehatan = $karyawan->bpjs_kesehatan;
         $this->bpjs_tk = $karyawan->bpjs_tk;
+        $this->ptkp_status = $karyawan->ptkp_status;
     }
 
     // set using different compoenent
@@ -158,6 +160,7 @@ class KaryawanForm extends Form
             "bpjs_tk" => $this->bpjs_tk,
             "ruangan_id" => empty($this->ruangan) ? null : $this->ruangan,
             "kategori_kerja" => empty($this->kategori_kerja) ? 'reguler' : $this->kategori_kerja,
+            "ptkp_status" => empty($this->ptkp_status) ? 'TK0' : $this->ptkp_status,
             "cuti" => 0
 
         ];
@@ -208,7 +211,8 @@ class KaryawanForm extends Form
             'dom_desa' => $this->dom_desa,
             'dom_alamat' => $this->dom_alamat,
             'bpjs_kesehatan' => $this->bpjs_kesehatan,
-            'bpjs_tk' => $this->bpjs_tk
+            'bpjs_tk' => $this->bpjs_tk,
+            'ptkp_status' => $this->ptkp_status
         ];
 
         if (auth()->user()->hasRole('Staff-SDM') || auth()->user()->hasRole('Super-Admin')) {
