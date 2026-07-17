@@ -156,7 +156,7 @@ class EditKedinasan extends Component
                 ->send();
         } catch (Throwable $th) {
             $this->toast()
-                ->error('Failed', 'Error : ', $th->getMessage())
+                ->error('Failed', 'Error : ' . $th->getMessage())
                 ->send();
         }
     }
@@ -187,7 +187,7 @@ class EditKedinasan extends Component
                 ->send();
         } catch (Throwable $th) {
             $this->toast()
-                ->error('Failed', 'Error : ', $th->getMessage())
+                ->error('Failed', 'Error : ' . $th->getMessage())
                 ->send();
         }
     }
