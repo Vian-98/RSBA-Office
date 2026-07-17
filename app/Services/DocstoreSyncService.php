@@ -62,7 +62,10 @@ class DocstoreSyncService
 
             $certs = null;
             if ($log) {
-                $certs = SignatureCerts::where('user_id', $approval->disetujui)->latest('id')->first();
+                // Gunakan certificate_id dari log (sertifikat yang benar-benar dipakai saat sign)
+                $certs = $log->certificate_id
+                    ? SignatureCerts::find($log->certificate_id)
+                    : SignatureCerts::where('user_id', $approval->disetujui)->latest('id')->first();
             }
 
             // Fallback jika log tidak ditemukan (dokumen seeder/tanpa log)
@@ -146,7 +149,10 @@ class DocstoreSyncService
 
             $certs = null;
             if ($user && $log) {
-                $certs = SignatureCerts::where('user_id', $user->id)->latest('id')->first();
+                // Gunakan certificate_id dari log (sertifikat yang benar-benar dipakai saat sign)
+                $certs = $log->certificate_id
+                    ? SignatureCerts::find($log->certificate_id)
+                    : SignatureCerts::where('user_id', $user->id)->latest('id')->first();
             }
 
             // Fallback jika log tidak ditemukan (dokumen seeder/tanpa log)
