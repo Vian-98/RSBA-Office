@@ -118,93 +118,24 @@ class JadwalDummyJuniSeeder extends Seeder
                             }
                         }
 
-                        // Special scenario for Super Admin in June 2026 to test every feature card
-                        if ($karyawan->id == 1 && $bulan == 6) {
+                        if ($bulan == 6) {
                             $attendance = [
                                 'status_kehadiran' => 'belum_dicek',
                                 'absen_masuk_at' => null,
                                 'absen_keluar_at' => null,
                                 'catatan' => null
                             ];
-                            
-                            if ($d == 1) {
-                                // 01 June: Hadir Tepat Waktu (Normal)
+                        } else {
+                            if ($date->gt(Carbon::today())) {
                                 $attendance = [
-                                    'status_kehadiran' => 'hadir',
-                                    'absen_masuk_at' => '2026-06-01 07:55:00',
-                                    'absen_keluar_at' => '2026-06-01 16:05:00',
-                                    'catatan' => null
-                                ];
-                            } elseif ($d == 2) {
-                                // 02 June: Lateness + Early Checkout
-                                $attendance = [
-                                    'status_kehadiran' => 'terlambat',
-                                    'absen_masuk_at' => '2026-06-02 08:32:00',
-                                    'absen_keluar_at' => '2026-06-02 15:45:00',
-                                    'catatan' => 'Terlambat 32 menit. Pulang cepat 15 menit.'
-                                ];
-                            } elseif ($d == 3) {
-                                // 03 June: Lateness + Overtime
-                                $attendance = [
-                                    'status_kehadiran' => 'terlambat',
-                                    'absen_masuk_at' => '2026-06-03 08:20:00',
-                                    'absen_keluar_at' => '2026-06-03 17:30:00',
-                                    'catatan' => 'Terlambat 20 menit.'
-                                ];
-                            } elseif ($d == 4) {
-                                // 04 June: Only Overtime (On-Time + Overtime)
-                                $attendance = [
-                                    'status_kehadiran' => 'hadir',
-                                    'absen_masuk_at' => '2026-06-04 07:50:00',
-                                    'absen_keluar_at' => '2026-06-04 18:15:00',
-                                    'catatan' => null
-                                ];
-                            } elseif ($d == 5) {
-                                // 05 June: Only Lateness
-                                $attendance = [
-                                    'status_kehadiran' => 'terlambat',
-                                    'absen_masuk_at' => '2026-06-05 08:45:00',
-                                    'absen_keluar_at' => '2026-06-05 16:05:00',
-                                    'catatan' => 'Terlambat 45 menit.'
-                                ];
-                            } elseif ($d == 6) {
-                                // 06 June: Weekend Overtime (OFF but worked)
-                                $shiftId = null; // Tipe OFF
-                                $attendance = [
-                                    'status_kehadiran' => 'hadir',
-                                    'absen_masuk_at' => '2026-06-06 08:00:00',
-                                    'absen_keluar_at' => '2026-06-06 16:00:00',
-                                    'catatan' => 'Lembur tugas khusus hari libur.'
-                                ];
-                            } elseif ($d == 8) {
-                                // 08 June: Only Early Checkout
-                                $attendance = [
-                                    'status_kehadiran' => 'pulang_cepat',
-                                    'absen_masuk_at' => '2026-06-08 07:55:00',
-                                    'absen_keluar_at' => '2026-06-08 15:30:00',
-                                    'catatan' => 'Pulang cepat 30 menit.'
-                                ];
-                            } elseif ($d == 9) {
-                                // 09 June: Cuti
-                                $attendance = [
-                                    'status_kehadiran' => 'cuti',
+                                    'status_kehadiran' => 'belum_dicek',
                                     'absen_masuk_at' => null,
                                     'absen_keluar_at' => null,
-                                    'catatan' => 'Cuti tahunan disetujui.'
-                                ];
-                            } elseif ($d == 10) {
-                                // 10 June: Tidak Hadir
-                                $attendance = [
-                                    'status_kehadiran' => 'tidak_hadir',
-                                    'absen_masuk_at' => null,
-                                    'absen_keluar_at' => null,
-                                    'catatan' => 'Tanpa keterangan.'
+                                    'catatan' => null
                                 ];
                             } else {
                                 $attendance = $this->generateMockAttendance($date, $shiftId);
                             }
-                        } else {
-                            $attendance = $this->generateMockAttendance($date, $shiftId);
                         }
 
                         $detailsToInsert[] = [
