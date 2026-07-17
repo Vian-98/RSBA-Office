@@ -51,21 +51,22 @@ class DocstoreSyncService
                 continue;
             }
 
-            $log = SignatureLogs::where('data_hash', $approval->signature_hash)->first();
+            // Cari SignatureLog berdasarkan sign_type dan sign_id (andal)
+            // data_hash di signature_logs bisa berisi nilai random dari migrasi lama,
+            // sehingga tidak bisa digunakan sebagai identifier.
+            $log = SignatureLogs::where('sign_type', 'persetujuan_sp3')
+                ->where('sign_id', $surat->id)
+                ->where('user_id', $approval->disetujui)
+                ->orderBy('id', 'desc')
+                ->first();
+
             $certs = null;
             if ($log) {
                 $certs = SignatureCerts::where('user_id', $approval->disetujui)->latest('id')->first();
             }
 
-            // Fallback for seeded/mock signatures
-            $originalData = $log ? $log->data : json_encode([
-                'surat_sp3_id' => $surat->id,
-                'disetujui' => $approval->disetujui,
-                'status' => is_object($approval->status) ? $approval->status->value : $approval->status,
-                'keterangan' => $approval->keterangan ?? null,
-                'approved_at' => $approval->approved_at ?? now()->toIso8601String()
-            ]);
-
+            // Fallback jika log tidak ditemukan (dokumen seeder/tanpa log)
+            $originalData = $log ? $log->data : 'MOCK_SIGNATURE_' . $approval->signature_hash;
             $signature = $log ? $log->signature : 'MOCK_SIGNATURE_' . $approval->signature_hash;
 
             $publicKey = '';
@@ -134,23 +135,22 @@ class DocstoreSyncService
                 continue;
             }
 
-            $log = SignatureLogs::where('data_hash', $approval->signature_hash)->first();
-            $certs = null;
-            
+            // Cari SignatureLog berdasarkan sign_type dan sign_id (andal)
             $user = User::where('karyawan_id', $approval->disetujui_oleh)->first();
+
+            $log = SignatureLogs::where('sign_type', 'surat_cuti_approval')
+                ->where('sign_id', $surat->id)
+                ->when($user, fn($q) => $q->where('user_id', $user->id))
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $certs = null;
             if ($user && $log) {
                 $certs = SignatureCerts::where('user_id', $user->id)->latest('id')->first();
             }
 
-            // Fallback for seeded/mock signatures
-            $originalData = $log ? $log->data : json_encode([
-                'title' => "Approval Cuti {$surat->id}",
-                'status' => is_object($approval->status) ? $approval->status->value : $approval->status,
-                'ket_reject' => $approval->keterangan,
-                'user' => optional($approval->karyawan)->nama ?? 'Sistem',
-                'approved_at' => $approval->approved_at ?? now()->toIso8601String()
-            ]);
-
+            // Fallback jika log tidak ditemukan (dokumen seeder/tanpa log)
+            $originalData = $log ? $log->data : 'MOCK_SIGNATURE_' . $approval->signature_hash;
             $signature = $log ? $log->signature : 'MOCK_SIGNATURE_' . $approval->signature_hash;
 
             $publicKey = '';
