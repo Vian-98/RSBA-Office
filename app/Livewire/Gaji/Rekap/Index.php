@@ -23,7 +23,6 @@ class Index extends Component
     // Payroll Configuration Parameters
     public $config_umk;
     public $config_potongan_telat;
-    public $config_tarif_lembur;
     public $config_toleransi_telat;
 
     // Dynamic 25% UMK allocations list
@@ -49,7 +48,6 @@ class Index extends Component
         // Load payroll parameters from DB
         $this->config_umk = DB::table('sdm_payroll_settings')->where('key', 'umk')->value('value');
         $this->config_potongan_telat = DB::table('sdm_payroll_settings')->where('key', 'potongan_telat_per_menit')->value('value');
-        $this->config_tarif_lembur = DB::table('sdm_payroll_settings')->where('key', 'tarif_lembur_per_menit')->value('value');
 
         $this->config_toleransi_telat = DB::table('sdm_payroll_settings')->where('key', 'toleransi_telat_menit')->value('value');
         if (is_null($this->config_toleransi_telat)) {
@@ -112,10 +110,16 @@ class Index extends Component
 
     public function saveParameters()
     {
+        if (is_string($this->config_umk)) {
+            $this->config_umk = str_replace('.', '', $this->config_umk);
+        }
+        if (is_string($this->config_potongan_telat)) {
+            $this->config_potongan_telat = str_replace('.', '', $this->config_potongan_telat);
+        }
+
         $this->validate([
             'config_umk' => 'required|numeric|min:0',
             'config_potongan_telat' => 'required|numeric|min:0',
-            'config_tarif_lembur' => 'required|numeric|min:0',
             'config_toleransi_telat' => 'required|integer|min:0',
             'allocations.*.nama' => 'required|string|max:255',
             'allocations.*.persen' => 'required|numeric|min:0|max:100',
@@ -126,9 +130,6 @@ class Index extends Component
             'config_potongan_telat.required' => 'Potongan telat wajib diisi.',
             'config_potongan_telat.numeric' => 'Potongan telat harus berupa angka.',
             'config_potongan_telat.min' => 'Potongan telat tidak boleh kurang dari 0.',
-            'config_tarif_lembur.required' => 'Tarif lembur wajib diisi.',
-            'config_tarif_lembur.numeric' => 'Tarif lembur harus berupa angka.',
-            'config_tarif_lembur.min' => 'Tarif lembur tidak boleh kurang dari 0.',
             'config_toleransi_telat.required' => 'Toleransi keterlambatan wajib diisi.',
             'config_toleransi_telat.integer' => 'Toleransi keterlambatan harus berupa bilangan bulat.',
             'config_toleransi_telat.min' => 'Toleransi keterlambatan tidak boleh kurang dari 0.',
@@ -154,7 +155,6 @@ class Index extends Component
             // Save settings
             DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'umk'], ['value' => $this->config_umk, 'updated_at' => now()]);
             DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'potongan_telat_per_menit'], ['value' => $this->config_potongan_telat, 'updated_at' => now()]);
-            DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'tarif_lembur_per_menit'], ['value' => $this->config_tarif_lembur, 'updated_at' => now()]);
             DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'toleransi_telat_menit'], ['value' => $this->config_toleransi_telat, 'updated_at' => now()]);
 
             // Save allocations

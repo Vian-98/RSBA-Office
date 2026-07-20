@@ -344,10 +344,6 @@
                             <span class="text-slate-500 text-xs font-semibold">Toleransi Telat</span>
                             <span class="font-extrabold text-slate-800 text-sm">{{ $config_toleransi_telat }} menit</span>
                         </div>
-                        <div class="flex justify-between items-center py-3">
-                            <span class="text-slate-500 text-xs font-semibold">Tarif Lembur</span>
-                            <span class="font-extrabold text-slate-800 text-sm">Rp {{ number_format($config_tarif_lembur, 0, ',', '.') }} / menit</span>
-                        </div>
                     </div>
 
                     <!-- Allocations summary -->
@@ -388,13 +384,10 @@
         <form wire:submit.prevent="saveParameters" class="space-y-5 p-2">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                    <x-ts:input label="UMK Kantor (Rupiah)" wire:model.defer="config_umk" type="number" prefix="Rp" />
+                    <x-ts:input label="UMK Kantor (Rupiah)" wire:model.defer="config_umk" type="text" prefix="Rp" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                 </div>
                 <div>
-                    <x-ts:input label="Potongan Telat (Rupiah/Menit)" wire:model.defer="config_potongan_telat" type="number" prefix="Rp" />
-                </div>
-                <div>
-                    <x-ts:input label="Tarif Lembur (Rupiah/Menit)" wire:model.defer="config_tarif_lembur" type="number" prefix="Rp" />
+                    <x-ts:input label="Potongan Telat (Rupiah/Menit)" wire:model.defer="config_potongan_telat" type="text" prefix="Rp" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                 </div>
                 <div>
                     <x-ts:input label="Toleransi Telat (Menit)" wire:model.defer="config_toleransi_telat" type="number" suffix="Min" />
