@@ -21,12 +21,14 @@ class PrintSp3 extends Component
     function approvals(): array
     {
         $data = $this->suratSp3->approvals->map(function ($item): array {
+            $isManual = $item->status === \App\Enums\StatusApproval::MANUAL || str_contains(strtolower($item->keterangan ?? ''), 'manual');
             return [
-                'status' => $item->status->nama(),
-                'nama' => $item->users->karyawan->full_nama,
+                'status' => $isManual ? 'Manual' : $item->status->nama(),
+                'nama' => $item->users->karyawan->full_nama ?? $item->users->nama,
                 'jabatan' => $item->users->karyawan?->jabatan ?? null,
                 'approved_at' => $item->approved_at,
-                'signature' => $item->signature_hash
+                'signature' => $item->signature_hash,
+                'is_manual' => $isManual,
             ];
         })->toArray();
 

@@ -444,15 +444,24 @@ class DigitalSignatureService
     }
 
     /**
-     * Shell: Create PKCS#12 file
+     * Create PKCS#12 file
      */
     private function execPKCS12(array $paths, string $password): void
     {
-        $bin = $this->opensslBin();
-        shell_exec("\"{$bin}\" pkcs12 -export -out {$paths['p12']} -inkey {$paths['privateKey']} -in {$paths['cert']} -password pass:{$password}");
+        $privateKey = file_get_contents($paths['privateKey']);
+        $cert = file_get_contents($paths['cert']);
+        $p12Content = '';
 
-        if (!file_exists($paths['p12']) || filesize($paths['p12'] === 0)) {
-            throw new Exception("Gagal membuat file PCKS#12");
+        if (!openssl_pkcs12_export($cert, $p12Content, $privateKey, $password)) {
+            // Fallback to CLI if native function fails
+            $bin = $this->opensslBin();
+            shell_exec("\"{$bin}\" pkcs12 -export -out {$paths['p12']} -inkey {$paths['privateKey']} -in {$paths['cert']} -password pass:{$password}");
+        } else {
+            file_put_contents($paths['p12'], $p12Content);
+        }
+
+        if (!file_exists($paths['p12']) || filesize($paths['p12']) === 0) {
+            throw new Exception("Gagal membuat file PKCS#12");
         }
     }
 
