@@ -119,6 +119,13 @@ class Add extends Component
 
     public function submit($send = true)
     {
+        if (is_array($this->listSp3)) {
+            foreach ($this->listSp3 as $key => $item) {
+                if (isset($item['nominal']) && is_string($item['nominal'])) {
+                    $this->listSp3[$key]['nominal'] = (double) str_replace('.', '', $item['nominal']);
+                }
+            }
+        }
         $this->validate();
         $data = [
             'no' => $this->createNomor(),

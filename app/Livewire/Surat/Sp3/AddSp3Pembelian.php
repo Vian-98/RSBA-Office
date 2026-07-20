@@ -167,6 +167,13 @@ class AddSp3Pembelian extends Component
 
     public function submit($send = true)
     {
+        if (is_array($this->listSp3)) {
+            foreach ($this->listSp3 as $key => $item) {
+                if (isset($item['nominal']) && is_string($item['nominal'])) {
+                    $this->listSp3[$key]['nominal'] = (double) str_replace('.', '', $item['nominal']);
+                }
+            }
+        }
         $this->validate();
         $data = [
             'no' => $this->createNomor(),
@@ -282,7 +289,7 @@ class AddSp3Pembelian extends Component
         );
 
         // Update status pembayaran PO karena SP3 otomatis disetujui (manual sign)
-        \App\Models\Gudang\Pembelian::where('sp3_id', $suratSp3->id)
+        Pembelian::where('sp3_id', $suratSp3->id)
             ->update([
                 'status_pembayaran' => 'lunas',
                 'tgl_pembayaran' => now()->format('Y-m-d')

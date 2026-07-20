@@ -1,9 +1,9 @@
 <div class="space-y-6">
     <!-- Header Page -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-800">Master Pengaturan Golongan</h1>
-            <p class="text-sm text-slate-500">Kelola nominal tunjangan dan matrix penentuan golongan karyawan tetap.</p>
+            <h1 class="text-lg font-bold text-slate-800">Master Pengaturan Golongan</h1>
+            <p class="text-xs text-slate-500">Kelola nominal tunjangan dan matrix penentuan golongan karyawan tetap.</p>
         </div>
     </div>
 
@@ -37,7 +37,7 @@
                         @foreach($golongansList as $gol)
                             <div class="p-3 bg-slate-50/50 border border-slate-100 rounded-xl space-y-1.5 hover:border-slate-200 transition-colors">
                                 <span class="text-xs font-semibold text-slate-500 block">Golongan {{ $gol->golongan }}</span>
-                                <x-ts:input wire:model.defer="allowances.{{ $gol->golongan }}" type="number" min="0" placeholder="0" prefix="Rp" />
+                                <x-ts:input wire:model.defer="allowances.{{ $gol->golongan }}" type="text" placeholder="0" prefix="Rp" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                             </div>
                         @endforeach
                     </div>

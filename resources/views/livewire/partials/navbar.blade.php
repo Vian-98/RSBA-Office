@@ -16,7 +16,7 @@
         <div class="ml-auto flex">
             <div class="flex items-center">
                 <div class="me-6 hidden space-x-4 lg:block">
-                    <x-ts:dropdown position="bottom-end" width="2xl">
+                    <x-ts:dropdown position="bottom-end" width="lg">
                         <x-slot:action>
                             <x-ts:button.circle flat outline class="relative" x-on:click="show = !show">
                                 <x-tabler-bell />
@@ -26,15 +26,17 @@
                             </x-ts:button.circle>
                         </x-slot:action>
 
-                        <div class="w-full p-4 max-h-96 overflow-y-auto scrollbar-hidden">
-                            <div class="flex items-center justify-between border-b border-gray-100 pb-2 mb-3">
+                        <div class="w-full p-4 flex flex-col max-h-96">
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-2 mb-3 shrink-0">
                                 <span class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                                     <x-tabler-bell class="size-4 text-indigo-500" />
                                     Notifikasi
                                 </span>
                                 <a href="{{ route('profile.notif') }}" class="text-xs font-semibold text-indigo-600 hover:underline">Lihat Semua</a>
                             </div>
-                            <livewire:Profile.Notif :key="auth()->user()->id" />
+                            <div class="flex-1 overflow-y-auto scrollbar-hidden">
+                                <livewire:Profile.Notif :key="auth()->user()->id" />
+                            </div>
                         </div>
                     </x-ts:dropdown>
                 </div>
