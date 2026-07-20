@@ -19,6 +19,14 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <x-ts:button wire:click="exportToExcel" flat color="emerald" class="text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200">
+                <x-tabler-file-spreadsheet class="h-4 w-4 mr-1.5" />
+                Export Excel
+            </x-ts:button>
+            <x-ts:button wire:click="openPeriodLogModal" flat color="indigo" class="text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200">
+                <x-tabler-history class="h-4 w-4 mr-1.5" />
+                Log Edit
+            </x-ts:button>
             <x-ts:button href="{{ route('kepegawaian.gaji.index') }}" flat color="slate" class="text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200">
                 <x-tabler-arrow-left class="h-4 w-4 mr-1.5" />
                 Kembali ke Rekap
@@ -98,14 +106,18 @@
             <table class="w-full border-collapse text-left text-sm text-slate-600">
                 <thead>
                     <tr class="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase text-slate-400">
-                        <th class="px-6 py-4">Nama & NIP</th>
-                        <th class="px-6 py-4">Bagian / Jabatan</th>
-                        <th class="px-6 py-4">Status Kerja</th>
-                        <th class="px-6 py-4">Status Input</th>
-                        <th class="px-6 py-4">Gaji Pokok</th>
-                        <th class="px-6 py-4">Tunjangan</th>
-                        <th class="px-6 py-4">Gaji Bersih</th>
-                        <th class="px-6 py-4 text-center">Aksi</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Nama & NIP</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Bagian / Jabatan</th>
+                        @if(str_ends_with($periode, '-12'))
+                            <th class="px-6 py-4 text-indigo-700 bg-indigo-50/50 whitespace-nowrap">Bruto YTD (Setahun)</th>
+                            <th class="px-6 py-4 text-indigo-700 bg-indigo-50/50 whitespace-nowrap">PPh21 YTD (Setahun)</th>
+                        @endif
+                        <th class="px-6 py-4 whitespace-nowrap">Status Kerja</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Status Input</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Gaji Pokok</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Tunjangan</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Gaji Bersih</th>
+                        <th class="px-6 py-4 text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
@@ -119,29 +131,37 @@
                                 <div class="font-semibold text-slate-700">{{ $karyawan->calculated_salary['bagian_nama'] }}</div>
                                 <div class="text-xs text-slate-500">{{ $karyawan->calculated_salary['jabatan_nama'] }}</div>
                             </td>
+                            @if(str_ends_with($periode, '-12'))
+                                <td class="px-6 py-4 font-bold text-slate-800 bg-indigo-50/20 whitespace-nowrap">
+                                    Rp {{ number_format($karyawan->calculated_salary['bruto_ytd'], 0, ',', '.') }}
+                                </td>
+                                <td class="px-6 py-4 font-bold text-amber-600 bg-indigo-50/20 whitespace-nowrap">
+                                    Rp {{ number_format($karyawan->calculated_salary['pph21_ytd'], 0, ',', '.') }}
+                                </td>
+                            @endif
                             <td class="px-6 py-4">
-                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">
                                     {{ $karyawan->status->nama() }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
                                 @if($karyawan->payroll_status === 'generated')
-                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-100">
+                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-100 whitespace-nowrap">
                                         Selesai
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 border border-slate-200">
+                                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 border border-slate-200 whitespace-nowrap">
                                         Belum Input
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 font-medium text-slate-700">
+                            <td class="px-6 py-4 font-medium text-slate-700 whitespace-nowrap">
                                 Rp {{ number_format($karyawan->calculated_salary['gaji_pokok'], 0, ',', '.') }}
                             </td>
-                            <td class="px-6 py-4 font-medium text-slate-700">
+                            <td class="px-6 py-4 font-medium text-slate-700 whitespace-nowrap">
                                 Rp {{ number_format($karyawan->calculated_salary['tunjangan'], 0, ',', '.') }}
                             </td>
-                            <td class="px-6 py-4 font-bold text-indigo-600">
+                            <td class="px-6 py-4 font-bold text-indigo-600 whitespace-nowrap">
                                 Rp {{ number_format($karyawan->calculated_salary['gaji_bersih'], 0, ',', '.') }}
                             </td>
                             <td class="px-6 py-4 text-center">
@@ -180,7 +200,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center text-slate-400">
+                            <td colspan="12" class="px-6 py-12 text-center text-slate-400">
                                 <x-tabler-database-x class="mx-auto h-12 w-12 text-slate-300 mb-3" />
                                 <div class="text-sm font-semibold">Tidak Ada Karyawan Ditemukan</div>
                             </td>
@@ -191,7 +211,7 @@
         </div>
         @if($karyawans->hasPages())
             <div class="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
-                {{ $karyawans->links() }}
+                {{ $karyawans->onEachSide(1)->links('partials.pagination') }}
             </div>
         @endif
     </div>
@@ -206,7 +226,12 @@
         </x-slot:title>
 
         @if($selectedKaryawan)
-            <div class="p-2 space-y-5">
+            <div x-data="{
+                formatNominal(val) {
+                    if (val === 0 || val === '0') return '0';
+                    return String(val || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                }
+            }" class="p-2 space-y-5">
                 <!-- Employee Summary Header -->
                 <div class="bg-indigo-50/50 border border-indigo-100/75 rounded-2xl p-4 flex flex-col md:flex-row justify-between gap-4">
                     <div class="space-y-1">
@@ -243,13 +268,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Gaji Pokok (Base)</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_gaji_pokok" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.defer="form_gaji_pokok" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Tetap</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_tunjangan_tetap" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.defer="form_tunjangan_tetap" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                 </div>
 
@@ -259,13 +284,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Absensi</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_tunjangan_absensi" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.defer="form_tunjangan_absensi" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Jabatan</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_tunjangan_jabatan" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.defer="form_tunjangan_jabatan" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                 </div>
 
@@ -275,13 +300,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Shift</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_shift" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_shift" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Radiologi</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_radiologi" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_radiologi" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                 </div>
 
@@ -291,16 +316,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Lain (Total)</span>
                                         </div>
-                                        <x-ts:input wire:model.defer="form_tunjangan_lain" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.defer="form_tunjangan_lain" type="text" prefix="Rp" disabled class="bg-slate-100 cursor-not-allowed font-semibold text-slate-600 text-xs" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Uang Lembur</span>
-                                            @if($calculatedOvertimeMinutes > 0)
-                                                <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $calculatedOvertimeMinutes }} mnt lembur</span>
-                                            @endif
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_uang_lembur" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_uang_lembur" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                 </div>
 
@@ -310,7 +332,7 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Tunjangan Hari Raya</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_hari_raya" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_tunjangan_hari_raya" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     <div></div>
                                 </div>
@@ -330,7 +352,7 @@
                                             </select>
                                         </div>
                                         <div class="w-full sm:w-40">
-                                            <x-ts:input label="Nominal" wire:model.defer="temp_allowance_nominal" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                            <x-ts:input label="Nominal" wire:model.defer="temp_allowance_nominal" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                         </div>
                                         <div>
                                             <x-ts:button type="button" wire:click="addTunjanganLain" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm w-full sm:w-auto">
@@ -383,16 +405,21 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Absensi</span>
                                             @if($calculatedLateMinutes > 0)
-                                                <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $calculatedLateMinutes }} mnt telat</span>
+                                                @php
+                                                    $lateHours = floor($calculatedLateMinutes / 60);
+                                                    $lateMins = $calculatedLateMinutes % 60;
+                                                    $lateText = ($lateHours > 0 ? $lateHours . ' jam' : '') . ($lateMins > 0 ? ($lateHours > 0 ? ' ' : '') . $lateMins . ' menit' : '');
+                                                @endphp
+                                                <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $lateText }} ({{ $calculatedLateMinutes }} menit)</span>
                                             @endif
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_absensi" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_absensi" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Cash Bon</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_cash_bon" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_cash_bon" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                 </div>
                                 
@@ -402,13 +429,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Obat / Rawat</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_obat" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_obat" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Lain-Lain</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_lain" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_lain" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                 </div>
                                 
@@ -418,13 +445,13 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">BPJS Kesehatan</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_kes" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_kes" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">BPJS Ketenagakerjaan</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_tk" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bpjs_tk" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                 </div>
                                 
@@ -434,7 +461,7 @@
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Potongan Bank</span>
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bank" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_bank" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
@@ -461,7 +488,7 @@
                                                 <button type="button" wire:click="resetPph21ToAuto" class="text-[9px] font-bold text-indigo-650 hover:underline">Reset ke Auto</button>
                                             @endif
                                         </div>
-                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_pph21" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.live.debounce.500ms="form_potongan_pph21" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
                                     </div>
                                     @if($form_pph21_is_overridden)
                                         <div>
@@ -483,6 +510,68 @@
                                             <div>
                                                 <span class="font-bold block">Peringatan: Perubahan Signifikan</span>
                                                 <span>Nilai PPh 21 manual yang Anda masukkan (Rp {{ number_format((double)$form_potongan_pph21, 0, ',', '.') }}) berbeda lebih dari 20% dibandingkan hasil hitung otomatis sistem (Rp {{ number_format((double)$form_pph21_calculated, 0, ',', '.') }}). Pastikan alasan yang dimasukkan sudah benar.</span>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($is_december)
+                                        <div class="col-span-1 sm:col-span-2 mt-4 bg-indigo-50/50 border border-indigo-100/70 rounded-2xl p-4 text-slate-700 text-xs">
+                                            <div class="flex items-center gap-1.5 font-bold text-indigo-800 mb-3 border-b border-indigo-100 pb-1.5">
+                                                <x-tabler-calculator class="h-4.5 w-4.5 text-indigo-600" />
+                                                <span>Rekonsiliasi PPh 21 Tahunan (Desember)</span>
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500">Akumulasi Bruto (Jan-Nov):</span>
+                                                    <span class="font-bold">Rp {{ number_format($ytd_prior_bruto, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500">Bruto Bulan Ini (Des):</span>
+                                                    <span class="font-bold">Rp {{ number_format($calc_total_gaji, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between sm:col-span-2 border-t border-dashed border-indigo-100/70 pt-2 font-semibold text-indigo-950">
+                                                    <span>Total Bruto Setahun (YTD):</span>
+                                                    <span>Rp {{ number_format($ytd_total_bruto, 0, ',', '.') }}</span>
+                                                </div>
+                                                
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500">Biaya Jabatan (Max 6jt):</span>
+                                                    <span class="font-bold">-Rp {{ number_format($ytd_biaya_jabatan, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500">BPJS Ketenagakerjaan YTD:</span>
+                                                    <span class="font-bold">-Rp {{ number_format($ytd_total_bpjs_tk, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between sm:col-span-2 border-t border-dashed border-indigo-100/70 pt-2 font-semibold text-indigo-950">
+                                                    <span>Neto Setahun (YTD):</span>
+                                                    <span>Rp {{ number_format($ytd_neto, 0, ',', '.') }}</span>
+                                                </div>
+                                                
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500">Status PTKP (1 Jan):</span>
+                                                    <span class="font-bold text-indigo-700">{{ $selectedKaryawan ? ($selectedKaryawan->ptkp_status ?: 'TK0') : 'TK0' }}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500">PTKP Setahun:</span>
+                                                    <span class="font-bold">-Rp {{ number_format($ytd_ptkp, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between sm:col-span-2 border-t border-dashed border-indigo-100/70 pt-2 font-semibold text-indigo-950">
+                                                    <span>Penghasilan Kena Pajak (PKP):</span>
+                                                    <span>Rp {{ number_format($ytd_pkp, 0, ',', '.') }}</span>
+                                                </div>
+                                                
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500">Total PPh 21 Setahun:</span>
+                                                    <span class="font-bold text-slate-800">Rp {{ number_format($ytd_tax_annual, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500">PPh 21 Paid (Jan-Nov):</span>
+                                                    <span class="font-bold text-emerald-600">-Rp {{ number_format($ytd_paid_jan_nov, 0, ',', '.') }}</span>
+                                                </div>
+                                                <div class="flex justify-between sm:col-span-2 border-t border-slate-200/80 pt-2 font-bold text-indigo-700 text-xs">
+                                                    <span>PPh 21 Bulan Desember (Selisih):</span>
+                                                    <span>Rp {{ number_format($form_pph21_calculated, 0, ',', '.') }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     @endif
@@ -837,6 +926,54 @@
                 </div>
             </div>
 
+            <!-- Edit History Section (Non-printable) -->
+            @if(!empty($selectedSlip['edit_logs']) && count($selectedSlip['edit_logs']) > 0)
+                <div class="mt-6 border-t border-slate-200 pt-6 px-6 pb-4">
+                    <div class="flex items-center gap-2 mb-4">
+                        <x-tabler-history class="h-5 w-5 text-slate-500" />
+                        <h3 class="font-bold text-slate-800 text-sm">Riwayat Perubahan Data Gaji</h3>
+                    </div>
+                    <div class="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                        @foreach($selectedSlip['edit_logs'] as $log)
+                            <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 text-xs text-slate-600">
+                                <div class="flex justify-between items-start gap-4 mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="rounded-full bg-slate-200 text-slate-700 w-6 h-6 flex items-center justify-center font-bold text-[10px]">
+                                            {{ strtoupper(substr($log->editor_name, 0, 2)) }}
+                                        </div>
+                                        <div>
+                                            <span class="font-bold text-slate-800">{{ $log->editor_name }}</span>
+                                            <span class="text-slate-400 text-[10px] ml-1.5">• Mengubah data</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 font-semibold bg-white border border-slate-200/60 rounded-md px-2 py-0.5 shadow-sm">
+                                        {{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d M Y, H:i') }} WIB
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 mt-2.5 pl-8">
+                                    @foreach($log->perubahan as $col => $change)
+                                        <div class="flex items-center justify-between py-1 border-b border-dashed border-slate-200 last:border-0">
+                                            <span class="text-slate-500 font-medium">{{ $change['label'] }}</span>
+                                            <div class="flex items-center gap-2 font-semibold">
+                                                @if($col === 'bpjs_keluarga_tambahan')
+                                                    <span class="text-slate-400 font-normal line-through">{{ $change['old'] }}</span>
+                                                    <x-tabler-arrow-narrow-right class="h-3 w-3 text-slate-400" />
+                                                    <span class="text-indigo-600">{{ $change['new'] }}</span>
+                                                @else
+                                                    <span class="text-slate-400 font-normal line-through">Rp {{ number_format($change['old'], 0, ',', '.') }}</span>
+                                                    <x-tabler-arrow-narrow-right class="h-3 w-3 text-slate-400" />
+                                                    <span class="text-indigo-600">Rp {{ number_format($change['new'], 0, ',', '.') }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             <x-slot:footer>
                 <div class="flex justify-end gap-2.5">
                     <x-ts:button size="sm" flat color="slate" wire:click="closeModal">Tutup</x-ts:button>
@@ -925,4 +1062,94 @@
             }, 250);
         }
     </script>
+
+    <!-- Period Edit Logs Modal -->
+    <x-ts:modal wire="isPeriodLogModalOpen" size="4xl" class="relative z-50">
+        <x-slot:title>
+            <span class="flex items-center gap-1.5 font-bold text-slate-800">
+                <x-tabler-history class="h-5 w-5 text-indigo-500" />
+                Log Perubahan Data Gaji - Periode {{ \Carbon\Carbon::parse($this->periode . '-01')->translatedFormat('F Y') }}
+            </span>
+        </x-slot:title>
+
+        <div class="p-2 space-y-4">
+            <!-- Search bar -->
+            <div class="flex items-center gap-3 bg-white p-3 rounded-2xl border border-slate-150 shadow-2xs">
+                <div class="relative flex-1">
+                    <x-ts:input wire:model.live.debounce.300ms="periodLogSearch" placeholder="Cari nama pengubah, karyawan, NIP, bagian, nominal, atau nama komponen..." icon="tabler.search" class="w-full text-xs" />
+                </div>
+            </div>
+
+            @if(empty($periodLogs))
+                <div class="py-12 text-center text-slate-400">
+                    <x-tabler-database-x class="mx-auto h-12 w-12 text-slate-350 mb-3" />
+                    <div class="text-sm font-semibold text-slate-700">Belum Ada Riwayat Perubahan</div>
+                    <p class="text-xs text-slate-400 mt-1">
+                        @if(!empty($periodLogSearch))
+                            Tidak ada log perubahan yang cocok dengan kata kunci "{{ $periodLogSearch }}".
+                        @else
+                            Perubahan nominal slip gaji pada periode ini akan dicatat di sini.
+                        @endif
+                    </p>
+                </div>
+            @else
+                <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+                    @foreach($periodLogs as $log)
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 text-xs">
+                            <!-- Editor and Target Employee Info -->
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-200/60">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800">{{ $log['editor_name'] }}</span>
+                                        <span class="text-slate-400 font-medium">• mengedit slip gaji</span>
+                                    </div>
+                                    <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+                                        <div class="flex items-center gap-1 text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 shadow-3xs">
+                                            <x-tabler-user class="h-3.5 w-3.5" />
+                                            {{ $log['employee_name'] }} (NIP: {{ $log['employee_nip'] }})
+                                        </div>
+                                        @if(!empty($log['employee_bagian']))
+                                            <div class="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 shadow-3xs">
+                                                <x-tabler-building class="h-3.5 w-3.5" />
+                                                Bagian: {{ $log['employee_bagian'] }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-semibold bg-white border border-slate-200/60 rounded-md px-2 py-0.5 shadow-sm shrink-0">
+                                    {{ \Carbon\Carbon::parse($log['created_at'])->translatedFormat('d M Y, H:i') }} WIB
+                                </span>
+                            </div>
+
+                            <!-- List of Changes -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 mt-3 pl-1">
+                                @foreach($log['perubahan'] as $col => $change)
+                                    <div class="flex items-center justify-between py-1 border-b border-dashed border-slate-200/60 last:border-0">
+                                        <span class="text-slate-500 font-medium">{{ $change['label'] }}</span>
+                                        <div class="flex items-center gap-2 font-semibold">
+                                            @if($col === 'bpjs_keluarga_tambahan')
+                                                <span class="text-slate-400 font-normal line-through">{{ $change['old'] }}</span>
+                                                <x-tabler-arrow-narrow-right class="h-3 w-3 text-slate-400" />
+                                                <span class="text-indigo-600">{{ $change['new'] }}</span>
+                                            @else
+                                                <span class="text-slate-400 font-normal line-through">Rp {{ number_format($change['old'], 0, ',', '.') }}</span>
+                                                <x-tabler-arrow-narrow-right class="h-3 w-3 text-slate-400" />
+                                                <span class="text-indigo-600">Rp {{ number_format($change['new'], 0, ',', '.') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        <x-slot:footer>
+            <div class="flex justify-end">
+                <x-ts:button size="sm" flat color="slate" wire:click="closePeriodLogModal">Tutup</x-ts:button>
+            </div>
+        </x-slot:footer>
+    </x-ts:modal>
 </div>
