@@ -33,8 +33,8 @@ class Add extends Component
 
     public $mengetahuiOptions;
     public $tgl;
-    public string $rekanan, $keterangan = '', $method_bayar;
-    public ?int $mengetahui, $jabatan, $rekananId, $userApprove;
+    public ?string $rekanan = null, $keterangan = '', $method_bayar = null;
+    public ?int $mengetahui = null, $jabatan = null, $rekananId = null, $userApprove = null;
     public $listSp3 = [];
 
     protected $rules = [
@@ -104,8 +104,9 @@ class Add extends Component
 
             if ($karyawanJabatan) {
                 $this->mengetahui = $karyawanJabatan->karyawan?->id;
-                $this->userApprove = $karyawanJabatan->karyawan?->user?->id;
+                $this->userApprove = $karyawanJabatan->karyawan?->user?->id ?? auth()->id() ?? 1;
             } else {
+                $this->userApprove = auth()->id() ?? 1;
                 $this->toast()
                     ->error('Pejabat tidak ditemukan.', "Tidak ada karyawan dengan jabatan <b>{$jabatan->nama}</b>.")
                     ->send();
@@ -187,11 +188,20 @@ class Add extends Component
 
     public function signManual($suratSp3)
     {
+        if (!$this->userApprove) {
+            if ($this->jabatan) {
+                $this->updatedJabatan($this->jabatan);
+            }
+            if (!$this->userApprove) {
+                $this->userApprove = auth()->id() ?? 1;
+            }
+        }
+
         $data = [
             'surat_sp3_id' => $suratSp3->id,
             'disetujui' => $this->userApprove,
-            'status' => 'approved',  // Manual cetak langsung approved oleh sistem
-            'keterangan' => 'Manual cetak, tanda tangan sistem',
+            'status' => 'manual',  // Status manual cetak, tanda tangan basah
+            'keterangan' => 'Manual cetak, tanda tangan basah',
             'approved_at' => now()->toIso8601String(),
         ];
 
@@ -230,7 +240,7 @@ class Add extends Component
         SuratSp3Approval::create($data);
         $suratSp3->update(
             [
-                'status' => 'approved'
+                'status' => 'manual'
             ]
         );
 
