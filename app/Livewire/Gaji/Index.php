@@ -1189,11 +1189,10 @@ class Index extends Component
         $isDecember = str_ends_with($this->periode, '-12');
         $year = (int) substr($this->periode, 0, 4);
 
-        // Generate CSV file content with semicolon separator for direct Excel opening
-        $filename = "rekap_gaji_" . $this->periode . "_" . now()->format('Ymd_His') . ".csv";
+        $filename = "rekap_gaji_" . $this->periode . "_" . now()->format('Ymd_His') . ".xls";
         
         $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Type"        => "application/vnd.ms-excel; charset=utf-8",
             "Content-Disposition" => "attachment; filename=$filename",
             "Pragma"              => "no-cache",
             "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
@@ -1201,30 +1200,50 @@ class Index extends Component
         ];
 
         $callback = function() use ($karyawans, $isDecember, $year) {
-            $file = fopen('php://output', 'w');
+            $output = fopen('php://output', 'w');
             
-            // Add UTF-8 BOM to make Excel open it correctly in UTF-8
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            // CSV Header Row
+            // Write standard Excel HTML headers
+            fwrite($output, '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">');
+            fwrite($output, '<head><meta http-equiv="Content-type" content="text/html;charset=utf-8" />');
+            fwrite($output, '<style>
+                table { border-collapse: collapse; }
+                th { background-color: #4F46E5; color: #FFFFFF; font-weight: bold; text-align: center; border: 1px solid #D1D5DB; padding: 10px 8px; font-size: 11pt; font-family: Calibri, sans-serif; }
+                .th-ytd { background-color: #0369A1; }
+                td { border: 1px solid #D1D5DB; padding: 8px 6px; font-size: 10pt; font-family: Calibri, sans-serif; }
+                .text-cell { mso-number-format: "\@"; text-align: left; }
+                .money-cell { text-align: right; }
+                .bold-money-cell { font-weight: bold; text-align: right; }
+                .center-cell { text-align: center; }
+            </style></head><body>');
+            
+            // Add visual title
+            $titlePeriode = \Carbon\Carbon::parse($this->periode . '-01')->translatedFormat('F Y');
+            fwrite($output, '<h3 style="font-family: Calibri, sans-serif; margin-bottom: 15px;">REKAP PENGGAJIAN KARYAWAN - PERIODE ' . strtoupper($titlePeriode) . '</h3>');
+            
+            fwrite($output, '<table><thead><tr>');
+            
             $columns = [
                 'No', 'NIP', 'Nama Karyawan', 'Bagian', 'Jabatan', 'Status Kerja', 'Status Input',
                 'Gaji Pokok', 'Tunjangan Tetap', 'Tunjangan Absensi', 'Tunjangan Jabatan', 'Tunjangan Shift', 
-                'Tunjangan Radiologi', 'Tunjangan Lain', 'Uang Lembur', 'Tunjangan Hari Raya', 'Total Pendapatan (Bruto)',
+                'Tunjangan Radiologi', 'Tunjangan Lain', 'Uang Lembur', 'Tunjangan THR', 'Total Pendapatan (Bruto)',
                 'Potongan Absensi', 'Potongan Cash Bon', 'Potongan Obat', 'Potongan Lain', 'Potongan Bank',
                 'BPJS Kesehatan', 'BPJS Ketenagakerjaan', 'PPh 21', 'Total Potongan', 'Gaji Bersih'
             ];
 
-            if ($isDecember) {
-                $columns[] = 'Bruto YTD (Setahun)';
-                $columns[] = 'PPh21 YTD (Setahun)';
+            foreach ($columns as $col) {
+                fwrite($output, '<th>' . $col . '</th>');
             }
 
-            fputcsv($file, $columns, ';');
+            if ($isDecember) {
+                fwrite($output, '<th class="th-ytd">Bruto YTD (Setahun)</th>');
+                fwrite($output, '<th class="th-ytd">PPh21 YTD (Setahun)</th>');
+            }
+
+            fwrite($output, '</tr></thead><tbody>');
 
             $no = 1;
             foreach ($karyawans as $karyawan) {
-                // Check if slip is already inputted in DB
+                // Fetch slip details
                 $slip = DB::table('sdm_payroll_slips')
                     ->where('karyawan_id', $karyawan->id)
                     ->where('periode', $this->periode)
@@ -1316,45 +1335,55 @@ class Index extends Component
                 $bagian = $karyawan->jabatan->first() && $karyawan->jabatan->first()->bagian ? $karyawan->jabatan->first()->bagian->nama : 'Umum';
                 $jabatan = $karyawan->jabatan->first() ? $karyawan->jabatan->first()->nama : 'Staff';
 
-                $row = [
-                    $no++,
-                    $karyawan->nip,
-                    $karyawan->full_nama,
-                    $bagian,
-                    $jabatan,
-                    $karyawan->status->nama(),
-                    $statusInput,
-                    $gajiPokok,
-                    $tunjanganTetap,
-                    $tunjanganAbsensi,
-                    $tunjanganJabatan,
-                    $tunjanganShift,
-                    $tunjanganRadiologi,
-                    $tunjanganLain,
-                    $uangLembur,
-                    $thr,
-                    $totalBruto,
-                    $potAbsensi,
-                    $potCashBon,
-                    $potObat,
-                    $potLain,
-                    $potBank,
-                    $bpjsKes,
-                    $bpjsTk,
-                    $pph21,
-                    $totalPotongan,
-                    $gajiBersih
-                ];
+                fwrite($output, '<tr>');
+                fwrite($output, '<td class="center-cell">' . $no++ . '</td>');
+                fwrite($output, '<td class="text-cell">' . $karyawan->nip . '</td>');
+                fwrite($output, '<td>' . htmlspecialchars($karyawan->full_nama) . '</td>');
+                fwrite($output, '<td>' . htmlspecialchars($bagian) . '</td>');
+                fwrite($output, '<td>' . htmlspecialchars($jabatan) . '</td>');
+                fwrite($output, '<td class="center-cell">' . htmlspecialchars($karyawan->status->nama()) . '</td>');
+                fwrite($output, '<td class="center-cell">' . htmlspecialchars($statusInput) . '</td>');
+                
+                // Money cells
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($gajiPokok, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($tunjanganTetap, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($tunjanganAbsensi, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($tunjanganJabatan, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($tunjanganShift, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($tunjanganRadiologi, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($tunjanganLain, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($uangLembur, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($thr, 0, ',', '.') . '</td>');
+                
+                // Total bruto
+                fwrite($output, '<td class="bold-money-cell">Rp ' . number_format($totalBruto, 0, ',', '.') . '</td>');
+                
+                // Potongans
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($potAbsensi, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($potCashBon, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($potObat, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($potLain, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($potBank, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($bpjsKes, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($bpjsTk, 0, ',', '.') . '</td>');
+                fwrite($output, '<td class="money-cell">Rp ' . number_format($pph21, 0, ',', '.') . '</td>');
+                
+                // Total potongan
+                fwrite($output, '<td class="bold-money-cell">Rp ' . number_format($totalPotongan, 0, ',', '.') . '</td>');
+                
+                // Gaji bersih
+                fwrite($output, '<td class="bold-money-cell" style="color: #4F46E5;">Rp ' . number_format($gajiBersih, 0, ',', '.') . '</td>');
 
                 if ($isDecember) {
-                    $row[] = $brutoYtd;
-                    $row[] = $pph21Ytd;
+                    fwrite($output, '<td class="bold-money-cell">Rp ' . number_format($brutoYtd, 0, ',', '.') . '</td>');
+                    fwrite($output, '<td class="bold-money-cell" style="color: #ea580c;">Rp ' . number_format($pph21Ytd, 0, ',', '.') . '</td>');
                 }
 
-                fputcsv($file, $row, ';');
+                fwrite($output, '</tr>');
             }
 
-            fclose($file);
+            fwrite($output, '</tbody></table></body></html>');
+            fclose($output);
         };
 
         return response()->stream($callback, 200, $headers);
