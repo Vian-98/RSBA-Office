@@ -70,6 +70,13 @@
             <td colspan="4">{{ \Carbon\Carbon::parse($suratCuti->tgl_mulai)->translatedFormat('d M Y') }} s/d {{ \Carbon\Carbon::parse($suratCuti->tgl_akhir)->translatedFormat('d M Y') }}
                 ({{ $suratCuti->lama_cuti }} hari)</td>
         </tr>
+        @if ($suratCuti->is_penyesuaian_melahirkan && $suratCuti->tgl_melahirkan_aktual)
+        <tr>
+            <td><b>Tgl Melahirkan Aktual</b></td>
+            <td><b>:</b></td>
+            <td colspan="4">{{ \Carbon\Carbon::parse($suratCuti->tgl_melahirkan_aktual)->translatedFormat('d M Y') }} (Disesuaikan SDM H+45 hari persalinan)</td>
+        </tr>
+        @endif
 
         <tr>
             <td colspan="6">Demikian surat izin cuti ini saya ajukan. Atas perhatian dan diberikannya permohonan izin sajya ini, saya mengucapkan terima kasih.
