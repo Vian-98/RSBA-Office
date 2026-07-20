@@ -50,7 +50,7 @@
                         ],
                     };
                 @endphp
-                <div class="relative overflow-hidden rounded-xl border transition-all duration-200 p-3 shadow-3xs hover:shadow-2xs {{ $colors['bg'] }}">
+                <div class="relative overflow-hidden rounded-xl border transition-all duration-200 p-3.5 shadow-3xs hover:shadow-2xs {{ $colors['bg'] }}">
                     <div class="flex gap-3">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-3xs {{ $colors['iconBg'] }}">
                             @if(str_contains($notif['icon'], 'calendar'))
@@ -79,19 +79,19 @@
                             <div class="flex items-start justify-between gap-2">
                                 <div class="flex flex-col min-w-0">
                                     <h4 class="text-xs font-bold text-slate-800 leading-tight">{{ $notif['title'] }}</h4>
-                                    <span class="text-4xs text-slate-400 mt-0.5">{{ $notif['time'] }}</span>
+                                    <span class="text-[10px] text-slate-400 mt-0.5">{{ $notif['time'] }}</span>
                                 </div>
                                 @if ($isUnread)
                                     <button wire:click="markAsRead('{{ $notif['id'] }}')" 
-                                            class="rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors shrink-0" 
+                                            class="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors shrink-0" 
                                             title="Tandai sudah dibaca">
                                         <x-ts:icon name="tabler.check" class="h-4 w-4" />
                                     </button>
                                 @endif
                             </div>
-                            <p class="mt-1 text-2xs text-slate-600 leading-relaxed">{{ $notif['message'] }}</p>
+                            <p class="mt-1 text-xs text-slate-500 leading-relaxed">{{ $notif['message'] }}</p>
                             @if(isset($notif['route']) && Route::has($notif['route']))
-                                <a href="{{ route($notif['route'], $notif['route_params'] ?? []) }}" class="mt-2 inline-flex items-center gap-0.5 text-3xs font-bold {{ $colors['text'] }} hover:underline">
+                                <a href="{{ route($notif['route'], $notif['route_params'] ?? []) }}" class="mt-2 inline-flex items-center gap-0.5 text-[11px] font-bold {{ $colors['text'] }} hover:underline">
                                     Buka Halaman
                                     <svg class="h-2.5 w-2.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
