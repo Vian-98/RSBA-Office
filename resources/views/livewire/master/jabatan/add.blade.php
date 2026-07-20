@@ -10,7 +10,7 @@
 
             <x-ts:select.styled wire:model.defer='bagian' searchable :options="$bagian_options" placeholder="Bagian" select="label:nama|value:id" />
 
-            <x-ts:input label="Tunjangan Jabatan" wire:model.defer="tunjangan_jabatan" type="number" prefix="Rp" placeholder="0" />
+            <x-ts:input label="Tunjangan Jabatan" wire:model.defer="tunjangan_jabatan" type="text" prefix="Rp" placeholder="0" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
         </div>
 
         <div class="flex justify-end gap-2 pt-4">

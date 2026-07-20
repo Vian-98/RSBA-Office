@@ -65,13 +65,14 @@ class Index extends Component
             $oldAllowances = DB::table('sdm_payroll_golongans')->get()->pluck('tunjangan_golongan', 'golongan')->toArray();
 
             foreach ($this->allowances as $gol => $val) {
+                $cleanedVal = is_string($val) ? str_replace('.', '', $val) : $val;
                 $oldVal = $oldAllowances[$gol] ?? 0.0;
-                if ((double)$oldVal !== (double)$val) {
+                if ((double)$oldVal !== (double)$cleanedVal) {
                     DB::table('sdm_payroll_golongan_logs')->insert([
                         'tipe' => 'Tunjangan',
                         'kunci' => "Nominal Golongan {$gol}",
                         'nilai_lama' => 'Rp ' . number_format($oldVal, 0, ',', '.'),
-                        'nilai_baru' => 'Rp ' . number_format($val, 0, ',', '.'),
+                        'nilai_baru' => 'Rp ' . number_format($cleanedVal, 0, ',', '.'),
                         'user_id' => auth()->id() ?? 1,
                         'created_at' => now(),
                     ]);
@@ -79,7 +80,7 @@ class Index extends Component
                     DB::table('sdm_payroll_golongans')
                         ->where('golongan', $gol)
                         ->update([
-                            'tunjangan_golongan' => (double) $val,
+                            'tunjangan_golongan' => (double) $cleanedVal,
                             'updated_at' => now()
                         ]);
                 }

@@ -36,6 +36,9 @@ class Add extends Component
 
     function submit()
     {
+        if (is_string($this->tunjangan_jabatan)) {
+            $this->tunjangan_jabatan = str_replace('.', '', $this->tunjangan_jabatan);
+        }
         $this->validate();
 
         DB::beginTransaction();

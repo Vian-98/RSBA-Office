@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <!-- Breadcrumb & Header -->
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
         <div>
             <nav class="flex text-xs text-slate-400 font-semibold mb-1" aria-label="Breadcrumb">
                 <ol class="inline-flex items-center space-x-1 md:space-x-2">
@@ -13,17 +13,17 @@
                     <li>
                         <div class="flex items-center">
                             <x-tabler-chevron-right class="h-3 w-3 text-slate-400 mx-1" />
-                            <span class="text-slate-600">Tunjangan Jabatan</span>
+                            <span class="text-slate-650">Tunjangan Jabatan</span>
                         </div>
                     </li>
                 </ol>
             </nav>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-800">
+            <h1 class="text-lg font-bold text-slate-800">
                 Konfigurasi Tunjangan Jabatan
             </h1>
         </div>
         <div>
-            <x-ts:button type="button" @click="$dispatch('open-modal', {id: 'new-jabatan'})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm">
+            <x-ts:button size="sm" type="button" @click="$dispatch('open-modal', {id: 'new-jabatan'})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
                 <x-tabler-plus class="h-4 w-4 mr-1.5" />
                 Tambah Jabatan Baru
             </x-ts:button>
@@ -55,7 +55,7 @@
                                 <span class="text-sm font-bold text-slate-700 block line-clamp-1">{{ $jab->nama }}</span>
                             </div>
                             <div>
-                                <x-ts:input wire:model.defer="allowances.{{ $jab->id }}" type="number" min="0" placeholder="0" prefix="Rp" class="font-semibold text-slate-700" />
+                                <x-ts:input wire:model.defer="allowances.{{ $jab->id }}" type="text" placeholder="0" prefix="Rp" class="font-semibold text-slate-700" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                             </div>
                         </div>
                     @empty
