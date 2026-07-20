@@ -304,20 +304,15 @@ class PoliAdmin extends Component
             $this->successMessage = '';
             $this->errorMessage = '';
 
-            if ($currentStatus === 'terlewat' && $newStatus === 'menunggu') {
-                $client->requeuePatient($this->queuePoliId, $id);
-                $this->successMessage = 'Pasien berhasil dipanggil ulang (turun 2 posisi)!';
-            } else {
-                $client->updateQueueStatus($this->queuePoliId, $id, $newStatus);
-                $statusLabels = [
-                    'menunggu' => 'menunggu',
-                    'dilayani' => 'sedang dilayani',
-                    'selesai' => 'selesai dilayani',
-                    'terlewat' => 'dilewati',
-                ];
-                $label = $statusLabels[$newStatus] ?? $newStatus;
-                $this->successMessage = "Status pasien berhasil diubah menjadi '{$label}'!";
-            }
+            $client->updateQueueStatus($this->queuePoliId, $id, $newStatus);
+            $statusLabels = [
+                'menunggu' => 'menunggu',
+                'dilayani' => 'sedang dilayani',
+                'selesai' => 'selesai dilayani',
+                'terlewat' => 'dilewati',
+            ];
+            $label = $statusLabels[$newStatus] ?? $newStatus;
+            $this->successMessage = "Status pasien berhasil diubah menjadi '{$label}'!";
             $this->loadQueue($client);
         } catch (\Exception $e) {
             $this->errorMessage = $e->getMessage();
