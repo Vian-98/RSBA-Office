@@ -1,12 +1,13 @@
 <div class="space-y-6">
     <!-- Header Page -->
-    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-800">Master Tunjangan Lain-Lain</h1>
-            <p class="text-sm text-slate-500">Kelola daftar jenis tunjangan tidak tetap/tambahan yang dapat ditambahkan secara dinamis pada penggajian bulanan.</p>
+            <h1 class="text-lg font-bold text-slate-800">Master Tunjangan Lain-Lain</h1>
+            <p class="text-xs text-slate-500">Kelola daftar jenis tunjangan tidak tetap/tambahan yang dapat ditambahkan secara dinamis pada penggajian bulanan.</p>
         </div>
         <div>
-            <x-ts:button class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm" icon="plus" wire:click="openModal()">
+            <x-ts:button size="sm" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" wire:click="openModal()">
+                <x-tabler-plus class="h-4 w-4 mr-1.5" />
                 Tambah Jenis Tunjangan
             </x-ts:button>
         </div>
