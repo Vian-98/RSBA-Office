@@ -12,6 +12,7 @@ enum StatusKehadiran: string
     case CUTI = 'cuti';
     case IZIN = 'izin';
     case PERLU_VERIFIKASI = 'perlu_verifikasi';
+    case CUTI_BERSAMA = 'cuti_bersama';
 
     public function nama(): string
     {
@@ -24,6 +25,7 @@ enum StatusKehadiran: string
             self::CUTI => 'Cuti',
             self::IZIN => 'Izin',
             self::PERLU_VERIFIKASI => 'Perlu Verifikasi',
+            self::CUTI_BERSAMA => 'Cuti Bersama',
         };
     }
 
@@ -34,7 +36,7 @@ enum StatusKehadiran: string
             self::HADIR => 'success',
             self::TERLAMBAT, self::PULANG_CEPAT, self::PERLU_VERIFIKASI => 'warning',
             self::TIDAK_HADIR => 'danger',
-            self::CUTI, self::IZIN => 'info',
+            self::CUTI, self::IZIN, self::CUTI_BERSAMA => 'info',
         };
     }
 }
