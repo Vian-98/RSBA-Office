@@ -71,8 +71,10 @@
             </table>
         </div>
         
-        <div class="mt-4">
-            {{ $logs->links() }}
-        </div>
+        @if($logs->hasPages())
+            <div class="mt-4 pt-4 border-t border-slate-100">
+                {{ $logs->onEachSide(1)->links('partials.pagination') }}
+            </div>
+        @endif
     </x-ts:card>
 </div>
