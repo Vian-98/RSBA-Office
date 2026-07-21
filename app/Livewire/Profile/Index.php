@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\Url;
 use TallStackUi\Traits\Interactions;
 
 #[Lazy]
@@ -27,7 +28,8 @@ class Index extends Component
     #[Locked]
     public $user;
 
-    public $tab = 'Home';
+    #[Url]
+    public $tab = 'home';
 
     function mount()
     {

@@ -164,19 +164,10 @@ class MenuSeeder extends Seeder
             [
                 'id' => 17,
                 'nama' => 'Surat',
-                'route' => null,
+                'route' => 'kepegawaian.surat.index',
                 'icon' => 'mail-opened',
-                'permission' => [],
+                'permission' => ['view-kepegawaian-cuti-bersama', 'view-kepegawaian-surat-cuti', 'view-kepegawaian-surat-sp3', 'view-surat-verification'],
                 'parent_id' => 1,
-                'group' => 'sdm',
-            ],
-            [
-                'id' => 19,
-                'nama' => 'SP3',
-                'route' => 'kepegawaian.surat.sp3',
-                'icon' => null,
-                'permission' => ['view-kepegawaian-surat-sp3'],
-                'parent_id' => 17,
                 'group' => 'sdm',
             ],
             [
@@ -324,15 +315,6 @@ class MenuSeeder extends Seeder
                 'group' => 'keu',
             ],
             [
-                'id' => 36,
-                'nama' => 'Verifikasi',
-                'route' => 'surat.verification',
-                'icon' => '',
-                'permission' => ['view-surat-verification'],
-                'parent_id' => 17,
-                'group' => 'sdm',
-            ],
-            [
                 'id' => 37,
                 'nama' => 'Maintenance',
                 'route' => 'umum.maintenance.index',
@@ -384,15 +366,6 @@ class MenuSeeder extends Seeder
                 'icon' => null,
                 'permission' => ['view-kepegawaian-master-cuti'],
                 'parent_id' => 12,
-                'group' => 'sdm',
-            ],
-            [
-                'id' => 43,
-                'nama' => 'Izin dan Cuti',
-                'route' => 'kepegawaian.surat.cuti',
-                'icon' => null,
-                'permission' => ['create-cuti-other-karyawan', 'view-kepegawaian-surat-cuti'],
-                'parent_id' => 17,
                 'group' => 'sdm',
             ],
             [
