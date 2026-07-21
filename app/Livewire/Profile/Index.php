@@ -55,6 +55,33 @@ class Index extends Component
         return $this->karyawan->sisa_cuti;
     }
 
+    #[Computed]
+    public function avatarUrl(): ?string
+    {
+        return $this->karyawan->foto
+            ? route('api.users.avatar', ['userId' => $this->user->id])
+            : null;
+    }
+
+    #[Computed]
+    public function avatarInitials(): string
+    {
+        $name = trim($this->karyawan->full_nama ?: $this->karyawan->nama ?: '');
+
+        if ($name === '') {
+            return 'NA';
+        }
+
+        $parts = preg_split('/\s+/', $name) ?: [];
+        $initials = '';
+
+        foreach (array_slice($parts, 0, 2) as $part) {
+            $initials .= mb_substr($part, 0, 1);
+        }
+
+        return strtoupper($initials ?: 'NA');
+    }
+
     function updateAvatar()
     {
         $this->validate([

@@ -9,14 +9,19 @@
                 <div class="h-24 bg-gradient-to-br from-indigo-400 to-purple-600"></div>
 
                 {{-- Foto & nama --}}
-                <div class="flex flex-col items-center px-5 pb-5"
-                     x-data="{ userPreview: '{{ $profileTmp ? $profileTmp->temporaryUrl() : asset('storage/' . $this->karyawan->foto) }}' }">
+                 <div class="flex flex-col items-center px-5 pb-5"
+                     x-data="{ userPreview: '{{ $profileTmp ? $profileTmp->temporaryUrl() : ($this->avatarUrl ?? '') }}' }">
 
                     {{-- Avatar - posisi overlap cover --}}
                     <div class="-mt-12 mb-3 flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full border-4 border-white bg-indigo-100 shadow"
                          x-on:click="document.getElementById('profileInput').click();"
                          title="Klik untuk ganti foto">
-                        <img :src="userPreview" class="h-full w-full object-cover" alt="Foto Profil" />
+                        <template x-if="userPreview">
+                            <img :src="userPreview" class="h-full w-full object-cover" alt="Foto Profil" />
+                        </template>
+                        <template x-if="!userPreview">
+                            <span class="text-lg font-bold text-indigo-600">{{ $this->avatarInitials }}</span>
+                        </template>
                     </div>
 
                     <input type="file" wire:model='profileTmp' id="profileInput" style="display:none"

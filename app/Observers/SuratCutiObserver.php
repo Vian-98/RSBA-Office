@@ -19,7 +19,11 @@ class SuratCutiObserver
 
     public function saved(SuratCuti $surat)
     {
-        $this->syncService->syncCuti($surat);
+        // Cuti bersama can create many surat in one request; avoid synchronous
+        // external Docstore calls here to keep Livewire apply action responsive.
+        if ($surat->sumber !== 'cuti_bersama') {
+            $this->syncService->syncCuti($surat);
+        }
 
         // Sync to JadwalKerjaDetail
         $dates = json_decode($surat->tgl_cuti, true);
