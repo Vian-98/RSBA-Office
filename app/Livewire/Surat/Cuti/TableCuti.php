@@ -97,7 +97,7 @@ class TableCuti extends Component implements HasTable, HasForms, HasActions
                     ->action(
                         function ($record, $livewire) {
 
-                            $livewire->surat = $record;
+                            $livewire->surat = $record->fresh();
 
                             return match ($record->status) {
                                 StatusApproval::APPROVED, StatusApproval::MANUAL => $livewire->dispatch('trigger-print'),
@@ -143,7 +143,7 @@ class TableCuti extends Component implements HasTable, HasForms, HasActions
                     )
                     ->action(
                         function ($record, $livewire) {
-                            $livewire->surat = $record;
+                            $livewire->surat = $record->fresh();
                             $livewire->tglMelahirkanAktual = $record->tgl_melahirkan_aktual ?? date('Y-m-d');
                             $livewire->catatanPenyesuaian = $record->catatan_penyesuaian ?? '';
                             $livewire->dispatch('open-modal', id: 'modal-adjust-cuti-melahirkan');
