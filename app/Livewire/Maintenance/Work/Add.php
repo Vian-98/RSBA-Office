@@ -264,6 +264,9 @@ class Add extends Component
             $this->toast()
                 ->success('Berhasil', "Work Order <b>#{$this->maintenanceWork->id}</b> berhasil diselesaikan.")
                 ->send();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollback();
+            throw $e;
         } catch (Throwable $e) {
             DB::rollback();
 
