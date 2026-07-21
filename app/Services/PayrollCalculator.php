@@ -131,11 +131,13 @@ class PayrollCalculator
             $allocationsBreakdown = [];
         }
 
-        // 7. Calculate Tunjangan Jabatan based on Jabatan
+        // 7. Calculate Tunjangan Jabatan based on Jabatan (Only for Karyawan Tetap)
         $tunjanganJabatan = 0.0;
-        $latestJab = $karyawan->jabatan->first();
-        if ($latestJab) {
-            $tunjanganJabatan = (double) $latestJab->tunjangan_jabatan;
+        if ($isTetap) {
+            $latestJab = $karyawan->jabatan->first();
+            if ($latestJab) {
+                $tunjanganJabatan = (double) $latestJab->tunjangan_jabatan;
+            }
         }
 
         return [

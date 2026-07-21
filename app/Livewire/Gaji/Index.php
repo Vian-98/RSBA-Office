@@ -13,6 +13,10 @@ use TallStackUi\Traits\Interactions;
 use Illuminate\Support\Facades\DB;
 use App\Services\PayrollCalculator;
 use Carbon\Carbon;
+use Livewire\WithFileUploads;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PayrollTemplateExport;
+use App\Imports\PayrollImport;
 
 #[Title('Penggajian')]
 class Index extends Component
@@ -20,14 +24,18 @@ class Index extends Component
     use WithPagination;
     use AuthorizesFromRoute;
     use Interactions;
+    use WithFileUploads;
 
     public string $search = '';
     public string $bagianFilter = '';
+    public string $statusFilter = '';
+    public string $payrollStatusFilter = '';
     
     #[Url]
     public string $periode = ''; // YYYY-MM
     public ?string $carriedOverFromPeriode = null;
     public int $calculatedLateMinutes = 0;
+    public int $calculatedLateCount = 0;
     public int $calculatedOvertimeMinutes = 0;
     public int $perPage = 10;
 
@@ -39,6 +47,10 @@ class Index extends Component
     public bool $isPeriodLogModalOpen = false;
     public array $periodLogs = [];
     public string $periodLogSearch = '';
+
+    // Modal state for Bulk Excel Import
+    public bool $isImportModalOpen = false;
+    public $excelFile = null;
 
     // Modal state for Payroll Input
     public bool $isInputModalOpen = false;
@@ -150,6 +162,16 @@ class Index extends Component
     }
 
     public function updatingBagianFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPayrollStatusFilter(): void
     {
         $this->resetPage();
     }
@@ -389,7 +411,7 @@ class Index extends Component
     private function calculateAttendanceStats(int $karyawanId): array
     {
         if (empty($this->periode)) {
-            return ['late_minutes' => 0, 'overtime_minutes' => 0];
+            return ['late_minutes' => 0, 'late_count' => 0, 'overtime_minutes' => 0];
         }
 
         try {
@@ -397,7 +419,7 @@ class Index extends Component
             $bulan = $parsedDate->month;
             $tahun = $parsedDate->year;
         } catch (\Exception $e) {
-            return ['late_minutes' => 0, 'overtime_minutes' => 0];
+            return ['late_minutes' => 0, 'late_count' => 0, 'overtime_minutes' => 0];
         }
 
         $details = DB::table('sdm_jadwal_kerja_detail')
@@ -408,12 +430,14 @@ class Index extends Component
 
         $toleransiTelat = (int) (DB::table('sdm_payroll_settings')->where('key', 'toleransi_telat_menit')->value('value') ?: 0);
         $lateMinutes = 0;
+        $lateCount = 0;
         $overtimeMinutes = 0;
 
         foreach ($details as $d) {
             // Lateness
-            if ($d->status_kehadiran && strtolower($d->status_kehadiran) === 'terlambat' && $d->catatan) {
-                if (preg_match('/Terlambat (-?\d+) menit/i', $d->catatan, $matches)) {
+            if ($d->status_kehadiran && strtolower($d->status_kehadiran) === 'terlambat') {
+                $lateCount++;
+                if ($d->catatan && preg_match('/Terlambat (-?\d+) menit/i', $d->catatan, $matches)) {
                     $mins = abs((int) $matches[1]);
                     if ($mins > $toleransiTelat) {
                         $lateMinutes += $mins;
@@ -446,6 +470,7 @@ class Index extends Component
 
         return [
             'late_minutes' => $lateMinutes,
+            'late_count' => $lateCount,
             'overtime_minutes' => $overtimeMinutes,
         ];
     }
@@ -465,11 +490,14 @@ class Index extends Component
         // Calculate attendance stats & pre-fill auto-calculated parameters
         $stats = $this->calculateAttendanceStats($karyawanId);
         $this->calculatedLateMinutes = $stats['late_minutes'];
+        $this->calculatedLateCount = $stats['late_count'];
         $this->calculatedOvertimeMinutes = $stats['overtime_minutes'];
 
-        $rateLate = (double) DB::table('sdm_payroll_settings')->where('key', 'potongan_telat_per_menit')->value('value') ?: 0;
+        $rateLateDeduction = (double) (DB::table('sdm_payroll_settings')->where('key', 'potongan_telat_per_kejadian')->value('value')
+            ?: DB::table('sdm_payroll_settings')->where('key', 'potongan_telat_per_menit')->value('value')
+            ?: 50000);
 
-        $autoPotonganAbsensi = (int) ($this->calculatedLateMinutes * $rateLate);
+        $autoPotonganAbsensi = (int) ($this->calculatedLateCount * $rateLateDeduction);
         $autoUangLembur = 0; // Uang Lembur is entered manually
 
         // Check if current month is December
@@ -956,6 +984,8 @@ class Index extends Component
                 'status' => $karyawan->status->nama(),
                 'jabatan' => $jabName,
                 'bagian' => $bagName,
+                'nama_bank' => $karyawan->nama_bank,
+                'no_rekening' => $karyawan->no_rekening,
                 'gaji_pokok' => $slip->gaji_pokok,
                 'tunjangan_tetap' => $slip->tunjangan_tetap,
                 'tunjangan_absensi' => $slip->tunjangan_absensi,
@@ -1001,6 +1031,8 @@ class Index extends Component
                 'status' => $karyawan->status->nama(),
                 'jabatan' => $jabName,
                 'bagian' => $bagName,
+                'nama_bank' => $karyawan->nama_bank,
+                'no_rekening' => $karyawan->no_rekening,
                 'gaji_pokok' => $base['gaji_pokok'],
                 'tunjangan_tetap' => $base['tunjangan_tetap'],
                 'tunjangan_absensi' => $base['tunjangan_absensi'],
@@ -1167,6 +1199,56 @@ class Index extends Component
         }
     }
 
+    public function downloadTemplate()
+    {
+        $this->authorizeFromRoute();
+        return Excel::download(
+            new PayrollTemplateExport($this->periode),
+            'template_penggajian_' . $this->periode . '.xlsx'
+        );
+    }
+
+    public function openImportModal(): void
+    {
+        $this->excelFile = null;
+        $this->isImportModalOpen = true;
+    }
+
+    public function closeImportModal(): void
+    {
+        $this->isImportModalOpen = false;
+        $this->excelFile = null;
+    }
+
+    public function importExcel(): void
+    {
+        $this->authorizeFromRoute();
+
+        if ($this->isLocked) {
+            $this->toast()->error('Gagal !', 'Periode ini telah disetujui dan terkunci. Data tidak dapat diubah.')->send();
+            return;
+        }
+
+        $this->validate([
+            'excelFile' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ], [
+            'excelFile.required' => 'Pilih file Excel yang ingin diunggah.',
+            'excelFile.mimes' => 'Format file harus berupa Excel (.xlsx, .xls) atau CSV.',
+            'excelFile.max' => 'Ukuran file maksimal 10MB.',
+        ]);
+
+        try {
+            $importer = new PayrollImport($this->periode);
+            Excel::import($importer, $this->excelFile->getRealPath());
+
+            $count = $importer->getImportedCount();
+            $this->closeImportModal();
+            $this->toast()->success('Berhasil !', "Berhasil mengimpor data penggajian untuk {$count} karyawan.")->send();
+        } catch (\Throwable $e) {
+            $this->toast()->error('Gagal Impor !', 'Terjadi kesalahan: ' . $e->getMessage())->send();
+        }
+    }
+
     public function exportToExcel()
     {
         $this->authorizeFromRoute();
@@ -1176,13 +1258,38 @@ class Index extends Component
             ->with(['jabatan.bagian']);
 
         if (!empty($this->search)) {
-            $query->where('nama', 'like', '%' . $this->search . '%');
+            $query->where(function ($q) {
+                $q->where('nama', 'like', '%' . $this->search . '%')
+                  ->orWhere('nip', 'like', '%' . $this->search . '%');
+            });
         }
 
         if (!empty($this->bagianFilter)) {
             $query->whereHas('jabatan.bagian', function ($q) {
                 $q->where('id', $this->bagianFilter);
             });
+        }
+
+        if (!empty($this->statusFilter)) {
+            $query->where('status', $this->statusFilter);
+        }
+
+        if (!empty($this->payrollStatusFilter)) {
+            if ($this->payrollStatusFilter === 'generated') {
+                $query->whereExists(function ($q) {
+                    $q->select(DB::raw(1))
+                        ->from('sdm_payroll_slips')
+                        ->whereColumn('sdm_payroll_slips.karyawan_id', 'sdm_karyawan.id')
+                        ->where('sdm_payroll_slips.periode', $this->periode);
+                });
+            } elseif ($this->payrollStatusFilter === 'pending') {
+                $query->whereNotExists(function ($q) {
+                    $q->select(DB::raw(1))
+                        ->from('sdm_payroll_slips')
+                        ->whereColumn('sdm_payroll_slips.karyawan_id', 'sdm_karyawan.id')
+                        ->where('sdm_payroll_slips.periode', $this->periode);
+                });
+            }
         }
 
         $karyawans = $query->get();
@@ -1217,7 +1324,7 @@ class Index extends Component
             </style></head><body>');
             
             // Add visual title
-            $titlePeriode = \Carbon\Carbon::parse($this->periode . '-01')->translatedFormat('F Y');
+            $titlePeriode = Carbon::parse($this->periode . '-01')->translatedFormat('F Y');
             fwrite($output, '<h3 style="font-family: Calibri, sans-serif; margin-bottom: 15px;">REKAP PENGGAJIAN KARYAWAN - PERIODE ' . strtoupper($titlePeriode) . '</h3>');
             
             fwrite($output, '<table><thead><tr>');
@@ -1397,13 +1504,38 @@ class Index extends Component
             ->with(['jabatan.bagian']);
 
         if (!empty($this->search)) {
-            $query->where('nama', 'like', '%' . $this->search . '%');
+            $query->where(function ($q) {
+                $q->where('nama', 'like', '%' . $this->search . '%')
+                  ->orWhere('nip', 'like', '%' . $this->search . '%');
+            });
         }
 
         if (!empty($this->bagianFilter)) {
             $query->whereHas('jabatan.bagian', function ($q) {
                 $q->where('id', $this->bagianFilter);
             });
+        }
+
+        if (!empty($this->statusFilter)) {
+            $query->where('status', $this->statusFilter);
+        }
+
+        if (!empty($this->payrollStatusFilter)) {
+            if ($this->payrollStatusFilter === 'generated') {
+                $query->whereExists(function ($q) {
+                    $q->select(DB::raw(1))
+                        ->from('sdm_payroll_slips')
+                        ->whereColumn('sdm_payroll_slips.karyawan_id', 'sdm_karyawan.id')
+                        ->where('sdm_payroll_slips.periode', $this->periode);
+                });
+            } elseif ($this->payrollStatusFilter === 'pending') {
+                $query->whereNotExists(function ($q) {
+                    $q->select(DB::raw(1))
+                        ->from('sdm_payroll_slips')
+                        ->whereColumn('sdm_payroll_slips.karyawan_id', 'sdm_karyawan.id')
+                        ->where('sdm_payroll_slips.periode', $this->periode);
+                });
+            }
         }
 
         if ($this->perPage === -1) {
@@ -1492,6 +1624,7 @@ class Index extends Component
         return view('livewire.gaji.index', [
             'karyawans' => $karyawans,
             'bagians' => Bagian::all(),
+            'statusOptions' => \App\Enums\StatusKaryawan::options(),
             'allowanceTypes' => $allowanceTypes,
             'isOnlyPajak' => $isOnlyPajak,
             'periodStatus' => $this->periodStatus,

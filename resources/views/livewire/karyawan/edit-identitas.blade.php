@@ -81,6 +81,24 @@
             </div>
         </div>
 
+        {{-- REKENING BANK --}}
+        <div class="space-y-2 pt-2">
+            <hr class="text-gray-200">
+            <span class="text-primary-500 flex gap-1 font-semibold">
+                <x-ts:icon name="tabler.building-bank" class="h-5 w-5" />
+                Rekening Pembayaran Gaji
+            </span>
+        </div>
+
+        <div class="flex flex-col gap-2 lg:flex-row">
+            <div class="w-full lg:w-1/2">
+                <x-ts:input wire:model.lazy='form.nama_bank' placeholder="Nama Bank (misal: BSI, Mandiri, BCA)" />
+            </div>
+            <div class="w-full lg:w-1/2">
+                <x-ts:input wire:model.lazy='form.no_rekening' placeholder="Nomor Rekening Bank" />
+            </div>
+        </div>
+
         {{-- KONTAK --}}
         <div class="space-y-2 pt-2">
             <hr class="text-gray-200">

@@ -90,7 +90,7 @@ class Cuti extends Component implements HasTable, HasForms, HasActions
     {
         return $tableCuti
             ->query(
-                SuratCuti::where('karyawan_id', Auth::user()->karyawan_id)
+                SuratCuti::query()->where('karyawan_id', Auth::user()->karyawan_id)
                     ->latest()
             )
             ->deferLoading(false)

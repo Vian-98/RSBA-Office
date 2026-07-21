@@ -19,9 +19,19 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <x-ts:button wire:click="downloadTemplate" flat color="emerald" class="text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200">
+                <x-tabler-file-download class="h-4 w-4 mr-1.5" />
+                Templat Excel
+            </x-ts:button>
+            @if(!$isLocked)
+                <x-ts:button wire:click="openImportModal" flat color="sky" class="text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200">
+                    <x-tabler-file-upload class="h-4 w-4 mr-1.5" />
+                    Impor Excel
+                </x-ts:button>
+            @endif
             <x-ts:button wire:click="exportToExcel" flat color="emerald" class="text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200">
                 <x-tabler-file-spreadsheet class="h-4 w-4 mr-1.5" />
-                Export Excel
+                Export Rekap
             </x-ts:button>
             <x-ts:button wire:click="openPeriodLogModal" flat color="indigo" class="text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200">
                 <x-tabler-history class="h-4 w-4 mr-1.5" />
@@ -73,9 +83,9 @@
 
     <!-- Filters Panel -->
     <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-2xs">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div>
-                <x-ts:input wire:model.live.debounce.300ms="search" placeholder="Cari nama karyawan..." icon="tabler.search" class="w-full" />
+                <x-ts:input wire:model.live.debounce.300ms="search" placeholder="Cari nama / NIP..." icon="tabler.search" class="w-full" />
             </div>
             <div>
                 <select wire:model.live="bagianFilter" class="w-full rounded-lg border-gray-300 text-sm shadow-2xs focus:border-indigo-500 focus:ring-indigo-500">
@@ -86,16 +96,22 @@
                 </select>
             </div>
             <div>
-                <x-month-picker wire:model.live="periode" />
+                <select wire:model.live="statusFilter" class="w-full rounded-lg border-gray-300 text-sm shadow-2xs focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Semua Status Kerja</option>
+                    @foreach($statusOptions as $opt)
+                        <option value="{{ $opt['value'] }}">{{ $opt['label'] }}</option>
+                    @endforeach
+                </select>
             </div>
             <div>
-                <select wire:model.live="perPage" class="w-full rounded-lg border-gray-300 text-sm shadow-2xs focus:border-indigo-500 focus:ring-indigo-500">
-                    <option value="10">Tampilkan 10 data</option>
-                    <option value="25">Tampilkan 25 data</option>
-                    <option value="50">Tampilkan 50 data</option>
-                    <option value="100">Tampilkan 100 data</option>
-                    <option value="-1">Tampilkan Semua data</option>
+                <select wire:model.live="payrollStatusFilter" class="w-full rounded-lg border-gray-300 text-sm shadow-2xs focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Semua Status Input</option>
+                    <option value="generated">Selesai (Sudah Input)</option>
+                    <option value="pending">Belum Input Gaji</option>
                 </select>
+            </div>
+            <div>
+                <x-month-picker wire:model.live="periode" />
             </div>
         </div>
     </div>
@@ -209,11 +225,23 @@
                 </tbody>
             </table>
         </div>
-        @if($karyawans->hasPages())
-            <div class="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
-                {{ $karyawans->onEachSide(1)->links('partials.pagination') }}
+        <div class="border-t border-slate-100 px-6 py-4 bg-slate-50/50 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span>Tampilkan:</span>
+                <select wire:model.live="perPage" class="rounded-lg border-gray-300 text-xs py-1.5 shadow-2xs focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="10">10 data</option>
+                    <option value="25">25 data</option>
+                    <option value="50">50 data</option>
+                    <option value="100">100 data</option>
+                    <option value="-1">Semua data</option>
+                </select>
             </div>
-        @endif
+            @if($karyawans->hasPages())
+                <div>
+                    {{ $karyawans->onEachSide(1)->links('partials.pagination') }}
+                </div>
+            @endif
+        </div>
     </div>
 
     <!-- Payroll Input Modal -->
@@ -404,13 +432,8 @@
                                     <div>
                                         <div class="flex justify-between items-end h-8 mb-1">
                                             <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-tight">Absensi</span>
-                                            @if($calculatedLateMinutes > 0)
-                                                @php
-                                                    $lateHours = floor($calculatedLateMinutes / 60);
-                                                    $lateMins = $calculatedLateMinutes % 60;
-                                                    $lateText = ($lateHours > 0 ? $lateHours . ' jam' : '') . ($lateMins > 0 ? ($lateHours > 0 ? ' ' : '') . $lateMins . ' menit' : '');
-                                                @endphp
-                                                <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $lateText }} ({{ $calculatedLateMinutes }} menit)</span>
+                                            @if($calculatedLateCount > 0)
+                                                <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-sm shrink-0 whitespace-nowrap">{{ $calculatedLateCount }}x Terlambat ({{ $calculatedLateMinutes }} mnt)</span>
                                             @endif
                                         </div>
                                         <x-ts:input wire:model.live.debounce.500ms="form_potongan_absensi" type="text" prefix="Rp" class="text-xs" :disabled="$isLocked" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let attr = Array.from($el.attributes).find(a => a.name.startsWith('wire:model')) || Array.from(($el.querySelector('input') || {}).attributes || []).find(a => a.name.startsWith('wire:model')); if (attr) { let val = $wire.get(attr.value); let inp = $el.querySelector('input') || $el; inp.value = String(val === 0 || val === '0' ? 0 : (val || '')).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }" />
@@ -1149,6 +1172,61 @@
         <x-slot:footer>
             <div class="flex justify-end">
                 <x-ts:button size="sm" flat color="slate" wire:click="closePeriodLogModal">Tutup</x-ts:button>
+            </div>
+        </x-slot:footer>
+    </x-ts:modal>
+
+    <!-- Modal Bulk Import Excel Gaji -->
+    <x-ts:modal wire="isImportModalOpen" title="Impor Gaji Massal (Excel)" size="lg" class="relative z-50">
+        <div class="space-y-4">
+            <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs text-indigo-800 space-y-1">
+                <p class="font-bold">Panduan Impor Excel:</p>
+                <ol class="list-decimal list-inside space-y-0.5 text-indigo-700">
+                    <li>Unduh <b>Templat Excel</b> terlebih dahulu agar format kolom sesuai.</li>
+                    <li>Edit nominal Gaji Pokok, Tunjangan, Uang Lembur, Potongan, No. Rekening, dll.</li>
+                    <li>Unggah kembali file Excel yang telah diedit di bawah ini.</li>
+                    <li>Sistem akan mencocokkan data berdasarkan NIP karyawan secara otomatis.</li>
+                </ol>
+            </div>
+
+            <div>
+                <x-ts:upload wire:model.live="excelFile" placeholder="Pilih File Excel (.xlsx / .xls)" accept=".xlsx,.xls,.csv" close-after-upload />
+            </div>
+
+            <!-- Indicator Upload Progress -->
+            <div wire:loading wire:target="excelFile" class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-2 text-xs text-indigo-700 font-medium animate-pulse">
+                <x-tabler-loader-2 class="h-4 w-4 animate-spin text-indigo-600 shrink-0" />
+                <span>Sedang mengunggah file ke sistem...</span>
+            </div>
+
+            <!-- Status File Terunggah -->
+            @if($excelFile)
+                <div wire:loading.remove wire:target="excelFile" class="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900 font-medium shadow-3xs">
+                    <div class="flex items-center gap-2.5">
+                        <div class="p-2 bg-emerald-500 text-white rounded-lg">
+                            <x-tabler-file-spreadsheet class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <span class="block text-[10px] uppercase font-bold text-emerald-600 tracking-wider">File Siap Di-Impor</span>
+                            <span class="text-xs font-extrabold text-slate-800">{{ $excelFile->getClientOriginalName() }}</span>
+                            <span class="text-[10px] text-slate-400 font-medium block">Ukuran: {{ number_format($excelFile->getSize() / 1024, 1) }} KB</span>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-full border border-emerald-200">
+                        <x-tabler-circle-check class="h-4 w-4 text-emerald-600" />
+                        Terunggah
+                    </span>
+                </div>
+            @endif
+        </div>
+
+        <x-slot:footer>
+            <div class="flex justify-end gap-2">
+                <x-ts:button size="sm" flat color="slate" wire:click="closeImportModal">Batal</x-ts:button>
+                <x-ts:button size="sm" color="indigo" wire:click="importExcel" loading="importExcel" :disabled="!$excelFile">
+                    <x-tabler-upload class="h-4 w-4 mr-1" />
+                    Mulai Impor Gaji
+                </x-ts:button>
             </div>
         </x-slot:footer>
     </x-ts:modal>
