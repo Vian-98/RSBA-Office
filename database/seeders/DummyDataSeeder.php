@@ -70,7 +70,7 @@ class DummyDataSeeder extends Seeder
 
         DB::table('surat_cuti_jenis')->insert([
             ['id' => 1, 'nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 2, 'nama' => 'Cuti Sakit', 'lama' => 3, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 2, 'nama' => 'Cuti Sakit', 'lama' => 0, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 3, 'nama' => 'Cuti Melahirkan', 'lama' => 90, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 4, 'nama' => 'Cuti Alasan Penting', 'lama' => 5, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
         ]);
