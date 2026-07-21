@@ -47,7 +47,7 @@
     </div>
 
     {{-- Stat Cards --}}
-    <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         <div class="rounded-lg bg-white p-3 shadow-sm border-l-4 border-indigo-500">
             <div class="text-xs text-gray-500 uppercase font-semibold">Total Pegawai</div>
             <div class="text-xl font-bold text-gray-800 mt-1">{{ $simulasiData['total_pegawai'] ?? 0 }}</div>
@@ -71,6 +71,19 @@
         <div class="rounded-lg bg-white p-3 shadow-sm border-l-4 border-gray-400">
             <div class="text-xs text-gray-500 uppercase font-semibold">Jadwal Belum Ada</div>
             <div class="text-xl font-bold text-gray-700 mt-1">{{ $simulasiData['total_jadwal_belum_ada'] ?? 0 }}</div>
+        </div>
+        {{-- DEFISIT CARDS --}}
+        <div class="rounded-lg bg-white p-3 shadow-sm border-l-4 border-orange-500"
+             title="Pegawai yang kuota cuti tahunannya tidak mencukupi setelah event ini diterapkan">
+            <div class="text-xs text-orange-600 uppercase font-semibold">⚠ Pegawai Defisit</div>
+            <div class="text-xl font-bold text-orange-600 mt-1">{{ $simulasiData['total_pegawai_defisit'] ?? 0 }} pegawai</div>
+            <div class="text-xs text-gray-400 mt-0.5">Kuota tidak cukup</div>
+        </div>
+        <div class="rounded-lg bg-white p-3 shadow-sm border-l-4 border-orange-400"
+             title="Total akumulasi hari yang melebihi saldo cuti tahunan seluruh pegawai defisit">
+            <div class="text-xs text-orange-600 uppercase font-semibold">⚠ Total Hari Defisit</div>
+            <div class="text-xl font-bold text-orange-600 mt-1">{{ $simulasiData['total_hari_defisit'] ?? 0 }} hari</div>
+            <div class="text-xs text-gray-400 mt-0.5">Akumulasi selisih</div>
         </div>
     </div>
 
@@ -101,7 +114,9 @@
             </div>
         </div>
 
-        <div x-show="open" x-collapse class="overflow-x-auto border rounded-lg">
+           <div x-show="open" x-collapse class="overflow-x-auto border rounded-lg"
+               wire:loading.remove
+               wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori">
             <table class="w-full text-left text-sm text-gray-600">
                 <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                     <tr>
@@ -149,6 +164,28 @@
                 </tbody>
             </table>
         </div>
+
+        <div x-show="open"
+             x-collapse
+             class="border rounded-lg p-4 bg-gray-50"
+             wire:loading
+             wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori">
+            <div class="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                <svg class="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Memuat hasil simulasi...
+            </div>
+
+            <div class="space-y-2 animate-pulse">
+                <div class="h-10 bg-gray-200 rounded"></div>
+                <div class="h-10 bg-gray-200 rounded"></div>
+                <div class="h-10 bg-gray-200 rounded"></div>
+                <div class="h-10 bg-gray-200 rounded"></div>
+                <div class="h-10 bg-gray-200 rounded"></div>
+            </div>
+        </div>
     </div>
 
     {{-- Quota Summary Table --}}
@@ -165,7 +202,9 @@
                 </div>
             </div>
 
-            <div x-show="open" x-collapse class="overflow-x-auto border rounded-lg">
+              <div x-show="open" x-collapse class="overflow-x-auto border rounded-lg"
+                  wire:loading.remove
+                  wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori">
                 <table class="w-full text-left text-sm text-gray-600">
                     <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                         <tr>
@@ -174,15 +213,26 @@
                             <th class="px-4 py-3 text-center">Sisa Cuti Saat Ini</th>
                             <th class="px-4 py-3 text-center">Hari Terpotong Event Ini</th>
                             <th class="px-4 py-3 text-center">Proyeksi Sisa Cuti</th>
+                            <th class="px-4 py-3 text-center text-orange-600">Defisit</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @php
                             $terdampakSummary = collect($simulasiData['karyawan_summary'] ?? [])->filter(fn($k) => $k['hari_terpotong'] > 0);
+                            $totalDefisit = $simulasiData['total_pegawai_defisit'] ?? 0;
+                            $totalHariDef = $simulasiData['total_hari_defisit'] ?? 0;
                         @endphp
 
+                        @if($totalDefisit > 0)
+                            <tr class="bg-orange-50">
+                                <td colspan="6" class="px-4 py-2 text-xs text-orange-700 font-semibold">
+                                    ⚠ Proyeksi Bisnis: <strong>{{ $totalDefisit }} pegawai</strong> akan defisit kuota dengan total akumulasi <strong>{{ $totalHariDef }} hari</strong> melebihi saldo — perlu dipertimbangkan dalam perencanaan SDM.
+                                </td>
+                            </tr>
+                        @endif
+
                         @forelse($terdampakSummary as $ksum)
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50 {{ $ksum['is_minus'] ? 'bg-orange-50/40' : '' }}">
                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $ksum['nama'] }}</td>
                                 <td class="px-4 py-3 text-xs">{{ $ksum['kategori'] }}</td>
                                 <td class="px-4 py-3 text-center font-mono font-semibold">{{ $ksum['sisa_cuti_saat_ini'] }} hari</td>
@@ -198,16 +248,46 @@
                                         </span>
                                     @endif
                                 </td>
+                                <td class="px-4 py-3 text-center">
+                                    @if($ksum['is_minus'])
+                                        <span class="text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded">
+                                            -{{ $ksum['hari_defisit'] }} hari
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-gray-400">—</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
                                     Tidak ada pegawai yang terpotong kuota cuti tahunan pada event ini.
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            <div x-show="open"
+                 x-collapse
+                 class="border rounded-lg p-4 bg-orange-50/30"
+                 wire:loading
+                 wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori">
+                <div class="flex items-center gap-2 text-sm text-orange-700 mb-3">
+                    <svg class="animate-spin h-4 w-4 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    Memuat proyeksi kuota cuti...
+                </div>
+
+                <div class="space-y-2 animate-pulse">
+                    <div class="h-9 bg-orange-100 rounded"></div>
+                    <div class="h-9 bg-orange-100 rounded"></div>
+                    <div class="h-9 bg-orange-100 rounded"></div>
+                    <div class="h-9 bg-orange-100 rounded"></div>
+                </div>
             </div>
         </div>
     @endif
