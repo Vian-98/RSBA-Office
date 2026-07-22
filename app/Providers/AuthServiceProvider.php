@@ -42,9 +42,17 @@ class AuthServiceProvider extends ServiceProvider
                 }
             }
 
-            // Izinkan semua user biasa yang login untuk melihat/mengakses halaman index jadwal kerja
+            // Halaman Jadwal Kerja hanya untuk Manajemen SDM/Kabid/Wadir, Koordinator Ruangan, Dokter, dan Pegawai Shift
             if ($ability === 'view-kepegawaian-jadwal-kerja') {
-                return true;
+                if (
+                    $user->hasRole(['Super-Admin', 'Staff-SDM', 'Kepala-Bidang', 'Wakil-Direktur']) ||
+                    $user->isKoordinator() ||
+                    $user->isDokterOrApprover() ||
+                    ($user->karyawan && $user->karyawan->kategori_kerja === \App\Enums\KategoriKerja::SHIFT)
+                ) {
+                    return true;
+                }
+                return false;
             }
 
             return null;

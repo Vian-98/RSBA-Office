@@ -240,8 +240,9 @@ class JadwalKerjaApprovalTest extends TestCase
         Role::firstOrCreate(['name' => 'Keuangan']);
         $userKeuangan->assignRole('Keuangan');
 
-        // User Keuangan bukan Super-Admin, bukan Staff-SDM, dan bukan Koordinator Ruangan
+        // User Keuangan bukan Super-Admin, bukan Staff-SDM, bukan Koordinator, dan bukan Pegawai Shift
         $this->assertFalse($userKeuangan->can('generate', JadwalKerja::class));
+        $this->assertFalse($userKeuangan->can('view-kepegawaian-jadwal-kerja'));
 
         Livewire::actingAs($userKeuangan)
             ->test(\App\Livewire\Kepegawaian\JadwalKerja\Generate::class)
