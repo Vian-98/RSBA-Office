@@ -49,7 +49,7 @@ class SkenarioTriRahayuSeeder extends Seeder
             'lama_cuti' => 3,
             'keterangan' => 'Liburan keluarga',
             'status' => StatusApproval::APPROVED,
-            'created_by' => 1,
+            'created_by' => \App\Models\User::first()?->id,
         ]);
 
         // 3. Buat Surat Izin / Alasan Penting (18 - 19 Juni 2026)
@@ -64,7 +64,7 @@ class SkenarioTriRahayuSeeder extends Seeder
             'lama_cuti' => 2,
             'keterangan' => 'Mengurus dokumen keluarga penting',
             'status' => StatusApproval::APPROVED,
-            'created_by' => 1,
+            'created_by' => \App\Models\User::first()?->id,
         ]);
 
         // 4. Update Jadwal Kerja Detail untuk mencerminkan Cuti, Izin, dan Alfa

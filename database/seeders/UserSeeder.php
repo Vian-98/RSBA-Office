@@ -97,6 +97,22 @@ class UserSeeder extends Seeder
                 'ruangan_id' => 1, // UGD
             ],
             [
+                'email' => 'kabid@rsba.com',
+                'nama' => 'Kepala Bidang',
+                'nip' => '9999999991',
+                'nik' => '9999999999999991',
+                'role' => 'Kepala-Bidang',
+                'ruangan_id' => null,
+            ],
+            [
+                'email' => 'wadir@rsba.com',
+                'nama' => 'Wakil Direktur',
+                'nip' => '9999999992',
+                'nik' => '9999999999999992',
+                'role' => 'Wakil-Direktur',
+                'ruangan_id' => null,
+            ],
+            [
                 'email' => 'pajak@rsba.com',
                 'nama' => 'Staff Pajak',
                 'nip' => '8888888888',
@@ -136,14 +152,15 @@ class UserSeeder extends Seeder
             $user = User::updateOrCreate(
                 ['email' => $u['email']],
                 [
-                    'password' => Hash::make('1234'),
+                    'password' => '1234',
                     'karyawan_id' => $karyawan->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]
             );
 
-            // Assign role safely
+            // Ensure role exists before assigning
+            Role::firstOrCreate(['name' => $u['role']]);
             $user->syncRoles([$u['role']]);
         }
 
