@@ -20,6 +20,9 @@ class Add extends Component
 
     public ?AssetBarang $assetBarang;
 
+    public $target_asset_id;
+    public array $targetAssetOptions = [];
+
     public $priority = 'normal';
     public array $priorityPermintaan = [
         ['value' => 'normal', 'label' => 'Normal'],
@@ -84,6 +87,7 @@ class Add extends Component
     public function rules(): array
     {
         return  [
+            'target_asset_id' => 'required',
             'priority' => 'required',
             'ket_priority' => $this->is_normal ? 'nullable' : 'required|string|max:255',
             'note' => 'required|string|max:255',
@@ -104,9 +108,11 @@ class Add extends Component
                 return $file->store('maintenanceReqs/lampiran', 'public');
             })->toArray();
 
+            $targetAsset = AssetBarang::findOrFail($this->target_asset_id);
+
             // Perpared data for submission
             $data = [
-                'asset_id' => $this->assetBarang->id,
+                'asset_id' => $targetAsset->id,
                 'user_req_id' => auth()->id(),
                 'priority' => $this->priority,
                 'ket_priority' => $this->ket_priority,
@@ -115,27 +121,38 @@ class Add extends Component
             ];
 
             // Create a new maintenance request
-            $maintReq = $this->assetBarang->maintenanceRequests()->create($data);
+            $maintReq = $targetAsset->maintenanceRequests()->create($data);
 
             // Log sistem
+            $itemName = $targetAsset->id === $this->assetBarang->id 
+                ? 'Asset Utama (' . ($targetAsset->barang->nama ?? '-') . ')'
+                : 'Komponen (' . ($targetAsset->barang->nama ?? '-') . ')';
+
             \App\Models\Maintenance\TicketComment::create([
                 'request_id' => $maintReq->id,
                 'user_id'    => auth()->id(),
-                'body'       => 'Tiket dibuat oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name ?? 'User'),
+                'body'       => 'Tiket dibuat oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name ?? 'User') . ' untuk perbaikan ' . $itemName,
                 'type'       => 'log',
             ]);
 
-            //update asset status
-            $this->assetBarang->update([
+            // update target asset status
+            $targetAsset->update([
                 'status' => 'diperbaiki',
             ]);
 
-            // Update components status if any
-            $this->assetBarang->components->each(function ($component) {
-                $component->update([
+            if ($targetAsset->id === $this->assetBarang->id) {
+                // Update components status if main asset is being repaired
+                $this->assetBarang->components->each(function ($component) {
+                    $component->update([
+                        'status' => 'diperbaiki',
+                    ]);
+                });
+            } else {
+                // Update main asset status as well so ticket status is visible
+                $this->assetBarang->update([
                     'status' => 'diperbaiki',
                 ]);
-            });
+            }
             // Commit the transaction
             DB::commit();
             $this->dispatch('maintenance-request-created');
@@ -162,8 +179,26 @@ class Add extends Component
 
     public function mount($id): void
     {
-        $this->assetBarang = AssetBarang::with(['barang', 'ruangan'])
+        $this->assetBarang = AssetBarang::with(['barang', 'ruangan', 'components.barang'])
             ->findOrFail($id);
+
+        $this->target_asset_id = $this->assetBarang->id;
+
+        $options = [
+            [
+                'value' => $this->assetBarang->id,
+                'label' => 'Asset Utama: ' . ($this->assetBarang->barang->nama ?? '-') . ' (' . ($this->assetBarang->kode ?? 'Belum ada kode') . ')',
+            ]
+        ];
+
+        foreach ($this->assetBarang->components as $komponen) {
+            $options[] = [
+                'value' => $komponen->id,
+                'label' => 'Komponen: ' . ($komponen->barang->nama ?? '-') . ' (' . ($komponen->kode ?? '-') . ')',
+            ];
+        }
+
+        $this->targetAssetOptions = $options;
     }
 
     public function render()

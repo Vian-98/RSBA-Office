@@ -7,6 +7,13 @@
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <title>{{ $title ?? config('app.name') }}</title>
 
+        <script>
+            document.addEventListener('alpine:init', () => {
+                if (window.Alpine && !window.Alpine.store('theme')) {
+                    window.Alpine.store('theme', localStorage.getItem('theme') || 'light');
+                }
+            });
+        </script>
         <tallstackui:script />
         @filamentStyles
         @vite(['resources/css/app.css', 'resources/js/app.js'])

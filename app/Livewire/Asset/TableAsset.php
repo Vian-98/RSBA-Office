@@ -177,6 +177,20 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                     ->icon('tabler-tools')
                     ->color('danger')
                     ->form([
+                        \Filament\Forms\Components\Select::make('target_asset_id')
+                            ->label('Item yang Diperbaiki')
+                            ->options(function ($record) {
+                                $options = [
+                                    $record->id => 'Asset Utama: ' . ($record->barang->nama ?? 'Asset') . ' (' . ($record->kode ?? 'Belum ada kode') . ')'
+                                ];
+                                foreach ($record->components as $comp) {
+                                    $options[$comp->id] = 'Komponen: ' . ($comp->barang->nama ?? 'Komponen') . ' (' . ($comp->kode ?? '-') . ')';
+                                }
+                                return $options;
+                            })
+                            ->default(fn ($record) => $record->id)
+                            ->required()
+                            ->visible(fn ($record) => $record->components->count() > 0),
                         \Filament\Forms\Components\Select::make('priority')
                             ->label('Prioritas')
                             ->options([
@@ -204,8 +218,11 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                     ->action(function (array $data, $record, $livewire) {
                         \Illuminate\Support\Facades\DB::beginTransaction();
                         try {
+                            $targetAssetId = $data['target_asset_id'] ?? $record->id;
+                            $targetAsset = AssetBarang::find($targetAssetId) ?? $record;
+
                             // Create the maintenance request
-                            $maintReq = $record->maintenanceRequests()->create([
+                            $maintReq = $targetAsset->maintenanceRequests()->create([
                                 'user_req_id' => auth()->id(),
                                 'priority' => $data['priority'],
                                 'ket_priority' => $data['ket_priority'] ?? null,
@@ -214,19 +231,28 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                                 'status' => 'pending',
                             ]);
 
+                            $itemName = $targetAsset->id === $record->id 
+                                ? 'Asset Utama (' . ($targetAsset->barang->nama ?? '-') . ')'
+                                : 'Komponen (' . ($targetAsset->barang->nama ?? '-') . ')';
+
                             // Log sistem
                             \App\Models\Maintenance\TicketComment::create([
                                 'request_id' => $maintReq->id,
                                 'user_id'    => auth()->id(),
-                                'body'       => 'Tiket dibuat oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name ?? 'User'),
+                                'body'       => 'Tiket dibuat oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name ?? 'User') . ' untuk perbaikan ' . $itemName,
                                 'type'       => 'log',
                             ]);
 
                             // Update asset status
-                            $record->update(['status' => 'diperbaiki']);
-                            $record->components->each(function ($component) {
-                                $component->update(['status' => 'diperbaiki']);
-                            });
+                            $targetAsset->update(['status' => 'diperbaiki']);
+
+                            if ($targetAsset->id === $record->id) {
+                                $record->components->each(function ($component) {
+                                    $component->update(['status' => 'diperbaiki']);
+                                });
+                            } else {
+                                $record->update(['status' => 'diperbaiki']);
+                            }
 
                             \Illuminate\Support\Facades\DB::commit();
 
