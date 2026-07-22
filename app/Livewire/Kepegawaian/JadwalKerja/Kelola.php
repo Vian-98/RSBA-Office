@@ -26,13 +26,17 @@ class Kelola extends Component
     public $shiftOptions = [];
     public $isReadOnly = false;
     public $cutiDates = [];
+    public $catatanRevisiInput = '';
+    public $showRevisiModal = false;
 
     public function mount($id, AturanJadwalService $service)
     {
         $this->jadwalKerja = JadwalKerja::with([
             'ruangan',
             'details.karyawan',
-            'details.shift'
+            'details.shift',
+            'diketahuiOleh',
+            'disetujuiOleh'
         ])->findOrFail($id);
 
         $karyawanIds = $this->jadwalKerja->details->pluck('karyawan_id')->unique()->toArray();
@@ -60,13 +64,11 @@ class Kelola extends Component
             } else {
                 $ownRuanganId = $user->karyawan?->ruangan_id;
                 $ruanganIds = $user->isKoordinator() ? ($user->getRuanganKoordinatorIds() ?? []) : [];
-                
-                // Cek hak melihat
+
                 if ($this->jadwalKerja->ruangan_id === $ownRuanganId || in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
                     $canView = true;
                 }
-                
-                // Cek hak mengelola (edit)
+
                 if (in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
                     $canManage = true;
                 }
@@ -89,7 +91,9 @@ class Kelola extends Component
             ];
         })->toArray();
 
-        $this->isReadOnly = $this->jadwalKerja->status === StatusJadwalKerja::LOCKED || !$canManage;
+        // Read-only mode is active if status is not draft/ditolak, unless user is Super-Admin
+        $isEditableStatus = in_array($this->jadwalKerja->status, [StatusJadwalKerja::DRAFT, StatusJadwalKerja::DITOLAK]);
+        $this->isReadOnly = (!$isEditableStatus && !($user && $user->hasRole('Super-Admin'))) || !$canManage;
 
         // Populate dates for header
         $daysInMonth = Carbon::create($this->jadwalKerja->tahun, $this->jadwalKerja->bulan, 1)->daysInMonth;
@@ -101,7 +105,7 @@ class Kelola extends Component
 
         // Group details by Karyawan
         $grouped = $this->jadwalKerja->details->groupBy('karyawan_id');
-        
+
         foreach ($grouped as $karyawanId => $details) {
             $karyawan = $details->first()->karyawan;
             $row = [
@@ -114,7 +118,7 @@ class Kelola extends Component
             foreach ($details as $detail) {
                 $day = $detail->tanggal->day;
                 $row['details'][$day] = $detail;
-                
+
                 // Init state
                 $this->state[$detail->id] = $detail->shift_id;
             }
@@ -128,10 +132,9 @@ class Kelola extends Component
         $karyawansInRoom = \App\Models\Sdm\Karyawan::where('ruangan_id', $this->jadwalKerja->ruangan_id)
             ->whereNull('resign_at')
             ->get();
-            
+
         $existingDetails = $this->jadwalKerja->details;
-        
-        // Build a fast lookup map of existing details (karyawan_id => array of dates)
+
         $existingMap = [];
         foreach ($existingDetails as $detail) {
             $dateStr = $detail->tanggal->format('Y-m-d');
@@ -141,7 +144,6 @@ class Kelola extends Component
         $startDate = $this->dates[0]->format('Y-m-d');
         $endDate = $this->dates[$daysInMonth - 1]->format('Y-m-d');
 
-        // Fetch approved cuti dates
         $approvedCutis = \App\Models\Surat\SuratCuti::where('status', 'approved')
             ->where(function($q) use ($startDate, $endDate) {
                 $q->whereBetween('tgl_mulai', [$startDate, $endDate])
@@ -165,14 +167,14 @@ class Kelola extends Component
                 }
             }
         }
-        
+
         $detailsToInsert = [];
-        
+
         foreach ($karyawansInRoom as $karyawan) {
             for ($d = 1; $d <= $daysInMonth; $d++) {
                 $dateStr = $this->dates[$d - 1]->format('Y-m-d');
                 $exists = isset($existingMap[$karyawan->id][$dateStr]);
-                
+
                 if (!$exists) {
                     $statusKehadiran = 'belum_dicek';
                     $catatan = null;
@@ -195,7 +197,7 @@ class Kelola extends Component
                 }
             }
         }
-        
+
         if (!empty($detailsToInsert)) {
             foreach (array_chunk($detailsToInsert, 500) as $chunk) {
                 JadwalKerjaDetail::insert($chunk);
@@ -209,7 +211,7 @@ class Kelola extends Component
         $this->authorize('kelola', $this->jadwalKerja);
 
         if ($this->isReadOnly) {
-            $this->toast()->error('Gagal', 'Jadwal kerja ini sudah terkunci (locked).')->send();
+            $this->toast()->error('Gagal', 'Jadwal kerja ini dalam status terlindungi / read-only.')->send();
             return;
         }
 
@@ -219,33 +221,29 @@ class Kelola extends Component
 
             foreach ($this->state as $detailId => $shiftId) {
                 $detail = JadwalKerjaDetail::find($detailId);
-                
-                // Force shift to null if they are on approved cuti
+
                 $dateStr = $detail->tanggal->format('Y-m-d');
                 $isCuti = isset($this->cutiDates["{$detail->karyawan_id}-{$dateStr}"]);
                 if ($isCuti) {
                     $shiftId = null;
                 } else {
-                    // Konversi empty string/null/0 ke null
                     $shiftId = empty($shiftId) ? null : (int) $shiftId;
                 }
-                
-                // Cek apakah ada perubahan shift
+
                 if ($detail->shift_id !== $shiftId) {
-                    
                     \App\Models\Sdm\JadwalKerjaLog::create([
                         'jadwal_kerja_id' => $this->jadwalKerja->id,
                         'detail_id'       => $detail->id,
                         'karyawan_id'     => $detail->karyawan_id,
                         'shift_lama_id'   => $detail->shift_id,
                         'shift_baru_id'   => $shiftId,
-                        'diubah_oleh'     => Auth::user()->karyawan_id ?? 1, // Fallback ke 1 jika user bukan karyawan
+                        'diubah_oleh'     => Auth::user()->karyawan_id ?? 1,
                     ]);
 
                     $detail->update([
                         'shift_id' => $shiftId
                     ]);
-                    
+
                     $logCount++;
                 }
             }
@@ -263,32 +261,97 @@ class Kelola extends Component
         }
     }
 
-    public function publish()
+    public function ajukanKeKabid()
     {
-        $this->authorize('publish', $this->jadwalKerja);
+        $this->authorize('ajukanKabid', $this->jadwalKerja);
 
-        if ($this->jadwalKerja->status === StatusJadwalKerja::LOCKED) {
-            $this->toast()->error('Gagal', 'Jadwal sudah terkunci.')->send();
-            return;
+        if (!$this->isReadOnly) {
+            $this->save();
         }
 
-        $this->dialog()
-            ->question('Publikasikan Jadwal?', 'Jadwal yang dipublikasikan dapat dilihat oleh pegawai dan pengajuan tukar shift dapat dilakukan.')
-            ->confirm('Ya, Publikasikan', 'confirmPublish')
-            ->cancel('Batal')
-            ->send();
+        $this->jadwalKerja->update([
+            'status' => StatusJadwalKerja::MENUNGGU_KABID,
+            'catatan_revisi' => null,
+        ]);
+
+        $this->toast()->success('Berhasil', 'Jadwal kerja berhasil diajukan ke Kepala Bidang!')->send();
+        return redirect()->route('kepegawaian.jadwal-kerja.index');
     }
 
-    public function confirmPublish()
+    public function ajukanKeWadirLangsung()
     {
-        $this->save(); // Simpan draft terakhir
+        $this->authorize('ajukanWadirLangsung', $this->jadwalKerja);
+
+        if (!$this->isReadOnly) {
+            $this->save();
+        }
+
+        $this->jadwalKerja->update([
+            'status' => StatusJadwalKerja::MENUNGGU_WADIR,
+            'catatan_revisi' => null,
+        ]);
+
+        $this->toast()->success('Berhasil', 'Jadwal Dokter berhasil diajukan langsung ke Wadir!')->send();
+        return redirect()->route('kepegawaian.jadwal-kerja.index');
+    }
+
+    public function konfirmasiKabid()
+    {
+        $this->authorize('konfirmasiKabid', $this->jadwalKerja);
+
+        $karyawanId = Auth::user()->karyawan_id ?? Auth::user()->karyawan?->id;
+
+        $this->jadwalKerja->update([
+            'status' => StatusJadwalKerja::MENUNGGU_WADIR,
+            'diketahui_oleh' => $karyawanId,
+            'diketahui_at' => now(),
+        ]);
+
+        $this->toast()->success('Berhasil', 'Jadwal kerja dikonfirmasi Diketahui Kabid & diteruskan ke Wadir!')->send();
+        return redirect()->route('kepegawaian.jadwal-kerja.index');
+    }
+
+    public function setujuiWadir()
+    {
+        $this->authorize('setujuiWadir', $this->jadwalKerja);
+
+        $karyawanId = Auth::user()->karyawan_id ?? Auth::user()->karyawan?->id;
 
         $this->jadwalKerja->update([
             'status' => StatusJadwalKerja::PUBLISHED,
+            'disetujui_oleh' => $karyawanId,
+            'disetujui_at' => now(),
             'published_at' => now(),
         ]);
 
-        $this->toast()->success('Berhasil', 'Jadwal berhasil dipublikasikan!')->send();
+        $this->toast()->success('Berhasil', 'Jadwal kerja disetujui & resmi dipublikasikan!')->send();
+        return redirect()->route('kepegawaian.jadwal-kerja.index');
+    }
+
+    public function openRevisiModal()
+    {
+        $this->authorize('kembalikanDraft', $this->jadwalKerja);
+        $this->catatanRevisiInput = '';
+        $this->showRevisiModal = true;
+    }
+
+    public function confirmKembalikanDraft()
+    {
+        $this->authorize('kembalikanDraft', $this->jadwalKerja);
+        $this->validate([
+            'catatanRevisiInput' => 'required|string|min:3|max:500'
+        ], [
+            'catatanRevisiInput.required' => 'Catatan revisi wajib diisi saat mengembalikan jadwal.',
+            'catatanRevisiInput.min' => 'Catatan revisi minimal 3 karakter.'
+        ]);
+
+        $this->jadwalKerja->update([
+            'status' => StatusJadwalKerja::DITOLAK,
+            'catatan_revisi' => $this->catatanRevisiInput,
+        ]);
+
+        $this->showRevisiModal = false;
+        $this->toast()->warning('Dikembalikan', 'Jadwal kerja telah dikembalikan ke Draf dengan catatan revisi.')->send();
         return redirect()->route('kepegawaian.jadwal-kerja.index');
     }
 

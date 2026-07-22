@@ -169,7 +169,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
     public function table(Table $table): Table
     {
         $query = JadwalKerja::query()
-            ->with(['ruangan', 'pembuat']);
+            ->with(['ruangan', 'pembuat', 'diketahuiOleh', 'disetujuiOleh']);
 
         $user = Auth::user();
         if ($user) {
@@ -210,7 +210,9 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     ->badge()
                     ->color(fn ($state) => $state->color())
                     ->formatStateUsing(fn ($state) => $state->nama()),
-                TextColumn::make('pembuat.nama')->label('Dibuat Oleh'),
+                TextColumn::make('diketahuiOleh.nama')->label('Diketahui (Kabid)')->placeholder('—')->toggleable(),
+                TextColumn::make('disetujuiOleh.nama')->label('Disetujui (Wadir)')->placeholder('—')->toggleable(),
+                TextColumn::make('pembuat.nama')->label('Dibuat Oleh')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->recordActions([
                 Action::make('kelola')
@@ -238,7 +240,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     ->action(fn (JadwalKerja $record) => $record->delete())
                     ->successNotificationTitle('Jadwal berhasil dihapus')
                     ->visible(fn (JadwalKerja $record): bool => 
-                        $record->status === \App\Enums\StatusJadwalKerja::DRAFT && 
+                        in_array($record->status, [\App\Enums\StatusJadwalKerja::DRAFT, \App\Enums\StatusJadwalKerja::DITOLAK]) && 
                         (Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
                          (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? [])))
                     ),
