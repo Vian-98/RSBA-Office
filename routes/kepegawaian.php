@@ -16,6 +16,7 @@ Route::prefix('jadwal-kerja')
     ->name('jadwal-kerja.')
     ->group(function () {
         Route::get('/', App\Livewire\Kepegawaian\JadwalKerja\Index::class)->name('index');
+        Route::get('/tukar-dokter', App\Livewire\Kepegawaian\JadwalKerja\TukarJadwal::class)->name('tukar-dokter');
         Route::get('/kelola/{id}', App\Livewire\Kepegawaian\JadwalKerja\Kelola::class)->name('kelola');
     });
 
