@@ -156,12 +156,29 @@ class AssetBarangForm extends Form
 
         $nomor =  $this->main ? $mainNo . '.' . $subNo : $mainNo;
         
-        // Membuat singkatan ruangan (contoh: "Unit Gawat Darurat" -> "UGD")
+        // Membuat singkatan ruangan (contoh: "IGD (Instalasi Gawat Darurat)" -> "IGD", "Poliklinik Mata" -> "PM")
         $namaRuangan = $assetBarang->ruangan->nama ?? '';
-        $singkatanRuangan = collect(explode(' ', $namaRuangan))
+        
+        // Hapus teks dalam tanda kurung jika ada (misal: "IGD (Instalasi Gawat Darurat)" -> "IGD")
+        $cleanNama = trim(preg_replace('/\s*\(.*?\)/', '', $namaRuangan));
+        if (empty($cleanNama)) {
+            $cleanNama = trim(preg_replace('/[^a-zA-Z0-9\s]/', '', $namaRuangan));
+        }
+
+        $words = collect(explode(' ', $cleanNama))
+            ->map(fn($w) => preg_replace('/[^a-zA-Z0-9]/', '', $w))
             ->filter()
-            ->map(fn($word) => strtoupper(substr($word, 0, 1)))
-            ->join('');
+            ->values();
+
+        if ($words->count() === 1) {
+            $single = $words->first();
+            $singkatanRuangan = strlen($single) <= 4 ? strtoupper($single) : strtoupper(substr($single, 0, 3));
+        } else {
+            $singkatanRuangan = $words->map(fn($w) => strtoupper(substr($w, 0, 1)))->join('');
+        }
+
+        // Pastikan hanya karakter Alfanumerik (A-Z, 0-9) tanpa simbol seperti '(' atau ')'
+        $singkatanRuangan = preg_replace('/[^A-Z0-9]/', '', $singkatanRuangan);
 
         // return string formated kode (Contoh: AST-ATK-UGD-001)
         return 'AST-' . $prefix . '-' . $singkatanRuangan . '-' . $nomor;
