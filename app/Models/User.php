@@ -98,5 +98,34 @@ class User extends Authenticatable
         }
         return $this->koordinatorRuangans()->pluck('ruangan_id')->toArray();
     }
+
+    /**
+     * Cek apakah user ini merupakan Dokter atau Pengawas (Wadir/SDM/Super-Admin)
+     */
+    public function isDokterOrApprover(): bool
+    {
+        if ($this->hasRole(['Super-Admin', 'Wakil-Direktur', 'Staff-SDM']) || $this->can('approve-jadwal-wadir')) {
+            return true;
+        }
+
+        if ($this->hasRole(['Koordinator-Dokter', 'Dokter'])) {
+            return true;
+        }
+
+        if (!$this->karyawan_id) {
+            return false;
+        }
+
+        if (\Illuminate\Support\Facades\DB::table('dokter')->where('karyawan_id', $this->karyawan_id)->exists()) {
+            return true;
+        }
+
+        $karyawan = $this->karyawan;
+        if ($karyawan && (str_contains(strtolower($karyawan->gelar_depan ?? ''), 'dr') || str_contains(strtolower($karyawan->gelar_belakang ?? ''), 'sp'))) {
+            return true;
+        }
+
+        return false;
+    }
 }
 

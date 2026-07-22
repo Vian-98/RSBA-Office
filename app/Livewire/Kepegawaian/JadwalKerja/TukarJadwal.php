@@ -35,7 +35,11 @@ class TukarJadwal extends Component
     public function mount()
     {
         $user = Auth::user();
-        if ($user && $user->karyawan_id) {
+        if (!$user || !$user->isDokterOrApprover()) {
+            abort(403, 'Akses ditolak. Halaman Tukar Shift Dokter hanya dapat diakses oleh Dokter atau Manajemen.');
+        }
+
+        if ($user->karyawan_id) {
             $this->dokterPengajuId = $user->karyawan_id;
         }
 

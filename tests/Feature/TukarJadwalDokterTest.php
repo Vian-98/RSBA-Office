@@ -237,4 +237,38 @@ class TukarJadwalDokterTest extends TestCase
         $this->assertEquals($this->shiftPagi->id, $this->detailA->shift_id);
         $this->assertEquals($this->shiftMalam->id, $this->detailB->shift_id);
     }
+
+    #[Test]
+    public function pengguna_bukan_dokter_ditolak_mengakses_halaman_tukar_dokter(): void
+    {
+        $nonDokterKaryawan = Karyawan::create([
+            'nip'            => 'STAFF-001',
+            'nik'            => '3374000000000099',
+            'nama'           => 'Staff Admin Biasa',
+            'jk'             => 'L',
+            'tgl_lahir'      => '1995-01-01',
+            'hp'             => '081234567899',
+            'prov'           => 'Jateng',
+            'kab'            => 'Semarang',
+            'kec'            => 'Semarang',
+            'desa'           => 'Desa',
+            'alamat'         => 'Alamat',
+            'agama'          => 'islam',
+            'status'         => 'tetap',
+            'tgl_masuk'      => '2021-01-01',
+            'kategori_kerja' => 'reguler',
+        ]);
+
+        $nonDokterUser = User::create([
+            'name'        => 'Staff Biasa',
+            'email'       => 'staff_biasa@rsba.com',
+            'password'    => '1234',
+            'karyawan_id' => $nonDokterKaryawan->id,
+        ]);
+
+        $this->actingAs($nonDokterUser);
+
+        \Livewire\Livewire::test(\App\Livewire\Kepegawaian\JadwalKerja\TukarJadwal::class)
+            ->assertStatus(403);
+    }
 }
