@@ -13,9 +13,9 @@ class UmDataSeeder extends Seeder
     public function run(): void
     {
         $files = [
-            base_path('um_kategori.sql'),
-            base_path('um_satuan.sql'),
-            base_path('um_barang.sql'),
+            database_path('data/um_kategori.sql'),
+            database_path('data/um_satuan.sql'),
+            database_path('data/um_barang.sql'),
         ];
 
         foreach ($files as $file) {

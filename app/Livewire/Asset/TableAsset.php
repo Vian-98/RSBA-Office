@@ -173,11 +173,72 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
             ->recordActions([
                 Action::make('maintenance')
                     ->iconButton()
-                    ->tooltip('Buat Tiket Maintenance')
+                    ->extraAttributes(['title' => 'Buat Tiket Maintenance'])
                     ->icon('tabler-tools')
                     ->color('danger')
-                    ->url(fn($record) => route('umum.maintenance.index', ['asset_id' => $record->getKey()]))
-                    ->openUrlInNewTab(false)
+                    ->form([
+                        \Filament\Forms\Components\Select::make('priority')
+                            ->label('Prioritas')
+                            ->options([
+                                'normal' => 'Normal',
+                                'penting' => 'Penting',
+                                'darurat' => 'Darurat',
+                            ])
+                            ->default('normal')
+                            ->required()
+                            ->live(),
+                        \Filament\Forms\Components\TextInput::make('ket_priority')
+                            ->label('Keterangan Prioritas')
+                            ->required(fn (\Filament\Forms\Get $get) => $get('priority') !== 'normal')
+                            ->visible(fn (\Filament\Forms\Get $get) => $get('priority') !== 'normal')
+                            ->maxLength(255),
+                        \Filament\Forms\Components\Textarea::make('note')
+                            ->label('Keluhan / Masalah (Note)')
+                            ->required()
+                            ->maxLength(255),
+                        \Filament\Forms\Components\FileUpload::make('lampiran')
+                            ->label('Lampiran / Foto')
+                            ->multiple()
+                            ->directory('maintenanceReqs/lampiran'),
+                    ])
+                    ->action(function (array $data, $record, $livewire) {
+                        \Illuminate\Support\Facades\DB::beginTransaction();
+                        try {
+                            // Create the maintenance request
+                            $maintReq = $record->maintenanceRequests()->create([
+                                'user_req_id' => auth()->id(),
+                                'priority' => $data['priority'],
+                                'ket_priority' => $data['ket_priority'] ?? null,
+                                'note' => $data['note'],
+                                'lampiran' => $data['lampiran'] ?? null,
+                                'status' => 'pending',
+                            ]);
+
+                            // Log sistem
+                            \App\Models\Maintenance\TicketComment::create([
+                                'request_id' => $maintReq->id,
+                                'user_id'    => auth()->id(),
+                                'body'       => 'Tiket dibuat oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name ?? 'User'),
+                                'type'       => 'log',
+                            ]);
+
+                            // Update asset status
+                            $record->update(['status' => 'diperbaiki']);
+                            $record->components->each(function ($component) {
+                                $component->update(['status' => 'diperbaiki']);
+                            });
+
+                            \Illuminate\Support\Facades\DB::commit();
+
+                            // Use TallStackUI Toast for notification since we might not have Filament Notifications configured
+                            $livewire->toast()->success('Berhasil', 'Tiket perbaikan berhasil dikirim.')->send();
+                        } catch (\Throwable $e) {
+                            \Illuminate\Support\Facades\DB::rollBack();
+                            $livewire->toast()->error('Gagal', 'Terjadi kesalahan saat membuat tiket.')->send();
+                        }
+                    })
+                    ->modalHeading(fn ($record) => 'Buat Tiket Perbaikan - ' . $record->nama)
+                    ->modalWidth('lg')
                     ->visible(fn($record) => !$record->maintenanceRequests->count()),
 
                 Action::make('lihat_tiket')
