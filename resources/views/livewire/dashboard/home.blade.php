@@ -300,7 +300,7 @@
                             </div>
                             <div class="text-right">
                                 <p class="text-sm font-bold text-slate-800">{{ formatRupiah($purchase['total'], true, false) }}</p>
-                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-2xs font-semibold tracking-wider uppercase {{ $purchase['status_pembayaran'] === 'lunas' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100' }}">
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase {{ $purchase['status_pembayaran'] === 'lunas' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100' }}">
                                     {{ $purchase['status_pembayaran'] ?? 'tempo' }}
                                 </span>
                             </div>
