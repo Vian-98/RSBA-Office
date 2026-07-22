@@ -46,8 +46,12 @@ class Index extends Component
         $this->periode = now()->format('Y-m');
 
         // Load payroll parameters from DB
-        $this->config_umk = DB::table('sdm_payroll_settings')->where('key', 'umk')->value('value');
-        $this->config_potongan_telat = DB::table('sdm_payroll_settings')->where('key', 'potongan_telat_per_menit')->value('value');
+        $this->config_umk = DB::table('sdm_payroll_settings')->where('key', 'umk')->value('value') ?: 3000000;
+        $this->config_potongan_telat = DB::table('sdm_payroll_settings')->where('key', 'potongan_telat_per_kejadian')->value('value');
+        if (is_null($this->config_potongan_telat)) {
+            DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'potongan_telat_per_kejadian'], ['value' => '50000', 'created_at' => now(), 'updated_at' => now()]);
+            $this->config_potongan_telat = 50000;
+        }
 
         $this->config_toleransi_telat = DB::table('sdm_payroll_settings')->where('key', 'toleransi_telat_menit')->value('value');
         if (is_null($this->config_toleransi_telat)) {
@@ -154,7 +158,7 @@ class Index extends Component
         try {
             // Save settings
             DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'umk'], ['value' => $this->config_umk, 'updated_at' => now()]);
-            DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'potongan_telat_per_menit'], ['value' => $this->config_potongan_telat, 'updated_at' => now()]);
+            DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'potongan_telat_per_kejadian'], ['value' => $this->config_potongan_telat, 'updated_at' => now()]);
             DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'toleransi_telat_menit'], ['value' => $this->config_toleransi_telat, 'updated_at' => now()]);
 
             // Save allocations
@@ -329,9 +333,21 @@ class Index extends Component
         $isOnlyPajak = $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
         $isSDM = $user->hasRole('Staff-SDM') || $user->hasRole('Super-Admin');
 
+        $potonganBreakdown = [
+            'bpjs_kes' => (double) $slips->sum('potongan_bpjs_kes'),
+            'bpjs_tk' => (double) $slips->sum('potongan_bpjs_tk'),
+            'pph21' => (double) $slips->sum('potongan_pph21'),
+            'absensi' => (double) $slips->sum('potongan_absensi'),
+            'cash_bon' => (double) $slips->sum('potongan_cash_bon'),
+            'obat' => (double) $slips->sum('potongan_obat'),
+            'bank' => (double) $slips->sum('potongan_bank'),
+            'lain' => (double) $slips->sum('potongan_lain'),
+        ];
+
         return view('livewire.gaji.rekap.index', [
             'totalGajiBersih' => $totalGajiBersih,
             'totalPotongan' => $totalPotongan,
+            'potonganBreakdown' => $potonganBreakdown,
             'jumlahKaryawan' => $jumlahKaryawan,
             'percentChange' => $percentChange,
             'lastMonthNet' => $lastMonthNet,

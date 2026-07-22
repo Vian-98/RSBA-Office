@@ -90,13 +90,14 @@ class Cuti extends Component implements HasTable, HasForms, HasActions
     {
         return $tableCuti
             ->query(
-                SuratCuti::where('karyawan_id', Auth::user()->karyawan_id)
+                SuratCuti::query()->where('karyawan_id', Auth::user()->karyawan_id)
                     ->latest()
             )
             ->deferLoading(false)
             ->columns([
                 TextColumn::make('no_surat')
-                    ->label('No Surat Cuti'),
+                    ->label('No Surat Cuti')
+                    ->description(fn(SuratCuti $record) => $record->sumber === 'cuti_bersama' ? 'Cuti Bersama Sistem' : null),
 
                 TextColumn::make('status')
                     ->label('Status')

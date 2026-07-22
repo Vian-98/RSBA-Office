@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             JadwalDummyJuniSeeder::class, // Generate draf jadwal kerja Juni 2026
             SkenarioTriRahayuSeeder::class, // Skenario absensi tes Tri Rahayu
             JadwalDuaTahunSeeder::class, // Generate jadwal dan absensi 2023 - 2024
+            CutiBersamaSeeder::class, // Event Cuti Bersama
         ]);
     }
 }

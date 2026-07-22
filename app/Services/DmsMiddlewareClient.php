@@ -69,12 +69,17 @@ class DmsMiddlewareClient
         }
     }
 
-    public function registerDisplay(string $displayId, string $name): bool
+    public function registerDisplay(string $displayId, string $name, ?string $ipAddress = null): bool
     {
-        $response = $this->request()->post('/displays', [
+        $payload = [
             'display_id' => $displayId,
             'name' => $name,
-        ]);
+        ];
+        if (!empty($ipAddress)) {
+            $payload['ip_address'] = $ipAddress;
+        }
+
+        $response = $this->request()->post('/displays', $payload);
         
         if (!$response->successful()) {
             $err = $response->json('error.message') ?? 'Gagal mendaftarkan monitor.';
@@ -84,11 +89,14 @@ class DmsMiddlewareClient
         return true;
     }
 
-    public function updateDisplay(string $displayId, string $name): bool
+    public function updateDisplay(string $displayId, string $name, ?string $ipAddress = null): bool
     {
-        $response = $this->request()->put("/displays/{$displayId}", [
+        $payload = [
             'name' => $name,
-        ]);
+            'ip_address' => $ipAddress,
+        ];
+
+        $response = $this->request()->put("/displays/{$displayId}", $payload);
         
         if (!$response->successful()) {
             $err = $response->json('error.message') ?? 'Gagal mengubah nama monitor.';

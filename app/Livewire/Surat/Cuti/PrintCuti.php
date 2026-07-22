@@ -70,6 +70,9 @@ class PrintCuti extends Component
 
     public function render()
     {
+        if ($this->suratCuti && $this->suratCuti->exists) {
+            $this->suratCuti = $this->suratCuti->fresh();
+        }
         return view('livewire.surat.cuti.print-cuti');
     }
 }

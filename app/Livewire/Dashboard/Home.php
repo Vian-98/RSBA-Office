@@ -254,7 +254,7 @@ class Home extends Component
             : 0;
 
         // Mendapatkan nama bulan lokalisasi Indonesia
-        $dateObj = \Carbon\Carbon::create($currentYear, $currentMonth, 1);
+        $dateObj = Carbon::create($currentYear, $currentMonth, 1);
         $bulanNama = $dateObj->translatedFormat('F Y');
 
         $this->rekapAbsen = [

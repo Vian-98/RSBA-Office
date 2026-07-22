@@ -1,3 +1,4 @@
+
 <div>
     <form wire:submit.prevent='submit' class="flex flex-col gap-2" x-data="listDetailInvoice">
         <div class="flex flex-col gap-4 lg:flex-row">

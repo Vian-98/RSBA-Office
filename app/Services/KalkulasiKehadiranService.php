@@ -47,9 +47,22 @@ class KalkulasiKehadiranService
         }
 
         if ($cuti) {
+            $isCutiBersama = isset($cuti['sumber']) && $cuti['sumber'] === 'cuti_bersama';
             return [
-                'status' => StatusKehadiran::CUTI,
-                'catatan' => 'Cuti/Izin resmi (' . ($cuti['no_surat'] ?? '') . ')'
+                'status' => $isCutiBersama ? StatusKehadiran::CUTI_BERSAMA : StatusKehadiran::CUTI,
+                'catatan' => $isCutiBersama ? 'Cuti Bersama' : ('Cuti/Izin resmi (' . ($cuti['no_surat'] ?? '') . ')')
+            ];
+        }
+
+        // 1.5. Cek Cuti Bersama tanpa potong kuota (Event diterapkan)
+        $isCutiBersamaTanggal = \App\Models\Sdm\CutiBersamaTanggal::where('tanggal', $tanggal)
+            ->whereHas('cutiBersama', fn($q) => $q->where('status', 'diterapkan'))
+            ->exists();
+
+        if ($isCutiBersamaTanggal && empty($clockIn) && empty($clockOut)) {
+            return [
+                'status' => StatusKehadiran::CUTI_BERSAMA,
+                'catatan' => 'Hari Cuti Bersama'
             ];
         }
 

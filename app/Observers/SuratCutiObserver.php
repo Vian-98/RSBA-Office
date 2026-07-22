@@ -19,16 +19,24 @@ class SuratCutiObserver
 
     public function saved(SuratCuti $surat)
     {
-        $this->syncService->syncCuti($surat);
+        // Cuti bersama can create many surat in one request; avoid synchronous
+        // external Docstore calls here to keep Livewire apply action responsive.
+        if ($surat->sumber !== 'cuti_bersama') {
+            $this->syncService->syncCuti($surat);
+        }
 
         // Sync to JadwalKerjaDetail
         $dates = json_decode($surat->tgl_cuti, true);
         if (is_array($dates) && !empty($dates)) {
             if ($surat->status === StatusApproval::APPROVED) {
-                $statusKehadiran = match ((int)$surat->urgensi_id) {
-                    4 => StatusKehadiran::IZIN,
-                    default => StatusKehadiran::CUTI,
-                };
+                if ($surat->sumber === 'cuti_bersama') {
+                    $statusKehadiran = StatusKehadiran::CUTI_BERSAMA;
+                } else {
+                    $statusKehadiran = match ((int)$surat->urgensi_id) {
+                        4 => StatusKehadiran::IZIN,
+                        default => StatusKehadiran::CUTI,
+                    };
+                }
 
                 JadwalKerjaDetail::where('karyawan_id', $surat->karyawan_id)
                     ->whereIn('tanggal', $dates)
@@ -39,7 +47,7 @@ class SuratCutiObserver
             } elseif ($surat->status === StatusApproval::REJECTED) {
                 JadwalKerjaDetail::where('karyawan_id', $surat->karyawan_id)
                     ->whereIn('tanggal', $dates)
-                    ->whereIn('status_kehadiran', [StatusKehadiran::CUTI, StatusKehadiran::IZIN])
+                    ->whereIn('status_kehadiran', [StatusKehadiran::CUTI, StatusKehadiran::IZIN, StatusKehadiran::CUTI_BERSAMA])
                     ->update([
                         'status_kehadiran' => StatusKehadiran::BELUM_DICEK,
                         'catatan' => null
@@ -55,7 +63,7 @@ class SuratCutiObserver
         if (is_array($dates) && !empty($dates)) {
             JadwalKerjaDetail::where('karyawan_id', $surat->karyawan_id)
                 ->whereIn('tanggal', $dates)
-                ->whereIn('status_kehadiran', [StatusKehadiran::CUTI, StatusKehadiran::IZIN])
+                ->whereIn('status_kehadiran', [StatusKehadiran::CUTI, StatusKehadiran::IZIN, StatusKehadiran::CUTI_BERSAMA])
                 ->update([
                     'status_kehadiran' => StatusKehadiran::BELUM_DICEK,
                     'catatan' => null
