@@ -8,9 +8,11 @@
                     Tukar Shift Dokter
                 </a>
             @endif
-            <x-ts:button sm icon="tabler.plus" x-on:click="$dispatch('open-modal', {id:'generate-jadwal-kerja'})">
-                Generate Jadwal Baru
-            </x-ts:button>
+            @can('generate', App\Models\Sdm\JadwalKerja::class)
+                <x-ts:button sm icon="tabler.plus" x-on:click="$dispatch('open-modal', {id:'generate-jadwal-kerja'})">
+                    Generate Jadwal Baru
+                </x-ts:button>
+            @endcan
         </div>
     </div>
 

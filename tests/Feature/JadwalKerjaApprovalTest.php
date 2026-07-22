@@ -225,4 +225,26 @@ class JadwalKerjaApprovalTest extends TestCase
 
         $this->assertEquals(StatusJadwalKerja::MENUNGGU_WADIR, $jadwal->fresh()->status);
     }
+
+    public function test_staff_keuangan_atau_pekerja_reguler_tidak_dapat_generate_jadwal(): void
+    {
+        $ruangan = Ruangan::create(['nama' => 'Bagian Keuangan & Akuntansi']);
+        $karyawanKeuangan = $this->createDummyKaryawan('33333', 'Staff Keuangan Test', $ruangan->id);
+        $userKeuangan = User::create([
+            'name' => 'Staff Keuangan Test',
+            'email' => 'keuangan_test@rsba.com',
+            'password' => bcrypt('password'),
+            'karyawan_id' => $karyawanKeuangan->id,
+        ]);
+
+        Role::firstOrCreate(['name' => 'Keuangan']);
+        $userKeuangan->assignRole('Keuangan');
+
+        // User Keuangan bukan Super-Admin, bukan Staff-SDM, dan bukan Koordinator Ruangan
+        $this->assertFalse($userKeuangan->can('generate', JadwalKerja::class));
+
+        Livewire::actingAs($userKeuangan)
+            ->test(\App\Livewire\Kepegawaian\JadwalKerja\Generate::class)
+            ->assertStatus(403);
+    }
 }

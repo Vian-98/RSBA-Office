@@ -11,7 +11,16 @@ class JadwalKerjaPolicy
 {
     public function generate(User $user): bool
     {
-        return $user->can('add-kepegawaian-jadwal-kerja');
+        if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            return true;
+        }
+
+        // Hanya Koordinator Ruangan yang ditugaskan (penanggung jawab unit shift/klinis)
+        if ($user->isKoordinator()) {
+            return true;
+        }
+
+        return false;
     }
 
     public function kelola(User $user, JadwalKerja $jadwalKerja): bool
