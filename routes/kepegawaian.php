@@ -126,10 +126,17 @@ Route::prefix('master')
 Route::prefix('surat')
     ->name('surat.')
     ->group(function () {
+        Route::redirect('/', '/kepegawaian/cuti-bersama');
         Route::get('cuti', App\Livewire\Surat\Cuti\Index::class)->name('cuti');
-        // Route::get('cuti/approval/{id?}', App\Livewire\Surat\Cuti\Approval::class)->name('cuti.approval');
-
         Route::get('sp3', App\Livewire\Surat\Sp3\Index::class)->name('sp3');
+    });
+
+// Cuti Bersama
+Route::prefix('cuti-bersama')
+    ->name('cuti-bersama.')
+    ->group(function () {
+        Route::get('/', App\Livewire\Kepegawaian\CutiBersama\Index::class)->name('index');
+        Route::get('/{id}', App\Livewire\Kepegawaian\CutiBersama\Show::class)->name('show');
     });
 
 

@@ -96,7 +96,8 @@ class Cuti extends Component implements HasTable, HasForms, HasActions
             ->deferLoading(false)
             ->columns([
                 TextColumn::make('no_surat')
-                    ->label('No Surat Cuti'),
+                    ->label('No Surat Cuti')
+                    ->description(fn(SuratCuti $record) => $record->sumber === 'cuti_bersama' ? 'Cuti Bersama Sistem' : null),
 
                 TextColumn::make('status')
                     ->label('Status')

@@ -107,6 +107,10 @@ class Karyawan extends Model
             return 0;
         }
 
+        if ($jenis->lama === 0 || is_null($jenis->lama)) {
+            return 999;
+        }
+
         $quota = $jenis->lama;
 
         if (empty($this->tgl_masuk)) {

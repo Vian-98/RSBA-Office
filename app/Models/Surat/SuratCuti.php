@@ -47,6 +47,11 @@ class SuratCuti extends Model
         return $this->hasMany(SuratCutiApproval::class, 'surat_cuti_id', 'id');
     }
 
+    public function cutiBersama()
+    {
+        return $this->belongsTo(\App\Models\Sdm\CutiBersama::class, 'cuti_bersama_id', 'id');
+    }
+
     /**
      * Penyesuaian tanggal selesai Cuti Melahirkan (H+45 dari tanggal persalinan aktual) oleh SDM
      */
