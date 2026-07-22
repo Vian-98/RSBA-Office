@@ -107,7 +107,7 @@ class JadwalDuaTahunSeeder extends Seeder
                         'bulan' => $bulan,
                         'tahun' => $tahun,
                         'status' => 'published', // Publikasikan langsung agar muncul di UI rekap
-                        'dibuat_oleh' => 1,
+                        'dibuat_oleh' => Karyawan::first()?->id,
                     ]);
                     $totalHeaderCreated++;
 
