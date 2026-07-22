@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\Sdm\Bagian;
+use App\Enums\StatusJadwalKerja;
 use App\Models\Sdm\JadwalKerja;
 use App\Models\Sdm\JadwalTukar;
 use App\Models\User;
@@ -28,18 +28,58 @@ class JadwalKerjaPolicy
         return $ruanganIds !== null && in_array($jadwalKerja->ruangan_id, $ruanganIds);
     }
 
-    public function publish(User $user, JadwalKerja $jadwalKerja): bool
+    public function ajukanKabid(User $user, JadwalKerja $jadwalKerja): bool
     {
-        if (!$user->can('edit-kepegawaian-jadwal-kerja')) {
+        if (!in_array($jadwalKerja->status, [StatusJadwalKerja::DRAFT, StatusJadwalKerja::DITOLAK])) {
             return false;
         }
 
-        if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
-            return true;
+        return $this->kelola($user, $jadwalKerja);
+    }
+
+    public function ajukanWadirLangsung(User $user, JadwalKerja $jadwalKerja): bool
+    {
+        if (!in_array($jadwalKerja->status, [StatusJadwalKerja::DRAFT, StatusJadwalKerja::DITOLAK])) {
+            return false;
         }
 
-        $ruanganIds = $user->getRuanganKoordinatorIds();
-        return $ruanganIds !== null && in_array($jadwalKerja->ruangan_id, $ruanganIds);
+        return $this->kelola($user, $jadwalKerja);
+    }
+
+    public function konfirmasiKabid(User $user, JadwalKerja $jadwalKerja): bool
+    {
+        if ($jadwalKerja->status !== StatusJadwalKerja::MENUNGGU_KABID) {
+            return false;
+        }
+
+        return $user->hasRole('Super-Admin') || $user->can('approve-jadwal-kabid') || $user->hasRole('Kepala-Bidang');
+    }
+
+    public function setujuiWadir(User $user, JadwalKerja $jadwalKerja): bool
+    {
+        if ($jadwalKerja->status !== StatusJadwalKerja::MENUNGGU_WADIR) {
+            return false;
+        }
+
+        return $user->hasRole('Super-Admin') || $user->can('approve-jadwal-wadir') || $user->hasRole('Wakil-Direktur');
+    }
+
+    public function kembalikanDraft(User $user, JadwalKerja $jadwalKerja): bool
+    {
+        if ($jadwalKerja->status === StatusJadwalKerja::MENUNGGU_KABID) {
+            return $this->konfirmasiKabid($user, $jadwalKerja);
+        }
+
+        if ($jadwalKerja->status === StatusJadwalKerja::MENUNGGU_WADIR) {
+            return $this->setujuiWadir($user, $jadwalKerja);
+        }
+
+        return false;
+    }
+
+    public function publish(User $user, JadwalKerja $jadwalKerja): bool
+    {
+        return $this->setujuiWadir($user, $jadwalKerja);
     }
 
     public function approveTukar(User $user, JadwalTukar $jadwalTukar): bool

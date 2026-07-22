@@ -13,7 +13,10 @@ class JadwalKerja extends Model
     protected $table = 'sdm_jadwal_kerja';
     protected $guarded = [];
     protected $casts = [
-        'status' => StatusJadwalKerja::class
+        'status' => StatusJadwalKerja::class,
+        'diketahui_at' => 'datetime',
+        'disetujui_at' => 'datetime',
+        'published_at' => 'datetime',
     ];
 
     public function details()
@@ -26,9 +29,37 @@ class JadwalKerja extends Model
         return $this->belongsTo(Karyawan::class, 'dibuat_oleh');
     }
 
+    public function diketahuiOleh()
+    {
+        return $this->belongsTo(Karyawan::class, 'diketahui_oleh');
+    }
+
+    public function disetujuiOleh()
+    {
+        return $this->belongsTo(Karyawan::class, 'disetujui_oleh');
+    }
+
     public function ruangan()
     {
         return $this->belongsTo(\App\Models\Ruangan::class, 'ruangan_id');
+    }
+
+    public function isDokterSchedule(): bool
+    {
+        if ($this->ruangan) {
+            $namaRuangan = strtolower($this->ruangan->nama);
+            if (str_contains($namaRuangan, 'dokter') || str_contains($namaRuangan, 'spesialis')) {
+                return true;
+            }
+        }
+
+        if ($this->ruangan_id) {
+            return Dokter::whereHas('karyawan', function ($q) {
+                $q->where('ruangan_id', $this->ruangan_id);
+            })->exists();
+        }
+
+        return false;
     }
 
     public static function ensureEmployeeDetailsExist($karyawanId, $bulan, $tahun)
