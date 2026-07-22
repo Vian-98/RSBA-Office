@@ -46,7 +46,7 @@ class BatalkanCutiBersamaService
             // 3. Kembalikan status kehadiran di sdm_jadwal_kerja_detail
             $tglList = $cutiBersama->tanggal->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
 
-            JadwalKerjaDetail::whereIn('tanggal', $tglList)
+            JadwalKerjaDetail::whereIn(DB::raw('DATE(tanggal)'), $tglList)
                 ->where('status_kehadiran', StatusKehadiran::CUTI_BERSAMA)
                 ->update([
                     'status_kehadiran' => StatusKehadiran::BELUM_DICEK,

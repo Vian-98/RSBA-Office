@@ -37,7 +37,7 @@ class TerapkanCutiBersamaService
                 // Update jadwal kerja detail jika sudah ada
                 if (in_array($item['status_aksi'], ['DIPOTONG_CUTI', 'CUTI_BERSAMA_BEBAS'])) {
                     JadwalKerjaDetail::where('karyawan_id', $item['karyawan_id'])
-                        ->where('tanggal', $item['tanggal'])
+                        ->where(DB::raw('DATE(tanggal)'), $item['tanggal'])
                         ->update([
                             'status_kehadiran' => StatusKehadiran::CUTI_BERSAMA,
                             'catatan' => 'Cuti Bersama: ' . $cutiBersama->nama,
