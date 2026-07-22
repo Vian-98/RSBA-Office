@@ -91,6 +91,9 @@ class Sidebar extends Component
     {
         return cache()->remember('user-sidebar-menu:base', 60 * 720, function () {
             $mainMenu = Menu::first();
+            if (!$mainMenu) {
+                return [];
+            }
 
             return Menu::where('parent_id', $mainMenu->id)
                 ->with('submenus')
