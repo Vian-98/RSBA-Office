@@ -10,8 +10,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE `surat_sp3` MODIFY COLUMN `status` ENUM('pending', 'approved', 'rejected', 'manual') NOT NULL DEFAULT 'pending'");
-        DB::statement("ALTER TABLE `surat_sp3_approval` MODIFY COLUMN `status` ENUM('approved', 'rejected', 'manual') NOT NULL DEFAULT 'approved'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE `surat_sp3` MODIFY COLUMN `status` ENUM('pending', 'approved', 'rejected', 'manual') NOT NULL DEFAULT 'pending'");
+            DB::statement("ALTER TABLE `surat_sp3_approval` MODIFY COLUMN `status` ENUM('approved', 'rejected', 'manual') NOT NULL DEFAULT 'approved'");
+        }
     }
 
     /**
@@ -19,7 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE `surat_sp3` MODIFY COLUMN `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending'");
-        DB::statement("ALTER TABLE `surat_sp3_approval` MODIFY COLUMN `status` ENUM('approved', 'rejected') NOT NULL DEFAULT 'approved'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE `surat_sp3` MODIFY COLUMN `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending'");
+            DB::statement("ALTER TABLE `surat_sp3_approval` MODIFY COLUMN `status` ENUM('approved', 'rejected') NOT NULL DEFAULT 'approved'");
+        }
     }
 };

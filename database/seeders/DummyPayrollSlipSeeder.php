@@ -25,10 +25,17 @@ class DummyPayrollSlipSeeder extends Seeder
 
         // Hapus data lama agar tidak duplikat saat di-seed ulang
         Schema::disableForeignKeyConstraints();
-        DB::table('sdm_payroll_slip_allocations')->truncate();
-        DB::table('sdm_payroll_slip_allowances')->truncate();
-        DB::table('sdm_payroll_pph21_override_logs')->truncate();
-        DB::table('sdm_payroll_slips')->truncate();
+        if (DB::getDriverName() === 'sqlite') {
+            DB::table('sdm_payroll_slip_allocations')->delete();
+            DB::table('sdm_payroll_slip_allowances')->delete();
+            DB::table('sdm_payroll_pph21_override_logs')->delete();
+            DB::table('sdm_payroll_slips')->delete();
+        } else {
+            DB::table('sdm_payroll_slip_allocations')->truncate();
+            DB::table('sdm_payroll_slip_allowances')->truncate();
+            DB::table('sdm_payroll_pph21_override_logs')->truncate();
+            DB::table('sdm_payroll_slips')->truncate();
+        }
         Schema::enableForeignKeyConstraints();
 
         $months = [];
@@ -115,7 +122,7 @@ class DummyPayrollSlipSeeder extends Seeder
                     'total_gaji' => $totalEarnings,
                     'total_potongan' => $totalPotongan,
                     'gaji_bersih' => $gajiBersih,
-                    'created_by' => 1,
+                    'created_by' => \App\Models\User::first()?->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

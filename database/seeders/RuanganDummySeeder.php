@@ -12,6 +12,9 @@ class RuanganDummySeeder extends Seeder
      */
     public function run(): void
     {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('ruangan')) {
+            return;
+        }
         $kategoriRuangan = [
             'Gawat Darurat' => [
                 'IGD (Instalasi Gawat Darurat)',
