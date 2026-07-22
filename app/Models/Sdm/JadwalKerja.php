@@ -65,11 +65,23 @@ class JadwalKerja extends Model
     public static function ensureEmployeeDetailsExist($karyawanId, $bulan, $tahun)
     {
         $karyawan = \App\Models\Sdm\Karyawan::find($karyawanId);
-        if (!$karyawan || !$karyawan->ruangan_id) {
+        if (!$karyawan) {
             return;
         }
 
-        $jadwalKerja = self::where('ruangan_id', $karyawan->ruangan_id)
+        $ruanganId = $karyawan->ruangan_id;
+        if (!$ruanganId) {
+            $defaultRuangan = \App\Models\Ruangan::firstOrCreate(
+                ['nama' => 'Kantor Manajemen (SDM & Keuangan)'],
+                ['is_active' => true]
+            );
+            $ruanganId = $defaultRuangan->id;
+            $karyawan->update(['ruangan_id' => $ruanganId]);
+        }
+
+        $isReguler = $karyawan->kategori_kerja === \App\Enums\KategoriKerja::REGULER;
+
+        $jadwalKerja = self::where('ruangan_id', $ruanganId)
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
             ->first();
@@ -77,14 +89,14 @@ class JadwalKerja extends Model
         if (!$jadwalKerja) {
             try {
                 $jadwalKerja = self::create([
-                    'ruangan_id' => $karyawan->ruangan_id,
-                    'bulan' => $bulan,
-                    'tahun' => $tahun,
-                    'status' => \App\Enums\StatusJadwalKerja::DRAFT,
+                    'ruangan_id'  => $ruanganId,
+                    'bulan'       => $bulan,
+                    'tahun'       => $tahun,
+                    'status'      => $isReguler ? \App\Enums\StatusJadwalKerja::PUBLISHED : \App\Enums\StatusJadwalKerja::DRAFT,
                     'dibuat_oleh' => 1,
                 ]);
             } catch (\Throwable $e) {
-                $jadwalKerja = self::where('ruangan_id', $karyawan->ruangan_id)
+                $jadwalKerja = self::where('ruangan_id', $ruanganId)
                     ->where('bulan', $bulan)
                     ->where('tahun', $tahun)
                     ->first();
@@ -92,6 +104,8 @@ class JadwalKerja extends Model
                     return;
                 }
             }
+        } elseif ($isReguler && $jadwalKerja->status === \App\Enums\StatusJadwalKerja::DRAFT) {
+            $jadwalKerja->update(['status' => \App\Enums\StatusJadwalKerja::PUBLISHED]);
         }
 
         $hasDetails = \App\Models\Sdm\JadwalKerjaDetail::where('jadwal_kerja_id', $jadwalKerja->id)
@@ -100,7 +114,7 @@ class JadwalKerja extends Model
 
         if ($hasDetails) {
             $shiftReguler = \App\Models\Sdm\JadwalShift::where('kode', 'REGULER')->where('aktif', true)->first();
-            if ($karyawan->kategori_kerja === \App\Enums\KategoriKerja::REGULER && $shiftReguler) {
+            if ($isReguler && $shiftReguler) {
                 $details = \App\Models\Sdm\JadwalKerjaDetail::where('jadwal_kerja_id', $jadwalKerja->id)
                     ->where('karyawan_id', $karyawanId)
                     ->whereNull('shift_id')
