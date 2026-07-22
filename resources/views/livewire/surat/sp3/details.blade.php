@@ -31,14 +31,14 @@
             <div class="ml-auto flex w-full justify-end px-4 py-2">
                 <div class="flex w-full flex-col">
                     @forelse ($this->approvals as $item)
-                        @if ($item['status'] == 'Manual')
+                        @if ($item['status'] == 'Manual' || !empty($item['is_manual']))
                             <div class="flex flex-col">
                                 <span class="text-xs text-gray-500">Mengetahui</span>
                                 <span class="block h-12 w-auto">
-                                    {{-- <img src="data:image/png;base64,{{ $this->generateBarcode }}" alt="Barcode Tanda Tangan" class="h-auto w-32"> --}}
+                                    {{-- Kolom Tanda Tangan Basah --}}
                                 </span>
-                                <span class="text-indigo-500">{{ $item['nama'] }}</span>
-                                <span class="text-[10px] font-light text-gray-400">{{ $item['approved_at'] }}</span>
+                                <span class="text-indigo-500 font-semibold">{{ $item['nama'] }}</span>
+                                <span class="text-[10px] font-light text-gray-400">Manual Cetak (Tanda Tangan Basah)</span>
                             </div>
                         @else
                             <div class="flex flex-col">

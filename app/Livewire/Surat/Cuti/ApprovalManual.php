@@ -24,7 +24,7 @@ class ApprovalManual extends Component
     #[Locked]
     public ?SuratCuti $suratCuti;
 
-    public ?int $mengetahui = null, $menyetujui;
+    public ?int $mengetahui = null, $menyetujui = null;
 
     public function rules(): array
     {

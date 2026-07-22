@@ -80,7 +80,7 @@
         </tr>
         <tr>
             @forelse ($this->approvals as $item)
-                @if ($item['status'] == 'Manual')
+                @if ($item['status'] == 'Manual' || !empty($item['is_manual']))
                     <td colspan="6" align="right">
                         <table style="font-size:11px; width:33%; text-align: center;">
                             <tr>
@@ -88,7 +88,7 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <span style="display:block; height:48px; width:auto;"></span>
+                                    <span style="display:block; height:60px; width:auto;"></span>
                                     <span style="font-weight: bold; display:block; margin: 0 auto;">{{ $item['nama'] }}</span>
                                     <span style="font-size:10px;">({{ $item['jabatan'][0]['nama'] ?? ' ' }})</span>
                                 </td>
