@@ -19,9 +19,37 @@ use Illuminate\Support\Facades\Auth;
  */
 class StokMutasiTest extends TestCase
 {
+    use \Illuminate\Foundation\Testing\RefreshDatabase;
+
     protected function loginAsFirstUser(): void
     {
         $user = \App\Models\User::first();
+        if (!$user) {
+            $karyawan = \App\Models\Sdm\Karyawan::first();
+            if (!$karyawan) {
+                $karyawan = \App\Models\Sdm\Karyawan::create([
+                    'nip' => '999999999',
+                    'nik' => '9999999999999999',
+                    'nama' => 'Dummy Stok Admin',
+                    'hp' => '-',
+                    'prov' => '-',
+                    'kab' => '-',
+                    'kec' => '-',
+                    'desa' => '-',
+                    'alamat' => '-',
+                    'agama' => 'islam',
+                    'tgl_lahir' => '1990-01-01',
+                    'status' => 'tetap',
+                    'tgl_masuk' => '2020-01-01',
+                ]);
+            }
+            $user = \App\Models\User::create([
+                'name' => 'Test Admin',
+                'email' => 'stok_admin@rsba.com',
+                'password' => '1234',
+                'karyawan_id' => $karyawan->id,
+            ]);
+        }
         if (!$user) {
             $this->markTestSkipped('Tidak ada user di database. Jalankan seeder terlebih dahulu.');
         }

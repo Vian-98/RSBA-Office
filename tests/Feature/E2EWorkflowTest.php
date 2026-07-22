@@ -15,7 +15,7 @@ use Tests\TestCase;
 
 class E2EWorkflowTest extends TestCase
 {
-    use DatabaseTransactions;
+    use \Illuminate\Foundation\Testing\RefreshDatabase;
 
     public function test_full_cuti_bersama_e2e_system_workflow()
     {
@@ -25,9 +25,23 @@ class E2EWorkflowTest extends TestCase
 
         $user = \App\Models\User::first();
         if (!$user) {
-            $this->seed(\Database\Seeders\DatabaseSeeder::class);
-            $user = \App\Models\User::first();
+            $karyawan = \App\Models\Sdm\Karyawan::create([
+                'nip' => '777777777',
+                'nik' => '7777777777777777',
+                'nama' => 'E2E Karyawan User',
+                'hp' => '-', 'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => '-', 'agama' => 'islam',
+                'tgl_lahir' => '1990-01-01', 'status' => 'tetap', 'tgl_masuk' => '2020-01-01',
+            ]);
+            $user = \App\Models\User::create([
+                'name' => 'Test Admin',
+                'email' => 'e2e_admin@rsba.com',
+                'password' => '1234',
+                'karyawan_id' => $karyawan->id,
+            ]);
         }
+
+        \App\Models\Surat\CutiJenis::firstOrCreate(['id' => 1], ['nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y']);
+        $ruangan = \App\Models\Ruangan::firstOrCreate(['nama' => 'IGD (Instalasi Gawat Darurat)']);
 
         // 1. Create Event (Draft)
         $event = CutiBersama::create([
