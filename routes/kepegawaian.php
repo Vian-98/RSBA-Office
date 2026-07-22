@@ -135,7 +135,7 @@ Route::prefix('surat')
 Route::prefix('cuti-bersama')
     ->name('cuti-bersama.')
     ->group(function () {
-        Route::get('/', App\Livewire\Kepegawaian\CutiBersama\Index::class)->name('index');
+        Route::redirect('/', '/kepegawaian/surat/cuti?tab=cuti-bersama')->name('index');
         Route::get('/{id}', App\Livewire\Kepegawaian\CutiBersama\Show::class)->name('show');
     });
 
