@@ -79,11 +79,11 @@ class AbsensiClearingService
     }
 
     /**
-     * Langkah 2: Cross-Midnight Assignment (Shift Lintas Hari H-1 & Night Shift Pattern Detection)
+     * Langkah 2: Cross-Midnight Assignment (3-Way Branching: Sepakat Lintas Hari, Sepakat Reguler, atau Konflik Jadwal vs Tap)
      *
-     * Tap subuh pada hari T (<= 09:30) di-assign ke H-1 jika:
+     * Tap subuh pada hari T (<= 10:00) di-assign ke H-1 jika:
      * 1. Jadwal DB H-1 secara resmi diset lintas_hari = true, ATAU
-     * 2. Pola tap mentah H-1 murni shift malam: memiliki tap malam (>= 19:00) DAN TIDAK memiliki tap pagi (06:00-12:00).
+     * 2. Pola tap mentah H-1 murni shift malam: memiliki tap malam (>= 17:00) DAN TIDAK memiliki tap pagi/siang (05:00-17:00).
      */
     public function assignCrossMidnightDates(int $importLogId): void
     {
@@ -101,25 +101,28 @@ class AbsensiClearingService
             $yesterday = $tap->tanggal->copy()->subDay()->toDateString();
 
             $jamStr = is_object($tap->jam) ? $tap->jam->format('H:i:s') : (string) $tap->jam;
-            $isMorningTapToday = substr($jamStr, 0, 5) <= '10:00';
+            $isMorningTapToday = substr($jamStr, 0, 5) <= '12:00'; // Batas check-out pagi/siang s/d 12:00 WIB
 
             if ($isMorningTapToday) {
-                // 1. Cek jadwal resmi DB H-1 (jika diset lintas_hari = true)
+                // 1. Cek jadwal resmi DB H-1
+                $hasScheduleRecord = false;
                 $isLintasHariSchedule = false;
+
                 if ($karyawanId) {
                     $yesterdayShift = DB::table('sdm_jadwal_kerja_detail as jkd')
-                        ->join('sdm_jadwal_shift as js', 'jkd.shift_id', '=', 'js.id')
+                        ->leftJoin('sdm_jadwal_shift as js', 'jkd.shift_id', '=', 'js.id')
                         ->where('jkd.karyawan_id', $karyawanId)
                         ->whereDate('jkd.tanggal', $yesterday)
-                        ->select('js.jam_masuk', 'js.jam_keluar', 'js.lintas_hari')
+                        ->select('js.nama', 'js.jam_masuk', 'js.jam_keluar', 'js.lintas_hari')
                         ->first();
 
-                    if ($yesterdayShift && $yesterdayShift->lintas_hari) {
-                        $isLintasHariSchedule = true;
+                    if ($yesterdayShift) {
+                        $hasScheduleRecord = true;
+                        $isLintasHariSchedule = (bool) $yesterdayShift->lintas_hari;
                     }
                 }
 
-                // 2. Cek pola tap mentah H-1 (hanya tap mentah yang terikat pada tanggal H-1):
+                // 2. Cek pola tap mentah H-1:
                 $yesterdayPunches = AbsensiRawPunch::where('import_log_id', $importLogId)
                     ->where('employee_id', $tap->employee_id)
                     ->where(function ($q) use ($yesterday) {
@@ -131,29 +134,62 @@ class AbsensiClearingService
                     ->where('is_discarded', false)
                     ->get();
 
+                // Pola 1: Shift Malam (In >= 17:00, Out <= 12:00)
                 $hasEveningTapYesterday = $yesterdayPunches->contains(function ($p) {
                     $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
                     return substr($jam, 0, 5) >= '17:00';
                 });
 
-
                 $hasEarlierTapYesterday = $yesterdayPunches->contains(function ($p) {
                     $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
-                    return substr($jam, 0, 5) >= '06:00' && substr($jam, 0, 5) < '17:00';
+                    return substr($jam, 0, 5) >= '05:00' && substr($jam, 0, 5) < '17:00';
                 });
 
-                // Jika jadwal DB resmi lintas_hari ATAU (pola H-1 murni shift malam: ada tap malam & tanpa tap lebih awal 06:00-17:00 H-1)
-                if ($isLintasHariSchedule || ($hasEveningTapYesterday && !$hasEarlierTapYesterday)) {
+                $isNightTapPattern = $hasEveningTapYesterday && !$hasEarlierTapYesterday;
 
+                // Pola 2: Shift Sore Lintas Tengah Malam (In >= 13:00 - 16:00, Out <= 12:00)
+                $hasAfternoonTapYesterday = $yesterdayPunches->contains(function ($p) {
+                    $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
+                    return substr($jam, 0, 5) >= '13:00' && substr($jam, 0, 5) <= '16:00';
+                });
+
+                $hasMorningTapYesterday = $yesterdayPunches->contains(function ($p) {
+                    $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
+                    return substr($jam, 0, 5) < '13:00';
+                });
+
+                $isAfternoonCrossMidnightPattern = $hasAfternoonTapYesterday && !$hasMorningTapYesterday;
+
+                // DETEKSI KONFLIK JADWAL VS TAP (Cabang ke-3):
+                if ($hasScheduleRecord) {
+                    if (!$isLintasHariSchedule && ($isNightTapPattern || $isAfternoonCrossMidnightPattern)) {
+                        // Konflik: Jadwal REGULER/PAGI di DB, tapi Tap Murni Shift Sore/Malam
+                        $tap->update([
+                            'assigned_date'  => $yesterday,
+                            'discard_reason' => 'KONFLIK_JADWAL_VS_TAP (Jadwal REGULER tapi Tap Shift Sore/Malam)',
+                        ]);
+                        continue;
+                    } elseif ($isLintasHariSchedule && !($isNightTapPattern || $isAfternoonCrossMidnightPattern)) {
+                        // Konflik: Jadwal SHIFT MALAM di DB, tapi Tap tidak mencerminkan shift sore/malam
+                        $tap->update([
+                            'assigned_date'  => $tap->tanggal,
+                            'discard_reason' => 'KONFLIK_JADWAL_VS_TAP (Jadwal MALAM tapi Tap Reguler)',
+                        ]);
+                        continue;
+                    }
+                }
+
+                if ($isLintasHariSchedule || $isNightTapPattern || $isAfternoonCrossMidnightPattern) {
                     $tap->update(['assigned_date' => $yesterday]);
                     continue;
                 }
             }
 
+
+
             $tap->update(['assigned_date' => $tap->tanggal]);
         }
     }
-
 
     /**
      * Langkah 3 & 4: Pairing (First-In / Last-Out by DATETIME) & Sanity Check
@@ -191,13 +227,22 @@ class AbsensiClearingService
             $clockOut   = null;
             $flags      = [];
 
+            // Cek jika ada flag konflik jadwal vs tap pada rekaman tap
+            $conflictPunch = $punches->first(function ($p) {
+                return $p->discard_reason && str_contains($p->discard_reason, 'KONFLIK_JADWAL_VS_TAP');
+            });
+            if ($conflictPunch) {
+                $flags[] = $conflictPunch->discard_reason;
+            }
+
             if ($count === 1) {
                 $clockOut = null;
                 $flags[]  = 'SINGLE_PUNCH';
             } else {
                 $clockOut = $lastTap->punch_datetime ? $lastTap->punch_datetime->format('Y-m-d H:i:s') : null;
 
-                if ($count === 3 || $count === 4) {
+                // Generalisasi penanganan Extra Punch untuk >= 3 tap (termasuk 5+ tap)
+                if ($count >= 3) {
                     $flags[] = "EXTRA_PUNCH ({$count} rekaman)";
                     for ($i = 1; $i < $count - 1; $i++) {
                         $punches[$i]->update([
