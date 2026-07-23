@@ -131,6 +131,8 @@ Route::prefix('surat')
         Route::redirect('/', '/kepegawaian/cuti-bersama');
         Route::get('cuti', App\Livewire\Surat\Cuti\Index::class)->name('cuti');
         Route::get('sp3', App\Livewire\Surat\Sp3\Index::class)->name('sp3');
+        // Audit Bank Surat — laporan keaslian surat dari docstore (source of truth)
+        Route::get('audit-bank-surat', App\Livewire\Surat\AuditBankSurat::class)->name('audit-bank-surat');
     });
 
 // Cuti Bersama

@@ -15,6 +15,7 @@ class SuratCuti extends Model
     protected $casts = [
         'status' => StatusApproval::class,
         'is_penyesuaian_melahirkan' => 'boolean',
+        'docstore_synced_at' => 'datetime',
     ];
 
     public function karyawan()

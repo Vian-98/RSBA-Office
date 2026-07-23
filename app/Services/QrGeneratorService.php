@@ -16,7 +16,32 @@ class QrGeneratorService
     }
 
     /**
-     * Build public verification URL for a given document qr_hash.
+     * Generate QR Code PNG untuk docstore_key.
+     * QR ini yang dicetak di surat — saat di-scan membuka halaman verify dengan data dari docstore.
+     *
+     * @param string $docstoreKey UUID dari docstore
+     * @param int $width
+     * @param int $height
+     * @return string base64 PNG
+     */
+    public function generateDocstoreQr(string $docstoreKey, int $width = 4, int $height = 4): string
+    {
+        $verifyUrl = $this->getDocstoreVerifyUrl($docstoreKey);
+        return $this->generateQrPngBase64($verifyUrl, $width, $height);
+    }
+
+    /**
+     * Build public verification URL untuk docstore_key.
+     * URL ini di-embed ke QR code surat — scan QR → buka verify app langsung ke halaman dokumen tersebut.
+     */
+    public function getDocstoreVerifyUrl(string $docstoreKey): string
+    {
+        $verifyBaseUrl = env('VERIFY_APP_URL', 'http://localhost:5173');
+        return rtrim($verifyBaseUrl, '/') . '/?key=' . $docstoreKey;
+    }
+
+    /**
+     * Build public verification URL untuk signature hash (legacy — backward compatible).
      */
     public function getVerificationUrl(string $qrHash): string
     {

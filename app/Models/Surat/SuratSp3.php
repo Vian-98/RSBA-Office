@@ -15,7 +15,8 @@ class SuratSp3 extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'status' => StatusApproval::class
+        'status' => StatusApproval::class,
+        'docstore_synced_at' => 'datetime',
     ];
 
     public function details()

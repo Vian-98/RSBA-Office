@@ -115,7 +115,12 @@ class Approval extends Component
                 }
             }
 
+            // Sync ke docstore setiap ada perubahan status approval
+            // (sync terjadi untuk semua state: pending, approved, rejected)
+            app(\App\Services\DocumentSignatureService::class)->triggerDocstoreSync($this->suratCuti->fresh());
+
             // Memicu purna-approval & penerbitan QR Header berbasis Sistem PKCS#12 (.p12) jika Full ACC
+            // checkAndGenerateHeaderQr juga akan trigger sync lagi dengan status final
             app(\App\Services\DocumentSignatureService::class)->checkAndGenerateHeaderQr($this->suratCuti->fresh());
 
             DB::commit();

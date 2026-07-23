@@ -9,51 +9,281 @@ use App\Models\SignatureCerts;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class DocstoreSyncService
 {
     protected string $apiUrl;
     protected string $apiToken;
+    protected string $hmacSecret;
 
     public function __construct()
     {
-        $this->apiUrl = env('DOCSTORE_API_URL', 'http://localhost:8000/api');
-        $this->apiToken = env('DOCSTORE_API_TOKEN', '');
+        $this->apiUrl     = env('DOCSTORE_API_URL', 'http://localhost:8000/api');
+        $this->apiToken   = env('DOCSTORE_API_TOKEN', '');
+        $this->hmacSecret = env('DOCSTORE_HMAC_SECRET', '');
     }
 
-    public function syncSp3(SuratSp3 $surat)
+    /**
+     * Sync Surat SP3 ke docstore (bank surat).
+     * Dipanggil setiap kali ada perubahan status pada SP3.
+     */
+    public function syncSp3(SuratSp3 $surat): bool
     {
-        // Reload fresh model with relations to bypass cached relations
+        // Reload fresh model dengan relasi
         $surat = SuratSp3::with(['approvals.users.karyawan', 'details'])->findOrFail($surat->id);
 
-        // Prepare content
         $content = [
-            'no' => $surat->no,
-            'tahun' => $surat->tahun,
-            'tgl' => $surat->tgl,
-            'rekanan' => $surat->rekanan,
-            'bayar' => $surat->bayar,
+            'no'         => $surat->no,
+            'tahun'      => $surat->tahun,
+            'tgl'        => $surat->tgl,
+            'rekanan'    => $surat->rekanan,
+            'bayar'      => $surat->bayar,
             'keterangan' => $surat->keterangan,
-            'disetujui' => optional($surat->disetujui) ? (optional(\App\Models\Sdm\Karyawan::find($surat->disetujui))->nama ?? 'Sistem') : 'Sistem',
-            'jabatan' => $surat->jabatan,
-            'items' => $surat->details->map(function ($det) {
-                return [
-                    'keterangan' => $det->keterangan,
-                    'nominal' => $det->nominal
-                ];
-            })->toArray()
+            'disetujui'  => optional(\App\Models\Sdm\Karyawan::find($surat->disetujui))->nama ?? 'Sistem',
+            'jabatan'    => $surat->jabatan,
+            'items'      => $surat->details->map(fn($det) => [
+                'keterangan' => $det->keterangan,
+                'nominal'    => $det->nominal,
+            ])->toArray(),
         ];
 
-        // Prepare signatures
+        $signatures = $this->buildSp3Signatures($surat);
+
+        $payload = [
+            'document_type'   => 'sp3',
+            'document_id'     => $surat->id,
+            'document_number' => $surat->no,
+            'status'          => is_object($surat->status) ? $surat->status->value : $surat->status,
+            'content'         => $content,
+            'signatures'      => $signatures,
+        ];
+
+        $result = $this->sendToDocstore($payload);
+
+        // Simpan docstore_key ke record surat jika berhasil dan key diterima
+        if ($result['success'] && !empty($result['docstore_key'])) {
+            $surat->updateQuietly([
+                'docstore_key'       => $result['docstore_key'],
+                'docstore_synced_at' => now(),
+            ]);
+        }
+
+        return $result['success'];
+    }
+
+    /**
+     * Sync Surat Cuti ke docstore (bank surat).
+     * Dipanggil setiap kali ada perubahan status pada Cuti.
+     */
+    public function syncCuti(SuratCuti $surat): bool
+    {
+        // Reload fresh model dengan relasi
+        $surat = SuratCuti::with(['karyawan.jabatan', 'jenis', 'approvals.karyawan.jabatan'])->findOrFail($surat->id);
+
+        $karyawan = $surat->karyawan;
+        $content  = [
+            'no_surat'          => $surat->no_surat,
+            'tgl_surat'         => $surat->tgl_surat,
+            'tgl_mulai'         => $surat->tgl_mulai,
+            'tgl_akhir'         => $surat->tgl_akhir,
+            'tgl_cuti'          => $surat->tgl_cuti,
+            'lama_cuti'         => $surat->lama_cuti,
+            'urgensi'           => $surat->urgensi,
+            'keterangan'        => $surat->keterangan,
+            'alamat'            => $surat->alamat,
+            'jenis_cuti'        => optional($surat->jenis)->nama,
+            'karyawan_name'     => optional($karyawan)->nama,
+            'karyawan_nip'      => optional($karyawan)->nip,
+            'karyawan_hp'       => optional($karyawan)->hp,
+            'karyawan_jabatan'  => optional(optional($karyawan)->jabatan?->first())->nama,
+        ];
+
+        $signatures = $this->buildCutiSignatures($surat);
+
+        $payload = [
+            'document_type'   => 'cuti',
+            'document_id'     => $surat->id,
+            'document_number' => $surat->no_surat,
+            'status'          => is_object($surat->status) ? $surat->status->value : $surat->status,
+            'content'         => $content,
+            'signatures'      => $signatures,
+        ];
+
+        $result = $this->sendToDocstore($payload);
+
+        // Simpan docstore_key ke record surat jika berhasil dan key diterima
+        if ($result['success'] && !empty($result['docstore_key'])) {
+            $surat->updateQuietly([
+                'docstore_key'       => $result['docstore_key'],
+                'docstore_synced_at' => now(),
+            ]);
+        }
+
+        return $result['success'];
+    }
+
+    /**
+     * Ambil data surat dari docstore berdasarkan docstore_key.
+     * Digunakan oleh PrintCuti dan PrintSp3 untuk menarik data cetak dari bank surat.
+     * Data di-cache selama 5 menit untuk mengurangi beban request ke docstore.
+     *
+     * @return array|null — null jika tidak ditemukan atau error
+     */
+    public function fetchFromDocstore(string $docstoreKey): ?array
+    {
+        $cacheKey = 'docstore_doc_' . $docstoreKey;
+
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($docstoreKey) {
+            try {
+                $response = Http::withToken($this->apiToken)
+                    ->timeout(10)
+                    ->get($this->apiUrl . '/documents/' . $docstoreKey);
+
+                if ($response->successful()) {
+                    return $response->json();
+                }
+
+                Log::warning('Docstore fetch failed', [
+                    'docstore_key' => $docstoreKey,
+                    'status'       => $response->status(),
+                    'body'         => $response->body(),
+                ]);
+                return null;
+            } catch (\Throwable $e) {
+                Log::error('Docstore fetch error: ' . $e->getMessage(), [
+                    'docstore_key' => $docstoreKey,
+                ]);
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Invalidasi cache untuk docstore_key tertentu.
+     * Dipanggil setelah sync berhasil agar data print selalu fresh.
+     */
+    public function invalidateCache(string $docstoreKey): void
+    {
+        Cache::forget('docstore_doc_' . $docstoreKey);
+    }
+
+    /**
+     * List semua surat dari docstore (untuk halaman audit/laporan).
+     */
+    public function listFromDocstore(
+        string $type = 'all',
+        string $status = 'all',
+        int $page = 1,
+        int $perPage = 25,
+        ?string $search = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null
+    ): array {
+        try {
+            $params = [
+                'type'     => $type,
+                'status'   => $status,
+                'page'     => $page,
+                'per_page' => $perPage,
+            ];
+            if ($search) $params['search'] = $search;
+            if ($dateFrom) $params['date_from'] = $dateFrom;
+            if ($dateTo) $params['date_to'] = $dateTo;
+
+            $response = Http::withToken($this->apiToken)
+                ->timeout(15)
+                ->get($this->apiUrl . '/documents', $params);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            Log::warning('Docstore list failed', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+            return ['success' => false, 'data' => [], 'meta' => []];
+        } catch (\Throwable $e) {
+            Log::error('Docstore list error: ' . $e->getMessage());
+            return ['success' => false, 'data' => [], 'meta' => []];
+        }
+    }
+
+    // =============================================
+    // Private Helpers
+    // =============================================
+
+    /**
+     * Kirim payload ke docstore dengan HMAC signing.
+     * @return array ['success' => bool, 'docstore_key' => ?string]
+     */
+    protected function sendToDocstore(array $payload): array
+    {
+        try {
+            $jsonPayload = json_encode($payload);
+
+            // Hitung HMAC dari JSON payload
+            $headers = [
+                'Content-Type' => 'application/json',
+            ];
+            if (!empty($this->hmacSecret)) {
+                $hmacSignature = hash_hmac('sha256', $jsonPayload, $this->hmacSecret);
+                $headers['X-Payload-Signature'] = $hmacSignature;
+            }
+
+            $response = Http::withToken($this->apiToken)
+                ->withHeaders($headers)
+                ->timeout(10)
+                ->withBody($jsonPayload, 'application/json')
+                ->post($this->apiUrl . '/documents');
+
+            if ($response->successful()) {
+                $body = $response->json();
+                return [
+                    'success'      => true,
+                    'docstore_key' => $body['docstore_key'] ?? null,
+                ];
+            }
+
+            Log::error('Docstore sync failed: ' . $response->body(), [
+                'status'  => $response->status(),
+                'payload' => $payload,
+            ]);
+            return ['success' => false, 'docstore_key' => null];
+
+        } catch (\Throwable $e) {
+            Log::error('Docstore sync connection error: ' . $e->getMessage(), [
+                'payload' => $payload,
+            ]);
+            return ['success' => false, 'docstore_key' => null];
+        }
+    }
+
+    /**
+     * Bangun array signatures untuk SP3
+     */
+    protected function buildSp3Signatures(SuratSp3 $surat): array
+    {
         $signatures = [];
         foreach ($surat->approvals as $approval) {
             if (!$approval->signature_hash) {
+                // Sertakan approval tanpa signature (status pending/rejected tanpa tanda tangan)
+                $signatures[] = [
+                    'signature_hash' => 'pending_' . md5($surat->id . '_' . ($approval->disetujui ?? 0)),
+                    'original_data'  => 'PENDING_APPROVAL',
+                    'signature'      => 'PENDING_APPROVAL',
+                    'data_hash'      => null,
+                    'algorithm'      => 'sha256',
+                    'public_key'     => 'PENDING',
+                    'signer_name'    => optional($approval->users?->karyawan)->full_nama ?? optional($approval->users)->name ?? 'Pejabat',
+                    'signer_role'    => $approval->jabatan ?? null,
+                    'status'         => is_object($approval->status) ? $approval->status->value : ($approval->status ?? 'pending'),
+                    'signed_at'      => $approval->approved_at ?? null,
+                ];
                 continue;
             }
 
-            // Cari SignatureLog berdasarkan sign_type dan sign_id (andal)
-            // data_hash di signature_logs bisa berisi nilai random dari migrasi lama,
-            // sehingga tidak bisa digunakan sebagai identifier.
             $log = SignatureLogs::where('sign_type', 'persetujuan_sp3')
                 ->where('sign_id', $surat->id)
                 ->where('user_id', $approval->disetujui)
@@ -62,83 +292,61 @@ class DocstoreSyncService
 
             $certs = null;
             if ($log) {
-                // Gunakan certificate_id dari log (sertifikat yang benar-benar dipakai saat sign)
                 $certs = $log->certificate_id
                     ? SignatureCerts::find($log->certificate_id)
                     : SignatureCerts::where('user_id', $approval->disetujui)->latest('id')->first();
             }
 
-            // Fallback jika log tidak ditemukan (dokumen seeder/tanpa log)
             $originalData = $log ? $log->data : 'MOCK_SIGNATURE_' . $approval->signature_hash;
-            $signature = $log ? $log->signature : 'MOCK_SIGNATURE_' . $approval->signature_hash;
-
-            $publicKey = '';
+            $signature    = $log ? $log->signature : 'MOCK_SIGNATURE_' . $approval->signature_hash;
+            $publicKey    = '';
             if ($certs) {
                 $publicKey = $certs->public_key;
             } else {
                 $fallbackCert = SignatureCerts::where('user_id', 1)->first();
-                $publicKey = $fallbackCert ? $fallbackCert->public_key : 'MOCK_PUBLIC_KEY';
+                $publicKey    = $fallbackCert ? $fallbackCert->public_key : 'MOCK_PUBLIC_KEY';
             }
 
             $signatures[] = [
                 'signature_hash' => $approval->signature_hash,
-                'original_data' => $originalData,
-                'signature' => $signature,
-                'data_hash' => $log ? $log->data_hash : null,
-                'algorithm' => $log ? ($log->algorithm ?? 'sha256') : 'sha256',
-                'public_key' => $publicKey,
-                'signer_name' => optional($approval->users->karyawan)->full_nama ?? optional($approval->users)->name ?? 'Sistem',
-                'signer_role' => $approval->jabatan,
-                'status' => is_object($approval->status) ? $approval->status->value : $approval->status,
-                'signed_at' => $approval->approved_at ?? now()->toIso8601String()
+                'original_data'  => $originalData,
+                'signature'      => $signature,
+                'data_hash'      => $log ? $log->data_hash : null,
+                'algorithm'      => $log ? ($log->algorithm ?? 'sha256') : 'sha256',
+                'public_key'     => $publicKey,
+                'signer_name'    => optional($approval->users?->karyawan)->full_nama ?? optional($approval->users)->name ?? 'Sistem',
+                'signer_role'    => $approval->jabatan,
+                'status'         => is_object($approval->status) ? $approval->status->value : $approval->status,
+                'signed_at'      => $approval->approved_at ?? now()->toIso8601String(),
             ];
         }
-
-        // Send payload
-        $payload = [
-            'document_type' => 'sp3',
-            'document_id' => $surat->id,
-            'document_number' => $surat->no,
-            'status' => is_object($surat->status) ? $surat->status->value : $surat->status,
-            'content' => $content,
-            'signatures' => $signatures
-        ];
-
-        return $this->sendToDocstore($payload);
+        return $signatures;
     }
 
-    public function syncCuti(SuratCuti $surat)
+    /**
+     * Bangun array signatures untuk Cuti
+     */
+    protected function buildCutiSignatures(SuratCuti $surat): array
     {
-        // Reload fresh model with relations to bypass cached relations
-        $surat = SuratCuti::with(['karyawan.jabatan', 'jenis', 'approvals.karyawan.jabatan'])->findOrFail($surat->id);
-
-        // Prepare content
-        $karyawan = $surat->karyawan;
-        $content = [
-            'no_surat' => $surat->no_surat,
-            'tgl_surat' => $surat->tgl_surat,
-            'tgl_mulai' => $surat->tgl_mulai,
-            'tgl_akhir' => $surat->tgl_akhir,
-            'tgl_cuti' => $surat->tgl_cuti,
-            'lama_cuti' => $surat->lama_cuti,
-            'urgensi' => $surat->urgensi,
-            'keterangan' => $surat->keterangan,
-            'alamat' => $surat->alamat,
-            'jenis_cuti' => optional($surat->jenis)->nama,
-            'karyawan_name' => optional($karyawan)->nama,
-            'karyawan_nip' => optional($karyawan)->nip,
-            'karyawan_hp' => optional($karyawan)->hp,
-            'karyawan_jabatan' => optional(optional($karyawan)->jabatan?->first())->nama,
-        ];
-
-        // Prepare signatures
         $signatures = [];
         foreach ($surat->approvals as $approval) {
             if (!$approval->signature_hash) {
+                // Sertakan approval tanpa signature (status pending/rejected tanpa tanda tangan)
+                $signatures[] = [
+                    'signature_hash' => 'pending_' . md5($surat->id . '_' . ($approval->disetujui_oleh ?? 0)),
+                    'original_data'  => 'PENDING_APPROVAL',
+                    'signature'      => 'PENDING_APPROVAL',
+                    'data_hash'      => null,
+                    'algorithm'      => 'sha256',
+                    'public_key'     => 'PENDING',
+                    'signer_name'    => optional($approval->karyawan)->full_nama ?? optional($approval->karyawan)->nama ?? 'Pejabat',
+                    'signer_role'    => optional(optional($approval->karyawan)->jabatan?->first())->nama,
+                    'status'         => is_object($approval->status) ? $approval->status->value : ($approval->status ?? 'pending'),
+                    'signed_at'      => $approval->approved_at ?? null,
+                ];
                 continue;
             }
 
-            // Cari SignatureLog berdasarkan sign_type dan sign_id (andal)
             $user = User::where('karyawan_id', $approval->disetujui_oleh)->first();
 
             $log = SignatureLogs::where('sign_type', 'surat_cuti_approval')
@@ -149,72 +357,34 @@ class DocstoreSyncService
 
             $certs = null;
             if ($user && $log) {
-                // Gunakan certificate_id dari log (sertifikat yang benar-benar dipakai saat sign)
                 $certs = $log->certificate_id
                     ? SignatureCerts::find($log->certificate_id)
                     : SignatureCerts::where('user_id', $user->id)->latest('id')->first();
             }
 
-            // Fallback jika log tidak ditemukan (dokumen seeder/tanpa log)
             $originalData = $log ? $log->data : 'MOCK_SIGNATURE_' . $approval->signature_hash;
-            $signature = $log ? $log->signature : 'MOCK_SIGNATURE_' . $approval->signature_hash;
-
-            $publicKey = '';
+            $signature    = $log ? $log->signature : 'MOCK_SIGNATURE_' . $approval->signature_hash;
+            $publicKey    = '';
             if ($certs) {
                 $publicKey = $certs->public_key;
             } else {
                 $fallbackCert = SignatureCerts::where('user_id', 1)->first();
-                $publicKey = $fallbackCert ? $fallbackCert->public_key : 'MOCK_PUBLIC_KEY';
+                $publicKey    = $fallbackCert ? $fallbackCert->public_key : 'MOCK_PUBLIC_KEY';
             }
 
             $signatures[] = [
                 'signature_hash' => $approval->signature_hash,
-                'original_data' => $originalData,
-                'signature' => $signature,
-                'data_hash' => $log ? $log->data_hash : null,
-                'algorithm' => $log ? ($log->algorithm ?? 'sha256') : 'sha256',
-                'public_key' => $publicKey,
-                'signer_name' => optional($approval->karyawan)->full_nama ?? optional($approval->karyawan)->nama ?? 'Sistem',
-                'signer_role' => optional(optional($approval->karyawan)->jabatan?->first())->nama,
-                'status' => is_object($approval->status) ? $approval->status->value : $approval->status,
-                'signed_at' => $approval->approved_at ?? now()->toIso8601String()
+                'original_data'  => $originalData,
+                'signature'      => $signature,
+                'data_hash'      => $log ? $log->data_hash : null,
+                'algorithm'      => $log ? ($log->algorithm ?? 'sha256') : 'sha256',
+                'public_key'     => $publicKey,
+                'signer_name'    => optional($approval->karyawan)->full_nama ?? optional($approval->karyawan)->nama ?? 'Sistem',
+                'signer_role'    => optional(optional($approval->karyawan)->jabatan?->first())->nama,
+                'status'         => is_object($approval->status) ? $approval->status->value : $approval->status,
+                'signed_at'      => $approval->approved_at ?? now()->toIso8601String(),
             ];
         }
-
-        // Send payload
-        $payload = [
-            'document_type' => 'cuti',
-            'document_id' => $surat->id,
-            'document_number' => $surat->no_surat,
-            'status' => is_object($surat->status) ? $surat->status->value : $surat->status,
-            'content' => $content,
-            'signatures' => $signatures
-        ];
-
-        return $this->sendToDocstore($payload);
-    }
-
-    protected function sendToDocstore(array $payload)
-    {
-        try {
-            $response = Http::withToken($this->apiToken)
-                ->timeout(5)
-                ->post($this->apiUrl . '/documents', $payload);
-
-            if ($response->successful()) {
-                return true;
-            }
-
-            Log::error('Docstore sync failed: ' . $response->body(), [
-                'status' => $response->status(),
-                'payload' => $payload
-            ]);
-            return false;
-        } catch (\Throwable $e) {
-            Log::error('Docstore sync connection error: ' . $e->getMessage(), [
-                'payload' => $payload
-            ]);
-            return false;
-        }
+        return $signatures;
     }
 }
