@@ -26,6 +26,7 @@ Route::prefix('absensi')
     ->group(function () {
         Route::get('/', App\Livewire\Kepegawaian\AbsensiContainer::class)->name('index');
         Route::get('/import', App\Livewire\Kepegawaian\Absensi\Import::class)->name('import');
+        Route::get('/duplicate-report/{logId?}', App\Livewire\Kepegawaian\Absensi\DuplicateTapReport::class)->name('duplicate-report');
         Route::get('/rekonsiliasi/{batchId}', App\Livewire\Kepegawaian\Absensi\Rekonsiliasi::class)->name('rekonsiliasi');
         Route::get('/rekap', App\Livewire\Kepegawaian\Absensi\Rekap::class)->name('rekap');
     });

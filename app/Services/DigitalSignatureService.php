@@ -820,17 +820,17 @@ class DigitalSignatureService
         int $id,
         int $certificate_id
     ): SignatureLogs {
-        return SignatureLogs::create(
+        return SignatureLogs::updateOrCreate(
+            ['data_hash' => $data_hash],
             [
-                'data' => $data,
-                'signature' => $signature,
-                'data_hash' => $data_hash,
-                'algorithm' => $algorithm,
-                'sign_type' => $type,
-                'sign_id' => $id,
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-                'user_id' => $userId,
+                'data'           => $data,
+                'signature'      => $signature,
+                'algorithm'      => $algorithm,
+                'sign_type'      => $type,
+                'sign_id'        => $id,
+                'ip_address'     => request()->ip(),
+                'user_agent'     => request()->userAgent(),
+                'user_id'        => $userId,
                 'certificate_id' => $certificate_id,
             ]
         );

@@ -78,51 +78,41 @@
             <td colspan="6"><b>Demikian untuk diterima dengan baik dan pelaksanaan pembuatan bukti kas / bank untuk proses pembayaran selanjutnya.<br>Atas perhatian dan kerjasamanya diucapkan
                     terima kasih.</b></td>
         </tr>
+        @php
+            $isManualSp3 = ($suratSp3->status === 'manual') || collect($this->approvals)->contains(function($item) {
+                $st = strtolower(is_object($item['status'] ?? '') ? $item['status']->value : (string)($item['status'] ?? ''));
+                return in_array($st, ['manual', 'approved manual']) || !empty($item['is_manual']);
+            });
+        @endphp
+
+        @if ($isManualSp3 || $suratSp3->status !== 'approved')
         <tr>
             @forelse ($this->approvals as $item)
-                @if ($item['status'] == 'Manual' || !empty($item['is_manual']))
-                    <td colspan="6" align="right">
-                        <table style="font-size:11px; width:33%; text-align: center;">
-                            <tr>
-                                <td>Mengetahui,</td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <span style="display:block; height:60px; width:auto;"></span>
-                                    <span style="font-weight: bold; display:block; margin: 0 auto;">{{ $item['nama'] }}</span>
-                                    <span style="font-size:10px;">({{ $item['jabatan'][0]['nama'] ?? ' ' }})</span>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                @else
-                    <td colspan="6" align="right">
-                        <table style="font-size:11px; width:33%; text-align: center;">
-                            <tr>
-                                <td>{{ $item['status'] }} Oleh,</td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center;">
-                                    <span>
-                                        <img src="data:image/png;base64,{{ $this->generateBarcode }}" alt="Barcode Tanda Tangan" style="height: 80px; width:auto; display:block; margin: 0 auto;">
-                                    </span>
-                                    <span style="font-weight: bold; display:block; margin: 0 auto;">{{ $item['nama'] }}</span>
-                                    <span style="font-size:10px;">({{ $item['jabatan'][0]['nama'] ?? ' ' }})</span>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                @endif
+                <td colspan="6" align="right">
+                    <table style="font-size:11px; width:33%; text-align: center;">
+                        <tr>
+                            <td>{{ ($item['status'] == 'Manual' || !empty($item['is_manual'])) ? 'Mengetahui' : $item['status'] . ' Oleh' }},</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: center;">
+                                <span style="display:block; height:60px; width:auto;"></span>
+                                <span style="font-weight: bold; display:block; margin: 0 auto;">{{ $item['nama'] }}</span>
+                                <span style="font-size:10px;">({{ $item['jabatan'][0]['nama'] ?? ' ' }})</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
             @empty
                 <td colspan="6" align="right">
                     <table style="font-size:11px; font-style:italic;">
                         <tr>
-                            <td>Menunggu Persetujuan</td>
+                            <td>Menunggu Persetujuan TTD Basah</td>
                         </tr>
                     </table>
                 </td>
             @endforelse
         </tr>
+        @endif
         <tr>
             <td colspan="6">
                 <table style="font-size:8px;">
@@ -134,6 +124,11 @@
                     </tr>
                     <tr>
                         <td>2. Arsip</td>
+                    </tr>
+                    <tr>
+                        <td style="padding-top: 5px;">
+                            <img src="data:image/png;base64,{{ $this->generateHeaderQrCode }}" alt="QR Legalitas Dokumen" style="height: 55px; width: 55px; display: block;">
+                        </td>
                     </tr>
                 </table>
             </td>

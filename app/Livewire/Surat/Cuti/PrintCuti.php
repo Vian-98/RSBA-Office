@@ -3,6 +3,8 @@
 namespace App\Livewire\Surat\Cuti;
 
 use App\Models\Surat\SuratCuti;
+use App\Services\QrGeneratorService;
+use App\Services\DocumentSignatureService;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -25,7 +27,7 @@ class PrintCuti extends Component
     {
         $this->suratCuti = SuratCuti::find($this->suratCuti->id);
 
-        $this->dispatch('trigger-print');
+        $this->dispatch('trigger-print', noSurat: $this->suratCuti->no_surat);
     }
 
     #[Computed]
@@ -37,32 +39,39 @@ class PrintCuti extends Component
     #[Computed]
     public function approvals()
     {
-        // parent_id pengaju
-        // $jabatanId  = $this->karyawan->jabatan?->first()?->id;
-
-        // Approvers
         return $this->suratCuti->approvals->map(
             function ($approval) {
                 $jabatan = $approval->karyawan?->jabatan?->first();
-                // dd($jabatan->id, $atasanId);
+
+                $isManual = $approval->status === \App\Enums\StatusApproval::MANUAL
+                    || str_contains(strtolower($approval->keterangan ?? ''), 'manual');
 
                 return [
-                    'nama'        => $approval->karyawan?->full_nama,
-                    'jabatan'     => $jabatan?->nama,
-                    'status'      => $approval->status->nama(),
-                    'signature'   => $approval?->signature_hash,
+                    'nama'      => $approval->karyawan?->full_nama,
+                    'jabatan'   => $jabatan?->nama,
+                    'status'    => $isManual ? 'Manual' : $approval->status->nama(),
+                    'signature' => $approval?->signature_hash,
+                    'is_manual' => $isManual,
                 ];
             }
-
         )->toArray();
+    }
+
+    #[Computed]
+    public function generateHeaderQrCode()
+    {
+        $docSignService = app(DocumentSignatureService::class);
+        $p12Hash = $docSignService->ensureP12SystemSignature($this->suratCuti);
+
+        $qrService = app(QrGeneratorService::class);
+        return $qrService->generateQrPngBase64($p12Hash, 4, 4);
     }
 
     #[Computed]
     public function generateBarcode($key)
     {
-        // $key = $this->approvals();
         if (!$key) {
-            return;
+            return $this->generateHeaderQrCode();
         }
         $barcode = new DNS2D();
         return $barcode->getBarcodePNG($key, 'QRCODE');

@@ -3,7 +3,6 @@
 namespace App\Livewire\Kepegawaian\Absensi;
 
 use Livewire\Component;
-
 use Livewire\WithPagination;
 use App\Models\Sdm\AbsensiImportLog;
 use App\Models\Sdm\AbsensiStaging;
@@ -20,7 +19,16 @@ class Rekonsiliasi extends Component
     public $batchId;
     public $log;
     public $search = '';
-    public $filterStatus = 'all';
+    public $filterStatus = 'problematic'; // Default: Tampilkan data yang memerlukan perhatian/revisi
+
+    // Modal Edit/Revisi
+    public $editingStagingId = null;
+    public $editNamaMentah = '';
+    public $editTanggal = '';
+    public $editClockIn = '';
+    public $editClockOut = '';
+    public $editKaryawanId = null;
+    public $editCatatan = '';
 
     public function mount($batchId)
     {
@@ -31,6 +39,65 @@ class Rekonsiliasi extends Component
     public function updatingSearch()
     {
         $this->resetPage();
+    }
+
+    public function updatingFilterStatus()
+    {
+        $this->resetPage();
+    }
+
+    public function openEditModal($stagingId)
+    {
+        $staging = AbsensiStaging::find($stagingId);
+        if (!$staging) return;
+
+        $this->editingStagingId = $staging->id;
+        $this->editNamaMentah    = $staging->nama_mentah;
+        $this->editTanggal       = \Carbon\Carbon::parse($staging->tanggal)->format('d/m/Y');
+        $this->editClockIn       = $staging->clock_in_aktual ?? '';
+        $this->editClockOut      = $staging->clock_out_aktual ?? '';
+        $this->editKaryawanId    = $staging->karyawan_id;
+        $this->editCatatan       = $staging->catatan_mesin ?? '';
+
+        $this->dispatch('open-modal', id: 'modal-revisi-absensi');
+    }
+
+    public function simpanRevisi()
+    {
+        if (!$this->editingStagingId) return;
+
+        $staging = AbsensiStaging::find($this->editingStagingId);
+        if ($staging) {
+            $statusMatching = $this->editKaryawanId ? 'matched' : $staging->status_matching;
+
+            $clockIn  = !empty($this->editClockIn) ? trim($this->editClockIn) : null;
+            $clockOut = !empty($this->editClockOut) ? trim($this->editClockOut) : null;
+
+            // Format HH:mm jika dimasukkan angka/jam
+            if ($clockIn && strlen($clockIn) === 5) {
+                $clockIn = $clockIn;
+            }
+            if ($clockOut && strlen($clockOut) === 5) {
+                $clockOut = $clockOut;
+            }
+
+            $catatanBaru = "Direvisi manual SDM";
+            if ($this->editCatatan && $this->editCatatan !== 'Direvisi manual SDM') {
+                $catatanBaru .= " ({$this->editCatatan})";
+            }
+
+            $staging->update([
+                'clock_in_aktual'  => $clockIn,
+                'clock_out_aktual' => $clockOut,
+                'karyawan_id'      => $this->editKaryawanId,
+                'status_matching'  => $statusMatching,
+                'catatan_mesin'    => $catatanBaru,
+            ]);
+
+            $this->updateLogCounters();
+            $this->dispatch('close-modal', id: 'modal-revisi-absensi');
+            $this->toast()->success('Sukses', 'Data absensi berhasil direvisi.')->send();
+        }
     }
 
     public function tautkanManual($stagingId, $karyawanId)
@@ -87,8 +154,7 @@ class Rekonsiliasi extends Component
             return;
         }
 
-        // Optimization: Fetch all details in one query and group by karyawan_id . '_' . tanggal
-        $karyawanIds = $stagings->pluck('karyawan_id')->unique()->toArray();
+        $karyawanIds = $stagings->pluck('karyawan_id')->filter()->unique()->toArray();
         $startDate = $stagings->min('tanggal');
         $endDate = $stagings->max('tanggal');
 
@@ -190,7 +256,14 @@ class Rekonsiliasi extends Component
     {
         $query = AbsensiStaging::where('import_batch_id', $this->batchId);
 
-        if ($this->filterStatus !== 'all') {
+        if ($this->filterStatus === 'problematic') {
+            $query->where(function ($q) {
+                $q->whereIn('status_matching', ['unmatched', 'ambiguous'])
+                  ->orWhereNotNull('catatan_mesin');
+            });
+        } elseif ($this->filterStatus === 'anomali') {
+            $query->whereNotNull('catatan_mesin');
+        } elseif ($this->filterStatus !== 'all') {
             $query->where('status_matching', $this->filterStatus);
         }
 
@@ -202,7 +275,7 @@ class Rekonsiliasi extends Component
         }
 
         return view('livewire.kepegawaian.absensi.rekonsiliasi', [
-            'stagings' => $query->paginate(20),
+            'stagings'  => $query->paginate(20),
             'karyawans' => Karyawan::select('id', 'nama', 'nip')->orderBy('nama')->get()
         ]);
     }

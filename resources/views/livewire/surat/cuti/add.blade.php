@@ -45,7 +45,7 @@
                     hint="Pilih tanggal mulai cuti melahirkan (otomatis diajukan selama 90 hari ke depan).">
                 </x-ts:date>
             @else
-                <x-ts:date multiple format="DD MMM" wire:model='form.tgl_cuti' x-on:select="updateLamaCuti($event.detail.date)" :min-date="now()->subDays(-1)" placeholder="Tgl Cuti" wire:key="cuti-multiple"
+                <x-ts:date multiple format="YYYY-MM-DD" wire:model='form.tgl_cuti' x-on:select="updateLamaCuti($event.detail.date)" :min-date="now()->subDays(-1)" placeholder="Tgl Cuti" wire:key="cuti-multiple"
                     hint="Pilih satu per satu tanggal cuti yang diajukan.">
                 </x-ts:date>
             @endif

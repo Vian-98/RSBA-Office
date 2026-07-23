@@ -94,7 +94,7 @@
         @endif
     </x-filament::modal>
 
-    <div x-data x-on:trigger-print.window="$nextTick(() => printArea('print-cuti-approved'))">
+    <div x-data x-on:trigger-print.window="$nextTick(() => printArea('print-cuti-approved', $event.detail?.noSurat ?? 'Surat_Cuti'))">
         <div class="hidden" id="print-cuti-approved">
             @if ($surat)
                 <livewire:Surat.Cuti.PrintCuti :suratCuti="$surat" :key="'print-cuti-' . $surat->id . '-' . optional($surat->updated_at)->timestamp" />

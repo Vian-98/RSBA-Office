@@ -84,14 +84,18 @@
         </tr>
     </table>
 
+    @php
+        $isManualCuti = ($suratCuti->status->value === 'manual') || collect($this->approvals)->contains(fn($item) => !empty($item['is_manual']));
+    @endphp
+
+    @if ($isManualCuti || $suratCuti->status->value !== 'approved')
     <table style="width:100%;font-size:12px;margin-top:8px;" cellpadding="5">
         <tr>
             {{-- Pemohon --}}
             <td style="width:33%;text-align:center;">
                 <p style="margin:0;"><strong>Pemohon,</strong></p>
 
-                <img src="data:image/png;base64,{{ $this->generateBarcode($suratCuti->no_surat) }}" alt="Barcode {{ $suratCuti->no_surat }}"
-                    style="height:70px;width:auto;display:block;margin:4px auto;">
+                <span style="height:70px;display:block;"></span>
 
                 <p style="margin:0;border-top:1px solid #777;display:inline-block;padding-top:5px;">
                     {{ $this->karyawan->nama ?? '_______________' }}
@@ -101,14 +105,9 @@
             {{-- Approvers --}}
             @foreach ($this->approvals as $approver)
                 <td style="width:33%;text-align:center;">
-                    <p style="margin:0;"><strong>{{ $approver['status'] }},</strong></p>
+                    <p style="margin:0;"><strong>{{ $approver['is_manual'] ? 'Mengetahui' : $approver['status'] . ' Oleh' }},</strong></p>
 
-                    <span style="height:70px;display:flex;align-items:center;justify-content:center;margin:4px auto;">
-                        @if (!empty($approver['signature']))
-                            <img src="data:image/png;base64,{{ $this->generateBarcode($approver['signature']) }}" alt="Tanda tangan {{ $approver['nama'] ?? '' }}"
-                                style="max-height:100%;width:auto;">
-                        @endif
-                    </span>
+                    <span style="height:70px;display:block;"></span>
 
                     <p style="margin:0;border-top:1px solid #777;display:inline-block;padding-top:2px;">
                         {{ $approver['nama'] ?? '_______________' }}<br>
@@ -116,6 +115,35 @@
                     </p>
                 </td>
             @endforeach
+        </tr>
+    </table>
+    @endif
+
+
+    <table style="width:100%;font-size:12px;margin-top:4px;" cellpadding="5">
+        <tr>
+            <td colspan="6">
+                <table style="font-size:8px;">
+                    <tr>
+                        <td>Tembusan:</td>
+                    </tr>
+                    @if ($isManualCuti)
+                        <tr><td>1. Direktur</td></tr>
+                        <tr><td>2. Arsip</td></tr>
+                    @else
+                        @foreach ($this->approvals as $i => $approver)
+                        <tr>
+                            <td>{{ $i + 1 }}. {{ $approver['nama'] }} ({{ $approver['is_manual'] ? 'Mengetahui' : 'Menyetujui' }})</td>
+                        </tr>
+                        @endforeach
+                    @endif
+                    <tr>
+                        <td style="padding-top:5px;">
+                            <img src="data:image/png;base64,{{ $this->generateHeaderQrCode }}" alt="QR Legalitas Dokumen" style="height:80px; width:80px; display:block;">
+                        </td>
+                    </tr>
+                </table>
+            </td>
         </tr>
     </table>
 

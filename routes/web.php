@@ -42,6 +42,9 @@ Route::middleware('auth')
 
 Route::get('surat/verification', App\Livewire\Surat\Verifikasi\Index::class)->name('surat.verification');
 
+// Public Document Verification Portal
+Route::get('/verifikasi-surat/{hash?}', App\Livewire\Public\VerifyDocument::class)->name('surat.verifikasi.publik');
+
 // // Administrator
 // Route::middleware('auth')
 //     ->prefix('admin')
