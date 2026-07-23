@@ -73,11 +73,3 @@
                 </x-ts:dropdown>
             </div>
         </div>
-
-
-
-
-
-
-    </nav>
-</div>

@@ -22,19 +22,50 @@ use Exception;
 
 class CutiBersamaTest extends TestCase
 {
-    use \Illuminate\Foundation\Testing\DatabaseTransactions;
+    use \Illuminate\Foundation\Testing\RefreshDatabase;
 
     protected function loginUser(): User
     {
-        $user = User::first() ?? User::factory()->create();
+        \App\Models\Surat\CutiJenis::firstOrCreate(['id' => 1], ['nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y']);
+
+        $user = User::first();
+        if (!$user) {
+            $karyawan = Karyawan::create([
+                'nip' => '888888888',
+                'nik' => '8888888888888888',
+                'nama' => 'Test Karyawan User',
+                'hp' => '-', 'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => '-', 'agama' => 'islam',
+                'tgl_lahir' => '1990-01-01', 'status' => 'tetap', 'tgl_masuk' => '2020-01-01',
+            ]);
+            $user = User::create([
+                'name' => 'Test Admin',
+                'email' => 'admin_test@rsba.com',
+                'password' => '1234',
+                'karyawan_id' => $karyawan->id,
+            ]);
+        }
         $this->actingAs($user);
         return $user;
+    }
+
+    protected function createTestKaryawanReguler($ruanganId, $nip = '111111111', $nama = 'Reguler User Test')
+    {
+        return Karyawan::create([
+            'nip' => $nip,
+            'nik' => $nip . $nip,
+            'nama' => $nama,
+            'hp' => '-', 'prov' => '-', 'kab' => '-', 'kec' => '-', 'desa' => '-', 'alamat' => '-', 'agama' => 'islam',
+            'tgl_lahir' => '1990-01-01', 'status' => 'tetap', 'tgl_masuk' => '2020-01-01',
+            'ruangan_id' => $ruanganId,
+            'kategori_kerja' => KategoriKerja::REGULER,
+        ]);
     }
 
     #[Test]
     public function simulasi_cuti_bersama_memotongan_kuota_reguler_dan_membatasi_piket_dan_absensi(): void
     {
-        $this->loginUser();
+        $user = $this->loginUser();
+        $ruangan = \App\Models\Ruangan::firstOrCreate(['nama' => 'IGD (Instalasi Gawat Darurat)']);
 
         // 1. Setup Event Cuti Bersama 1 Hari
         $tglTest = '2026-09-15';
@@ -52,28 +83,25 @@ class CutiBersamaTest extends TestCase
         ]);
 
         $shift = \App\Models\Sdm\JadwalShift::firstOrCreate(['kode' => 'REGULER'], ['nama' => 'Reguler Pagi', 'jam_masuk' => '07:30:00', 'jam_keluar' => '16:00:00', 'created_by' => 1]);
-        $jadwalKerja = \App\Models\Sdm\JadwalKerja::firstOrCreate(['bulan' => 9, 'tahun' => 2026], ['created_by' => 1]);
-        $karyawanReguler = Karyawan::where('kategori_kerja', KategoriKerja::REGULER)->first();
-        if ($karyawanReguler) {
-            JadwalKerjaDetail::updateOrCreate(
-                ['karyawan_id' => $karyawanReguler->id, 'tanggal' => $tglTest],
-                ['jadwal_kerja_id' => $jadwalKerja->id, 'shift_id' => $shift->id, 'status_kehadiran' => StatusKehadiran::BELUM_DICEK]
-            );
-        }
+        $jadwalKerja = \App\Models\Sdm\JadwalKerja::firstOrCreate(['bulan' => 9, 'tahun' => 2026, 'ruangan_id' => $ruangan->id], ['created_by' => 1]);
+        
+        $karyawanReguler = $this->createTestKaryawanReguler($ruangan->id, '111111111', 'Reguler User 1');
+        JadwalKerjaDetail::updateOrCreate(
+            ['karyawan_id' => $karyawanReguler->id, 'tanggal' => $tglTest],
+            ['jadwal_kerja_id' => $jadwalKerja->id, 'shift_id' => $shift->id, 'status_kehadiran' => StatusKehadiran::BELUM_DICEK]
+        );
 
         // 3. Setup Pegawai Reguler YANG MASUK / TAP ABSEN (harus TETAP_HADIR, TIDAK dipotong)
-        $karyawanAbsen = Karyawan::where('kategori_kerja', KategoriKerja::REGULER)->skip(1)->first();
-        if ($karyawanAbsen) {
-            JadwalKerjaDetail::updateOrCreate(
-                ['karyawan_id' => $karyawanAbsen->id, 'tanggal' => $tglTest],
-                ['jadwal_kerja_id' => $jadwalKerja->id, 'shift_id' => $shift->id, 'status_kehadiran' => StatusKehadiran::BELUM_DICEK]
-            );
+        $karyawanAbsen = $this->createTestKaryawanReguler($ruangan->id, '222222222', 'Reguler User 2');
+        JadwalKerjaDetail::updateOrCreate(
+            ['karyawan_id' => $karyawanAbsen->id, 'tanggal' => $tglTest],
+            ['jadwal_kerja_id' => $jadwalKerja->id, 'shift_id' => $shift->id, 'status_kehadiran' => StatusKehadiran::BELUM_DICEK]
+        );
 
-            AbsensiStaging::updateOrCreate(
-                ['karyawan_id' => $karyawanAbsen->id, 'tanggal' => $tglTest],
-                ['import_batch_id' => 1, 'employee_id_mentah' => 'TEST01', 'clock_in_aktual' => '07:30', 'clock_out_aktual' => '16:00', 'status_matching' => 'matched']
-            );
-        }
+        AbsensiStaging::updateOrCreate(
+            ['karyawan_id' => $karyawanAbsen->id, 'tanggal' => $tglTest],
+            ['import_batch_id' => 1, 'employee_id_mentah' => 'TEST01', 'clock_in_aktual' => '07:30', 'clock_out_aktual' => '16:00', 'status_matching' => 'matched']
+        );
 
         // 4. Jalankan Simulasi
         $simulasiService = app(SimulasiCutiBersamaService::class);
@@ -83,18 +111,14 @@ class CutiBersamaTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $hasil['total_pegawai']);
 
         // Verifikasi Pegawai Reguler Tanpa Absen -> DIPOTONG_CUTI
-        if ($karyawanReguler) {
-            $rowReguler = collect($hasil['details'])->firstWhere('karyawan_id', $karyawanReguler->id);
-            $this->assertEquals('DIPOTONG_CUTI', $rowReguler['status_aksi']);
-            $this->assertTrue($rowReguler['potong_cuti']);
-        }
+        $rowReguler = collect($hasil['details'])->firstWhere('karyawan_id', $karyawanReguler->id);
+        $this->assertEquals('DIPOTONG_CUTI', $rowReguler['status_aksi']);
+        $this->assertTrue($rowReguler['potong_cuti']);
 
         // Verifikasi Pegawai Reguler dengan Absen -> TETAP_HADIR
-        if ($karyawanAbsen) {
-            $rowAbsen = collect($hasil['details'])->firstWhere('karyawan_id', $karyawanAbsen->id);
-            $this->assertEquals('TETAP_HADIR', $rowAbsen['status_aksi']);
-            $this->assertFalse($rowAbsen['potong_cuti']);
-        }
+        $rowAbsen = collect($hasil['details'])->firstWhere('karyawan_id', $karyawanAbsen->id);
+        $this->assertEquals('TETAP_HADIR', $rowAbsen['status_aksi']);
+        $this->assertFalse($rowAbsen['potong_cuti']);
     }
 
     #[Test]
@@ -115,16 +139,15 @@ class CutiBersamaTest extends TestCase
             'tanggal' => $tglTest,
         ]);
 
+        $ruangan = \App\Models\Ruangan::firstOrCreate(['nama' => 'IGD (Instalasi Gawat Darurat)']);
         $shift = \App\Models\Sdm\JadwalShift::firstOrCreate(['kode' => 'REGULER'], ['nama' => 'Reguler Pagi', 'jam_masuk' => '07:30:00', 'jam_keluar' => '16:00:00', 'created_by' => 1]);
-        $jadwalKerja = \App\Models\Sdm\JadwalKerja::firstOrCreate(['bulan' => 9, 'tahun' => 2026], ['created_by' => 1]);
-        $karyawanReguler = Karyawan::where('kategori_kerja', KategoriKerja::REGULER)->first();
+        $jadwalKerja = \App\Models\Sdm\JadwalKerja::firstOrCreate(['bulan' => 9, 'tahun' => 2026, 'ruangan_id' => $ruangan->id], ['created_by' => 1]);
+        $karyawanReguler = $this->createTestKaryawanReguler($ruangan->id, '333333333', 'Reguler User 3');
 
-        if ($karyawanReguler) {
-            JadwalKerjaDetail::updateOrCreate(
-                ['karyawan_id' => $karyawanReguler->id, 'tanggal' => $tglTest],
-                ['jadwal_kerja_id' => $jadwalKerja->id, 'shift_id' => $shift->id, 'status_kehadiran' => StatusKehadiran::BELUM_DICEK]
-            );
-        }
+        JadwalKerjaDetail::updateOrCreate(
+            ['karyawan_id' => $karyawanReguler->id, 'tanggal' => $tglTest],
+            ['jadwal_kerja_id' => $jadwalKerja->id, 'shift_id' => $shift->id, 'status_kehadiran' => StatusKehadiran::BELUM_DICEK]
+        );
 
         $terapkanService = app(TerapkanCutiBersamaService::class);
         $success = $terapkanService->terapkan($event, $user->id);
@@ -132,23 +155,21 @@ class CutiBersamaTest extends TestCase
         $this->assertTrue($success);
         $this->assertEquals('diterapkan', $event->fresh()->status);
 
-        if ($karyawanReguler) {
-            // Verifikasi surat_cuti otomatis dibuat
-            $suratCuti = SuratCuti::where('karyawan_id', $karyawanReguler->id)
-                ->where('cuti_bersama_id', $event->id)
-                ->first();
+        // Verifikasi surat_cuti otomatis dibuat
+        $suratCuti = SuratCuti::where('karyawan_id', $karyawanReguler->id)
+            ->where('cuti_bersama_id', $event->id)
+            ->first();
 
-            $this->assertNotNull($suratCuti);
-            $this->assertEquals('cuti_bersama', $suratCuti->sumber);
-            $this->assertEquals(StatusApproval::APPROVED, $suratCuti->status);
+        $this->assertNotNull($suratCuti);
+        $this->assertEquals('cuti_bersama', $suratCuti->sumber);
+        $this->assertEquals(StatusApproval::APPROVED, $suratCuti->status);
 
-            // Verifikasi status_kehadiran berubah jadi CUTI_BERSAMA
-            $detail = JadwalKerjaDetail::where('karyawan_id', $karyawanReguler->id)
-                ->where('tanggal', $tglTest)
-                ->first();
+        // Verifikasi status_kehadiran berubah jadi CUTI_BERSAMA
+        $detail = JadwalKerjaDetail::where('karyawan_id', $karyawanReguler->id)
+            ->whereDate('tanggal', $tglTest)
+            ->first();
 
-            $this->assertEquals(StatusKehadiran::CUTI_BERSAMA, $detail->status_kehadiran);
-        }
+        $this->assertEquals(StatusKehadiran::CUTI_BERSAMA, $detail->status_kehadiran);
     }
 
     #[Test]
@@ -169,16 +190,15 @@ class CutiBersamaTest extends TestCase
             'tanggal' => $tglTest,
         ]);
 
+        $ruangan = \App\Models\Ruangan::firstOrCreate(['nama' => 'IGD (Instalasi Gawat Darurat)']);
         $shift = \App\Models\Sdm\JadwalShift::firstOrCreate(['kode' => 'REGULER'], ['nama' => 'Reguler Pagi', 'jam_masuk' => '07:30:00', 'jam_keluar' => '16:00:00', 'created_by' => 1]);
-        $jadwalKerja = \App\Models\Sdm\JadwalKerja::firstOrCreate(['bulan' => 9, 'tahun' => 2026], ['created_by' => 1]);
-        $karyawanReguler = Karyawan::where('kategori_kerja', KategoriKerja::REGULER)->first();
+        $jadwalKerja = \App\Models\Sdm\JadwalKerja::firstOrCreate(['bulan' => 9, 'tahun' => 2026, 'ruangan_id' => $ruangan->id], ['created_by' => 1]);
+        $karyawanReguler = $this->createTestKaryawanReguler($ruangan->id, '444444444', 'Reguler User 4');
 
-        if ($karyawanReguler) {
-            JadwalKerjaDetail::updateOrCreate(
-                ['karyawan_id' => $karyawanReguler->id, 'tanggal' => $tglTest],
-                ['jadwal_kerja_id' => $jadwalKerja->id, 'shift_id' => $shift->id, 'status_kehadiran' => StatusKehadiran::BELUM_DICEK]
-            );
-        }
+        JadwalKerjaDetail::updateOrCreate(
+            ['karyawan_id' => $karyawanReguler->id, 'tanggal' => $tglTest],
+            ['jadwal_kerja_id' => $jadwalKerja->id, 'shift_id' => $shift->id, 'status_kehadiran' => StatusKehadiran::BELUM_DICEK]
+        );
 
         // Terapkan dulu
         app(TerapkanCutiBersamaService::class)->terapkan($event, $user->id);
@@ -200,7 +220,7 @@ class CutiBersamaTest extends TestCase
 
             // Verifikasi status_kehadiran dikembalikan
             $detail = JadwalKerjaDetail::where('karyawan_id', $karyawanReguler->id)
-                ->where('tanggal', $tglTest)
+                ->whereDate('tanggal', $tglTest)
                 ->first();
 
             $this->assertEquals(StatusKehadiran::BELUM_DICEK, $detail->status_kehadiran);

@@ -235,7 +235,7 @@ class KaryawanExcelSeeder extends Seeder
                 $user = \App\Models\User::updateOrCreate(
                     ['email' => $emailKoor],
                     [
-                        'password'    => \Illuminate\Support\Facades\Hash::make('1234'),
+                        'password'    => '1234',
                         'karyawan_id' => $karyawanRecord->id,
                     ]
                 );

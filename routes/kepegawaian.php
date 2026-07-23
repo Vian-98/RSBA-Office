@@ -16,6 +16,7 @@ Route::prefix('jadwal-kerja')
     ->name('jadwal-kerja.')
     ->group(function () {
         Route::get('/', App\Livewire\Kepegawaian\JadwalKerja\Index::class)->name('index');
+        Route::get('/tukar-dokter', App\Livewire\Kepegawaian\JadwalKerja\TukarJadwal::class)->name('tukar-dokter');
         Route::get('/kelola/{id}', App\Livewire\Kepegawaian\JadwalKerja\Kelola::class)->name('kelola');
     });
 
@@ -135,7 +136,7 @@ Route::prefix('surat')
 Route::prefix('cuti-bersama')
     ->name('cuti-bersama.')
     ->group(function () {
-        Route::get('/', App\Livewire\Kepegawaian\CutiBersama\Index::class)->name('index');
+        Route::redirect('/', '/kepegawaian/surat/cuti?tab=cuti-bersama')->name('index');
         Route::get('/{id}', App\Livewire\Kepegawaian\CutiBersama\Show::class)->name('show');
     });
 

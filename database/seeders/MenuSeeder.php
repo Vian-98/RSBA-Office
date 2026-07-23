@@ -14,7 +14,11 @@ class MenuSeeder extends Seeder
     public function run(): void
     {
         \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
-        Menu::truncate();
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            Menu::query()->delete();
+        } else {
+            Menu::truncate();
+        }
 
         $menus = [
             [
@@ -168,15 +172,6 @@ class MenuSeeder extends Seeder
                 'icon' => 'mail-opened',
                 'permission' => [],
                 'parent_id' => 1,
-                'group' => 'sdm',
-            ],
-            [
-                'id' => 18,
-                'nama' => 'Cuti Bersama',
-                'route' => 'kepegawaian.cuti-bersama.index',
-                'icon' => 'calendar-event',
-                'permission' => ['view-kepegawaian-cuti-bersama'],
-                'parent_id' => 17,
                 'group' => 'sdm',
             ],
             [
@@ -504,6 +499,53 @@ class MenuSeeder extends Seeder
                 'icon' => null,
                 'permission' => ['view-kepegawaian-master-aturan-pajak'],
                 'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+
+            // ── Modul Jadwal & Kehadiran (Fase 0 & 1) ──
+            [
+                'id' => 70,
+                'nama' => 'Jadwal & Kehadiran',
+                'route' => null,
+                'icon' => 'calendar-time',
+                'permission' => ['view-kepegawaian-jadwal-kerja'],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 71,
+                'nama' => 'Jadwal Kerja',
+                'route' => 'kepegawaian.jadwal-kerja.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-jadwal-kerja'],
+                'parent_id' => 70,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 72,
+                'nama' => 'Kontrol Absensi',
+                'route' => 'kepegawaian.absensi.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-absensi'],
+                'parent_id' => 70,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 73,
+                'nama' => 'Konfigurasi Jadwal',
+                'route' => 'kepegawaian.konfigurasi-jadwal.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-konfigurasi-jadwal'],
+                'parent_id' => 70,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 74,
+                'nama' => 'Jadwal Tugas Saya',
+                'route' => 'profile.jadwal-tugas-saya',
+                'icon' => null,
+                'permission' => ['view-profile-jadwal-tugas-saya'],
+                'parent_id' => 70,
                 'group' => 'sdm',
             ],
         ];

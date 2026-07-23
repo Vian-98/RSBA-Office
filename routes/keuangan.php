@@ -34,5 +34,10 @@ Route::prefix('akuntansi')
                     Route::get('umum', App\Livewire\Akuntansi\Jurnal\Index::class)->name('umum');
                 });
         }
-
     );
+
+Route::prefix('master')
+    ->name('master.')
+    ->group(function () {
+        Route::get('rekanan', App\Livewire\Master\Supplier\Index::class)->name('rekanan');
+    });

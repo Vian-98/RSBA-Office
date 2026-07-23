@@ -20,6 +20,8 @@ class RoleSeeder extends Seeder
         // Define Roles
         $superAdmin = Role::firstOrCreate(['name' => 'Super-Admin']);
         $staffSdm = Role::firstOrCreate(['name' => 'Staff-SDM']);
+        $kabid = Role::firstOrCreate(['name' => 'Kepala-Bidang']);
+        $wadir = Role::firstOrCreate(['name' => 'Wakil-Direktur']);
         $bagianUmum = Role::firstOrCreate(['name' => 'Bagian-Umum']);
         $keuangan = Role::firstOrCreate(['name' => 'Keuangan']);
         $administrasi = Role::firstOrCreate(['name' => 'Administrasi']);
@@ -28,10 +30,23 @@ class RoleSeeder extends Seeder
         // yang di-assign via tabel sdm_ruangan_koordinator, bukan role Spatie
         $staffBedah = Role::firstOrCreate(['name' => 'Staff-Bedah']);
         $staffUgd = Role::firstOrCreate(['name' => 'Staff-UGD']);
+        $pajak = Role::firstOrCreate(['name' => 'Pajak']);
 
         // Fetch all permissions currently in database
         $allPermissions = Permission::all()->pluck('name')->toArray();
         $commonPermissions = ['view-dashboard', 'view-dashboard-kamar', 'view-profile-jadwal-tugas-saya', 'view-dashboard-poli'];
+
+        // Helper to safely sync permissions ensuring permissions exist in DB
+        $safeSync = function (Role $role, array $perms) {
+            foreach ($perms as $p) {
+                Permission::firstOrCreate(['name' => $p]);
+            }
+            $role->syncPermissions($perms);
+        };
+
+        // Assign permissions to Kepala-Bidang & Wakil-Direktur
+        $safeSync($kabid, array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'approve-jadwal-kabid'])));
+        $safeSync($wadir, array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'approve-jadwal-wadir'])));
         
         // (Koordinator tidak lagi memerlukan permission khusus via Role)
 

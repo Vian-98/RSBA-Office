@@ -27,7 +27,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-sm font-bold text-slate-800">{{ $sess['browser'] }} ({{ $sess['os'] }})</span>
                                 @if($sess['is_current'])
-                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-3xs font-extrabold text-emerald-700 border border-emerald-200">
+                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 border border-emerald-200">
                                         Perangkat Ini
                                     </span>
                                 @endif

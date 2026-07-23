@@ -13,7 +13,10 @@ class JadwalKerja extends Model
     protected $table = 'sdm_jadwal_kerja';
     protected $guarded = [];
     protected $casts = [
-        'status' => StatusJadwalKerja::class
+        'status' => StatusJadwalKerja::class,
+        'diketahui_at' => 'datetime',
+        'disetujui_at' => 'datetime',
+        'published_at' => 'datetime',
     ];
 
     public function details()
@@ -26,19 +29,59 @@ class JadwalKerja extends Model
         return $this->belongsTo(Karyawan::class, 'dibuat_oleh');
     }
 
+    public function diketahuiOleh()
+    {
+        return $this->belongsTo(Karyawan::class, 'diketahui_oleh');
+    }
+
+    public function disetujuiOleh()
+    {
+        return $this->belongsTo(Karyawan::class, 'disetujui_oleh');
+    }
+
     public function ruangan()
     {
         return $this->belongsTo(\App\Models\Ruangan::class, 'ruangan_id');
     }
 
+    public function isDokterSchedule(): bool
+    {
+        if ($this->ruangan) {
+            $namaRuangan = strtolower($this->ruangan->nama);
+            if (str_contains($namaRuangan, 'dokter') || str_contains($namaRuangan, 'spesialis')) {
+                return true;
+            }
+        }
+
+        if ($this->ruangan_id) {
+            return Dokter::whereHas('karyawan', function ($q) {
+                $q->where('ruangan_id', $this->ruangan_id);
+            })->exists();
+        }
+
+        return false;
+    }
+
     public static function ensureEmployeeDetailsExist($karyawanId, $bulan, $tahun)
     {
         $karyawan = \App\Models\Sdm\Karyawan::find($karyawanId);
-        if (!$karyawan || !$karyawan->ruangan_id) {
+        if (!$karyawan) {
             return;
         }
 
-        $jadwalKerja = self::where('ruangan_id', $karyawan->ruangan_id)
+        $ruanganId = $karyawan->ruangan_id;
+        if (!$ruanganId) {
+            $defaultRuangan = \App\Models\Ruangan::firstOrCreate(
+                ['nama' => 'Kantor Manajemen (SDM & Keuangan)'],
+                ['is_active' => true]
+            );
+            $ruanganId = $defaultRuangan->id;
+            $karyawan->update(['ruangan_id' => $ruanganId]);
+        }
+
+        $isReguler = $karyawan->kategori_kerja === \App\Enums\KategoriKerja::REGULER;
+
+        $jadwalKerja = self::where('ruangan_id', $ruanganId)
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
             ->first();
@@ -46,14 +89,14 @@ class JadwalKerja extends Model
         if (!$jadwalKerja) {
             try {
                 $jadwalKerja = self::create([
-                    'ruangan_id' => $karyawan->ruangan_id,
-                    'bulan' => $bulan,
-                    'tahun' => $tahun,
-                    'status' => \App\Enums\StatusJadwalKerja::DRAFT,
+                    'ruangan_id'  => $ruanganId,
+                    'bulan'       => $bulan,
+                    'tahun'       => $tahun,
+                    'status'      => $isReguler ? \App\Enums\StatusJadwalKerja::PUBLISHED : \App\Enums\StatusJadwalKerja::DRAFT,
                     'dibuat_oleh' => 1,
                 ]);
             } catch (\Throwable $e) {
-                $jadwalKerja = self::where('ruangan_id', $karyawan->ruangan_id)
+                $jadwalKerja = self::where('ruangan_id', $ruanganId)
                     ->where('bulan', $bulan)
                     ->where('tahun', $tahun)
                     ->first();
@@ -61,6 +104,8 @@ class JadwalKerja extends Model
                     return;
                 }
             }
+        } elseif ($isReguler && $jadwalKerja->status === \App\Enums\StatusJadwalKerja::DRAFT) {
+            $jadwalKerja->update(['status' => \App\Enums\StatusJadwalKerja::PUBLISHED]);
         }
 
         $hasDetails = \App\Models\Sdm\JadwalKerjaDetail::where('jadwal_kerja_id', $jadwalKerja->id)
@@ -69,7 +114,7 @@ class JadwalKerja extends Model
 
         if ($hasDetails) {
             $shiftReguler = \App\Models\Sdm\JadwalShift::where('kode', 'REGULER')->where('aktif', true)->first();
-            if ($karyawan->kategori_kerja === \App\Enums\KategoriKerja::REGULER && $shiftReguler) {
+            if ($isReguler && $shiftReguler) {
                 $details = \App\Models\Sdm\JadwalKerjaDetail::where('jadwal_kerja_id', $jadwalKerja->id)
                     ->where('karyawan_id', $karyawanId)
                     ->whereNull('shift_id')

@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
+            DokterSeeder::class,           // Spesialisasi, 3 Koor Dokter (IGD/Rawat Inap/HD), user login
             SuperAdminSignatureSeeder::class,
             MenuSeeder::class,
             PerusahaanSeeder::class,

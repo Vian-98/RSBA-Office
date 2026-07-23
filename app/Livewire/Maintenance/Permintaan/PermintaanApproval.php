@@ -62,14 +62,20 @@ class PermintaanApproval extends Component
             ]);
 
             if ($this->approval === 'rejected') {
-                $this->maintenanceRequest->asset->update([
-                    'status' => 'baik',
-                ]);
-                $this->maintenanceRequest->asset->components->each(function ($component) {
-                    $component->update([
-                        'status' => 'baik',
-                    ]);
-                });
+                $asset = $this->maintenanceRequest->asset;
+                if ($asset) {
+                    $asset->update(['status' => 'baik']);
+                    if ($asset->components->isNotEmpty()) {
+                        $asset->components->each(fn($c) => $c->update(['status' => 'baik']));
+                    }
+                    if ($asset->mainAsset) {
+                        $parent = $asset->mainAsset;
+                        $hasOtherUnderRepair = $parent->components()->where('id', '!=', $asset->id)->whereIn('status', ['diperbaiki', 'rusak'])->exists();
+                        if (!$hasOtherUnderRepair) {
+                            $parent->update(['status' => 'baik']);
+                        }
+                    }
+                }
             }
 
             // 02 Add jadwal dan teknisi jika disetujui

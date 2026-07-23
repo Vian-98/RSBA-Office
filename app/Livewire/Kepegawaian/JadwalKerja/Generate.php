@@ -35,6 +35,7 @@ class Generate extends Component
 
     public function mount()
     {
+        $this->authorize('generate', JadwalKerja::class);
         $this->bulan = date('n');
         $this->tahun = date('Y');
     }

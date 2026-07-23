@@ -16,9 +16,15 @@ class JadwalSeeder extends Seeder
     public function run(): void
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('sdm_jadwal_shift')->truncate();
-        DB::table('sdm_ruangan_shift')->truncate();
-        DB::table('sdm_jadwal_aturan')->truncate();
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            DB::table('sdm_jadwal_shift')->delete();
+            DB::table('sdm_ruangan_shift')->delete();
+            DB::table('sdm_jadwal_aturan')->delete();
+        } else {
+            DB::table('sdm_jadwal_shift')->truncate();
+            DB::table('sdm_ruangan_shift')->truncate();
+            DB::table('sdm_jadwal_aturan')->truncate();
+        }
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         // ── 1. Master Shift ──────────────────────────────────────────────

@@ -110,37 +110,37 @@
 
         {{-- ===== PANEL KANAN (Tabs) ===== --}}
         <div class="min-w-0 flex-1">
-            <div class="rounded-lg bg-white p-4 shadow-sm" x-data="{ tab: @entangle('tab') }">
-                <div class="border-b border-gray-200 overflow-x-auto">
-                    <nav class="-mb-px flex space-x-6 min-w-max" aria-label="Tabs">
+            <div class="rounded-2xl bg-white p-3 sm:p-5 shadow-sm border border-slate-100" x-data="{ tab: @entangle('tab') }">
+                <div class="overflow-x-auto scrollbar-hidden pb-1">
+                    <nav class="inline-flex gap-2 sm:gap-3 min-w-max p-0.5" aria-label="Tabs">
                         <button wire:click="$set('tab', 'home')" @click="tab = 'home'"
-                            :class="tab === 'home' ? 'border-indigo-500 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
-                            class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors flex items-center gap-2">
-                            <x-ts:icon name="tabler.home" class="h-4 w-4" />
+                            :class="tab === 'home' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-200 border border-indigo-600' : 'bg-slate-100/90 hover:bg-slate-200/80 border border-slate-200 text-slate-700 font-semibold'"
+                            class="whitespace-nowrap rounded-xl py-2 px-4 text-xs sm:text-sm transition-all duration-150 flex items-center gap-2">
+                            <x-ts:icon name="tabler.home" class="h-4 w-4 shrink-0" />
                             Home
                         </button>
                         <button wire:click="$set('tab', 'identitas')" @click="tab = 'identitas'"
-                            :class="tab === 'identitas' ? 'border-indigo-500 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
-                            class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors flex items-center gap-2">
-                            <x-ts:icon name="tabler.user-square" class="h-4 w-4" />
+                            :class="tab === 'identitas' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-200 border border-indigo-600' : 'bg-slate-100/90 hover:bg-slate-200/80 border border-slate-200 text-slate-700 font-semibold'"
+                            class="whitespace-nowrap rounded-xl py-2 px-4 text-xs sm:text-sm transition-all duration-150 flex items-center gap-2">
+                            <x-ts:icon name="tabler.user-square" class="h-4 w-4 shrink-0" />
                             Identitas
                         </button>
                         <button wire:click="$set('tab', 'pendidikan')" @click="tab = 'pendidikan'"
-                            :class="tab === 'pendidikan' ? 'border-indigo-500 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
-                            class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors flex items-center gap-2">
-                            <x-ts:icon name="tabler.school" class="h-4 w-4" />
+                            :class="tab === 'pendidikan' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-200 border border-indigo-600' : 'bg-slate-100/90 hover:bg-slate-200/80 border border-slate-200 text-slate-700 font-semibold'"
+                            class="whitespace-nowrap rounded-xl py-2 px-4 text-xs sm:text-sm transition-all duration-150 flex items-center gap-2">
+                            <x-ts:icon name="tabler.school" class="h-4 w-4 shrink-0" />
                             Pendidikan
                         </button>
                         <button wire:click="$set('tab', 'documents')" @click="tab = 'documents'"
-                            :class="tab === 'documents' ? 'border-indigo-500 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
-                            class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors flex items-center gap-2">
-                            <x-ts:icon name="tabler.file-type-doc" class="h-4 w-4" />
+                            :class="tab === 'documents' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-200 border border-indigo-600' : 'bg-slate-100/90 hover:bg-slate-200/80 border border-slate-200 text-slate-700 font-semibold'"
+                            class="whitespace-nowrap rounded-xl py-2 px-4 text-xs sm:text-sm transition-all duration-150 flex items-center gap-2">
+                            <x-ts:icon name="tabler.file-type-doc" class="h-4 w-4 shrink-0" />
                             Dokumen
                         </button>
                         <button wire:click="$set('tab', 'cuti')" @click="tab = 'cuti'"
-                            :class="tab === 'cuti' ? 'border-indigo-500 text-indigo-600 font-semibold' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
-                            class="whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors flex items-center gap-2">
-                            <x-ts:icon name="tabler.calendar-pause" class="h-4 w-4" />
+                            :class="tab === 'cuti' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-200 border border-indigo-600' : 'bg-slate-100/90 hover:bg-slate-200/80 border border-slate-200 text-slate-700 font-semibold'"
+                            class="whitespace-nowrap rounded-xl py-2 px-4 text-xs sm:text-sm transition-all duration-150 flex items-center gap-2">
+                            <x-ts:icon name="tabler.calendar-pause" class="h-4 w-4 shrink-0" />
                             Izin dan Cuti
                         </button>
                     </nav>

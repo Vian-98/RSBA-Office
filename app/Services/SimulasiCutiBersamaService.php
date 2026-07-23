@@ -28,14 +28,14 @@ class SimulasiCutiBersamaService
 
         $jadwalDetailMap = JadwalKerjaDetail::query()
             ->whereIn('karyawan_id', $karyawanIds)
-            ->whereIn('tanggal', $tanggals)
+            ->whereIn(\Illuminate\Support\Facades\DB::raw('DATE(tanggal)'), $tanggals)
             ->with('shift')
             ->get()
             ->keyBy(fn($row) => $row->karyawan_id . '|' . Carbon::parse($row->tanggal)->format('Y-m-d'));
 
         $absensiStagingMap = AbsensiStaging::query()
             ->whereIn('karyawan_id', $karyawanIds)
-            ->whereIn('tanggal', $tanggals)
+            ->whereIn(\Illuminate\Support\Facades\DB::raw('DATE(tanggal)'), $tanggals)
             ->where(function ($q) {
                 $q->whereNotNull('clock_in_aktual')->orWhereNotNull('clock_out_aktual');
             })

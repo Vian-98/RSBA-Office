@@ -134,7 +134,7 @@
                         @endphp
                         <div class="flex flex-col items-center flex-1 h-full justify-end group">
                             <!-- Tooltip / Label value -->
-                            <div class="mb-2 text-2xs font-extrabold text-slate-800 bg-slate-950 text-white px-2 py-1 rounded-md shadow-lg hidden group-hover:block transition-all duration-200">
+                            <div class="mb-2 text-[10px] font-extrabold text-slate-800 bg-slate-950 text-white px-2 py-1 rounded-md shadow-lg hidden group-hover:block transition-all duration-200">
                                 Rp {{ number_format($item['total_gaji_bersih'], 0, ',', '.') }}
                             </div>
                             
@@ -147,7 +147,7 @@
                             </div>
 
                             <!-- Label -->
-                            <span class="mt-2.5 text-2xs font-semibold {{ $isActive ? 'text-indigo-600 font-bold' : 'text-slate-400' }}">
+                            <span class="mt-2.5 text-[10px] font-semibold {{ $isActive ? 'text-indigo-600 font-bold' : 'text-slate-400' }}">
                                 {{ \Carbon\Carbon::parse($item['periode'] . '-01')->translatedFormat('M y') }}
                             </span>
                         </div>
@@ -470,7 +470,7 @@
         <form wire:submit.prevent="submitFinalisasi" class="space-y-4 p-2">
             <!-- Summary Information -->
             <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 space-y-2 text-xs">
-                <span class="text-2xs text-emerald-700 font-bold uppercase tracking-wider block mb-1">Ringkasan Penggajian Bulanan</span>
+                <span class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider block mb-1">Ringkasan Penggajian Bulanan</span>
                 <div class="flex justify-between">
                     <span class="text-slate-500 font-medium">Periode</span>
                     <span class="text-slate-800 font-bold">

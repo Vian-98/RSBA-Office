@@ -3,7 +3,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between rounded-lg bg-white p-4 shadow-sm gap-4">
         <div>
             <div class="flex items-center gap-2">
-                <a href="{{ route('kepegawaian.cuti-bersama.index') }}" class="text-gray-400 hover:text-gray-600">
+                <a href="{{ route('kepegawaian.surat.cuti', ['tab' => 'cuti-bersama']) }}" class="text-gray-400 hover:text-gray-600">
                     <x-ts:icon name="tabler.arrow-left" class="w-5 h-5" />
                 </a>
                 <h2 class="text-xl font-bold text-gray-800">{{ $cutiBersama->nama }}</h2>
