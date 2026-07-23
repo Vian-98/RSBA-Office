@@ -20,6 +20,13 @@
                 font-family: 'Plus Jakarta Sans', sans-serif !important;
             }
         </style>
+        <script>
+            document.addEventListener('alpine:init', () => {
+                if (window.Alpine && !window.Alpine.store('theme')) {
+                    window.Alpine.store('theme', localStorage.getItem('theme') || 'light');
+                }
+            });
+        </script>
         <tallstackui:script />
         @filamentStyles
 

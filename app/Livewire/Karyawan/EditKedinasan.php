@@ -66,7 +66,7 @@ class EditKedinasan extends Component
 
         // Load education options from matrix groups & current auto default
         $groups = \Illuminate\Support\Facades\DB::table('sdm_payroll_golongan_matrix')
-            ->select('kelompok_pendidikan')
+            ->select('kelompok_pendidikan', 'urutan_kelompok')
             ->orderBy('urutan_kelompok', 'asc')
             ->distinct()
             ->pluck('kelompok_pendidikan')
