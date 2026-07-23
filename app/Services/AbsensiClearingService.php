@@ -139,8 +139,9 @@ class AbsensiClearingService
 
                 $hasEarlierTapYesterday = $yesterdayPunches->contains(function ($p) {
                     $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
-                    return substr($jam, 0, 5) >= '06:00' && substr($jam, 0, 5) < '17:00';
+                    return substr($jam, 0, 5) >= '05:00' && substr($jam, 0, 5) < '17:00';
                 });
+
 
                 // Jika jadwal DB resmi lintas_hari ATAU (pola H-1 murni shift malam: ada tap malam & tanpa tap lebih awal 06:00-17:00 H-1)
                 if ($isLintasHariSchedule || ($hasEveningTapYesterday && !$hasEarlierTapYesterday)) {
