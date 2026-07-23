@@ -16,7 +16,7 @@
                     <x-tabler-users class="h-6 w-6" />
                 </span>
                 <div>
-                    <span class="text-2xs font-bold uppercase tracking-wider text-slate-400">Total Karyawan</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Karyawan</span>
                     <h3 class="text-2xl font-black text-slate-800 mt-0.5">{{ $stats['total_karyawan'] }}</h3>
                 </div>
             </div>
@@ -30,7 +30,7 @@
                     <x-tabler-id-badge class="h-6 w-6" />
                 </span>
                 <div>
-                    <span class="text-2xs font-bold uppercase tracking-wider text-slate-400">Pegawai Tetap</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pegawai Tetap</span>
                     <h3 class="text-2xl font-black text-slate-800 mt-0.5">{{ $stats['status_tetap'] }}</h3>
                 </div>
             </div>
@@ -44,7 +44,7 @@
                     <x-tabler-file-certificate class="h-6 w-6" />
                 </span>
                 <div>
-                    <span class="text-2xs font-bold uppercase tracking-wider text-slate-400">Pegawai Kontrak</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pegawai Kontrak</span>
                     <h3 class="text-2xl font-black text-slate-800 mt-0.5">{{ $stats['status_kontrak'] }}</h3>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                     <x-tabler-calendar-event class="h-6 w-6" />
                 </span>
                 <div>
-                    <span class="text-2xs font-bold uppercase tracking-wider text-slate-400">Sedang Cuti</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sedang Cuti</span>
                     <h3 class="text-2xl font-black text-slate-800 mt-0.5">{{ $stats['active_cuti'] }}</h3>
                 </div>
             </div>

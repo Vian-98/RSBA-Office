@@ -1,6 +1,6 @@
-<div class="flex w-full flex-col lg:flex-row gap-6">
+<div class="flex w-full flex-col lg:flex-row gap-4 sm:gap-6">
 
-    <div class="w-full rounded-2xl border border-slate-100 bg-white p-5 lg:w-1/2 shadow-2xs">
+    <div class="w-full rounded-2xl border border-slate-100 bg-white p-4 sm:p-5 lg:w-1/2 shadow-2xs">
         <h2 class="flex flex-row items-center gap-2 font-bold text-sm text-slate-800 border-b border-slate-100 pb-3 mb-4">
             <x-ts:icon name="tabler.key" class="h-4 w-4 text-indigo-500" />
             Ganti Password
