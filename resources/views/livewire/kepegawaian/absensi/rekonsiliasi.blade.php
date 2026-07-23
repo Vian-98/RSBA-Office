@@ -33,28 +33,54 @@
                 <p class="text-xs text-gray-500">Total Baris</p>
                 <p class="text-xl font-bold text-gray-800">{{ number_format($log->total_baris) }}</p>
             </div>
-            <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
-                <p class="text-xs text-emerald-600 font-medium">Matched</p>
+            <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <p class="text-xs text-amber-700 font-medium flex items-center gap-1">
+                    <x-ts:icon name="tabler.alert-triangle" class="w-3.5 h-3.5 text-amber-600" /> Single Punch (Tanpa Pasangan)
+                </p>
+                <p class="text-xl font-bold text-amber-700">{{ number_format($countSinglePunch) }}</p>
+            </div>
+            <div class="bg-sky-50 p-4 rounded-lg border border-sky-200">
+                <p class="text-xs text-sky-700 font-medium flex items-center gap-1">
+                    <x-ts:icon name="tabler.refresh" class="w-3.5 h-3.5 text-sky-600" /> Konflik Jadwal vs Tap
+                </p>
+                <p class="text-xl font-bold text-sky-700">{{ number_format($countKonflikJadwal) }}</p>
+            </div>
+            <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                <p class="text-xs text-emerald-700 font-medium flex items-center gap-1">
+                    <x-ts:icon name="tabler.check" class="w-3.5 h-3.5 text-emerald-600" /> Matched (Lengkap)
+                </p>
                 <p class="text-xl font-bold text-emerald-700">{{ number_format($log->baris_matched) }}</p>
-            </div>
-            <div class="bg-rose-50 p-4 rounded-lg border border-rose-100">
-                <p class="text-xs text-rose-600 font-medium">Unmatched / Ambiguous</p>
-                <p class="text-xl font-bold text-rose-700">{{ number_format($log->baris_unmatched) }}</p>
-            </div>
-            <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
-                <p class="text-xs text-amber-600 font-medium">Anomali Terdeteksi</p>
-                <p class="text-xl font-bold text-amber-700">{{ number_format($log->baris_anomali) }}</p>
             </div>
         </div>
 
         <!-- Filter Banner Notification -->
-        @if ($filterStatus === 'problematic')
+        @if ($filterStatus === 'single_punch')
             <div class="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center justify-between">
                 <div class="flex items-center gap-2 text-xs text-amber-800">
                     <x-ts:icon name="tabler.filter" class="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>Mode Otomatis Filter: Menampilkan data <strong>Perlu Rekonsiliasi / Bermasalah</strong> (Unmatched / Anomali).</span>
+                    <span>Mode Filter: Menampilkan data <strong>Single Punch (Lupa Tap / Belum Ada Pasangan)</strong>. Total: <strong>{{ $countSinglePunch }}</strong> data.</span>
                 </div>
                 <button wire:click="$set('filterStatus', 'all')" class="text-xs text-amber-900 underline font-semibold hover:text-indigo-600 transition">
+                    Tampilkan Semua Data (Tutup Filter)
+                </button>
+            </div>
+        @elseif ($filterStatus === 'konflik_jadwal')
+            <div class="mb-4 bg-sky-50 border border-sky-200 rounded-lg p-3 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-xs text-sky-800">
+                    <x-ts:icon name="tabler.refresh" class="w-4 h-4 text-sky-600 shrink-0" />
+                    <span>Mode Filter: Menampilkan data <strong>Konflik Jadwal vs Tap</strong> (Jam sudah berpasangan, jadwal DB Reguler). Total: <strong>{{ $countKonflikJadwal }}</strong> data.</span>
+                </div>
+                <button wire:click="$set('filterStatus', 'all')" class="text-xs text-sky-900 underline font-semibold hover:text-indigo-600 transition">
+                    Tampilkan Semua Data (Tutup Filter)
+                </button>
+            </div>
+        @elseif ($filterStatus === 'problematic')
+            <div class="mb-4 bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-xs text-purple-800">
+                    <x-ts:icon name="tabler.filter" class="w-4 h-4 text-purple-600 shrink-0" />
+                    <span>Mode Filter: Menampilkan data <strong>Perlu Rekonsiliasi Utama</strong> (Single Punch, Extra Punch, Unmatched).</span>
+                </div>
+                <button wire:click="$set('filterStatus', 'all')" class="text-xs text-purple-900 underline font-semibold hover:text-indigo-600 transition">
                     Tampilkan Semua Data (Tutup Filter)
                 </button>
             </div>
@@ -65,16 +91,14 @@
                 <x-ts:input wire:model.live.debounce.300ms="search" placeholder="Cari ID/Nama mentah..." icon="tabler.search" />
             </div>
             <div class="w-full sm:w-1/3">
-                <select wire:model.live="filterStatus" class="w-full text-xs rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    <option value="problematic">Perlu Rekonsiliasi (Unmatched / Anomali)</option>
-                    <option value="all">Semua Status Data</option>
-                    <option value="matched">Matched (Berhasil Ditautkan)</option>
-                    <option value="unmatched">Unmatched (Belum Ditautkan)</option>
-                    <option value="ambiguous">Ambiguous</option>
-                    <option value="anomali">Anomali (Single Punch / Extra Punch)</option>
-                    <option value="diabaikan">Diabaikan</option>
+                <select wire:model.live="filterStatus" class="w-full text-xs rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-medium">
+                    <option value="single_punch">⚠️ Single Punch Saja (Belum Ada Pasangan)</option>
+                    <option value="konflik_jadwal">🔄 Konflik Jadwal vs Tap Mentah</option>
+                    <option value="extra_punch">ℹ️ Extra Punch (3+ Tap dalam Sehari)</option>
+                    <option value="problematic">📌 Perlu Rekonsiliasi (Single, Extra & Unmatched)</option>
+                    <option value="matched">✅ Matched (Berhasil Ditautkan)</option>
+                    <option value="all">🌐 Semua Status Data (Tutup Filter)</option>
                 </select>
-
             </div>
             @if ($filterStatus !== 'all')
                 <div>
@@ -111,12 +135,30 @@
                                 <span class="{{ $staging->clock_out_aktual ? 'text-indigo-700 font-semibold' : 'text-gray-400' }}">{{ $staging->clock_out_aktual ?? '--:--' }}</span>
                             </div>
                             @if($staging->catatan_mesin)
-                            <div class="text-xs text-amber-700 font-medium mt-1 inline-flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                                <x-ts:icon name="tabler.alert-circle" class="w-3.5 h-3.5 text-amber-600" />
-                                {{ $staging->catatan_mesin }}
-                            </div>
+                                @if(str_contains($staging->catatan_mesin, 'SINGLE_PUNCH'))
+                                    <div class="text-xs text-amber-800 font-medium mt-1 inline-flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                        <x-ts:icon name="tabler.alert-triangle" class="w-3.5 h-3.5 text-amber-600" />
+                                        Belum Ada Pasangan (Single Punch)
+                                    </div>
+                                @elseif(str_contains($staging->catatan_mesin, 'KONFLIK_JADWAL_VS_TAP'))
+                                    <div class="text-xs text-sky-800 font-medium mt-1 inline-flex items-center gap-1 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                                        <x-ts:icon name="tabler.refresh" class="w-3.5 h-3.5 text-sky-600" />
+                                        Konflik Jadwal vs Tap (Jam Berpasangan)
+                                    </div>
+                                @elseif(str_contains($staging->catatan_mesin, 'EXTRA_PUNCH'))
+                                    <div class="text-xs text-purple-800 font-medium mt-1 inline-flex items-center gap-1 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                                        <x-ts:icon name="tabler.info-circle" class="w-3.5 h-3.5 text-purple-600" />
+                                        {{ $staging->catatan_mesin }}
+                                    </div>
+                                @else
+                                    <div class="text-xs text-gray-700 font-medium mt-1 inline-flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
+                                        <x-ts:icon name="tabler.alert-circle" class="w-3.5 h-3.5 text-gray-500" />
+                                        {{ $staging->catatan_mesin }}
+                                    </div>
+                                @endif
                             @endif
                         </td>
+
                         <td class="px-4 py-3 whitespace-nowrap">
                             @if($staging->status_matching === 'matched')
                                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">

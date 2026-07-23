@@ -122,8 +122,10 @@ class AbsensiClearingService
                     }
                 }
 
-                // 2. Cek pola tap mentah H-1 (lintas batch import):
-                $yesterdayPunches = AbsensiRawPunch::where('employee_id', $tap->employee_id)
+                // 2. Cek pola tap mentah H-1:
+                $yesterdayPunches = AbsensiRawPunch::where('import_log_id', $importLogId)
+                    ->where('employee_id', $tap->employee_id)
+
                     ->where(function ($q) use ($yesterday) {
                         $q->whereDate('assigned_date', $yesterday)
                           ->orWhere(function ($sub) use ($yesterday) {
