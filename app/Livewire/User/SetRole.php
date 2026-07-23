@@ -30,9 +30,9 @@ class SetRole extends Component
     {
         $this->user = User::findOrFail($id);
         $this->roles = Role::all();
-        $roleUser = Role::findByName($this->user->getRoleNames()[0]);
-        $this->role = $roleUser->name;
+        $this->role = $this->user->getRoleNames()->first();
     }
+
 
     function submit()
     {
