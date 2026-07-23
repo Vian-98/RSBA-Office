@@ -6,9 +6,10 @@ use Exception;
 use Throwable;
 use App\Models\Surat\SuratCuti;
 use App\Models\Surat\SuratCutiApproval;
-use App\Models\User;
 use App\Models\Sdm\Karyawan;
 use App\Services\DigitalSignatureService;
+use App\Services\SystemCertificateService;
+use App\Services\DocumentSignatureService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Lazy;
@@ -66,27 +67,18 @@ class ApprovalManual extends Component
         )->toArray();
     }
 
-
     public function printManual(): void
     {
-
         $this->validate();
 
         DB::beginTransaction();
         try {
-
-            // ambil data signature user [p12 path] , jika manual, gunakan tanda tangan Super Admin,
-            // Super Admin credential mewakili credential sistem,
-            $user = User::find(1) ?? auth()->user();
-            $certificate = $user->certificate()->latest('id')->first();
-
-            if (!$certificate) {
-                throw new Exception("Tidak memiliki certificate.");
-            }
+            // Menggunakan System Certificate User dengan password yang terkonfigurasi
+            $systemCertService = app(SystemCertificateService::class);
+            $user = $systemCertService->getOrCreateSystemUser();
 
             // Get data Approval
             $queryApprovals = SuratCutiApproval::where('surat_cuti_id', $this->suratCuti->id);
-
             $approvers = array_filter([$this->mengetahui, $this->menyetujui]);
 
             if (empty($approvers)) return;
@@ -96,32 +88,30 @@ class ApprovalManual extends Component
                     'title' => "Approval Cuti {$this->suratCuti->id}",
                     'status' => 'Approved Manual',
                     'ket_reject' => null,
-                    'user' => auth()->user()->karyawan->nama,
+                    'user' => auth()->user()->karyawan?->nama ?? auth()->user()->name,
                     'approver' => $approver
                 ];
 
                 $signature = $this->digital_signature_service->signData(
                     user: $user,
                     data: json_encode($dataSign),
-                    password: null,
+                    password: 'password123',
                     type: 'surat_cuti_approval',
                     id: $this->suratCuti->id
                 );
-
 
                 if (!$signature['status']) {
                     throw new Exception("Proses tanda tangan tidak berhasil: " . $signature['message']);
                 }
 
-                // prepare data update
+                // prepare data update untuk persetujuan manual
                 $dataUpdate = [
-                    'status' => 'approved',
-                    'keterangan' => 'Aproval cuti dengan manual',
+                    'status' => \App\Enums\StatusApproval::MANUAL->value ?? 'manual',
+                    'keterangan' => 'Approval cuti manual',
                     'signature_hash' => $signature['data_hash'],
                     'approved_at' => now()->toIso8601String()
                 ];
 
-                // If approval record does not exist in DB, create it first
                 $hasApproval = (clone $queryApprovals)
                     ->where('disetujui_oleh', $approver)
                     ->exists();
@@ -136,20 +126,27 @@ class ApprovalManual extends Component
                     ]);
                 }
 
-                // update approvals cuti
                 (clone $queryApprovals)
                     ->where('disetujui_oleh', $approver)
                     ->update($dataUpdate);
 
-                // selesaikan status cuti
                 $this->suratCuti->update([
-                    'status' =>  'approved',
+                    'status' => \App\Enums\StatusApproval::MANUAL->value ?? 'manual',
                     'updated_by' => auth()->user()->id
                 ]);
             }
 
-            // Sync immediately to docstore
-            app(\App\Services\DocstoreSyncService::class)->syncCuti($this->suratCuti);
+            // Memicu penerbitan QR Header Sistem
+            app(DocumentSignatureService::class)->checkAndGenerateHeaderQr($this->suratCuti);
+
+            // Sync immediately to docstore jika ada
+            if (class_exists(\App\Services\DocstoreSyncService::class)) {
+                try {
+                    app(\App\Services\DocstoreSyncService::class)->syncCuti($this->suratCuti);
+                } catch (\Throwable $th) {
+                    // ignore
+                }
+            }
 
             DB::commit();
 

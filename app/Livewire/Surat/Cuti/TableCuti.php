@@ -92,7 +92,12 @@ class TableCuti extends Component implements HasTable, HasForms, HasActions
                         }
                     )
                     ->visible(
-                        fn($record) => $record->status === StatusApproval::APPROVED || $record->status === StatusApproval::WAITING || $record->status === StatusApproval::PENDING
+                        fn($record) => in_array($record->status, [
+                            StatusApproval::APPROVED,
+                            StatusApproval::MANUAL,
+                            StatusApproval::WAITING,
+                            StatusApproval::PENDING,
+                        ])
                     )
                     ->action(
                         function ($record, $livewire) {
@@ -100,7 +105,7 @@ class TableCuti extends Component implements HasTable, HasForms, HasActions
                             $livewire->surat = $record->fresh();
 
                             return match ($record->status) {
-                                StatusApproval::APPROVED, StatusApproval::MANUAL => $livewire->dispatch('trigger-print'),
+                                StatusApproval::APPROVED, StatusApproval::MANUAL => $livewire->dispatch('trigger-print', noSurat: $record->no_surat),
                                 StatusApproval::WAITING, StatusApproval::PENDING => $livewire->modal(modal: 'modal-options-approval-manual', id: $record->getKey()),
                             };
                         }
