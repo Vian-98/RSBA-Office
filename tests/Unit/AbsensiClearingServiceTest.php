@@ -346,5 +346,109 @@ class AbsensiClearingServiceTest extends TestCase
 
         $this->assertStringContainsString('DURASI_SANGAT_PANJANG', $result->paired[0]['catatan_mesin']);
     }
+
+    /** @test */
+    public function five_taps_generalization_extra_punch()
+    {
+        $log = AbsensiImportLog::create([
+            'nama_file' => 'test_5taps.csv',
+            'periode_awal' => '2026-06-17',
+            'periode_akhir' => '2026-06-17',
+            'diunggah_oleh' => 1,
+        ]);
+
+        // 5 Taps: 07:27, 10:46, 14:29, 15:04, 16:35
+        $times = ['07:27:00', '10:46:00', '14:29:00', '15:04:00', '16:35:00'];
+        foreach ($times as $t) {
+            AbsensiRawPunch::create([
+                'import_log_id'  => $log->id,
+                'employee_id'    => 'EMP_5TAPS',
+                'tanggal'        => '2026-06-17',
+                'jam'            => $t,
+                'punch_datetime' => Carbon::parse("2026-06-17 {$t}"),
+            ]);
+        }
+
+        $result = $this->service->clear($log->id);
+
+        $this->assertCount(1, $result->paired);
+        $this->assertStringContainsString('EXTRA_PUNCH (5 rekaman)', $result->paired[0]['catatan_mesin']);
+        $this->assertEquals('2026-06-17 07:27:00', $result->paired[0]['clock_in_aktual']);
+        $this->assertEquals('2026-06-17 16:35:00', $result->paired[0]['clock_out_aktual']);
+    }
+
+    /** @test */
+    public function schedule_vs_tap_conflict_flagging()
+    {
+        $log = AbsensiImportLog::create([
+            'nama_file' => 'test_conflict.csv',
+            'periode_awal' => '2026-07-20',
+            'periode_akhir' => '2026-07-21',
+            'diunggah_oleh' => 1,
+        ]);
+
+        $karyawan = Karyawan::create([
+            'nip'       => 'EMP_CONFLICT',
+            'nik'       => '3301000000000002',
+            'nama'      => 'Conflict Worker',
+            'pin_absen' => 'EMP_CONFLICT',
+            'status'    => 'tetap',
+            'tgl_lahir' => '1995-01-01',
+            'tgl_masuk' => '2020-01-01',
+            'jk'        => 'L',
+            'hp'        => '08123456788',
+            'prov'      => 'Lampung',
+            'kab'       => 'Bandar Lampung',
+            'kec'       => 'Kedaton',
+            'desa'      => 'Sidodadi',
+            'alamat'    => 'Jl. Test',
+            'agama'     => 'islam',
+        ]);
+
+        // Schedule is REGULER / PAGI (lintas_hari = false)
+        $shiftPagi = \App\Models\Sdm\JadwalShift::create([
+            'kode' => 'PAGI_TEST',
+            'nama' => 'Shift Pagi Test',
+            'jam_masuk' => '07:00:00',
+            'jam_keluar' => '15:00:00',
+            'lintas_hari' => false,
+        ]);
+
+        $jadwalHeader = \App\Models\Sdm\JadwalKerja::create([
+            'bulan' => 7,
+            'tahun' => 2026,
+            'status' => 'published',
+        ]);
+
+        \App\Models\Sdm\JadwalKerjaDetail::create([
+            'jadwal_kerja_id' => $jadwalHeader->id,
+            'karyawan_id' => $karyawan->id,
+            'shift_id' => $shiftPagi->id,
+            'tanggal' => '2026-07-20',
+        ]);
+
+        // Tap pattern is PURE NIGHT SHIFT (20:48 on Day 1, 08:18 on Day 2)
+        AbsensiRawPunch::create([
+            'import_log_id'  => $log->id,
+            'employee_id'    => 'EMP_CONFLICT',
+            'tanggal'        => '2026-07-20',
+            'jam'            => '20:48:00',
+            'punch_datetime' => Carbon::parse('2026-07-20 20:48:00'),
+        ]);
+
+        AbsensiRawPunch::create([
+            'import_log_id'  => $log->id,
+            'employee_id'    => 'EMP_CONFLICT',
+            'tanggal'        => '2026-07-21',
+            'jam'            => '08:18:00',
+            'punch_datetime' => Carbon::parse('2026-07-21 08:18:00'),
+        ]);
+
+        $result = $this->service->clear($log->id);
+
+        $this->assertCount(1, $result->paired);
+        $this->assertStringContainsString('KONFLIK_JADWAL_VS_TAP', $result->paired[0]['catatan_mesin']);
+    }
 }
+
 
