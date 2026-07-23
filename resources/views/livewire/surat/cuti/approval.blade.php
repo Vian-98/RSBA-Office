@@ -13,7 +13,7 @@
         <div x-data="{ status: @entangle('status') }">
             <span class="italic text-indigo-500">Persetujuan</span>
             <div class="flex w-full flex-col gap-2">
-                <div class="flex w-1/2 justify-between">
+                <div class="flex w-full sm:w-1/2 flex-wrap gap-2 justify-between">
                     @foreach ($optionsApproval as $item)
                         <div @click="status = '{{ $item['value'] }}'"
                             :class="status === '{{ $item['value'] }}'
@@ -38,7 +38,7 @@
             <div class="relative" x-data="{ passwordPopUp: false }">
                 <x-ts:button sm icon="tabler.checks" x-on:click="passwordPopUp = true">Simpan</x-ts:button>
 
-                <div class="absolute right-0 z-50 mt-1 w-96 rounded-lg border bg-white px-6 py-4 shadow-lg" x-show="passwordPopUp" x-transition x-trap.noscroll="passwordPopUp"
+                <div class="absolute right-0 z-50 mt-1 w-72 sm:w-96 max-w-[calc(100vw-2rem)] rounded-lg border bg-white px-4 sm:px-6 py-4 shadow-lg" x-show="passwordPopUp" x-transition x-trap.noscroll="passwordPopUp"
                     x-on:click.away="passwordPopUp = false" x-on:keydown.escape.window="passwordPopUp = false">
 
                     <div class="flex flex-col gap-3">

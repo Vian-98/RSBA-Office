@@ -11,8 +11,8 @@
         <div class="flex w-full flex-col gap-2">
             <span class="text-lg font-semibold text-primary-500">{{ $karyawan?->nama }}</span>
 
-            <div class="flex w-full flex-row gap-2">
-                <x-ts:badge outline class="w-1/2">
+            <div class="flex w-full flex-col sm:flex-row gap-2">
+                <x-ts:badge outline class="w-full sm:w-1/2 justify-center">
                     hari sisa cuti
                     <x-slot:left>
                         <p class="mr-2 text-xl" wire:loading.class="animate-pulse opacity-10" wire:target='form.jenis_cuti'>
@@ -20,7 +20,7 @@
                     </x-slot:left>
                 </x-ts:badge>
 
-                <x-ts:badge color="red" outline class="w-1/2">
+                <x-ts:badge color="red" outline class="w-full sm:w-1/2 justify-center">
                     hari pengajuan cuti
                     <x-slot:left>
                         <p class="mr-2 text-xl" x-text="parseInt(jenisCuti) === 3 ? 90 : lamaCuti"></p>

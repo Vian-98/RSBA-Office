@@ -27,26 +27,26 @@
 @endphp
 
 <div class="flex flex-col gap-4">
-    <div class="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm border border-slate-100">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-white p-3.5 sm:p-4 shadow-sm border border-slate-100">
         <div>
-            <h2 class="text-lg font-semibold text-gray-800">
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">
                 Jadwal Kerja Saya
             </h2>
-            <p class="text-sm text-gray-500 flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+            <p class="text-xs sm:text-sm text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
                 <span>Lihat jadwal tugas dan shift Anda pada periode yang dipilih.</span>
                 @if($totalOvertimeBulan > 0)
                     @php
                         $toh = floor($totalOvertimeBulan / 60);
                         $tom = $totalOvertimeBulan % 60;
                     @endphp
-                    <span class="text-gray-300">•</span>
+                    <span class="text-slate-300 font-bold hidden sm:inline">•</span>
                     <span class="text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded text-xs select-none">Total Overtime: {{ $toh }}j {{ $tom }}m</span>
                 @endif
             </p>
         </div>
-        <div class="flex gap-2 items-center">
-            <x-ts:select.styled wire:model.live="bulan" :options="$bulanOptions" select="label:label|value:value" class="w-32" />
-            <x-ts:select.styled wire:model.live="tahun" :options="$tahunOptions" select="label:label|value:value" class="w-24" />
+        <div class="flex gap-2 items-center w-full sm:w-auto shrink-0">
+            <x-ts:select.styled wire:model.live="bulan" :options="$bulanOptions" select="label:label|value:value" class="flex-1 sm:w-32" />
+            <x-ts:select.styled wire:model.live="tahun" :options="$tahunOptions" select="label:label|value:value" class="flex-1 sm:w-24" />
         </div>
     </div>
 
@@ -127,23 +127,23 @@
                             {{ \Carbon\Carbon::parse($detail->tanggal)->translatedFormat('l, d F Y') }}
                         </span>
                         @if($status === \App\Enums\StatusKehadiran::CUTI)
-                            <span class="px-2 py-0.5 text-2xs font-semibold rounded bg-sky-100 text-sky-800 border border-sky-200">
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-sky-100 text-sky-800 border border-sky-200">
                                 CUTI
                             </span>
                         @elseif($status === \App\Enums\StatusKehadiran::IZIN)
-                            <span class="px-2 py-0.5 text-2xs font-semibold rounded bg-amber-100 text-amber-800 border border-amber-200">
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-amber-100 text-amber-800 border border-amber-200">
                                 IZIN
                             </span>
                         @elseif($status === \App\Enums\StatusKehadiran::TIDAK_HADIR)
-                            <span class="px-2 py-0.5 text-2xs font-semibold rounded bg-red-100 text-red-800 border border-red-200">
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-red-100 text-red-800 border border-red-200">
                                 TIDAK HADIR
                             </span>
                         @elseif($detail->shift_id)
-                            <span class="px-2 py-0.5 text-2xs font-semibold rounded text-slate-800 border border-black/5" style="background-color: {{ $detail->shift->warna ?? '#e2e8f0' }}">
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded text-slate-800 border border-black/5" style="background-color: {{ $detail->shift->warna ?? '#e2e8f0' }}">
                                 {{ $detail->shift->kode }}
                             </span>
                         @else
-                            <span class="px-2 py-0.5 text-2xs font-semibold rounded bg-gray-200 text-gray-700 border border-gray-300">
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-gray-200 text-gray-700 border border-gray-300">
                                 LIBUR
                             </span>
                         @endif

@@ -607,7 +607,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-slate-100 pt-4 mt-2">
                         <!-- Rincian Alokasi UMK (25%) Preview -->
                         <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs font-semibold text-slate-650">
-                            <span class="text-2xs text-indigo-650 font-bold uppercase tracking-wider block mb-2">Rincian Alokasi UMK (25% UMK)</span>
+                            <span class="text-[10px] text-indigo-650 font-bold uppercase tracking-wider block mb-2">Rincian Alokasi UMK (25% UMK)</span>
                             @foreach($form_umk_allocations as $alloc)
                                 <div class="flex justify-between py-0.5">
                                     <span>{{ $alloc['nama'] }} ({{ $alloc['persen'] }}%)</span>
@@ -618,7 +618,7 @@
 
                         <!-- Automatic Deductions Preview -->
                         <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2 text-xs font-semibold text-slate-655">
-                            <span class="text-2xs text-slate-450 font-bold uppercase tracking-wider block mb-2">Estimasi Potongan Otomatis (Auto)</span>
+                            <span class="text-[10px] text-slate-450 font-bold uppercase tracking-wider block mb-2">Estimasi Potongan Otomatis (Auto)</span>
                             <div class="flex justify-between">
                                 <span>Pot. BPJS Kesehatan (1% + Add-on)</span>
                                 <span class="text-slate-800 font-bold">Rp {{ number_format($calc_bpjs_kes, 0, ',', '.') }}</span>

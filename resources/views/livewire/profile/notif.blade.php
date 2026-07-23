@@ -7,7 +7,7 @@
                 </svg>
             </span>
             <h4 class="text-xs font-semibold text-slate-700">Tidak ada notifikasi</h4>
-            <p class="text-3xs text-slate-400 max-w-xs mt-0.5">Anda akan menerima pemberitahuan saat ada aktivitas baru.</p>
+            <p class="text-xs text-slate-400 max-w-xs mt-0.5">Anda akan menerima pemberitahuan saat ada aktivitas baru.</p>
         </div>
     @else
         @php

@@ -1,7 +1,7 @@
 <div class="flex flex-col gap-4">
 
     <div class="flex flex-col rounded-lg bg-indigo-50/50 border border-indigo-100 p-4">
-        <span class="text-2xs font-bold uppercase tracking-wider text-slate-400 mb-1">Role Anda</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Role Anda</span>
         <div class="flex flex-wrap gap-2">
             @forelse ($role as $r)
                 <span class="inline-flex items-center rounded-full bg-indigo-100/50 px-2.5 py-0.5 text-xs font-bold text-indigo-700 ring-1 ring-inset ring-indigo-600/10">

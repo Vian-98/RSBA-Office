@@ -1,6 +1,6 @@
 <div class="flex flex-col gap-3">
     <div>
-        <label class="block text-2xs font-bold uppercase tracking-wider text-slate-400 mb-1">Scan QR Code Dokumen Cuti</label>
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Scan QR Code Dokumen Cuti</label>
         <x-ts:input wire:model.live.debounce.300='signature' placeholder="Scan atau tempel kode tanda tangan di sini..." autocomplete="off" icon="tabler.qrcode" />
     </div>
 
