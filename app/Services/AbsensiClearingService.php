@@ -101,7 +101,8 @@ class AbsensiClearingService
             $yesterday = $tap->tanggal->copy()->subDay()->toDateString();
 
             $jamStr = is_object($tap->jam) ? $tap->jam->format('H:i:s') : (string) $tap->jam;
-            $isMorningTapToday = substr($jamStr, 0, 5) <= '10:00';
+            $isEarlyMorningTapToday = substr($jamStr, 0, 5) <= '06:00';
+            $isMorningTapToday      = substr($jamStr, 0, 5) <= '10:00';
 
             if ($isMorningTapToday) {
                 // 1. Cek jadwal resmi DB H-1
@@ -125,7 +126,6 @@ class AbsensiClearingService
                 // 2. Cek pola tap mentah H-1:
                 $yesterdayPunches = AbsensiRawPunch::where('import_log_id', $importLogId)
                     ->where('employee_id', $tap->employee_id)
-
                     ->where(function ($q) use ($yesterday) {
                         $q->whereDate('assigned_date', $yesterday)
                           ->orWhere(function ($sub) use ($yesterday) {
@@ -135,6 +135,7 @@ class AbsensiClearingService
                     ->where('is_discarded', false)
                     ->get();
 
+                // Pola 1: Shift Malam (In >= 17:00, Out <= 10:00)
                 $hasEveningTapYesterday = $yesterdayPunches->contains(function ($p) {
                     $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
                     return substr($jam, 0, 5) >= '17:00';
@@ -147,17 +148,30 @@ class AbsensiClearingService
 
                 $isNightTapPattern = $hasEveningTapYesterday && !$hasEarlierTapYesterday;
 
+                // Pola 2: Shift Sore Lintas Tengah Malam (In >= 13:00 - 16:00, Out 00:00-06:00)
+                $hasAfternoonTapYesterday = $yesterdayPunches->contains(function ($p) {
+                    $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
+                    return substr($jam, 0, 5) >= '13:00' && substr($jam, 0, 5) <= '16:00';
+                });
+
+                $hasMorningTapYesterday = $yesterdayPunches->contains(function ($p) {
+                    $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
+                    return substr($jam, 0, 5) < '13:00';
+                });
+
+                $isAfternoonCrossMidnightPattern = $isEarlyMorningTapToday && $hasAfternoonTapYesterday && !$hasMorningTapYesterday;
+
                 // DETEKSI KONFLIK JADWAL VS TAP (Cabang ke-3):
                 if ($hasScheduleRecord) {
-                    if (!$isLintasHariSchedule && $isNightTapPattern) {
-                        // Konflik: Jadwal REGULER/PAGI di DB, tapi Tap Murni Shift Malam
+                    if (!$isLintasHariSchedule && ($isNightTapPattern || $isAfternoonCrossMidnightPattern)) {
+                        // Konflik: Jadwal REGULER/PAGI di DB, tapi Tap Murni Shift Sore/Malam
                         $tap->update([
                             'assigned_date'  => $yesterday,
-                            'discard_reason' => 'KONFLIK_JADWAL_VS_TAP (Jadwal REGULER tapi Tap Shift Malam)',
+                            'discard_reason' => 'KONFLIK_JADWAL_VS_TAP (Jadwal REGULER tapi Tap Shift Sore/Malam)',
                         ]);
                         continue;
-                    } elseif ($isLintasHariSchedule && !$isNightTapPattern) {
-                        // Konflik: Jadwal MALAM di DB, tapi Tap tidak mencerminkan shift malam
+                    } elseif ($isLintasHariSchedule && !($isNightTapPattern || $isAfternoonCrossMidnightPattern)) {
+                        // Konflik: Jadwal SHIFT MALAM di DB, tapi Tap tidak mencerminkan shift sore/malam
                         $tap->update([
                             'assigned_date'  => $tap->tanggal,
                             'discard_reason' => 'KONFLIK_JADWAL_VS_TAP (Jadwal MALAM tapi Tap Reguler)',
@@ -166,11 +180,12 @@ class AbsensiClearingService
                     }
                 }
 
-                if ($isLintasHariSchedule || $isNightTapPattern) {
+                if ($isLintasHariSchedule || $isNightTapPattern || $isAfternoonCrossMidnightPattern) {
                     $tap->update(['assigned_date' => $yesterday]);
                     continue;
                 }
             }
+
 
             $tap->update(['assigned_date' => $tap->tanggal]);
         }

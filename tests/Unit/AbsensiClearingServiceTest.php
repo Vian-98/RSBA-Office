@@ -449,6 +449,43 @@ class AbsensiClearingServiceTest extends TestCase
         $this->assertCount(1, $result->paired);
         $this->assertStringContainsString('KONFLIK_JADWAL_VS_TAP', $result->paired[0]['catatan_mesin']);
     }
+
+    /** @test */
+    public function afternoon_shift_cross_midnight_pairing()
+    {
+        $log = AbsensiImportLog::create([
+            'nama_file' => 'test_afternoon.csv',
+            'periode_awal' => '2026-07-05',
+            'periode_akhir' => '2026-07-06',
+            'diunggah_oleh' => 1,
+        ]);
+
+        // Day 1 Afternoon tap (13:51)
+        AbsensiRawPunch::create([
+            'import_log_id'  => $log->id,
+            'employee_id'    => 'EMP_RAFA',
+            'tanggal'        => '2026-07-05',
+            'jam'            => '13:51:00',
+            'punch_datetime' => Carbon::parse('2026-07-05 13:51:00'),
+        ]);
+
+        // Day 2 Midnight tap (00:05)
+        AbsensiRawPunch::create([
+            'import_log_id'  => $log->id,
+            'employee_id'    => 'EMP_RAFA',
+            'tanggal'        => '2026-07-06',
+            'jam'            => '00:05:00',
+            'punch_datetime' => Carbon::parse('2026-07-06 00:05:00'),
+        ]);
+
+        $result = $this->service->clear($log->id);
+
+        $this->assertCount(1, $result->paired);
+        $this->assertEquals('2026-07-05', $result->paired[0]['tanggal']);
+        $this->assertEquals('2026-07-05 13:51:00', $result->paired[0]['clock_in_aktual']);
+        $this->assertEquals('2026-07-06 00:05:00', $result->paired[0]['clock_out_aktual']);
+    }
 }
+
 
 
