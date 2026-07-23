@@ -101,8 +101,7 @@ class AbsensiClearingService
             $yesterday = $tap->tanggal->copy()->subDay()->toDateString();
 
             $jamStr = is_object($tap->jam) ? $tap->jam->format('H:i:s') : (string) $tap->jam;
-            $isEarlyMorningTapToday = substr($jamStr, 0, 5) <= '06:00';
-            $isMorningTapToday      = substr($jamStr, 0, 5) <= '10:00';
+            $isMorningTapToday = substr($jamStr, 0, 5) <= '12:00'; // Batas check-out pagi/siang s/d 12:00 WIB
 
             if ($isMorningTapToday) {
                 // 1. Cek jadwal resmi DB H-1
@@ -135,7 +134,7 @@ class AbsensiClearingService
                     ->where('is_discarded', false)
                     ->get();
 
-                // Pola 1: Shift Malam (In >= 17:00, Out <= 10:00)
+                // Pola 1: Shift Malam (In >= 17:00, Out <= 12:00)
                 $hasEveningTapYesterday = $yesterdayPunches->contains(function ($p) {
                     $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
                     return substr($jam, 0, 5) >= '17:00';
@@ -148,7 +147,7 @@ class AbsensiClearingService
 
                 $isNightTapPattern = $hasEveningTapYesterday && !$hasEarlierTapYesterday;
 
-                // Pola 2: Shift Sore Lintas Tengah Malam (In >= 13:00 - 16:00, Out 00:00-06:00)
+                // Pola 2: Shift Sore Lintas Tengah Malam (In >= 13:00 - 16:00, Out <= 12:00)
                 $hasAfternoonTapYesterday = $yesterdayPunches->contains(function ($p) {
                     $jam = is_object($p->jam) ? $p->jam->format('H:i:s') : (string) $p->jam;
                     return substr($jam, 0, 5) >= '13:00' && substr($jam, 0, 5) <= '16:00';
@@ -159,7 +158,7 @@ class AbsensiClearingService
                     return substr($jam, 0, 5) < '13:00';
                 });
 
-                $isAfternoonCrossMidnightPattern = $isEarlyMorningTapToday && $hasAfternoonTapYesterday && !$hasMorningTapYesterday;
+                $isAfternoonCrossMidnightPattern = $hasAfternoonTapYesterday && !$hasMorningTapYesterday;
 
                 // DETEKSI KONFLIK JADWAL VS TAP (Cabang ke-3):
                 if ($hasScheduleRecord) {
@@ -185,6 +184,7 @@ class AbsensiClearingService
                     continue;
                 }
             }
+
 
 
             $tap->update(['assigned_date' => $tap->tanggal]);
