@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement(
-            "ALTER TABLE `surat_cuti_approval`
-             MODIFY `status` ENUM('pending','waiting','approved','rejected','manual') NOT NULL"
-        );
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement(
+                "ALTER TABLE `surat_cuti_approval`
+                 MODIFY `status` ENUM('pending','waiting','approved','rejected','manual') NOT NULL"
+            );
+        }
     }
 
     public function down(): void
