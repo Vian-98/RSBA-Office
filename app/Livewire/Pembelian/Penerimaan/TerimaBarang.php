@@ -238,7 +238,9 @@ WHERE id IN (" . $ids->implode(',') . ")";
                     'total_diskon' => $total->total_diskon,
                     'total_ppn' => $total->total_ppn,
                     'total' => ($total->subtotal_gross - $total->total_diskon) + $total->total_ppn,
-                    'status' => $status === 'selesai' ? 'selesai' : DB::raw('status')
+                    'status' => $status === 'selesai' ? 'selesai' : DB::raw('status'),
+                    'status_pembayaran' => $status === 'selesai' ? 'lunas' : DB::raw('status_pembayaran'),
+                    'tgl_pembayaran' => $status === 'selesai' ? now()->format('Y-m-d') : DB::raw('tgl_pembayaran'),
                 ]);
 
 

@@ -81,6 +81,34 @@
                 @endif
 
             </div>
+
+            {{-- Lampiran Dokumentasi & Foto Permintaan --}}
+            @php
+                $requestLampirans = is_array($work->jadwal->request->lampiran ?? null) 
+                    ? $work->jadwal->request->lampiran 
+                    : (is_string($work->jadwal->request->lampiran ?? null) ? (json_decode($work->jadwal->request->lampiran, true) ?? []) : []);
+                $workDokumentasi = is_array($work->dokumentasi ?? null) 
+                    ? $work->dokumentasi 
+                    : (is_string($work->dokumentasi ?? null) ? (json_decode($work->dokumentasi, true) ?? []) : []);
+                $allLampirans = array_merge($requestLampirans, $workDokumentasi);
+            @endphp
+            @if (count($allLampirans) > 0)
+                <div class="ms-4 flex flex-col gap-2 mt-3">
+                    <div class="font-semibold text-gray-500">Lampiran Foto & Dokumentasi</div>
+                    <div class="flex flex-wrap gap-3">
+                        @foreach ($allLampirans as $img)
+                            @php
+                                $imgUrl = (str_starts_with($img, 'http://') || str_starts_with($img, 'https://') || str_starts_with($img, '/storage/')) 
+                                    ? $img 
+                                    : Storage::url($img);
+                            @endphp
+                            <a href="{{ $imgUrl }}" target="_blank" class="block border rounded-lg overflow-hidden hover:opacity-80 transition">
+                                <img src="{{ $imgUrl }}" class="h-28 w-28 object-cover" alt="Dokumentasi Maintenance" />
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         @else
             <div class="ms-4 italic text-gray-600">Belum ada pengerjaan.</div>
         @endif
