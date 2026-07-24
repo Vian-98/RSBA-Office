@@ -92,4 +92,53 @@ class AbsensiPunchImportTest extends TestCase
         $this->assertEquals(1, $importLog->baris_matched);
         $this->assertEquals(1, $importLog->baris_unmatched);
     }
+
+    /** @test */
+    public function it_handles_long_catatan_mesin_exceeding_100_characters()
+    {
+        $karyawan = Karyawan::create([
+            'nama'        => 'Seve Sinta',
+            'nip'         => '22240416',
+            'pin_absen'   => '22240416',
+            'nik'         => '987654321',
+            'status'      => 'tetap',
+            'tgl_lahir'   => '1990-01-01',
+            'tgl_masuk'   => '2020-01-01',
+            'jk'          => 'P',
+            'hp'          => '08123456780',
+            'prov'        => 'Lampung',
+            'kab'         => 'Bandar Lampung',
+            'kec'         => 'Kedaton',
+            'desa'        => 'Sidodadi',
+            'alamat'      => 'Jl. Test No. 2',
+            'agama'       => 'islam',
+        ]);
+
+        $importLog = AbsensiImportLog::create([
+            'nama_file'     => 'Transaction_long_notes.csv',
+            'periode_awal'  => '2026-07-01',
+            'periode_akhir' => '2026-07-31',
+            'diunggah_oleh' => 1,
+        ]);
+
+        $longNote = 'KONFLIK_JADWAL_VS_TAP (Jadwal REGULER tapi Tap Shift Sore/Malam); EXTRA_PUNCH (3 rekaman); DURASI_SANGAT_PANJANG (> 16 jam)';
+        $this->assertGreaterThan(100, strlen($longNote));
+
+        $staging = AbsensiStaging::create([
+            'import_batch_id'    => $importLog->id,
+            'employee_id_mentah' => '22240416',
+            'nama_mentah'        => 'Seve Sinta',
+            'tanggal'            => '2026-06-20',
+            'clock_in_aktual'    => '14:20',
+            'clock_out_aktual'   => '07:51',
+            'catatan_mesin'      => $longNote,
+            'karyawan_id'        => $karyawan->id,
+            'status_matching'    => 'matched',
+        ]);
+
+        $fetched = AbsensiStaging::find($staging->id);
+        $this->assertNotNull($fetched);
+        $this->assertEquals($longNote, $fetched->catatan_mesin);
+        $this->assertGreaterThan(100, strlen($fetched->catatan_mesin));
+    }
 }
