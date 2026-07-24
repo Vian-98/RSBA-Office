@@ -163,6 +163,20 @@ class TablePembelian extends Component implements HasTable, HasForms, HasActions
 
             ])
             ->recordActions([
+                Action::make('mark_lunas')
+                    ->label('Bayar Lunas')
+                    ->icon('tabler-cash')
+                    ->iconButton()
+                    ->color('success')
+                    ->tooltip('Tandai Lunas')
+                    ->visible(fn(Pembelian $record) => $record->status_pembayaran !== 'lunas')
+                    ->requiresConfirmation()
+                    ->action(function (Pembelian $record) {
+                        $record->update([
+                            'status_pembayaran' => 'lunas',
+                            'tgl_pembayaran' => now()->format('Y-m-d'),
+                        ]);
+                    }),
                 Action::make('detail')
                     ->icon('tabler-file-symlink')
                     ->iconButton()
