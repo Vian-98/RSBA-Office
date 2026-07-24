@@ -92,12 +92,18 @@
             </div>
             <div class="w-full sm:w-1/3">
                 <select wire:model.live="filterStatus" class="w-full text-xs rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-medium">
-                    <option value="single_punch">⚠️ Single Punch Saja (Belum Ada Pasangan)</option>
-                    <option value="konflik_jadwal">🔄 Konflik Jadwal vs Tap Mentah</option>
-                    <option value="extra_punch">ℹ️ Extra Punch (3+ Tap dalam Sehari)</option>
-                    <option value="problematic">📌 Perlu Rekonsiliasi (Single, Extra & Unmatched)</option>
-                    <option value="matched">✅ Matched (Berhasil Ditautkan)</option>
-                    <option value="all">🌐 Semua Status Data (Tutup Filter)</option>
+                    <option value="single_punch">Single Punch Saja (Belum Ada Pasangan)</option>
+                    <option value="konflik_jadwal">Konflik Jadwal vs Tap Mentah</option>
+                    <option value="extra_punch">Extra Punch (3+ Tap dalam Sehari)</option>
+                    <option value="problematic">Perlu Rekonsiliasi (Single, Extra & Unmatched)</option>
+                    <option value="matched">Matched (Berhasil Ditautkan)</option>
+                    <option value="all">Semua Status Data (Tutup Filter)</option>
+                </select>
+            </div>
+            <div class="w-full sm:w-1/4">
+                <select wire:model.live="sortDirection" class="w-full text-xs rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-medium">
+                    <option value="asc">Urutan Tanggal: Awal ke Akhir</option>
+                    <option value="desc">Urutan Tanggal: Akhir ke Awal</option>
                 </select>
             </div>
             @if ($filterStatus !== 'all')
@@ -113,7 +119,16 @@
             <table class="w-full text-xs text-left text-gray-600">
                 <thead class="text-xs uppercase bg-gray-50 border-b text-gray-700">
                     <tr>
-                        <th class="px-4 py-3">Tanggal</th>
+                        <th class="px-4 py-3 cursor-pointer hover:bg-gray-100 transition select-none" wire:click="toggleSort('tanggal')">
+                            <div class="flex items-center gap-1">
+                                <span>Tanggal</span>
+                                @if ($sortBy === 'tanggal')
+                                    <x-ts:icon name="{{ $sortDirection === 'asc' ? 'tabler.arrow-up' : 'tabler.arrow-down' }}" class="w-3.5 h-3.5 text-indigo-600" />
+                                @else
+                                    <x-ts:icon name="tabler.arrows-sort" class="w-3.5 h-3.5 text-gray-400" />
+                                @endif
+                            </div>
+                        </th>
                         <th class="px-4 py-3">ID Mesin</th>
                         <th class="px-4 py-3">Nama Mesin</th>
                         <th class="px-4 py-3">Jam (In - Out)</th>
@@ -228,9 +243,78 @@
             </table>
         </div>
         
-        <div class="mt-4">
-            {{ $stagings->links() }}
-        </div>
+        @if($stagings && $stagings->hasPages())
+            <div class="flex flex-col items-center justify-center gap-2 mt-6 pt-4 border-t border-slate-100 bg-white w-full">
+                <nav class="inline-flex items-center gap-1.5" aria-label="Pagination">
+                    {{-- Previous --}}
+                    @if($stagings->onFirstPage())
+                        <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-300 border border-slate-200 select-none cursor-not-allowed">
+                            <x-ts:icon name="tabler.chevron-left" class="w-4 h-4" />
+                        </span>
+                    @else
+                        <button type="button" wire:click="previousPage" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition focus:outline-none">
+                            <x-ts:icon name="tabler.chevron-left" class="w-4 h-4" />
+                        </button>
+                    @endif
+
+                    @php
+                        $currentPage = $stagings->currentPage();
+                        $lastPage = $stagings->lastPage();
+                        $start = max(2, $currentPage - 1);
+                        $end = min($lastPage - 1, $currentPage + 1);
+                    @endphp
+
+                    {{-- Page 1 --}}
+                    @if($currentPage == 1)
+                        <span aria-current="page" class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs border border-indigo-600 select-none">{{ 1 }}</span>
+                    @else
+                        <button type="button" wire:click="gotoPage(1)" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 font-semibold text-xs border border-slate-200 hover:bg-slate-50 transition focus:outline-none">{{ 1 }}</button>
+                    @endif
+
+                    {{-- Ellipsis --}}
+                    @if($start > 2)
+                        <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-400 font-semibold text-xs border border-slate-200 select-none">...</span>
+                    @endif
+
+                    {{-- Sliding Range --}}
+                    @for($page = $start; $page <= $end; $page++)
+                        @if($page == $currentPage)
+                            <span aria-current="page" class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs border border-indigo-600 select-none">{{ $page }}</span>
+                        @else
+                            <button type="button" wire:click="gotoPage({{ $page }})" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 font-semibold text-xs border border-slate-200 hover:bg-slate-50 transition focus:outline-none">{{ $page }}</button>
+                        @endif
+                    @endfor
+
+                    {{-- Ellipsis --}}
+                    @if($end < $lastPage - 1)
+                        <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-400 font-semibold text-xs border border-slate-200 select-none">...</span>
+                    @endif
+
+                    {{-- Last Page --}}
+                    @if($lastPage > 1)
+                        @if($currentPage == $lastPage)
+                            <span aria-current="page" class="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs border border-indigo-600 select-none">{{ $lastPage }}</span>
+                        @else
+                            <button type="button" wire:click="gotoPage({{ $lastPage }})" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-600 font-semibold text-xs border border-slate-200 hover:bg-slate-50 transition focus:outline-none">{{ $lastPage }}</button>
+                        @endif
+                    @endif
+
+                    {{-- Next --}}
+                    @if($stagings->hasMorePages())
+                        <button type="button" wire:click="nextPage" class="flex items-center justify-center w-8 h-8 rounded-lg bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition focus:outline-none">
+                            <x-ts:icon name="tabler.chevron-right" class="w-4 h-4" />
+                        </button>
+                    @else
+                        <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-300 border border-slate-200 select-none cursor-not-allowed">
+                            <x-ts:icon name="tabler.chevron-right" class="w-4 h-4" />
+                        </span>
+                    @endif
+                </nav>
+                <p class="text-[11px] text-slate-400 font-medium select-none">
+                    Menampilkan <span class="font-bold text-slate-600">{{ $stagings->firstItem() ?? 0 }}</span> sampai <span class="font-bold text-slate-600">{{ $stagings->lastItem() ?? 0 }}</span> dari <span class="font-bold text-slate-600">{{ $stagings->total() }}</span> Data
+                </p>
+            </div>
+        @endif
     </x-ts:card>
 
     <!-- Modal Revisi Jam / Tautan SDM -->

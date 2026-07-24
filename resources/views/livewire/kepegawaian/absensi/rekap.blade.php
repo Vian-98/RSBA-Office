@@ -162,7 +162,7 @@
                 </button>
             </div>
             
-            <div x-show="showSummary" x-transition x-cloak class="overflow-x-auto rounded-lg border border-gray-200 pb-36">
+            <div x-show="showSummary" x-transition x-cloak class="overflow-x-auto rounded-lg border border-gray-200 pb-2">
                 <table class="w-full text-sm text-left text-gray-500 whitespace-nowrap">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                         <tr>

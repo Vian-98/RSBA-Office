@@ -20,6 +20,8 @@ class Rekonsiliasi extends Component
     public $log;
     public $search = '';
     public $filterStatus = 'single_punch'; // Default: Tampilkan Single Punch (Belum Ada Pasangan)
+    public $sortBy = 'tanggal';
+    public $sortDirection = 'asc';
 
     // Modal Edit/Revisi
     public $editingStagingId = null;
@@ -43,6 +45,22 @@ class Rekonsiliasi extends Component
 
     public function updatingFilterStatus()
     {
+        $this->resetPage();
+    }
+
+    public function updatingSortDirection()
+    {
+        $this->resetPage();
+    }
+
+    public function toggleSort($column = 'tanggal')
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
+        }
         $this->resetPage();
     }
 
@@ -277,6 +295,10 @@ class Rekonsiliasi extends Component
                   ->orWhere('nama_mentah', 'like', '%' . $this->search . '%');
             });
         }
+
+        $query->orderBy($this->sortBy, $this->sortDirection)
+              ->orderBy('nama_mentah', 'asc')
+              ->orderBy('id', 'asc');
 
         return view('livewire.kepegawaian.absensi.rekonsiliasi', [
             'stagings'           => $query->paginate(20),
