@@ -23,6 +23,15 @@ class Import extends Component
     public $previewData = null;
     public $isProcessing = false;
 
+    public function mount()
+    {
+        abort_unless(
+            auth()->user()?->hasRole('Super-Admin') || auth()->user()?->can('view-kepegawaian-absensi'),
+            403,
+            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk melakukan Import Absensi.'
+        );
+    }
+
     public function updatedFile()
     {
         if ($this->formatFile === 'punch_csv') {

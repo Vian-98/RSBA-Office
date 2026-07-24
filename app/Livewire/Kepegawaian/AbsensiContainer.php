@@ -24,9 +24,11 @@ class AbsensiContainer extends Component
     {
         $this->authorizeFromRoute();
 
-        if ($this->tab === 'rekap' && !auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM'])) {
-            $this->tab = 'kontrol';
-        }
+        abort_unless(
+            auth()->user()?->hasRole('Super-Admin') || auth()->user()?->can('view-kepegawaian-absensi'),
+            403,
+            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Kontrol Absensi.'
+        );
 
         return view('livewire.kepegawaian.absensi-container');
     }
