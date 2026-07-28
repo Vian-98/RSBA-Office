@@ -16,6 +16,9 @@
 - **Izin & Cuti Refactoring**: Pembaharuan nama istilah dari "Cuti" menjadi "Izin dan Cuti" pada seluruh modul, modal, dan seeder.
 - **Profil Karyawan & BPJS**: Pencatatan nomor kepesertaan BPJS Kesehatan dan BPJS Ketenagakerjaan yang terintegrasi dengan migrasi database.
 - **Konversi Satuan (UoM)**: Kemampuan untuk menyimpan satuan dasar dan satuan konversi tambahan pada Master Barang. Transaksi Pembelian Langsung akan secara otomatis mengkonversi jumlah barang dan nominal harganya (misal: 1 Box = 16 Pcs) agar mempermudah perhitungan stok.
+- **Docstore & Digital Signature**: Integrasi Docstore untuk audit dokumen, penerbitan QR Header Sistem, serta enkripsi dan verifikasi tanda tangan digital dokumen persuratan.
+- **Laporan Kepegawaian & Ekspor Data**: Modul laporan kepegawaian komprehensif berbasis tab interaktif dengan filter pencarian, ekspor format Excel/CSV, serta cetak dokumen (*print view*).
+- **Absensi & Rekonsiliasi**: Pencatatan dan alur *pairing* absensi fleksibel untuk berbagai *shift* (termasuk *cross-midnight*), deteksi *Single Punch*, dan pengelolaan konflik jadwal absensi.
 
 ## Prerequisite
 - **PHP**: `^8.2` (atau mengikuti Laravel)
