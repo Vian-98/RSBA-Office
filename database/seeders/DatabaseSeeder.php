@@ -33,6 +33,8 @@ class DatabaseSeeder extends Seeder
             SkenarioTriRahayuSeeder::class, // Skenario absensi tes Tri Rahayu
             JadwalDuaTahunSeeder::class, // Generate jadwal dan absensi 2023 - 2024
             CutiBersamaSeeder::class, // Event Cuti Bersama
+            StrukturOrganisasiSeeder::class, // Struktur Organisasi RSBA (Dewas, Direktur, Komite, Tim, Wadir)
         ]);
+
     }
 }
