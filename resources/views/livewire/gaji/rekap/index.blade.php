@@ -14,6 +14,14 @@
                 <x-tabler-arrow-left class="h-4 w-4 mr-1.5" />
                 Kembali
             </x-ts:button>
+            <x-ts:button wire:click="openAutoSendModal" flat color="purple" class="text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200">
+                <x-tabler-clock class="h-4 w-4 mr-1.5" />
+                Jadwal Otomatis
+            </x-ts:button>
+            <x-ts:button wire:click="openBatchSendModal" flat color="sky" class="text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200">
+                <x-tabler-mail-fast class="h-4 w-4 mr-1.5" />
+                Kirim Massal Email
+            </x-ts:button>
             @if(!$isOnlyPajak)
             <x-ts:button type="button" outline color="indigo" class="text-xs font-bold bg-white border border-indigo-200 text-indigo-600 shadow-sm" x-on:click="$tsui.open.modal('modal-payroll-parameters')">
                 <x-tabler-settings class="h-4 w-4 mr-1.5" />
@@ -30,6 +38,7 @@
                 <x-month-picker wire:model.live="periode" />
             </div>
         </div>
+
     </div>
 
     <!-- Quick Stats Section -->
@@ -592,4 +601,205 @@
             </div>
         </x-slot:footer>
     </x-ts:modal>
+
+    <!-- Modal Konfigurasi Pengiriman Otomatis Slip Gaji -->
+    <x-ts:modal wire="isAutoSendModalOpen" title="Konfigurasi Pengiriman Otomatis Slip Gaji (Email)" size="lg" class="relative z-50">
+        <div class="space-y-5">
+            <div class="p-4 bg-purple-50 border border-purple-100 rounded-2xl flex items-start gap-3">
+                <div class="p-2 bg-purple-500 text-white rounded-xl shrink-0">
+                    <x-tabler-clock-play class="h-5 w-5" />
+                </div>
+                <div class="text-xs text-purple-900 space-y-1">
+                    <span class="font-bold block text-sm">Otomatisasi Email Slip Gaji Bulanan</span>
+                    <p class="text-purple-700">
+                        Sistem akan menjalankan job background setiap bulan sesuai jadwal di bawah. Slip gaji hanya akan dikirimkan untuk periode yang sudah <b>Disetujui & Dikunci (`locked`)</b>.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Toggle Status Aktif -->
+            <div class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <div>
+                    <span class="text-sm font-bold text-slate-800 block">Status Pengiriman Otomatis</span>
+                    <span class="text-xs text-slate-500">Aktifkan untuk mengizinkan sistem mengirim email slip otomatis setiap bulan</span>
+                </div>
+                <x-ts:toggle wire:model="autoSendEnabled" color="purple" />
+            </div>
+
+            <!-- Form Tanggal & Jam Pengiriman -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Pengiriman Bulanan</label>
+                    <select wire:model="autoSendDay" class="w-full rounded-lg border-gray-300 text-sm shadow-2xs focus:border-purple-500 focus:ring-purple-500">
+                        @for($d = 1; $d <= 31; $d++)
+                            <option value="{{ $d }}">Setiap Tanggal {{ $d }}</option>
+                        @endfor
+                        <option value="last_day">Hari Terakhir Bulan (Last Day of Month)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Jam Eksekusi Pengiriman</label>
+                    <input type="text" wire:model="autoSendTime" placeholder="08:00" class="w-full rounded-lg border-gray-300 text-sm font-mono shadow-2xs focus:border-purple-500 focus:ring-purple-500" />
+                    <span class="text-[10px] text-slate-400 block mt-0.5">Format 24 jam (misal: 08:00, 14:30)</span>
+                </div>
+
+            </div>
+
+            <!-- Form Stabilitas Batching (Chunking) -->
+            <div class="p-4 bg-slate-50/70 border border-slate-200 rounded-xl space-y-3">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block">Pengaturan Stabilitas SMTP & Server</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Jumlah Email per Batch (Chunk Size)</label>
+                        <x-ts:input wire:model="autoSendChunkSize" type="number" min="1" max="50" class="text-xs" placeholder="Default: 10" />
+                        <span class="text-[10px] text-slate-400 block mt-0.5">Disarankan 10–20 email per batch</span>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Jeda Delay Antar Batch (Detik)</label>
+                        <x-ts:input wire:model="autoSendDelaySeconds" type="number" min="1" max="60" class="text-xs" placeholder="Default: 3" />
+                        <span class="text-[10px] text-slate-400 block mt-0.5">Mencegah server SMTP menganggap pesan sebagai SPAM</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ringkasan Log Eksekusi Terakhir -->
+            @if($autoSendLastRun)
+                <div class="p-3.5 bg-slate-100 border border-slate-200 rounded-xl text-xs space-y-1">
+                    <span class="font-bold text-slate-700 block">Riwayat Eksekusi Otomatis Terakhir:</span>
+                    <div class="flex items-center justify-between text-slate-600">
+                        <span>Waktu: {{ \Carbon\Carbon::parse($autoSendLastRun['executed_at'] ?? now())->translatedFormat('d F Y - H:i:s') }}</span>
+                        <span>Periode: {{ $autoSendLastRun['periode'] ?? '-' }}</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-slate-700 font-semibold pt-1">
+                        <span class="text-emerald-600">Terkirim: {{ $autoSendLastRun['sent'] ?? 0 }}</span>
+                        <span class="text-rose-600">Gagal: {{ $autoSendLastRun['failed'] ?? 0 }}</span>
+                        <span class="text-slate-500">Dilewati: {{ $autoSendLastRun['skipped'] ?? 0 }}</span>
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        <x-slot:footer>
+            <div class="flex justify-end gap-2">
+                <x-ts:button size="sm" flat color="slate" wire:click="closeAutoSendModal">Batal</x-ts:button>
+                <x-ts:button size="sm" color="purple" wire:click="saveAutoSendSettings" loading="saveAutoSendSettings">
+                    <x-tabler-device-floppy class="h-4 w-4 mr-1" />
+                    Simpan Pengaturan
+                </x-ts:button>
+            </div>
+        </x-slot:footer>
+
+
+    </x-ts:modal>
+
+    <!-- Modal Pengiriman Massal Email (Instant Batch Queue) -->
+    <x-ts:modal wire="isBatchSendModalOpen" title="Kirim Massal Slip Gaji (Background Queue)" size="lg" class="relative z-50">
+        <div class="space-y-5" @if($isBatchSending) wire:poll.1s="refreshBatchProgress" @endif>
+            <div class="p-4 bg-sky-50 border border-sky-100 rounded-2xl flex items-start gap-3">
+                <div class="p-2 bg-sky-500 text-white rounded-xl shrink-0">
+                    <x-tabler-rocket class="h-5 w-5" />
+                </div>
+                <div class="text-xs text-sky-900 space-y-1">
+                    <span class="font-bold block text-sm">Pengiriman Email Massal via Background Queue</span>
+                    <p class="text-sky-700">
+                        Pengiriman email slip gaji untuk periode <b>{{ \Carbon\Carbon::parse($periode . '-01')->translatedFormat('F Y') }}</b> akan dimasukkan ke antrean background (*Queue Job*) secara instant (< 1 detik). Anda bebas menutup modal ini.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-700">
+                    <span>Progres Pengiriman Antrean Background</span>
+                    <span class="font-mono text-sky-700 font-bold">{{ $batchProcessedCount }} / {{ $batchTotalCount }} Karyawan</span>
+                </div>
+
+                @php
+                    $percentage = $batchTotalCount > 0 ? round(($batchProcessedCount / $batchTotalCount) * 100) : 0;
+                @endphp
+                <div class="w-full bg-slate-200 rounded-full h-3.5 overflow-hidden p-0.5 border border-slate-300">
+                    <div class="bg-gradient-to-r from-sky-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300 shadow-xs" style="width: {{ $percentage }}%"></div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-center text-xs pt-1">
+                    <div class="p-2 bg-emerald-50 border border-emerald-100 rounded-xl">
+                        <span class="block text-[10px] uppercase font-bold text-emerald-600">Berhasil Terkirim</span>
+                        <span class="text-base font-black text-emerald-700">{{ $batchSuccessCount }}</span>
+                    </div>
+                    <div class="p-2 bg-rose-50 border border-rose-100 rounded-xl">
+                        <span class="block text-[10px] uppercase font-bold text-rose-600">Gagal</span>
+                        <span class="text-base font-black text-rose-700">{{ $batchFailedCount }}</span>
+                    </div>
+                    <div class="p-2 bg-slate-100 border border-slate-200 rounded-xl">
+                        <span class="block text-[10px] uppercase font-bold text-slate-500">Sisa Antrean</span>
+                        <span class="text-base font-black text-slate-700">{{ max(0, $batchTotalCount - $batchProcessedCount) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            @if($isBatchSending)
+                <div class="p-3.5 bg-sky-50/90 border border-sky-200 rounded-xl flex items-center gap-3 text-xs text-sky-900 shadow-xs">
+                    <x-tabler-loader-2 class="h-5 w-5 animate-spin text-sky-600 shrink-0" />
+                    <div class="space-y-0.5">
+                        <span class="font-bold block text-sky-800">Antrean Background Berjalan...</span>
+                        <span class="font-semibold text-sky-700 font-mono text-[11px]">{{ $currentSendingStatus ?: 'Memproses antrean...' }}</span>
+                    </div>
+                </div>
+            @endif
+
+            @php
+                $rekapModalFailedLogs = \App\Models\Sdm\PayrollSendLog::with('karyawan')
+                    ->where('periode', $periode)
+                    ->where('status', 'failed')
+                    ->orderByDesc('id')
+                    ->get();
+            @endphp
+
+            @if($rekapModalFailedLogs->count() > 0)
+                <div class="p-4 bg-rose-50/80 border border-rose-200 rounded-2xl space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-rose-900 font-bold text-xs">
+                            <x-tabler-alert-triangle class="h-4 w-4 text-rose-600 shrink-0" />
+                            <span>Detail Email Slip Gaji Gagal Terkirim ({{ $rekapModalFailedLogs->count() }} Karyawan)</span>
+                        </div>
+                    </div>
+
+                    <div class="max-h-56 overflow-y-auto space-y-2 pr-1">
+                        @foreach($rekapModalFailedLogs as $failedLog)
+                            <div class="p-3 bg-white border border-rose-200 rounded-xl flex items-center justify-between text-xs gap-3 shadow-xs hover:border-rose-300 transition-colors">
+                                <div class="space-y-1 min-w-0 flex-1">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="font-bold text-slate-900">{{ $failedLog->karyawan->full_nama ?? 'Karyawan ID: ' . $failedLog->karyawan_id }}</span>
+                                        <span class="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-700 font-mono rounded-md border border-slate-200">
+                                            {{ $failedLog->email ?? 'Tanpa Email' }}
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-rose-700 font-medium leading-relaxed bg-rose-50/60 p-1.5 rounded-lg border border-rose-100">
+                                        <span class="font-bold text-rose-900">Alasan Gagal:</span> {{ $failedLog->error_message ?? 'Terjadi kesalahan sistem pengiriman email.' }}
+                                    </p>
+                                </div>
+                                <div class="shrink-0">
+                                    <x-ts:button size="xs" color="rose" wire:click="sendSingleEmail({{ $failedLog->karyawan_id }})" loading="sendSingleEmail({{ $failedLog->karyawan_id }})">
+                                        <x-tabler-refresh class="h-3 w-3 mr-1" />
+                                        Coba Kirim Ulang
+                                    </x-ts:button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        <x-slot:footer>
+            <div class="flex justify-end gap-2">
+                <x-ts:button size="sm" flat color="slate" wire:click="closeBatchSendModal">Tutup</x-ts:button>
+                <x-ts:button size="sm" color="sky" wire:click="dispatchBulkQueue" loading="dispatchBulkQueue" :disabled="$isBatchSending || ($batchTotalCount > 0 && $batchProcessedCount >= $batchTotalCount)">
+                    <x-tabler-rocket class="h-4 w-4 mr-1" />
+                    {{ $batchProcessedCount > 0 ? 'Mulai Ulang Antrean Background' : 'Mulai Kirim Massal (Queue)' }}
+                </x-ts:button>
+            </div>
+        </x-slot:footer>
+    </x-ts:modal>
+
 </div>
+
