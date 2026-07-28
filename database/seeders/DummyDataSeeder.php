@@ -49,7 +49,6 @@ class DummyDataSeeder extends Seeder
             'asset_maintc_teknisi_assigment',
             'asset_maintc_work',
             'asset_maintc_work_parts',
-            'dokter_spesialisasi',
             'dokter',
             'jm_pasien',
             'jm_dokter',
@@ -1128,11 +1127,6 @@ class DummyDataSeeder extends Seeder
         ]);
 
         // 18. Seed Dokter & Jasa Medis (Payroll / Doctor Fees)
-        $dokterSpesialisasi = [
-            ['nama' => 'Spesialis Anak', 'singkatan' => 'Sp.A', 'kategori' => 'spesialis', 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Spesialis Bedah', 'singkatan' => 'Sp.B', 'kategori' => 'spesialis', 'created_at' => now(), 'updated_at' => now()],
-        ];
-        DB::table('dokter_spesialisasi')->insert($dokterSpesialisasi);
         $spesialisIds = DB::table('dokter_spesialisasi')->pluck('id')->toArray();
 
         // Create Dokter Karyawan record

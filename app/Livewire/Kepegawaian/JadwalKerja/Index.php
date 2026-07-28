@@ -169,7 +169,10 @@ class Index extends Component implements HasForms, HasTable, HasActions
     public function table(Table $table): Table
     {
         $query = JadwalKerja::query()
-            ->with(['ruangan', 'pembuat', 'diketahuiOleh', 'disetujuiOleh']);
+            ->with(['ruangan', 'pembuat', 'diketahuiOleh', 'disetujuiOleh'])
+            ->orderBy('tahun', 'desc')
+            ->orderBy('bulan', 'desc')
+            ->orderBy('id', 'desc');
 
         $user = Auth::user();
         if ($user) {
