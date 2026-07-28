@@ -44,11 +44,25 @@ class RoleSeeder extends Seeder
             $role->syncPermissions($perms);
         };
 
-        // Assign permissions to Kepala-Bidang & Wakil-Direktur
-        $safeSync($kabid, array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'approve-jadwal-kabid'])));
-        $safeSync($wadir, array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'approve-jadwal-wadir'])));
-        
-        // (Koordinator tidak lagi memerlukan permission khusus via Role)
+        // Assign comprehensive executive permissions to Kepala-Bidang & Wakil-Direktur
+        $systemSettingsOnly = [
+            'view-admin-settings-menu',
+            'view-admin-settings-perusahaan',
+            'view-admin-settings-role',
+            'view-admin-settings-permission',
+            'view-role-permission',
+            'view-roles',
+            'view-permissions',
+            'view-menus',
+            'add-menu',
+            'view-settings'
+        ];
+        $executivePermissions = array_values(array_filter($allPermissions, fn($p) => !in_array($p, $systemSettingsOnly)));
+
+        $safeSync($kabid, $executivePermissions);
+        $safeSync($wadir, $executivePermissions);
+
+
 
 
         // 1. SDM permissions

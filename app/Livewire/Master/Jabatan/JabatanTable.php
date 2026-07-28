@@ -29,7 +29,7 @@ class JabatanTable extends Component implements HasTable, HasForms, HasActions
     public static function table(Table $table): Table
     {
         return $table
-            ->query(Jabatan::query())
+            ->query(Jabatan::query()->orderByDesc('tunjangan_jabatan')->orderBy('id'))
             ->columns([
                 TextColumn::make('nama')
                     ->label('Jabatan')
@@ -45,13 +45,15 @@ class JabatanTable extends Component implements HasTable, HasForms, HasActions
                 TextColumn::make('bagian.nama')
                     ->label('Bagian')
             ])
+
             ->filters([
                 SelectFilter::make('parent_id')
                     ->label('Atasan')
                     ->options(
-                        fn(): array => Jabatan::pluck('nama', 'id')->toArray()
+                        fn(): array => Jabatan::orderByDesc('tunjangan_jabatan')->pluck('nama', 'id')->toArray()
                     )
             ])
+
             ->recordActions([
                 Action::make('edit')
                     ->iconButton()

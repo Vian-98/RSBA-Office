@@ -9,6 +9,11 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Models\Sdm\PayrollSendLog;
+use App\Mail\SlipGajiMail;
+use App\Services\PayrollCalculator;
+use Illuminate\Support\Facades\Mail;
+
 
 use TallStackUi\Traits\Interactions;
 
@@ -40,6 +45,26 @@ class Index extends Component
     public ?int $formSp3JabatanId = null;
     
     public array $mengetahuiOptions = [];
+
+    // Modal state for Auto-Send Configuration
+    public bool $isAutoSendModalOpen = false;
+    public bool $autoSendEnabled = false;
+    public string $autoSendDay = '25';
+    public string $autoSendTime = '08:00';
+    public int $autoSendChunkSize = 10;
+    public int $autoSendDelaySeconds = 3;
+    public ?array $autoSendLastRun = null;
+
+    // Modal & Progress state for Instant Batch Sending
+    public bool $isBatchSendModalOpen = false;
+    public bool $isBatchSending = false;
+    public int $batchTotalCount = 0;
+    public int $batchProcessedCount = 0;
+    public int $batchSuccessCount = 0;
+    public int $batchFailedCount = 0;
+    public string $currentSendingStatus = '';
+
+
 
     public function mount()
     {
@@ -586,4 +611,171 @@ class Index extends Component
             $this->toast()->error('Gagal !', 'Error: ' . $e->getMessage())->send();
         }
     }
+
+    public function openAutoSendModal(): void
+    {
+        $this->authorizeFromRoute();
+        $this->autoSendEnabled = DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_enabled')->value('value') === '1';
+        $this->autoSendDay = DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_day')->value('value') ?: '25';
+        $this->autoSendTime = DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_time')->value('value') ?: '08:00';
+        $this->autoSendChunkSize = (int) (DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_chunk_size')->value('value') ?: 10);
+        $this->autoSendDelaySeconds = (int) (DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_delay_seconds')->value('value') ?: 3);
+        
+        $lastRunRaw = DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_last_run')->value('value');
+        $this->autoSendLastRun = $lastRunRaw ? json_decode($lastRunRaw, true) : null;
+        
+        $this->isAutoSendModalOpen = true;
+    }
+
+    public function closeAutoSendModal(): void
+    {
+        $this->isAutoSendModalOpen = false;
+    }
+
+    public function saveAutoSendSettings(): void
+    {
+        $this->authorizeFromRoute();
+
+        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_enabled'], ['value' => $this->autoSendEnabled ? '1' : '0', 'updated_at' => now()]);
+        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_day'], ['value' => $this->autoSendDay, 'updated_at' => now()]);
+        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_time'], ['value' => $this->autoSendTime, 'updated_at' => now()]);
+        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_chunk_size'], ['value' => (string) $this->autoSendChunkSize, 'updated_at' => now()]);
+        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_delay_seconds'], ['value' => (string) $this->autoSendDelaySeconds, 'updated_at' => now()]);
+
+        $this->isAutoSendModalOpen = false;
+        $this->toast()->success('Berhasil !', 'Pengaturan jadwal pengiriman otomatis slip gaji berhasil disimpan.')->send();
+    }
+
+
+
+    public function openBatchSendModal(): void
+    {
+        $this->authorizeFromRoute();
+
+        $employees = Karyawan::whereNull('resign_at')->get();
+        $this->batchTotalCount = $employees->count();
+        $this->refreshBatchProgress();
+
+        $this->isBatchSendModalOpen = true;
+    }
+
+    public function closeBatchSendModal(): void
+    {
+        $this->isBatchSendModalOpen = false;
+        $this->isBatchSending = false;
+    }
+
+    public function triggerQueueWorker(): void
+    {
+        if (str_contains(PHP_OS_FAMILY, 'Windows')) {
+            pclose(popen("start /B php artisan queue:work --stop-when-empty", "r"));
+        } else {
+            exec("php artisan queue:work --stop-when-empty > /dev/null 2>&1 &");
+        }
+    }
+
+    public function sendEmail(int $karyawanId): void
+    {
+        $karyawan = Karyawan::with(['user'])->find($karyawanId);
+
+        if (!$karyawan) {
+            $this->toast()->error('Gagal !', 'Karyawan tidak ditemukan.')->send();
+            return;
+        }
+
+        $email = $karyawan->email ?: optional($karyawan->user)->email;
+        if (!$email) {
+            $this->toast()->warning('Peringatan !', 'Karyawan ini tidak memiliki alamat email terdaftar.')->send();
+            return;
+        }
+
+        PayrollSendLog::updateOrCreate(
+            ['periode' => $this->periode, 'karyawan_id' => $karyawanId],
+            ['email' => $email, 'status' => 'pending', 'tipe_pengiriman' => 'manual', 'error_message' => null]
+        );
+
+        \App\Jobs\SendPayrollSlipJob::dispatch($karyawanId, $this->periode, 'manual');
+        $this->triggerQueueWorker();
+
+        $this->toast()->success('Diproses !', 'Pengiriman email slip gaji ke ' . $email . ' sedang berjalan di background.')->send();
+    }
+
+    public function sendSingleEmail(int $karyawanId): void
+    {
+        $this->sendEmail($karyawanId);
+    }
+
+    public function dispatchBulkQueue(): void
+    {
+        $this->authorizeFromRoute();
+
+        $employees = Karyawan::whereNull('resign_at')->get();
+
+        $dispatchedCount = 0;
+        foreach ($employees as $karyawan) {
+            $log = PayrollSendLog::where('periode', $this->periode)
+                ->where('karyawan_id', $karyawan->id)
+                ->first();
+
+            if (!$log || $log->status !== 'sent') {
+                $email = $karyawan->email ?: optional($karyawan->user)->email;
+                if (!$email) {
+                    PayrollSendLog::updateOrCreate(
+                        [
+                            'periode' => $this->periode,
+                            'karyawan_id' => $karyawan->id,
+                        ],
+                        [
+                            'email' => '-',
+                            'status' => 'failed',
+                            'tipe_pengiriman' => 'instant_batch',
+                            'error_message' => 'Email karyawan belum terdaftar/kosong di sistem.',
+                        ]
+                    );
+                } else {
+                    PayrollSendLog::updateOrCreate(
+                        [
+                            'periode' => $this->periode,
+                            'karyawan_id' => $karyawan->id,
+                        ],
+                        [
+                            'email' => $email,
+                            'status' => 'pending',
+                            'tipe_pengiriman' => 'instant_batch',
+                        ]
+                    );
+                    \App\Jobs\SendPayrollSlipJob::dispatch($karyawan->id, $this->periode, 'instant_batch');
+                    $dispatchedCount++;
+                }
+            }
+        }
+
+        $this->isBatchSending = true;
+        $this->triggerQueueWorker();
+        $this->refreshBatchProgress();
+
+        if ($dispatchedCount > 0) {
+            $this->toast()->success('Antrean Dimulai !', "{$dispatchedCount} slip gaji telah dimasukkan ke dalam antrean pengiriman background.")->send();
+        } else {
+            $this->toast()->info('Selesai', 'Semua slip gaji karyawan periode ini telah terkirim.')->send();
+        }
+    }
+
+
+    public function refreshBatchProgress(): void
+    {
+        $this->batchSuccessCount = PayrollSendLog::where('periode', $this->periode)->where('status', 'sent')->count();
+        $this->batchFailedCount = PayrollSendLog::where('periode', $this->periode)->where('status', 'failed')->count();
+        $this->batchProcessedCount = $this->batchSuccessCount + $this->batchFailedCount;
+
+        if ($this->batchTotalCount > 0 && $this->batchProcessedCount >= $this->batchTotalCount) {
+            $this->isBatchSending = false;
+            $this->currentSendingStatus = 'Pengiriman antrean background selesai!';
+        } else {
+            $pendingCount = DB::table('jobs')->count();
+            $this->currentSendingStatus = "Memproses antrean background... ({$this->batchProcessedCount}/{$this->batchTotalCount} selesai, {$pendingCount} dalam antrean)";
+        }
+    }
+
 }
+
