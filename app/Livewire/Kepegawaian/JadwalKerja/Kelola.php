@@ -72,6 +72,15 @@ class Kelola extends Component
                 if (in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
                     $canManage = true;
                 }
+
+                // Validasi tipe jadwal: Koor Dokter hanya boleh buka tipe=dokter, Koor Karyawan hanya tipe=karyawan
+                if ($user->isKoordinatorDokter() && $this->jadwalKerja->tipe !== 'dokter') {
+                    // Redirect atau abort: jangan tampilkan jadwal karyawan kepada koor dokter
+                    abort(403, 'Anda adalah Koordinator Dokter, jadwal ini adalah Jadwal Karyawan.');
+                }
+                if ($user->isKoordinatorKaryawan() && $this->jadwalKerja->tipe === 'dokter') {
+                    abort(403, 'Jadwal Dokter tidak dapat dikelola oleh Koordinator Karyawan.');
+                }
             }
         }
 
@@ -101,16 +110,32 @@ class Kelola extends Component
             $this->dates[] = Carbon::create($this->jadwalKerja->tahun, $this->jadwalKerja->bulan, $d);
         }
 
-        $this->syncDetails($daysInMonth);
+        $user = Auth::user();
+        $isKoorDokter = $user?->isKoordinatorDokter() ?? false;
+        $isKoorKaryawan = $user?->isKoordinatorKaryawan() ?? false;
+
+        $this->syncDetails($daysInMonth, $isKoorDokter, $isKoorKaryawan);
 
         // Group details by Karyawan
         $grouped = $this->jadwalKerja->details->groupBy('karyawan_id');
 
         foreach ($grouped as $karyawanId => $details) {
             $karyawan = $details->first()->karyawan;
+            if (!$karyawan) continue;
+
+            $isDokter = $karyawan->dokterRecord()->exists();
+
+            if ($isKoorDokter && !$isDokter) {
+                continue; // Koordinator Dokter hanya melihat Dokter
+            }
+            if ($isKoorKaryawan && $isDokter) {
+                continue; // Koordinator Karyawan (Karu) hanya melihat Non-Dokter
+            }
+
             $row = [
                 'id' => $karyawan->id,
-                'nama' => $karyawan->nama,
+                'nama' => $karyawan->full_nama,
+                'is_dokter' => $isDokter,
                 'kategori' => $karyawan->kategori_kerja->nama(),
                 'details' => []
             ];
@@ -127,11 +152,19 @@ class Kelola extends Component
         }
     }
 
-    private function syncDetails($daysInMonth)
+    private function syncDetails($daysInMonth, bool $isKoorDokter = false, bool $isKoorKaryawan = false)
     {
-        $karyawansInRoom = \App\Models\Sdm\Karyawan::where('ruangan_id', $this->jadwalKerja->ruangan_id)
-            ->whereNull('resign_at')
-            ->get();
+        $karyawansQuery = \App\Models\Sdm\Karyawan::where('ruangan_id', $this->jadwalKerja->ruangan_id)
+            ->whereNull('resign_at');
+
+        // Filter berdasarkan TIPE JADWAL (bukan role user) untuk memastikan pemisahan permanen
+        if ($this->jadwalKerja->tipe === 'dokter') {
+            $karyawansQuery->whereHas('dokterRecord');
+        } else {
+            $karyawansQuery->whereDoesntHave('dokterRecord');
+        }
+
+        $karyawansInRoom = $karyawansQuery->get();
 
         $existingDetails = $this->jadwalKerja->details;
 

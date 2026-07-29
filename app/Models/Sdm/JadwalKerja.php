@@ -46,17 +46,16 @@ class JadwalKerja extends Model
 
     public function isDokterSchedule(): bool
     {
-        if ($this->ruangan) {
-            $namaRuangan = strtolower($this->ruangan->nama);
-            if (str_contains($namaRuangan, 'dokter') || str_contains($namaRuangan, 'spesialis')) {
-                return true;
-            }
+        if (!empty($this->tipe)) {
+            return $this->tipe === 'dokter';
         }
 
-        if ($this->ruangan_id) {
-            return Dokter::whereHas('karyawan', function ($q) {
-                $q->where('ruangan_id', $this->ruangan_id);
-            })->exists();
+        $detailsQuery = $this->details();
+        if ($detailsQuery->exists()) {
+            $karyawanIds = $detailsQuery->pluck('karyawan_id')->unique()->filter();
+            if ($karyawanIds->isNotEmpty()) {
+                return Dokter::whereIn('karyawan_id', $karyawanIds)->exists();
+            }
         }
 
         return false;
@@ -68,6 +67,9 @@ class JadwalKerja extends Model
         if (!$karyawan) {
             return;
         }
+
+        $isDokter = $karyawan->dokterRecord()->exists();
+        $tipe = $isDokter ? 'dokter' : 'karyawan';
 
         $ruanganId = $karyawan->ruangan_id;
         if (!$ruanganId) {
@@ -84,6 +86,7 @@ class JadwalKerja extends Model
         $jadwalKerja = self::where('ruangan_id', $ruanganId)
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
+            ->where('tipe', $tipe)
             ->first();
 
         if (!$jadwalKerja) {
@@ -92,6 +95,7 @@ class JadwalKerja extends Model
                     'ruangan_id'  => $ruanganId,
                     'bulan'       => $bulan,
                     'tahun'       => $tahun,
+                    'tipe'        => $tipe,
                     'status'      => $isReguler ? \App\Enums\StatusJadwalKerja::PUBLISHED : \App\Enums\StatusJadwalKerja::DRAFT,
                     'dibuat_oleh' => 1,
                 ]);
@@ -99,6 +103,7 @@ class JadwalKerja extends Model
                 $jadwalKerja = self::where('ruangan_id', $ruanganId)
                     ->where('bulan', $bulan)
                     ->where('tahun', $tahun)
+                    ->where('tipe', $tipe)
                     ->first();
                 if (!$jadwalKerja) {
                     return;
