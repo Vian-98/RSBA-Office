@@ -1,11 +1,28 @@
 import { defineConfig } from 'vite';
 import laravel, { refreshPaths } from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
+import os from 'os';
+
+function getLocalIp() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal && !iface.address.startsWith('169.254.')) {
+                return iface.address;
+            }
+        }
+    }
+    return 'localhost';
+}
 
 export default defineConfig({
     server: {
+        host: '0.0.0.0',
         port: 5173, // Fixed port
         strictPort: true, // Fail if the port is already in use
+        hmr: {
+            host: process.env.VITE_HMR_HOST || getLocalIp(),
+        },
     },
     plugins: [
         laravel({

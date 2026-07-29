@@ -102,6 +102,13 @@ class EditKedinasan extends Component
         $this->auto_pendidikan_label = \App\Enums\TingkatPendidikan::tryFrom($tingkat)?->nama() ?? 'SMA';
     }
 
+    public function updatedFormRuangan($value)
+    {
+        if (is_array($value)) {
+            $this->form->ruangan = $value['id'] ?? $value['value'] ?? (isset($value[0]) ? $value[0] : null);
+        }
+    }
+
     public function update()
     {
         $this->validate($this->rules());
@@ -119,9 +126,17 @@ class EditKedinasan extends Component
 
         // update ruangan, kategori kerja, dan pendidikan terakhir
         $data = [];
-        if ($this->form->ruangan !== $this->ruangan_init) {
-            $data['ruangan_id'] = empty($this->form->ruangan) ? null : $this->form->ruangan;
-            $this->ruangan_init = $this->form->ruangan;
+        
+        $ruanganRaw = $this->form->ruangan;
+        if (is_array($ruanganRaw)) {
+            $ruanganRaw = $ruanganRaw['id'] ?? $ruanganRaw['value'] ?? (isset($ruanganRaw[0]) ? $ruanganRaw[0] : null);
+        }
+        $ruanganId = (empty($ruanganRaw) || $ruanganRaw == '') ? null : (int) $ruanganRaw;
+
+        if ($ruanganId != $this->ruangan_init) {
+            $data['ruangan_id'] = $ruanganId;
+            $this->ruangan_init = $ruanganId;
+            $this->form->ruangan = $ruanganId;
         }
         
         $data['kategori_kerja'] = $this->form->kategori_kerja;
@@ -129,6 +144,7 @@ class EditKedinasan extends Component
         
         if (count($data) > 0) {
             Karyawan::where('id', $this->form->karyawan->id)->update($data);
+            $this->dispatch('updated-karywan');
         }
 
         $this->toast()
