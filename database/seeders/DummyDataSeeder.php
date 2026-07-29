@@ -78,11 +78,12 @@ class DummyDataSeeder extends Seeder
                 ['id' => 1, 'nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y'],
                 ['id' => 2, 'nama' => 'Izin Sakit', 'lama' => 0, 'periode' => 'Y'],
                 ['id' => 3, 'nama' => 'Cuti Melahirkan', 'lama' => 90, 'periode' => 'Y'],
+                ['id' => 4, 'nama' => 'Cuti Alasan Penting', 'lama' => 0, 'periode' => 'Y'],
             ];
             foreach ($items as $item) {
                 DB::table('surat_cuti_jenis')->updateOrInsert(['id' => $item['id']], array_merge($item, ['updated_at' => now(), 'created_at' => now()]));
             }
-            DB::table('surat_cuti_jenis')->where('id', '>', 3)->delete();
+            DB::table('surat_cuti_jenis')->where('id', '>', count($items))->delete();
         }
 
         // 3. Re-enable Foreign Key Checks
