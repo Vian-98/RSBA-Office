@@ -176,8 +176,13 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
         $user = Auth::user();
         if ($user) {
-            if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
-                // Super-Admin & Staff-SDM dapat melihat semua ruangan
+            $isApprover = $user->hasRole([
+                'Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang',
+                'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'
+            ]) || $user->can('approve-jadwal-kabid') || $user->can('approve-jadwal-wadir');
+
+            if ($isApprover) {
+                // Super-Admin, SDM, Wadir, dan Kabid dapat melihat seluruh daftar jadwal ruangan
             } elseif ($user->isKoordinatorDokter()) {
                 $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
                 if (empty($ruanganIds)) {
@@ -233,14 +238,14 @@ class Index extends Component implements HasForms, HasTable, HasActions
             ->recordActions([
                 Action::make('kelola')
                     ->label(fn (JadwalKerja $record): string => 
-                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
+                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur']) || 
                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
                             ? 'Kelola' 
                             : 'Lihat'
                     )
                     ->iconButton()
                     ->icon(fn (JadwalKerja $record): string => 
-                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
+                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur']) || 
                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
                             ? 'tabler-list-details' 
                             : 'tabler-eye'

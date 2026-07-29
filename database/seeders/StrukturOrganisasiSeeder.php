@@ -169,11 +169,11 @@ class StrukturOrganisasiSeeder extends Seeder
             ['nama' => 'Dewan Pengawas'],
             [
                 'kode_surat' => 'DEWAS',
+                'parent_id' => null,
                 'bagian_id' => $b_direksi,
                 'tunjangan_jabatan' => 6000000,
             ]
         );
-        $dewasJabatan->update(['parent_id' => $dewasJabatan->id]);
 
         // LEVEL 1.1: Sekretariat Dewas (Parent: Dewan Pengawas)
         $sekDewasJabatan = Jabatan::updateOrCreate(
