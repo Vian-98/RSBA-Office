@@ -15,13 +15,16 @@ function getLocalIp() {
     return 'localhost';
 }
 
+const localIp = process.env.VITE_HMR_HOST || getLocalIp();
+
 export default defineConfig({
     server: {
         host: '0.0.0.0',
         port: 5173,
         strictPort: true,
+        cors: true,
         hmr: {
-            host: process.env.VITE_HMR_HOST || getLocalIp(),
+            host: localIp,
         },
     },
     plugins: [
