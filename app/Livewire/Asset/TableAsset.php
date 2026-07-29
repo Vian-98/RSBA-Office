@@ -28,6 +28,18 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
     #[Locked]
     public $selectedId;
 
+    public function canManageAsset(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        return $user->hasRole('Super-Admin')
+            || $user->hasRole('Staff-Umum')
+            || $user->hasRole('Admin-Umum')
+            || $user->can('manage-umum-asset')
+            || $user->can('manage-asset');
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -35,7 +47,7 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                 AssetBarang::with(['barang', 'ruangan', 'barang.kategori', 'maintenanceRequests' => fn($q) => $q->active()])
                     ->withHierarchySort()
                     ->when(
-                        !auth()->user()->hasRole('Super-Admin') && !auth()->user()->can('view-umum-asset'),
+                        !$this->canManageAsset(),
                         function (Builder $query) {
                             $user = auth()->user();
                             if ($user && $user->karyawan && $user->karyawan->ruangan_id) {
@@ -54,13 +66,12 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                     )
                     ->action(
                         fn($record, $livewire) => match ($record->kode) {
-                            null =>  $livewire->modalAsset(
+                            null => $this->canManageAsset() ? $livewire->modalAsset(
                                 modal: 'modal-catat-asset',
                                 id: $record->getKey()
-                            ),
+                            ) : null,
                             default => '',
                         }
-
                     )
                     ->color(
                         fn($record) => $record->kode ? '' : 'danger'
@@ -288,7 +299,7 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                         )
                     )
                     ->visible(
-                        fn($record) => !$record->kode
+                        fn($record) => !$record->kode && $this->canManageAsset()
                     ),
 
 
@@ -315,7 +326,8 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                                 modal: 'modal-asset-specs',
                                 id: $record->getKey()
                             )
-                        ),
+                        )
+                        ->visible(fn() => $this->canManageAsset()),
 
                     // input maintenance
                     Action::make('maintenance')
@@ -327,7 +339,6 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                                 id: $record->getKey()
                             )
                         ),
-                    // ->url(fn($record): string => route('umum.asset.maintenance', $record->getKey())),
 
                     Action::make('mutasi')
                         ->icon('tabler-device-desktop-share')
@@ -337,7 +348,8 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                                 modal: 'modal-mutasi-asset',
                                 id: $record->getKey()
                             )
-                        ),
+                        )
+                        ->visible(fn() => $this->canManageAsset()),
 
                     Action::make('label')
                         ->label('Cetak Label')
@@ -345,7 +357,8 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                         ->action(function ($record) {
                             $this->selectedId = $record->getKey();
                             $this->dispatch('print-label');
-                        }),
+                        })
+                        ->visible(fn() => $this->canManageAsset()),
 
                     // logs
                     Action::make('logs')
@@ -355,7 +368,8 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                                 modal: 'modal-logs-asset',
                                 id: $record->getKey()
                             )
-                        ),
+                        )
+                        ->visible(fn() => $this->canManageAsset()),
                 ])->visible(
                     fn($record) => $record->kode
                 ),
