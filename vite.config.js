@@ -20,9 +20,7 @@ export default defineConfig({
         host: '0.0.0.0',
         port: 5173, // Fixed port
         strictPort: true, // Fail if the port is already in use
-        hmr: {
-            host: process.env.VITE_HMR_HOST || getLocalIp(),
-        },
+        ...(process.env.VITE_HMR_HOST ? { hmr: { host: process.env.VITE_HMR_HOST } } : {}),
     },
     plugins: [
         laravel({
