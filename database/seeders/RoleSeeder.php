@@ -138,5 +138,12 @@ class RoleSeeder extends Seeder
         ];
         $pajakRole = Role::firstOrCreate(['name' => 'Pajak']);
         $pajakRole->syncPermissions($pajakPermissions);
+
+        // 8. Dokter & Koordinator Dokter permissions
+        $dokterRole = Role::firstOrCreate(['name' => 'Dokter']);
+        $dokterRole->syncPermissions(array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja'])));
+
+        $koorDokterRole = Role::firstOrCreate(['name' => 'Koordinator-Dokter']);
+        $koorDokterRole->syncPermissions(array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'view-kepegawaian-konfigurasi-jadwal'])));
     }
 }
