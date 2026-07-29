@@ -29,4 +29,15 @@
             <livewire:Master.BagianKoordinator.Edit lazy :id="$editingId" :key="$editingId" />
         @endif
     </x-filament::modal>
+
+    {{-- Modal Atur Ruangan Koordinasi Multi-Select --}}
+    <x-filament::modal id="modal-koor-ruangan" width="lg" :autofocus="false" :close-by-clicking-away="false">
+        <x-slot name="heading">
+            Atur Ruangan Koordinasi Dokter / Karyawan
+        </x-slot>
+        <x-slot name="description">
+            Pilih ruangan-ruangan yang dapat dikelola jadwal kerjanya oleh koordinator ini.
+        </x-slot>
+        <livewire:Karyawan.Dokter.KoorRuangan @koor-ruangan-updated="$dispatch('close-modal', {id: 'modal-koor-ruangan'})" />
+    </x-filament::modal>
 </div>

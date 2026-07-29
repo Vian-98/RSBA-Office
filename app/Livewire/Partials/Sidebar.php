@@ -232,8 +232,22 @@ class Sidebar extends Component
                 ]);
             }
 
+            // Setiap Karyawan / Dokter otomatis memiliki akses ke menu "Jadwal Tugas Saya"
+            if ($user && ($user->karyawan_id || $user->isDokter())) {
+                if (!in_array('view-profile-jadwal-tugas-saya', $permissions)) {
+                    $permissions[] = 'view-profile-jadwal-tugas-saya';
+                }
+            }
+
+            // Dokter otomatis memiliki akses melihat "Jadwal Kerja"
+            if ($user && $user->isDokter()) {
+                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
+                }
+            }
+
             // Filter ketersediaan menu Jadwal Kerja sesuai wewenang user
-            if ($user && $user->can('view-kepegawaian-jadwal-kerja')) {
+            if ($user && ($user->can('view-kepegawaian-jadwal-kerja') || $user->isDokter() || $user->isKoordinator())) {
                 if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
                     $permissions[] = 'view-kepegawaian-jadwal-kerja';
                 }

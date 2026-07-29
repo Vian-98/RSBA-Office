@@ -221,7 +221,7 @@ class StrukturOrganisasiSeeder extends Seeder
 
         // LEVEL 3B: Jajaran Wakil Direktur (Wadir) (Parent: Direktur Utama)
         $wadirMedisJabatan = Jabatan::updateOrCreate(
-            ['nama' => 'Wakil Direktur Medis'],
+            ['nama' => 'Wakil Direktur Medis & Keperawatan'],
             [
                 'kode_surat' => 'WADIR-MEDIS',
                 'parent_id' => $dirJabatan->id,
