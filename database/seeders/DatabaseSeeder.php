@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             PerusahaanSeeder::class,
             WilayahSeeder::class,
             DummyDataSeeder::class,
+            UmDataSeeder::class,
+            UmumSeeder::class,
             JadwalSeeder::class, // Master shift, aturan jadwal, bagian-shift
             PayrollSeeder::class,
             SdmPayrollGolonganMatrixSeeder::class,
