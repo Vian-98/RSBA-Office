@@ -3,14 +3,9 @@ import laravel, { refreshPaths } from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-    server: {
-        port: 5173, // Fixed port
-        strictPort: true, // Fail if the port is already in use
-    },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
-            // refresh: true,
             refresh: [
                 ...refreshPaths,
                 'app/Livewire/**',
