@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             PerusahaanSeeder::class,
             WilayahSeeder::class,
             UmDataSeeder::class,
-            UmumSeeder::class,
+            'Database\Seeders\UmumSeeder',
             PayrollSeeder::class,
             SdmPayrollGolonganMatrixSeeder::class,
             PayrollPph21ReferenceSeeder::class,
