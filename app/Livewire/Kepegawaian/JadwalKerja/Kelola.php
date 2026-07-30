@@ -171,8 +171,14 @@ class Kelola extends Component
         }
 
         $karyawansInRoom = $karyawansQuery->get();
+        $validKaryawanIds = $karyawansInRoom->pluck('id')->toArray();
 
-        $existingDetails = $this->jadwalKerja->details;
+        // Hapus detail lama untuk karyawan yang sudah tidak berada di ruangan ini
+        JadwalKerjaDetail::where('jadwal_kerja_id', $this->jadwalKerja->id)
+            ->whereNotIn('karyawan_id', $validKaryawanIds)
+            ->delete();
+
+        $existingDetails = JadwalKerjaDetail::where('jadwal_kerja_id', $this->jadwalKerja->id)->get();
 
         $existingMap = [];
         foreach ($existingDetails as $detail) {
