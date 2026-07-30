@@ -91,7 +91,7 @@ class StrukturOrganisasiSeeder extends Seeder
             'view-kepegawaian-master-bagian', 'view-kepegawaian-master-jabatan', 'view-kepegawaian-master-ruangan', 'view-kepegawaian-master-spesialisasi',
             'view-kepegawaian-master-cuti', 'view-pengaturan-cuti', 'view-kepegawaian-master-cuti-index',
             'add-kepegawaian-master-cuti-index', 'edit-kepegawaian-master-cuti-index', 'delete-kepegawaian-master-cuti-index',
-            'view-kepegawaian-master-tunjangan-golongan', 'view-kepegawaian-master-aturan-pajak',
+            'view-kepegawaian-master-tunjangan-golongan', 'view-kepegawaian-master-tunjangan-jabatan', 'view-kepegawaian-master-tunjangan-lain', 'view-kepegawaian-master-aturan-pajak',
             'create-cuti-other-karyawan', 'view-sp3', 'view-kepegawaian-surat-sp3',
             'add-kepegawaian-surat-cuti', 'edit-kepegawaian-surat-cuti', 'delete-kepegawaian-surat-cuti',
             'view-kepegawaian-gaji', 'view-kepegawaian-gaji-index', 'add-kepegawaian-gaji-index', 'edit-kepegawaian-gaji-index', 'delete-kepegawaian-gaji-index', 'view-kepegawaian-gaji-rekap', 'view-kepegawaian-gaji-detail', 'approve-kepegawaian-gaji',
