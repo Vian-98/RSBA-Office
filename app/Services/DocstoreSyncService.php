@@ -13,24 +13,74 @@ use Illuminate\Support\Facades\Cache;
 
 class DocstoreSyncService
 {
+    protected string $baseUrl;
     protected string $apiUrl;
-    protected string $apiToken;
+    protected string $clientId;
+    protected string $clientSecret;
     protected string $hmacSecret;
+    protected bool $verifySsl;
 
     public function __construct()
     {
-        $this->apiUrl     = env('DOCSTORE_API_URL', 'http://localhost:8000/api');
-        $this->apiToken   = env('DOCSTORE_API_TOKEN', '');
-        $this->hmacSecret = env('DOCSTORE_HMAC_SECRET', '');
+        $this->baseUrl      = config('services.docstore.base_url', env('DOCSTORE_BASE_URL', 'http://localhost:8000'));
+        $this->apiUrl       = config('services.docstore.api_url', env('DOCSTORE_API_URL', 'http://localhost:8000/api'));
+        $this->clientId     = config('services.docstore.client_id', env('DOCSTORE_OAUTH_CLIENT_ID', ''));
+        $this->clientSecret = config('services.docstore.client_secret', env('DOCSTORE_OAUTH_CLIENT_SECRET', ''));
+        $this->hmacSecret   = config('services.docstore.hmac_secret', env('DOCSTORE_HMAC_SECRET', ''));
+        $this->verifySsl    = config('services.docstore.verify_ssl', env('DOCSTORE_VERIFY_SSL', false));
+    }
+
+    /**
+     * Dapatkan OAuth2 M2M Token via Client Credentials Grant.
+     * Caching token dinamis berbasis expires_in server: max(60, expiresIn - 300)
+     */
+    public function getM2mToken(): ?string
+    {
+        $cacheKey = 'docstore_m2m_token_' . md5($this->clientId);
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        try {
+            $response = Http::withOptions(['verify' => $this->verifySsl])
+                ->asForm()
+                ->timeout(10)
+                ->post(rtrim($this->baseUrl, '/') . '/oauth/token', [
+                    'grant_type'    => 'client_credentials',
+                    'client_id'     => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'scope'         => 'docstore:sync docstore:read',
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $token = $data['access_token'] ?? null;
+                $expiresIn = $data['expires_in'] ?? 3600;
+
+                if ($token) {
+                    $ttlSeconds = max(60, (int)$expiresIn - 300);
+                    Cache::put($cacheKey, $token, $ttlSeconds);
+                    return $token;
+                }
+            }
+
+            Log::error('Gagal mendapatkan OAuth2 token dari Docstore', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+            return null;
+        } catch (\Throwable $e) {
+            Log::error('Error koneksi OAuth2 token ke Docstore: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
      * Sync Surat SP3 ke docstore (bank surat).
-     * Dipanggil setiap kali ada perubahan status pada SP3.
      */
     public function syncSp3(SuratSp3 $surat): bool
     {
-        // Reload fresh model dengan relasi
         $surat = SuratSp3::with(['approvals.users.karyawan', 'details'])->findOrFail($surat->id);
 
         $content = [
@@ -61,7 +111,6 @@ class DocstoreSyncService
 
         $result = $this->sendToDocstore($payload);
 
-        // Simpan docstore_key ke record surat jika berhasil dan key diterima
         if ($result['success'] && !empty($result['docstore_key'])) {
             $surat->updateQuietly([
                 'docstore_key'       => $result['docstore_key'],
@@ -74,11 +123,9 @@ class DocstoreSyncService
 
     /**
      * Sync Surat Cuti ke docstore (bank surat).
-     * Dipanggil setiap kali ada perubahan status pada Cuti.
      */
     public function syncCuti(SuratCuti $surat): bool
     {
-        // Reload fresh model dengan relasi
         $surat = SuratCuti::with(['karyawan.jabatan', 'jenis', 'approvals.karyawan.jabatan'])->findOrFail($surat->id);
 
         $karyawan = $surat->karyawan;
@@ -112,7 +159,6 @@ class DocstoreSyncService
 
         $result = $this->sendToDocstore($payload);
 
-        // Simpan docstore_key ke record surat jika berhasil dan key diterima
         if ($result['success'] && !empty($result['docstore_key'])) {
             $surat->updateQuietly([
                 'docstore_key'       => $result['docstore_key'],
@@ -125,10 +171,6 @@ class DocstoreSyncService
 
     /**
      * Ambil data surat dari docstore berdasarkan docstore_key.
-     * Digunakan oleh PrintCuti dan PrintSp3 untuk menarik data cetak dari bank surat.
-     * Data di-cache selama 5 menit untuk mengurangi beban request ke docstore.
-     *
-     * @return array|null — null jika tidak ditemukan atau error
      */
     public function fetchFromDocstore(string $docstoreKey): ?array
     {
@@ -136,9 +178,11 @@ class DocstoreSyncService
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($docstoreKey) {
             try {
-                $response = Http::withToken($this->apiToken)
+                $token = $this->getM2mToken();
+                $response = Http::withOptions(['verify' => $this->verifySsl])
+                    ->when($token, fn($q) => $q->withToken($token))
                     ->timeout(10)
-                    ->get($this->apiUrl . '/documents/' . $docstoreKey);
+                    ->get(rtrim($this->apiUrl, '/') . '/documents/' . $docstoreKey);
 
                 if ($response->successful()) {
                     return $response->json();
@@ -147,53 +191,43 @@ class DocstoreSyncService
                 Log::warning('Docstore fetch failed', [
                     'docstore_key' => $docstoreKey,
                     'status'       => $response->status(),
-                    'body'         => $response->body(),
                 ]);
                 return null;
             } catch (\Throwable $e) {
-                Log::error('Docstore fetch error: ' . $e->getMessage(), [
-                    'docstore_key' => $docstoreKey,
-                ]);
+                Log::error('Docstore fetch error: ' . $e->getMessage());
                 return null;
             }
         });
     }
 
     /**
-     * Invalidasi cache untuk docstore_key tertentu.
-     * Dipanggil setelah sync berhasil agar data print selalu fresh.
-     */
-    public function invalidateCache(string $docstoreKey): void
-    {
-        Cache::forget('docstore_doc_' . $docstoreKey);
-    }
-
-    /**
-     * List semua surat dari docstore (untuk halaman audit/laporan).
+     * Ambil daftar surat dari docstore (untuk Audit Bank Surat).
      */
     public function listFromDocstore(
         string $type = 'all',
         string $status = 'all',
         int $page = 1,
-        int $perPage = 25,
+        int $perPage = 20,
         ?string $search = null,
         ?string $dateFrom = null,
-        ?string $dateTo = null
+        ?string $dateTo = null,
     ): array {
         try {
-            $params = [
-                'type'     => $type,
-                'status'   => $status,
-                'page'     => $page,
-                'per_page' => $perPage,
-            ];
-            if ($search) $params['search'] = $search;
-            if ($dateFrom) $params['date_from'] = $dateFrom;
-            if ($dateTo) $params['date_to'] = $dateTo;
+            $token = $this->getM2mToken();
+            $queryParams = array_filter([
+                'type'      => $type !== 'all' ? $type : null,
+                'status'    => $status !== 'all' ? $status : null,
+                'page'      => $page,
+                'per_page'  => $perPage,
+                'search'    => $search,
+                'date_from' => $dateFrom,
+                'date_to'   => $dateTo,
+            ]);
 
-            $response = Http::withToken($this->apiToken)
-                ->timeout(15)
-                ->get($this->apiUrl . '/documents', $params);
+            $response = Http::withOptions(['verify' => $this->verifySsl])
+                ->when($token, fn($q) => $q->withToken($token))
+                ->timeout(10)
+                ->get(rtrim($this->apiUrl, '/') . '/documents', $queryParams);
 
             if ($response->successful()) {
                 return $response->json();
@@ -210,33 +244,52 @@ class DocstoreSyncService
         }
     }
 
-    // =============================================
-    // Private Helpers
-    // =============================================
-
     /**
-     * Kirim payload ke docstore dengan HMAC signing.
-     * @return array ['success' => bool, 'docstore_key' => ?string]
+     * Kirim payload ke docstore dengan OAuth2 Token & HMAC Anti-Replay.
      */
     protected function sendToDocstore(array $payload): array
     {
         try {
-            $jsonPayload = json_encode($payload);
-
-            // Hitung HMAC dari JSON payload
-            $headers = [
-                'Content-Type' => 'application/json',
-            ];
-            if (!empty($this->hmacSecret)) {
-                $hmacSignature = hash_hmac('sha256', $jsonPayload, $this->hmacSecret);
-                $headers['X-Payload-Signature'] = $hmacSignature;
+            $token = $this->getM2mToken();
+            if (!$token) {
+                Log::error('Docstore sync dibatalkan: Gagal memperoleh OAuth2 token');
+                return ['success' => false, 'docstore_key' => null];
             }
 
-            $response = Http::withToken($this->apiToken)
+            $jsonPayload = json_encode($payload);
+            $timestamp = time();
+
+            $headers = [
+                'Content-Type' => 'application/json',
+                'X-Timestamp'  => (string)$timestamp,
+            ];
+
+            if (!empty($this->hmacSecret)) {
+                $payloadToSign = $timestamp . '.' . $jsonPayload;
+                $headers['X-Payload-Signature'] = hash_hmac('sha256', $payloadToSign, $this->hmacSecret);
+            }
+
+            $response = Http::withOptions(['verify' => $this->verifySsl])
+                ->withToken($token)
                 ->withHeaders($headers)
                 ->timeout(10)
                 ->withBody($jsonPayload, 'application/json')
-                ->post($this->apiUrl . '/documents');
+                ->post(rtrim($this->apiUrl, '/') . '/documents');
+
+            // Handle token expiry (401) -> Retry 1x dengan token baru
+            if ($response->status() === 401) {
+                Cache::forget('docstore_m2m_token_' . md5($this->clientId));
+                $newToken = $this->getM2mToken();
+
+                if ($newToken) {
+                    $response = Http::withOptions(['verify' => $this->verifySsl])
+                        ->withToken($newToken)
+                        ->withHeaders($headers)
+                        ->timeout(10)
+                        ->withBody($jsonPayload, 'application/json')
+                        ->post(rtrim($this->apiUrl, '/') . '/documents');
+                }
+            }
 
             if ($response->successful()) {
                 $body = $response->json();
@@ -260,15 +313,11 @@ class DocstoreSyncService
         }
     }
 
-    /**
-     * Bangun array signatures untuk SP3
-     */
     protected function buildSp3Signatures(SuratSp3 $surat): array
     {
         $signatures = [];
         foreach ($surat->approvals as $approval) {
             if (!$approval->signature_hash) {
-                // Sertakan approval tanpa signature (status pending/rejected tanpa tanda tangan)
                 $signatures[] = [
                     'signature_hash' => 'pending_' . md5($surat->id . '_' . ($approval->disetujui ?? 0)),
                     'original_data'  => 'PENDING_APPROVAL',
@@ -323,15 +372,11 @@ class DocstoreSyncService
         return $signatures;
     }
 
-    /**
-     * Bangun array signatures untuk Cuti
-     */
     protected function buildCutiSignatures(SuratCuti $surat): array
     {
         $signatures = [];
         foreach ($surat->approvals as $approval) {
             if (!$approval->signature_hash) {
-                // Sertakan approval tanpa signature (status pending/rejected tanpa tanda tangan)
                 $signatures[] = [
                     'signature_hash' => 'pending_' . md5($surat->id . '_' . ($approval->disetujui_oleh ?? 0)),
                     'original_data'  => 'PENDING_APPROVAL',
