@@ -28,13 +28,35 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
     #[Locked]
     public $selectedId;
 
+    public function canManageAsset(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        return $user->hasRole('Super-Admin')
+            || $user->hasRole('Staff-Umum')
+            || $user->hasRole('Admin-Umum')
+            || $user->can('manage-umum-asset')
+            || $user->can('manage-asset');
+    }
+
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                AssetBarang::with(['barang', 'ruangan', 'barang.kategori'])
+                AssetBarang::with(['barang', 'ruangan', 'barang.kategori', 'maintenanceRequests' => fn($q) => $q->active()])
                     ->withHierarchySort()
-                // AssetBarang::with(['barang', 'ruangan', 'barang.kategori'])
+                    ->when(
+                        !$this->canManageAsset(),
+                        function (Builder $query) {
+                            $user = auth()->user();
+                            if ($user && $user->karyawan && $user->karyawan->ruangan_id) {
+                                $query->where('ruangan_id', $user->karyawan->ruangan_id);
+                            } else {
+                                $query->whereNull('id'); // Hide all if no ruangan
+                            }
+                        }
+                    )
             )
             ->columns([
                 TextColumn::make('kode')
@@ -44,13 +66,12 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                     )
                     ->action(
                         fn($record, $livewire) => match ($record->kode) {
-                            null =>  $livewire->modalAsset(
+                            null => $this->canManageAsset() ? $livewire->modalAsset(
                                 modal: 'modal-catat-asset',
                                 id: $record->getKey()
-                            ),
+                            ) : null,
                             default => '',
                         }
-
                     )
                     ->color(
                         fn($record) => $record->kode ? '' : 'danger'
@@ -103,7 +124,15 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                             ),
                             default => ''
                         }
-                    )
+                    ),
+
+                TextColumn::make('active_ticket')
+                    ->label('Tiket Aktif')
+                    ->getStateUsing(fn($record) => $record->maintenanceRequests->first()?->nomor_tiket)
+                    ->badge()
+                    ->color('warning')
+                    ->fontFamily('mono')
+                    ->placeholder('-'),
             ])
             ->filters([
                 Filter::make('main_asset')
@@ -153,6 +182,112 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                     )
             ])
             ->recordActions([
+                Action::make('maintenance')
+                    ->iconButton()
+                    ->extraAttributes(['title' => 'Buat Tiket Maintenance'])
+                    ->icon('tabler-tools')
+                    ->color('danger')
+                    ->form([
+                        \Filament\Forms\Components\Select::make('target_asset_id')
+                            ->label('Item yang Diperbaiki')
+                            ->options(function ($record) {
+                                $options = [
+                                    $record->id => 'Asset Utama: ' . ($record->barang->nama ?? 'Asset') . ' (' . ($record->kode ?? 'Belum ada kode') . ')'
+                                ];
+                                foreach ($record->components as $comp) {
+                                    $options[$comp->id] = 'Komponen: ' . ($comp->barang->nama ?? 'Komponen') . ' (' . ($comp->kode ?? '-') . ')';
+                                }
+                                return $options;
+                            })
+                            ->default(fn ($record) => $record->id)
+                            ->required()
+                            ->visible(fn ($record) => $record->components->count() > 0),
+                        \Filament\Forms\Components\Select::make('priority')
+                            ->label('Prioritas')
+                            ->options([
+                                'normal' => 'Normal',
+                                'penting' => 'Penting',
+                                'darurat' => 'Darurat',
+                            ])
+                            ->default('normal')
+                            ->required()
+                            ->live(),
+                        \Filament\Forms\Components\TextInput::make('ket_priority')
+                            ->label('Keterangan Prioritas')
+                            ->required(fn (\Filament\Forms\Get $get) => $get('priority') !== 'normal')
+                            ->visible(fn (\Filament\Forms\Get $get) => $get('priority') !== 'normal')
+                            ->maxLength(255),
+                        \Filament\Forms\Components\Textarea::make('note')
+                            ->label('Keluhan / Masalah (Note)')
+                            ->required()
+                            ->maxLength(255),
+                        \Filament\Forms\Components\FileUpload::make('lampiran')
+                            ->label('Lampiran / Foto')
+                            ->multiple()
+                            ->directory('maintenanceReqs/lampiran'),
+                    ])
+                    ->action(function (array $data, $record, $livewire) {
+                        \Illuminate\Support\Facades\DB::beginTransaction();
+                        try {
+                            $targetAssetId = $data['target_asset_id'] ?? $record->id;
+                            $targetAsset = AssetBarang::find($targetAssetId) ?? $record;
+
+                            // Create the maintenance request
+                            $maintReq = $targetAsset->maintenanceRequests()->create([
+                                'user_req_id' => auth()->id(),
+                                'priority' => $data['priority'],
+                                'ket_priority' => $data['ket_priority'] ?? null,
+                                'note' => $data['note'],
+                                'lampiran' => $data['lampiran'] ?? null,
+                                'status' => 'pending',
+                            ]);
+
+                            $itemName = $targetAsset->id === $record->id 
+                                ? 'Asset Utama (' . ($targetAsset->barang->nama ?? '-') . ')'
+                                : 'Komponen (' . ($targetAsset->barang->nama ?? '-') . ')';
+
+                            // Log sistem
+                            \App\Models\Maintenance\TicketComment::create([
+                                'request_id' => $maintReq->id,
+                                'user_id'    => auth()->id(),
+                                'body'       => 'Tiket dibuat oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name ?? 'User') . ' untuk perbaikan ' . $itemName,
+                                'type'       => 'log',
+                            ]);
+
+                            // Update asset status
+                            $targetAsset->update(['status' => 'diperbaiki']);
+
+                            if ($targetAsset->id === $record->id) {
+                                $record->components->each(function ($component) {
+                                    $component->update(['status' => 'diperbaiki']);
+                                });
+                            } else {
+                                $record->update(['status' => 'diperbaiki']);
+                            }
+
+                            \Illuminate\Support\Facades\DB::commit();
+
+                            // Use TallStackUI Toast for notification since we might not have Filament Notifications configured
+                            $livewire->toast()->success('Berhasil', 'Tiket perbaikan berhasil dikirim.')->send();
+                        } catch (\Throwable $e) {
+                            \Illuminate\Support\Facades\DB::rollBack();
+                            $livewire->toast()->error('Gagal', 'Terjadi kesalahan saat membuat tiket.')->send();
+                        }
+                    })
+                    ->modalHeading(fn ($record) => 'Buat Tiket Perbaikan - ' . $record->nama)
+                    ->modalWidth('lg')
+                    ->visible(fn($record) => !$record->maintenanceRequests->count()),
+
+                Action::make('lihat_tiket')
+                    ->iconButton()
+                    ->icon('tabler-ticket')
+                    ->color('warning')
+                    ->url(fn($record) => $record->maintenanceRequests->first()
+                        ? route('umum.maintenance.ticket.detail', $record->maintenanceRequests->first()->id)
+                        : null
+                    )
+                    ->visible(fn($record) => $record->maintenanceRequests->count() > 0),
+
                 Action::make('catat')
                     ->iconButton()
                     ->icon('tabler-library-plus')
@@ -164,7 +299,7 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                         )
                     )
                     ->visible(
-                        fn($record) => !$record->kode
+                        fn($record) => !$record->kode && $this->canManageAsset()
                     ),
 
 
@@ -191,7 +326,8 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                                 modal: 'modal-asset-specs',
                                 id: $record->getKey()
                             )
-                        ),
+                        )
+                        ->visible(fn() => $this->canManageAsset()),
 
                     // input maintenance
                     Action::make('maintenance')
@@ -203,7 +339,6 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                                 id: $record->getKey()
                             )
                         ),
-                    // ->url(fn($record): string => route('umum.asset.maintenance', $record->getKey())),
 
                     Action::make('mutasi')
                         ->icon('tabler-device-desktop-share')
@@ -213,7 +348,8 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                                 modal: 'modal-mutasi-asset',
                                 id: $record->getKey()
                             )
-                        ),
+                        )
+                        ->visible(fn() => $this->canManageAsset()),
 
                     Action::make('label')
                         ->label('Cetak Label')
@@ -221,7 +357,8 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                         ->action(function ($record) {
                             $this->selectedId = $record->getKey();
                             $this->dispatch('print-label');
-                        }),
+                        })
+                        ->visible(fn() => $this->canManageAsset()),
 
                     // logs
                     Action::make('logs')
@@ -231,7 +368,8 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                                 modal: 'modal-logs-asset',
                                 id: $record->getKey()
                             )
-                        ),
+                        )
+                        ->visible(fn() => $this->canManageAsset()),
                 ])->visible(
                     fn($record) => $record->kode
                 ),

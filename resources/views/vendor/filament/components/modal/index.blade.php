@@ -119,7 +119,7 @@
                 x-transition:leave-end="fi-transition-leave-end" @endif
             @if (filled($wireSubmitHandler)) wire:submit.prevent="{!! $wireSubmitHandler !!}" @endif
             @if (filled($id)) wire:key="{{ isset($this) ? "{$this->getId()}." : '' }}modal.{{ $id }}.window" @endif
-            {{ ($extraModalWindowAttributeBag ?? new \Illuminate\View\ComponentAttributeBag())->class([
+            {{ ($extraModalWindowAttributeBag ?? new ComponentAttributeBag())->class([
                 'fi-modal-window',
                 'fi-modal-window-has-close-btn' => $closeButton,
                 'fi-modal-window-has-content' => $hasContent,

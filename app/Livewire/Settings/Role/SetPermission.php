@@ -9,6 +9,7 @@ use Livewire\Attributes\Lazy;
 use Spatie\Permission\Models\Role;
 use TallStackUi\Traits\Interactions;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Cache;
 
 #[Lazy]
 class SetPermission  extends Component
@@ -54,6 +55,8 @@ class SetPermission  extends Component
             $this->role->syncPermissions($this->permission);
 
             DB::commit();
+
+            Cache::flush();
 
             $this->toast()
                 ->success('Sukses', 'Setting permission role di update.')

@@ -12,6 +12,13 @@
             <x-ts:tab.items tab="Permintaan">
                 <form action="" class="flex flex-col gap-2" wire:submit.prevent="submit" autocomplete="off">
 
+                    @if (count($targetAssetOptions) > 1)
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs font-semibold text-gray-600">Item yang Diperbaiki:</span>
+                            <x-ts:select.styled wire:model.live='target_asset_id' placeholder="Pilih Item Perbaikan" :options="$targetAssetOptions" select="label:label|value:value" :clearable="false" />
+                        </div>
+                    @endif
+
                     <x-ts:select.styled wire:model.live.debounce.300ms='priority' placeholder="Jenis Permintaan" :options="$priorityPermintaan" select="label:label|value:value" />
 
                     @if (!$is_normal)

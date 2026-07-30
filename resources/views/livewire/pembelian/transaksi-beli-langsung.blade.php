@@ -111,10 +111,24 @@
                                         </td>
                                         <td class="p-1" x-text="item.sku"></td>
                                         <td class="p-1" x-text="item.nama"></td>
-                                        <td class="p-1" x-text="item.satuan"></td>
+                                        <td class="p-1">
+                                            <template x-if="item.pilihan_satuan && item.pilihan_satuan.length > 1">
+                                                <select x-model="item.selected_satuan_val" @change="updateSatuan(index, $event.target.value)" class="h-8 max-w-32 rounded-lg border border-gray-100 text-sm">
+                                                    <template x-for="pilihan in item.pilihan_satuan">
+                                                        <option :value="`${pilihan.satuan_id}_${pilihan.rasio}`" x-text="pilihan.rasio > 1 ? `${pilihan.nama_satuan} (Isi ${pilihan.rasio})` : pilihan.nama_satuan"></option>
+                                                    </template>
+                                                </select>
+                                            </template>
+                                            <template x-if="!item.pilihan_satuan || item.pilihan_satuan.length <= 1">
+                                                <span x-text="item.satuan"></span>
+                                            </template>
+                                        </td>
                                         <td class="p-1">
                                             <input type="number" min="1" x-model.number="item.jumlah" @keyup="updateItem(index)" class="h-8 max-w-24 rounded-lg border border-gray-100 text-sm"
                                                 placeholder="Qty" />
+                                            <template x-if="item.rasio && item.rasio > 1">
+                                                <div class="text-[10px] text-gray-500 mt-1" x-text="`= ${item.jumlah * item.rasio} ${item.satuan}`"></div>
+                                            </template>
                                         </td>
                                         <td class="p-1">
                                             <input type="number" step="any" min="0" x-model.number="item.harga" @keyup="updateItem(index)"
@@ -254,7 +268,7 @@
                 </div>
 
             </div>
-            <x-ts:button sm type="submit" loading="submit" icon="tabler.checks">Simpan</x-ts:button>
+            <x-ts:button sm type="submit" loading="submit" wire:loading.attr="disabled" wire:target="submit" icon="tabler.checks">Simpan</x-ts:button>
 
         </div>
     </form>
@@ -306,6 +320,10 @@
                                     sku: barang.sku,
                                     nama: barang.nama,
                                     satuan: barang.satuan,
+                                    satuan_beli_id: barang.satuan_id,
+                                    rasio: 1,
+                                    selected_satuan_val: barang.satuan_id + '_1',
+                                    pilihan_satuan: barang.pilihan_satuan,
                                     jumlah: 1,
                                     harga: 0,
                                     diskon: 0,
@@ -328,6 +346,15 @@
                         console.error('Error in addingCart:', error);
                     }
 
+                },
+
+                updateSatuan(index, val) {
+                    const item = this.cartItems[index];
+                    if (item && val) {
+                        const [satuanId, rasio] = val.split('_');
+                        item.satuan_beli_id = parseInt(satuanId);
+                        item.rasio = parseInt(rasio);
+                    }
                 },
 
                 updateItem(index) {

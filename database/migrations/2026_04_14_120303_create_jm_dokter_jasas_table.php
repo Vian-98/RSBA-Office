@@ -25,8 +25,9 @@ return new class extends Migration
             $table->index(['status']); // optional but helpful
         });
 
+        DB::unprepared("DROP VIEW IF EXISTS view_jm_dokter_jasa");
         DB::unprepared("
-        CREATE OR REPLACE VIEW view_jm_dokter_jasa AS
+        CREATE VIEW view_jm_dokter_jasa AS
         SELECT 
             j.jm_prosentase_id,
             j.dokter,
