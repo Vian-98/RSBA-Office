@@ -8,6 +8,9 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use TallStackUi\Traits\Interactions;
 
+use App\Exports\KaryawanExport;
+use Maatwebsite\Excel\Facades\Excel;
+
 #[Title('Karyawan')]
 #[Lazy]
 class Index extends Component
@@ -22,11 +25,9 @@ class Index extends Component
         $this->content = $route;
     }
 
-    public function  downloadKaryawan()
+    public function downloadKaryawan()
     {
-        $this->toast()
-            ->info('Woops!', 'Fitur ini belum tersedia')
-            ->send();
+        return Excel::download(new KaryawanExport, 'data_karyawan_' . now()->format('Y-m-d') . '.xlsx');
     }
 
     public function render()

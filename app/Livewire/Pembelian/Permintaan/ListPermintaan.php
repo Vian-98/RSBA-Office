@@ -25,6 +25,9 @@ class ListPermintaan extends Component implements HasTable, HasForms, HasActions
     {
         return  $table->query(
             PembelianRequest::query()
+                ->when(!auth()->user()->hasRole(['Super-Admin', 'Bagian-Umum']), function ($query) {
+                    $query->where('user_req_id', auth()->id());
+                })
         )
             ->columns([
                 TextColumn::make('id')
@@ -94,7 +97,7 @@ class ListPermintaan extends Component implements HasTable, HasForms, HasActions
                         )
                     )
                     ->visible(
-                        fn($record) => $record->status === 'pending'
+                        fn($record) => $record->status === 'pending' && auth()->user()->hasRole(['Super-Admin', 'Bagian-Umum'])
                     ),
 
                 Action::make('report')

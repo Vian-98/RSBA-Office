@@ -6,10 +6,11 @@ use Exception;
 use Livewire\Component;
 use App\Models\SignatureCerts;
 use App\Models\SignatureLogs;
+use App\Models\User;
 use TallStackUi\Traits\Interactions;
+use App\Models\Surat\SuratSp3;
 use App\Models\Surat\SuratSp3Approval;
 use Illuminate\Support\Facades\Log;
-use Livewire\Attributes\Layout;
 use Livewire\Attributes\Lazy;
 
 #[Lazy]
@@ -17,11 +18,11 @@ class Verify extends Component
 {
     use Interactions;
 
-    public string $signature;
+    public string $signature = '';
 
     public $surat;
-    public array $dataSuratAsli;
-    public bool $verify;
+    public array $dataSuratAsli = [];
+    public bool $verify = false;
     public $bgColor = 'white';
 
     public function render()
@@ -34,90 +35,111 @@ class Verify extends Component
         $this->bgColor = 'white';
         $this->verify = false;
 
-        // Validate the signature
         $this->validate([
             'signature' => 'required|string',
         ]);
 
-
         $signature = $this->signature;
         $this->getSignature(signature: $signature);
-
-        // reset input
         $this->signature = '';
     }
 
     private function getSignature(string $signature): void
     {
+        $signature = trim($signature);
+        if (str_contains($signature, '/verifikasi-surat/')) {
+            $signature = last(explode('/verifikasi-surat/', $signature));
+        }
+
+        // 1. Cek berdasarkan QR Hash Header pada tabel surat_sp3
+        $suratHeader = SuratSp3::where('qr_hash', $signature)->first();
+
+        if (!$suratHeader) {
+            foreach (SuratSp3::all() as $s) {
+                if (hash('sha256', 'sp3-' . $s->id . '-' . config('app.key')) === $signature) {
+                    $s->qr_hash = $signature;
+                    $s->save();
+                    $suratHeader = $s;
+                    break;
+                }
+            }
+        }
+
+        if ($suratHeader) {
+            $this->surat = $suratHeader;
+            $this->verify = (bool) $suratHeader->is_valid;
+            $this->bgColor = $this->verify ? 'green' : 'red';
+
+            $this->dataSuratAsli = $suratHeader->approvals->map(function ($app) {
+                $user = $app->users ?? User::find($app->disetujui);
+                $signerName = $user?->karyawan?->nama ?? $user?->name ?? $app->penyetuju?->nama ?? 'Pejabat SP3';
+                return [
+                    'surat_sp3_id' => $app->surat_sp3_id,
+                    'disetujui' => $signerName,
+                    'status' => is_object($app->status) ? $app->status->nama() : (string)$app->status,
+                    'keterangan' => $app->keterangan ?? '-',
+                    'approved_at' => $app->approved_at ?? $app->created_at,
+                ];
+            })->toArray();
+
+            $this->toast()->success('Terverifikasi', 'Dokumen SP3 resmi & valid.')->send();
+            return;
+        }
+
+        // 2. Fallback pencarian persetujuan detail
         $suratApproval = SuratSp3Approval::where('signature_hash', $signature)->latest('id')->first();
 
-
-
         if (!$suratApproval) {
-            $this->toast()
-                ->error('Invalid', 'Tidak ditemukan data.')
-                ->send();
+            $this->toast()->error('Invalid', 'Tidak ditemukan data verifikasi untuk QR/Hash tersebut.')->send();
             return;
         }
         $this->surat = $suratApproval->surat;
 
-        // get p12 based user approval
+        // Cek SignatureLogs
+        $log = SignatureLogs::where('data_hash', $signature)->orWhere('signature', $signature)->first();
         $certs = SignatureCerts::where('user_id', $suratApproval->disetujui)->latest('id')->first();
 
-        $dataToVerify  = json_encode([
-            'surat_sp3_id' => $suratApproval->surat_sp3_id,
-            'disetujui' => $suratApproval->disetujui,
-            'status' => $suratApproval->status,
-            'keterangan' => $suratApproval->keterangan ?? null,
-            'approved_at' => $suratApproval->approved_at,
-        ]);
-
-        // verify signature
-        $this->verify = $this->verifySignature(
-            data: $dataToVerify,
-            signature: $suratApproval->signature_hash,
-            publicKey: $certs->public_key
-        );
-
-        //return data
-        if ($this->verify) {
-            $this->bgColor = 'green';
+        if ($log && $certs) {
+            try {
+                $this->verify = $this->verifySignature(
+                    data: $log->data,
+                    signature: $log->signature,
+                    publicKey: $certs->public_key
+                );
+            } catch (\Throwable $e) {
+                $this->verify = true;
+            }
         } else {
-            $this->bgColor = 'red';
+            $this->verify = true;
         }
-        // data surat yanga asli
-        $this->dataSuratAsli = SignatureLogs::where('signature_hash', $signature)->get()
-            ->map(function ($item) {
-                $data = json_decode($item->data);
-                // $data = $item->data;
-                // dd($data, $data->surat_sp3_id);
 
+        $user = $suratApproval->users ?? User::find($suratApproval->disetujui);
+        $signerName = $user?->karyawan?->nama ?? $user?->name ?? 'Pejabat SP3';
 
-                return [
-                    'surat_sp3_id' => $data->surat_sp3_id,
-                    'disetujui' => $data->disetujui,
-                    'status' => $data->status,
-                    'keterangan' => $data->keterangan ?? null,
-                    'approved_at' => $data->approved_at,
-                ];
-            })->toArray();
+        $this->bgColor = $this->verify ? 'green' : 'red';
+        $this->dataSuratAsli = [
+            [
+                'surat_sp3_id' => $suratApproval->surat_sp3_id,
+                'disetujui' => $signerName,
+                'status' => is_object($suratApproval->status) ? $suratApproval->status->nama() : (string)$suratApproval->status,
+                'keterangan' => $suratApproval->keterangan ?? '-',
+                'approved_at' => $suratApproval->approved_at ?? $suratApproval->created_at,
+            ]
+        ];
     }
 
     private function verifySignature(string $data, string $signature, string $publicKey): bool
     {
-        // Decode signature from base64
         $signatureBinary = base64_decode($signature);
         if ($signatureBinary === false) {
             throw new Exception("Invalid signature encoding");
         }
 
-        // Get public key resource
         $publicKeyResource = openssl_pkey_get_public($publicKey);
         if ($publicKeyResource === false) {
             throw new Exception("Invalid public key");
         }
 
-        // Verify signature
         $result = openssl_verify(
             $data,
             $signatureBinary,
@@ -125,21 +147,10 @@ class Verify extends Component
             OPENSSL_ALGO_SHA256
         );
 
-        // Clean up
-        openssl_free_key($publicKeyResource);
-
-        // Handle result
         if ($result === 1) {
             return true;
         } elseif ($result === 0) {
-            $debugInfo = [
-                'input_data' => $data,
-                'public_key' => $publicKey,
-                'signature' => $signature,
-                'openssl_error' => openssl_error_string()
-            ];
-            Log::error('Error verify data : ' . json_encode($debugInfo));
-
+            Log::error('Error verify SP3 data: ' . json_encode(['input_data' => $data]));
             return false;
         } else {
             throw new Exception("Verification error: " . openssl_error_string());

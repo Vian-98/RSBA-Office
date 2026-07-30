@@ -21,42 +21,59 @@ class WilayahController extends Controller
 
 
     // Get Kabupaten
-    public function kab($id, Request $request): JsonResponse
+    public function kab($id = null, Request $request = null): JsonResponse
     {
-        $prov_id = $id;
+        if (empty($id)) {
+            return response()->json([]);
+        }
 
-        $kabupaten = Wilayah::select('kode', 'nama')
-            ->whereRaw('CHAR_LENGTH(kode) = 5')
-            ->whereRaw("LEFT(kode, 2) = '$prov_id'")
-            ->orderBy('nama', 'ASC')
-            ->get();
+        $query = Wilayah::select('kode', 'nama')->whereRaw('CHAR_LENGTH(kode) = 5');
 
+        if (strlen($id) === 2) {
+            $query->whereRaw("LEFT(kode, 2) = '$id'");
+        } else {
+            $query->where('kode', $id);
+        }
+
+        $kabupaten = $query->orderBy('nama', 'ASC')->get();
         return response()->json($kabupaten);
     }
 
     // Get Kecamatan
-    public function kec($id): JsonResponse
+    public function kec($id = null): JsonResponse
     {
-        $kab_id = $id;
+        if (empty($id)) {
+            return response()->json([]);
+        }
 
-        $kabupaten = Wilayah::select('kode', 'nama')
-            ->whereRaw('CHAR_LENGTH(kode) = 8')
-            ->whereRaw("LEFT(kode, 5) = '$kab_id'")
-            ->orderBy('nama', 'ASC')
-            ->get();
-        return response()->json($kabupaten);
+        $query = Wilayah::select('kode', 'nama')->whereRaw('CHAR_LENGTH(kode) = 8');
+
+        if (strlen($id) === 5) {
+            $query->whereRaw("LEFT(kode, 5) = '$id'");
+        } else {
+            $query->where('kode', $id);
+        }
+
+        $kecamatan = $query->orderBy('nama', 'ASC')->get();
+        return response()->json($kecamatan);
     }
 
     // Get Desa
-    public function desa($id): JsonResponse
+    public function desa($id = null): JsonResponse
     {
-        $kec_id = $id;
+        if (empty($id)) {
+            return response()->json([]);
+        }
 
-        $kabupaten = Wilayah::select('kode', 'nama')
-            ->whereRaw('CHAR_LENGTH(kode) = 13')
-            ->whereRaw("LEFT(kode, 8) = '$kec_id'")
-            ->orderBy('nama', 'ASC')
-            ->get();
-        return response()->json($kabupaten);
+        $query = Wilayah::select('kode', 'nama')->whereRaw('CHAR_LENGTH(kode) = 13');
+
+        if (strlen($id) === 8) {
+            $query->whereRaw("LEFT(kode, 8) = '$id'");
+        } else {
+            $query->where('kode', $id);
+        }
+
+        $desa = $query->orderBy('nama', 'ASC')->get();
+        return response()->json($desa);
     }
 }

@@ -14,7 +14,7 @@
 
             <x-ts:date wire:model.defer='form.tgl_catat' placeholder="Tgl Pencatatan" />
 
-            <x-ts:select.styled wire:model.defer='form.status' :options="$statusOptions" placeholder="Kondisi Saat Dicatat" />
+            <x-ts:select.styled wire:model.defer='form.status' :options="$statusOptions" select="label:label|value:value" placeholder="Kondisi Saat Dicatat" />
 
             <x-ts:input wire:model.defer='form.keterangan' placeholder="Keterangan" />
 
