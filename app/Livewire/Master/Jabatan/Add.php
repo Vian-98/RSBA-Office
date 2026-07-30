@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Master\Jabatan;
 
+use Throwable;
 use Livewire\Component;
 use App\Models\Sdm\Bagian;
 use App\Models\Sdm\Jabatan;
@@ -18,21 +19,27 @@ class Add extends Component
     public $atasan;
     public $kode_surat;
     public $bagian;
+    public $tunjangan_jabatan = 0;
     public $atasan_options;
     public $bagian_options;
 
     protected $rules = [
-        'nama' => 'required|string'
+        'nama' => 'required|string',
+        'tunjangan_jabatan' => 'nullable|numeric|min:0',
     ];
 
     function mount()
     {
-        $this->atasan_options = Jabatan::select('nama', 'id')->get();
+        $this->atasan_options = Jabatan::select('nama', 'id')->orderByDesc('tunjangan_jabatan')->orderBy('id')->get();
+
         $this->bagian_options = Bagian::select('nama', 'id')->get();
     }
 
     function submit()
     {
+        if (is_string($this->tunjangan_jabatan)) {
+            $this->tunjangan_jabatan = str_replace('.', '', $this->tunjangan_jabatan);
+        }
         $this->validate();
 
         DB::beginTransaction();
@@ -41,7 +48,8 @@ class Add extends Component
                 'nama' => $this->nama,
                 'kode_surat' => $this->kode_surat ?? null,
                 'parent_id' => $this->atasan ?? null,
-                'bagian_id' => $this->bagian ?? null
+                'bagian_id' => $this->bagian ?? null,
+                'tunjangan_jabatan' => $this->tunjangan_jabatan ?: 0,
             ];
             Jabatan::create($data);
 
@@ -52,7 +60,7 @@ class Add extends Component
             $this->toast()
                 ->success('Berhasil', 'Jabatan baru berhasil dibuat.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
             $this->toast()
                 ->error('Failed', 'Error' . $e->getMessage())

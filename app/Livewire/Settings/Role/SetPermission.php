@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Settings\Role;
 
+use Throwable;
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Lazy;
 use Spatie\Permission\Models\Role;
 use TallStackUi\Traits\Interactions;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Cache;
 
 #[Lazy]
 class SetPermission  extends Component
@@ -54,10 +56,12 @@ class SetPermission  extends Component
 
             DB::commit();
 
+            Cache::flush();
+
             $this->toast()
                 ->success('Sukses', 'Setting permission role di update.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollback();
             $this->toast()
                 ->error('Failed', 'Error :' . $e->getMessage())

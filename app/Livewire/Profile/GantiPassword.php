@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Profile;
 
+use Throwable;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
@@ -38,7 +39,7 @@ class GantiPassword extends Component
             $user->update();
 
             $this->toast()->success('Sukses', 'Password berhasil diperbaharui.')->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->toast()->error('Failed', 'Error :' . $e->getMessage())->send();
         }
     }

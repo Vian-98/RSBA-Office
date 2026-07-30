@@ -518,11 +518,12 @@ class Bpjs extends Component
         $this->validate(['bulan_ri' => 'required', 'batch_ri' => 'required']);
 
         $periode = $this->bulan_ri;
+        $cabar = 'bpjs';
         $kelompok = $this->pilih_download_ranap;
         $batch = $this->batch_ri;
 
         return Excel::download(
-            new RanapExport($periode, $kelompok, $batch),
+            new RanapExport($periode, $cabar, $kelompok, $batch),
             'Rekap Jasa Ranap ' . $periode . '.xlsx'
         );
 
@@ -736,11 +737,12 @@ class Bpjs extends Component
         $this->validate(['bulan_rj' => 'required', 'batch_rj' => 'required']);
 
         $periode = $this->bulan_rj;
+        $cabar = 'bpjs';
         $kelompok  = $this->pilih_download_rajal;
         $batch = $this->batch_rj;
 
         return Excel::download(
-            new RajalExport($periode, $kelompok,  $batch),
+            new RajalExport($periode, $cabar, $kelompok,  $batch),
             'Rekap Jasa Rajal ' . $periode . '.xlsx'
         );
     }

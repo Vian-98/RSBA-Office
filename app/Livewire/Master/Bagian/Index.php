@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Master\Bagian;
 
+use Filament\Actions\Contracts\HasActions;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Action;
+use Throwable;
 use Livewire\Component;
 use App\Models\Sdm\Bagian;
+use App\Traits\AuthorizesFromRoute;
 use Filament\Tables\Table;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Title;
-use Filament\Tables\Actions\Action;
 use TallStackUi\Traits\Interactions;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\TextColumn;
@@ -18,8 +22,10 @@ use Filament\Tables\Concerns\InteractsWithTable;
 
 #[Lazy]
 #[Title('Bagian')]
-class Index extends Component implements HasForms, HasTable
+class Index extends Component implements HasForms, HasTable, HasActions
 {
+    use InteractsWithActions;
+    use AuthorizesFromRoute;
     use InteractsWithForms, InteractsWithTable;
     use Interactions;
 
@@ -57,7 +63,7 @@ class Index extends Component implements HasForms, HasTable
                         'non_medis' => 'Non Medis'
                     ])
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('delete')
                     ->iconButton()
                     ->icon('tabler-trash')
@@ -88,7 +94,7 @@ class Index extends Component implements HasForms, HasTable
             $this->toast()
                 ->success('Berhasil', 'Data berhasil dihapus.')
                 ->send();
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             $this->toast()
                 ->success('Failed', 'Error : ' . $th->getMessage())
                 ->send();
@@ -105,6 +111,7 @@ class Index extends Component implements HasForms, HasTable
 
     public function render()
     {
+        $this->authorizeFromRoute();
         return view('livewire.master.bagian.index');
     }
 }

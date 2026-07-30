@@ -2,20 +2,28 @@
 
 namespace App\Livewire\Surat\Sp3;
 
-use Livewire\Component;
-use App\Models\Sdm\Jabatan;
-use Livewire\Attributes\Lazy;
-use App\Models\Surat\SuratSp3;
+use Throwable;
+use Exception;
 use App\Models\Master\Supplier;
-use Illuminate\Support\Facades\DB;
-use App\Models\Sdm\KaryawanJabatan;
+use App\Models\Sdm\Jabatan;
+use App\Models\Surat\SuratSp3;
+use App\Models\Surat\SuratSp3Approval;
 use App\Models\Surat\SuratSp3Detail;
+use App\Models\User;
+use App\Services\DigitalSignatureService;
+use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Lazy;
+use Livewire\Attributes\Locked;
+use Livewire\Component;
 use TallStackUi\Traits\Interactions;
 
 #[Lazy]
 class Add extends Component
 {
     use Interactions;
+
+    #[Locked]
+    public ?SuratSp3 $suratSp3;
 
     public array $caraBayarOptions = [
         ['label' => 'Tunai', 'value' => 'tunai'],
@@ -25,8 +33,8 @@ class Add extends Component
 
     public $mengetahuiOptions;
     public $tgl;
-    public string $rekanan, $keterangan = '', $method_bayar;
-    public int $mengetahui, $jabatan, $rekananId;
+    public ?string $rekanan = null, $keterangan = '', $method_bayar = null;
+    public ?int $mengetahui = null, $jabatan = null, $rekananId = null, $userApprove = null;
     public $listSp3 = [];
 
     protected $rules = [
@@ -46,10 +54,21 @@ class Add extends Component
         ];
     }
 
+    protected DigitalSignatureService $digitalSignatureService;
+
+    public function boot(DigitalSignatureService $digitalSignatureService)
+    {
+        $this->digitalSignatureService = $digitalSignatureService;
+    }
+
     public function mount()
     {
         $this->tgl = date('Y-m-d');
-        $this->mengetahuiOptions = Jabatan::where('bagian_id', 1)->get()
+        $this->mengetahuiOptions = Jabatan::with('bagian')
+            ->whereHas('bagian', function ($query) {
+                $query->where('group', 'manajemen');
+            })
+            ->get()
             ->map(function ($item) {
                 return [
                     'label' => $item->nama,
@@ -75,22 +94,39 @@ class Add extends Component
     function updatedJabatan($value)
     {
         // get id user karyawan base jabatan
-        $karyawanJabatan = KaryawanJabatan::with('karyawan')
-            ->where('jabatan_id', $value)
-            ->orderBy('id', 'desc')
-            ->first();
+        $jabatan = Jabatan::find($value);
 
-        if ($karyawanJabatan) {
-            $this->mengetahui = $karyawanJabatan->karyawan->id;
+        if ($jabatan) {
+            $karyawanJabatan = $jabatan->jabatans()
+                ->where('tgl_berakhir', null)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($karyawanJabatan) {
+                $this->mengetahui = $karyawanJabatan->karyawan?->id;
+                $this->userApprove = $karyawanJabatan->karyawan?->user?->id ?? auth()->id() ?? 1;
+            } else {
+                $this->userApprove = auth()->id() ?? 1;
+                $this->toast()
+                    ->error('Pejabat tidak ditemukan.', "Tidak ada karyawan dengan jabatan <b>{$jabatan->nama}</b>.")
+                    ->send();
+            }
         } else {
             $this->toast()
-                ->error('Not Found', 'Mengetahui tidak ditemukan.')
+                ->error('Harus Diisi', 'Mengetahui harus dipilih.')
                 ->send();
         }
     }
 
-    public function submit()
+    public function submit($send = true)
     {
+        if (is_array($this->listSp3)) {
+            foreach ($this->listSp3 as $key => $item) {
+                if (isset($item['nominal']) && is_string($item['nominal'])) {
+                    $this->listSp3[$key]['nominal'] = (double) str_replace('.', '', $item['nominal']);
+                }
+            }
+        }
         $this->validate();
         $data = [
             'no' => $this->createNomor(),
@@ -99,8 +135,7 @@ class Add extends Component
             'rekanan' => $this->rekanan,
             'bayar' => $this->method_bayar,
             'keterangan' => $this->keterangan,
-            'disetujui' => $this->mengetahui,
-            'jabatan' => $this->jabatan,
+            'jabatan_id' => $this->jabatan,
             'created_by' => auth()->user()->id,
         ];
 
@@ -123,13 +158,26 @@ class Add extends Component
                 )->toArray();
             // insert into database
             SuratSp3Detail::insert($itemsDetail);
+
+            // Manual dan printout
+            if (!$send) {
+                $this->signManual($suratSp3);
+            }
+
+            // Sync immediately to docstore
+            app(\App\Services\DocstoreSyncService::class)->syncSp3($suratSp3);
+
             DB::commit();
             $this->dispatch('created-sp3');
-
             $this->toast()
                 ->success('Berhasil', 'SP3 berhasil disimpan.')
                 ->send();
-        } catch (\Throwable $th) {
+
+            // If Manual , Direct to Printou
+            if (!$send) {
+                $this->js("setTimeout(() => \$dispatch('print-out-sp3'), 1500)");
+            }
+        } catch (Throwable $th) {
             DB::rollBack();
 
             $this->toast()
@@ -138,21 +186,87 @@ class Add extends Component
         }
     }
 
+    public function signManual($suratSp3)
+    {
+        if (!$this->userApprove) {
+            if ($this->jabatan) {
+                $this->updatedJabatan($this->jabatan);
+            }
+            if (!$this->userApprove) {
+                $this->userApprove = auth()->id() ?? 1;
+            }
+        }
+
+        $data = [
+            'surat_sp3_id' => $suratSp3->id,
+            'disetujui' => $this->userApprove,
+            'status' => 'manual',  // Status manual cetak, tanda tangan basah
+            'keterangan' => 'Manual cetak, tanda tangan basah',
+            'approved_at' => now()->toIso8601String(),
+        ];
+
+        // ambil data signature user [p12 path] , jika manual, gunakan tanda tangan Super Admin,
+        // Super Admin credential mewakili credential sistem,
+        $user = User::find(1);
+        if (!$user) {
+            throw new Exception("User Super Admin tidak ditemukan.");
+        }
+        $certificate = $user->certificate()->latest('id')->first();
+
+        if (!$certificate) {
+            throw new Exception("Tidak memiliki certificate.");
+        }
+
+        // buat signature hash dari p12
+        $dataToSign = json_encode($data);
+
+        $passwordCertificate = null;
+
+        // Proses tanda tangan data
+        $signature = $this->digitalSignatureService->signData(
+            user: $user,
+            data: $dataToSign,
+            password: $passwordCertificate,
+            type: 'persetujuan_sp3',
+            id: $suratSp3->id
+        );
+
+        if (!$signature['status']) {
+            throw new Exception($signature['message']);
+        }
+
+        $data['signature_hash'] = $signature['data_hash']; //adding hash to data
+
+        SuratSp3Approval::create($data);
+        $suratSp3->update(
+            [
+                'status' => 'manual'
+            ]
+        );
+
+        // return
+        $this->suratSp3 = $suratSp3;
+    }
+
     private function createNomor()
     {
-        $tahun = date('Y', strtotime($this->tgl));
+        // Format Nomor {no}/S4/SP.3/PBA-{kode_surat_jabatan (A10,A11,A12)}/{tanggal 14.04.2025}
 
         $last = SuratSp3::select('no')
-            ->whereYear('tahun', $tahun)
-            ->where('jabatan', $this->jabatan)
+            ->where('jabatan_id', $this->jabatan)
             ->orderBy('id', 'desc')
             ->first();
 
+        $jabatan = Jabatan::find($this->jabatan);
+
+        $tanggal = date('d.m.Y', strtotime($this->tgl));
         $no = 1;
         if ($last) {
-            $no = (int)$last->no + 1;
+            $fullNomor = explode('/', $last->no);
+            $lastNomor = $fullNomor[0];
+            $no = (int)$lastNomor + 1;
         }
-        return $no;
+        return "{$no}/S4/SP.3/PBA-{$jabatan->kode_surat}/{$tanggal}";
     }
 
     public function render()

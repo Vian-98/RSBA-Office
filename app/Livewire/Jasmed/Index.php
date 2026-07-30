@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Jasmed;
 
+use App\Traits\AuthorizesFromRoute;
 use Livewire\Component;
 use Livewire\Attributes\Title;
 
 #[Title('Jasmed')]
 class Index extends Component
 {
+    use AuthorizesFromRoute;
 
     public $content;
 
@@ -18,7 +20,8 @@ class Index extends Component
 
     public function render()
     {
-        $this->authorize('view-jasmed');
+        // $this->authorize('view-jasmed');
+        $this->authorizeFromRoute();
         return view('livewire.jasmed.index');
     }
 }

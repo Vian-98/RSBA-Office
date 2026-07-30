@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Karyawan\Pendidikan;
 
+use Throwable;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
 use App\Enums\TingkatPendidikan;
@@ -59,7 +60,7 @@ class Add extends Component
             $this->toast()
                 ->success('Sukses', 'Data pendidikan berhasil disimpan.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             $this->toast()

@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Settings\Menu;
 
+use Filament\Actions\Contracts\HasActions;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Action;
 use App\Models\Menu;
 use Livewire\Component;
 use App\Enums\MenuGroup;
 use Filament\Tables\Table;
-use Filament\Tables\Actions\Action;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -15,9 +17,11 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Tables\Concerns\InteractsWithTable;
 
-class MenuTable extends Component implements HasTable, HasForms
+class MenuTable extends Component implements HasActions, HasForms, HasTable
 {
-    use InteractsWithTable, InteractsWithForms;
+    use InteractsWithActions;
+    use InteractsWithTable;
+    use InteractsWithForms;
 
     public ?Menu $menu;
 
@@ -66,7 +70,7 @@ class MenuTable extends Component implements HasTable, HasForms
                             ->toArray()
                     ),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('Edit')
                     ->icon('tabler-edit')
                     ->action(

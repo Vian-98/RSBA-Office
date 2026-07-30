@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Karyawan\Pendidikan;
 
+use Throwable;
 use Livewire\Component;
 use App\Models\Sdm\Karyawan;
 use Livewire\Attributes\Lazy;
@@ -20,10 +21,6 @@ class PendidikanList extends Component
     public function mount($id)
     {
         $this->karyawan = Karyawan::findOrFail($id);
-
-        $this->pendidikans = KaryawanPendidikan::where('karyawan_id', $id)
-            ->orderBy('tahun_lulus', 'DESC')
-            ->get();
     }
 
     function delete($id): void
@@ -49,7 +46,7 @@ class PendidikanList extends Component
             $this->toast()
                 ->success('Sukses', 'Data pendidikan dihapus.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollback();
             $this->toast()
                 ->error('Failed', 'Error : ' . $e->getMessage())
@@ -70,8 +67,17 @@ class PendidikanList extends Component
         return view('components.skeleton', ['paragraf' => 2, 'footer' => 0]);
     }
 
+    protected $listeners = [
+        'pendidikan-karyawan-created' => '$refresh',
+        'deleted-pendidikan-karyawan' => '$refresh',
+    ];
+
     public function render()
     {
+        $this->pendidikans = KaryawanPendidikan::where('karyawan_id', $this->karyawan->id)
+            ->orderBy('tahun_lulus', 'DESC')
+            ->get();
+
         return view('livewire.karyawan.pendidikan.pendidikan-list');
     }
 }

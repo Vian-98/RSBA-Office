@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Master\Ruangan;
 
+use Throwable;
 use App\Models\Ruangan;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
@@ -32,7 +33,7 @@ class Add extends Component
                 ->send();
 
             $this->dispatch('new-ruangan-created');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->toast()
                 ->error('Failed', 'Error ' . $e->getMessage())
                 ->send();

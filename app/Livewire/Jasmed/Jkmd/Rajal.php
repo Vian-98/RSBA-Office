@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Jasmed\Jkmd;
 
+use Throwable;
 use App\Models\JmJasa;
 use Livewire\Component;
 use App\Models\JmDokter;
@@ -68,7 +69,7 @@ class Rajal extends Component
 
             // toast 
             $this->toast()->success('Berhasil !', 'Import data berhasil.!')->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $errors = $e->getMessage();
 
             // toast
@@ -116,7 +117,7 @@ class Rajal extends Component
                                 // DOING EXECUTE kalkulasi hitung rajal
                                 $dokter = $this->getDokter($pasien);
                                 $this->calcProsentaseRajal($pasien, $dokter);
-                            } catch (\Throwable $e) {
+                            } catch (Throwable $e) {
                                 // toast error
                                 $this->toast()
                                     ->error('Failed!', "Error: " . $e->getMessage())
@@ -145,7 +146,7 @@ class Rajal extends Component
                 ->success('Berhasil', "Proses Hitung Jasa Rajal Selesai, Total Data {$totalProcessed}!")
                 ->send();
             // END TRANSACTIONS
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
 
             // ROLLBACK IF HAS ERROR
             DB::rollBack();

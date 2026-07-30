@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Forms;
 
-use Livewire\Attributes\Validate;
+use Throwable;
 use Carbon\Carbon;
 use Livewire\Form;
 use App\Models\Sdm\Karyawan;
@@ -40,6 +40,11 @@ class KaryawanForm extends Form
     public $dom_kec;
     public $dom_desa;
     public $dom_alamat;
+    public $bpjs_kesehatan;
+    public $bpjs_tk;
+    public $nama_bank;
+    public $no_rekening;
+    public $ptkp_status;
 
     public $jabatan;
     public $tgl_jabatan;
@@ -50,6 +55,8 @@ class KaryawanForm extends Form
     public $tgl_status;
 
     public $ruangan;
+    public $kategori_kerja;
+    public $pendidikan_setara;
 
     function mount($karyawan)
     {
@@ -71,7 +78,9 @@ class KaryawanForm extends Form
             'kab' => 'required',
             'kec' => 'required',
             'desa' => 'required',
-            'alamat' => 'required'
+            'alamat' => 'required',
+            'bpjs_kesehatan' => 'nullable|string|max:50',
+            'bpjs_tk' => 'nullable|string|max:50'
         ];
     }
 
@@ -83,7 +92,6 @@ class KaryawanForm extends Form
         $this->tgl_masuk = $karyawan->tgl_masuk;
         $this->gelar_depan = $karyawan->gelar_depan;
         $this->gelar_belakang = $karyawan->gelar_belakang;
-        $this->gelar_belakang2 = $karyawan->gelar_belakang2;
         $this->nik = $karyawan->nik;
         $this->npwp = $karyawan->npwp;
         $this->tempat_lahir = $karyawan->tempat_lahir;
@@ -104,6 +112,11 @@ class KaryawanForm extends Form
         $this->dom_kec = $karyawan->dom_kec;
         $this->dom_desa = $karyawan->dom_desa;
         $this->dom_alamat = $karyawan->dom_alamat;
+        $this->bpjs_kesehatan = $karyawan->bpjs_kesehatan;
+        $this->bpjs_tk = $karyawan->bpjs_tk;
+        $this->nama_bank = $karyawan->nama_bank;
+        $this->no_rekening = $karyawan->no_rekening;
+        $this->ptkp_status = $karyawan->ptkp_status;
     }
 
     // set using different compoenent
@@ -112,6 +125,9 @@ class KaryawanForm extends Form
         $this->status = $karyawan->status;
         $this->jabatan = $karyawan->jabatan[0]->id ?? '';
         $this->dinas = $karyawan->resign ?? '';
+        $this->ruangan = $karyawan->ruangan_id;
+        $this->kategori_kerja = $karyawan->kategori_kerja?->value ?? 'reguler';
+        $this->pendidikan_setara = $karyawan->pendidikan_setara;
     }
 
     // simpan data
@@ -146,6 +162,13 @@ class KaryawanForm extends Form
             "agama" => $this->agama,
             "suku" => $this->suku,
             "npwp" => $this->npwp,
+            "bpjs_kesehatan" => $this->bpjs_kesehatan,
+            "bpjs_tk" => $this->bpjs_tk,
+            "nama_bank" => $this->nama_bank,
+            "no_rekening" => $this->no_rekening,
+            "ruangan_id" => empty($this->ruangan) ? null : $this->ruangan,
+            "kategori_kerja" => empty($this->kategori_kerja) ? 'reguler' : $this->kategori_kerja,
+            "ptkp_status" => empty($this->ptkp_status) ? 'TK0' : $this->ptkp_status,
             "cuti" => 0
 
         ];
@@ -159,7 +182,7 @@ class KaryawanForm extends Form
                 'status' => 'sukses',
                 'message' => 'Inserted'
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             return [
@@ -194,8 +217,17 @@ class KaryawanForm extends Form
             'dom_kab' => $this->dom_kab,
             'dom_kec' => $this->dom_kec,
             'dom_desa' => $this->dom_desa,
-            'dom_alamat' => $this->dom_alamat
+            'dom_alamat' => $this->dom_alamat,
+            'bpjs_kesehatan' => $this->bpjs_kesehatan,
+            'bpjs_tk' => $this->bpjs_tk,
+            'nama_bank' => $this->nama_bank,
+            'no_rekening' => $this->no_rekening,
+            'ptkp_status' => $this->ptkp_status
         ];
+
+        if (auth()->user()->hasRole('Staff-SDM') || auth()->user()->hasRole('Super-Admin')) {
+            $data['tgl_masuk'] = $this->tgl_masuk;
+        }
 
         $this->karyawan->update($data);
     }

@@ -34,7 +34,7 @@
             ];
         @endphp
 
-        <x-ts:select.styled wire:model.change='pilih_download_ranap' :options="$optionsRanap" select="label:label|value:value" />
+        <x-ts:select.styled wire:model.live.change='pilih_download_ranap' :options="$optionsRanap" select="label:label|value:value" />
         <x-ts:button type='submit' loading='downloadRanap'>
             <x-tabler-file-download class='size-5' />
             Download

@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Settings\Role;
 
+use Filament\Actions\Contracts\HasActions;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Action;
+use Throwable;
+use App\Traits\AuthorizesFromRoute;
 use Livewire\Component;
 use Filament\Tables\Table;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Title;
 use Spatie\Permission\Models\Role;
-use Filament\Tables\Actions\Action;
 use TallStackUi\Traits\Interactions;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\TextColumn;
@@ -18,8 +22,10 @@ use Filament\Tables\Concerns\InteractsWithTable;
 
 #[Title('Role')]
 #[Lazy]
-class Index extends Component implements HasTable, HasForms
+class Index extends Component implements HasTable, HasForms, HasActions
 {
+    use InteractsWithActions;
+    use AuthorizesFromRoute;
     use InteractsWithTable, InteractsWithForms;
     use Interactions;
 
@@ -39,7 +45,7 @@ class Index extends Component implements HasTable, HasForms
                 TextColumn::make('guard_name')
                     ->label('Guard')
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('Permission')
                     ->icon('tabler-circle-key')
                     ->action(
@@ -81,7 +87,7 @@ class Index extends Component implements HasTable, HasForms
             $this->toast()
                 ->success('Berhasil', "<b>$role->nama</b>  berhasil dihapus.")
                 ->send();
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             $this->toast()
                 ->error('Failed', "Error : " . $th->getMessage())
                 ->send();
@@ -97,7 +103,8 @@ class Index extends Component implements HasTable, HasForms
 
     public function render()
     {
-        $this->authorize('view-roles');
+        // $this->authorize('view-roles');
+        $this->authorizeFromRoute();
         return view('livewire.settings.role.index');
     }
 }

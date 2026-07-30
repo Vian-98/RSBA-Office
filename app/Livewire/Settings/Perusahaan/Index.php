@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Settings\Perusahaan;
 
+use Throwable;
 use Livewire\Component;
 use App\Models\Perusahaan;
+use App\Traits\AuthorizesFromRoute;
 use Illuminate\Container\Attributes\DB;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Title;
@@ -14,6 +16,7 @@ use TallStackUi\Traits\Interactions;
 #[Lazy]
 class Index extends Component
 {
+    use AuthorizesFromRoute;
     use Interactions;
     use WithFileUploads;
 
@@ -60,7 +63,7 @@ class Index extends Component
             $this->toast()
                 ->success('Updated!', 'Update data sukses!')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollback();
 
             $this->toast()
@@ -82,7 +85,7 @@ class Index extends Component
             Perusahaan::where('id', 1)->update(['logo' => $path]);
 
             $this->toast()->success('Success!', 'Logo berhasil diupdate.')->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->toast()->error('Failed!', 'Error: ' . $e->getMessage())->send();
         }
 
@@ -91,7 +94,8 @@ class Index extends Component
 
     public function render()
     {
-        $this->authorize('view-perusahaan');
+        // $this->authorize('view-perusahaan');
+        $this->authorizeFromRoute();
         return view('livewire.settings.perusahaan.index');
     }
 }

@@ -9,7 +9,7 @@
     </div>
 
     <div class="relative items-center overflow-x-auto rounded-lg bg-white px-4 py-2">
-        <livewire:Master.Jabatan.JabatanTable :key="Str::random()">
+        <livewire:Master.Jabatan.JabatanTable :key="Str::random()" />
     </div>
 
 

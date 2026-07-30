@@ -2,13 +2,15 @@
 
 namespace App\Livewire\Karyawan;
 
+use Filament\Actions\Contracts\HasActions;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Action;
 use Livewire\Component;
 use Filament\Tables\Table;
 use App\Models\Sdm\Karyawan;
 use App\Enums\StatusKaryawan;
 use App\Models\Sdm\Jabatan;
 use Filament\Forms\Components\Select;
-use Filament\Tables\Actions\Action;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
@@ -19,8 +21,9 @@ use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Locked;
 
-class TableKaryawan extends Component implements HasForms, HasTable
+class TableKaryawan extends Component implements HasForms, HasTable, HasActions
 {
+    use InteractsWithActions;
     use InteractsWithTable, InteractsWithForms;
 
     #[Locked]
@@ -29,7 +32,7 @@ class TableKaryawan extends Component implements HasForms, HasTable
     public static function table(Table $table): Table
     {
         return $table
-            ->query(Karyawan::query()->with('latestJabatan.jabatan'))
+            ->query(Karyawan::with('latestJabatan.jabatan')->where('resign', null))
             ->deferLoading(false)
             ->striped()
             ->columns([
@@ -55,7 +58,10 @@ class TableKaryawan extends Component implements HasForms, HasTable
                     ->default('-')
                     ->action(function (Karyawan $record, $livewire): void {
                         // dispatch event to livewire
-                        $livewire->historyJabatan('history-jabatan', $record->getKey());
+                        $livewire->modal(
+                            modal: 'history-jabatan',
+                            karyawan: $record->getKey()
+                        );
                     })
                     ->tooltip('History Jabatan'),
 
@@ -83,7 +89,7 @@ class TableKaryawan extends Component implements HasForms, HasTable
                 // Filter Jabatan
                 // FIXME tidak dapat filter jabatan saat ini saja
                 Filter::make('Jabatan')
-                    ->form([
+                    ->schema([
                         Select::make('Jabatan')
                             ->options(
                                 fn() => Jabatan::pluck('nama', 'id')->toArray()
@@ -107,13 +113,16 @@ class TableKaryawan extends Component implements HasForms, HasTable
                         return $jabatanNama ? 'Jabatan : ' . $jabatanNama : null;
                     })
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('view-profile')
                     ->iconButton()
                     ->icon('tabler-printer')
                     ->color('primary')
                     ->action(function (Karyawan $record, $livewire): void {
-                        $livewire->profileKaryawan('modal-print-cv', $record->getKey());
+                        $livewire->modal(
+                            modal: 'modal-print-cv',
+                            karyawan: $record->getKey()
+                        );
                     }),
 
                 Action::make('edit')
@@ -122,15 +131,15 @@ class TableKaryawan extends Component implements HasForms, HasTable
                     ->color('danger')
                     ->url(fn(Karyawan $record): string => route('kepegawaian.karyawan.edit', $record))
                     ->visible(
-                        fn() => auth()->user()->can('edit-karyawan')
+                        fn() => auth()->user()->can('edit-kepegawaian-karyawan')
                     )
             ]);
     }
 
-    function profileKaryawan($id, $karyawan)
+    function modal($modal, $karyawan)
     {
         $this->karyawanId = $karyawan;
-        $this->dispatch('open-modal', id: $id);
+        $this->dispatch('open-modal', id: $modal);
     }
 
     // #[On('open-history-jabatan')]

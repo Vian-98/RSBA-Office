@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Auth;
 
-use App\Livewire\Profile\Index as Profile;
 use Livewire\Component;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
@@ -46,9 +45,9 @@ class Login extends Component
                     ->flash()
                     ->send();
 
-                return $this->redirect(route('profile.index'), navigate: true);
+                return $this->redirect(route('dashboard'), navigate: true);
             }
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             $this->toast()
                 ->error('Email atau password salah!', trans('auth.failed'))
                 ->send();
@@ -59,7 +58,7 @@ class Login extends Component
     /**
      * Attempt to authenticate the request's credentials.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function authenticate(): void
     {
@@ -79,7 +78,7 @@ class Login extends Component
     /**
      * Ensure the login request is not rate limited.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function ensureIsNotRateLimited(): void
     {

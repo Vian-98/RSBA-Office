@@ -1,8 +1,8 @@
-<div>
-    <div class="flex h-full w-full flex-col items-start justify-start p-10 lg:p-16 xl:p-24">
-        <h4 class="w-full text-3xl font-bold">Login</h4>
+<div class="flex h-full w-full flex-col items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md space-y-6">
+        <h4 class="w-full text-3xl font-bold text-gray-900">Login</h4>
 
-        <form wire:submit.prevent="submit" class="relative mt-10 w-full space-y-3" autocomplete="off">
+        <form wire:submit.prevent="submit" class="relative mt-10 w-full space-y-3">
             {{-- <div class=""> --}}
             <div class="relative">
                 <x-ts:input wire:model.defer='email' label="Email" placeholder="Email" />
@@ -17,18 +17,15 @@
                 </x-ts:button>
             </div>
 
-            <hr class="my-12">
-            <div class="flex w-full flex-row">
-                <div class="w-1/2">
-                    <p class="max-w text-sm leading-5 text-gray-600">
-                        Belum mempunyai akun ?
-                    </p>
-                    <a wire:navigate href="{{ route('register') }}" class="font-medium text-indigo-600 transition duration-150 ease-in-out hover:text-indigo-500 focus:underline focus:outline-none">
-                        Registrasi
-                    </a>
-                </div>
+            <hr class="border-gray-200">
+            <div class="flex w-full flex-col">
+                <p class="max-w text-sm leading-5 text-gray-600">
+                    Belum mempunyai akun ?
+                </p>
+                <a wire:navigate href="{{ route('register') }}" class="font-medium text-indigo-600 transition duration-150 ease-in-out hover:text-indigo-500 focus:underline focus:outline-none">
+                    Registrasi
+                </a>
             </div>
-
         </form>
 
     </div>

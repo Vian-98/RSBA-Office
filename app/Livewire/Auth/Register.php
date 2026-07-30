@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use Throwable;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
@@ -19,21 +20,20 @@ class Register extends Component
     use Interactions;
 
     public int $karyawan_id;
-    public string $email, $password, $password_confirmation;
+    public string $email, $password, $passwordConfirmation;
 
     public function rules(): array
     {
         return [
             'karyawan_id' => 'required|numeric|unique:users,karyawan_id',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed',
+            'password' => 'required|min:6|same:passwordConfirmation',
         ];
     }
 
     public function register()
     {
         $this->validate();
-
         // TODO: Impelement rate limiter
         // Create a new user
         try {
@@ -53,7 +53,7 @@ class Register extends Component
                 ->send();
 
             return $this->redirect(route('profile.index'), navigate: true);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->toast()
                 ->error('Registrasi gagal!', 'Terjadi kesalahan saat mendaftar, error: ' . $e->getMessage())
                 ->send();

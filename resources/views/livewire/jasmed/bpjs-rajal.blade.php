@@ -29,7 +29,7 @@
             @php
                 $optionsRj = [['label' => 'Spesialis', 'value' => 'rj_sp'], ['label' => 'Umum', 'value' => 'rj_um'], ['label' => 'Mata', 'value' => 'rj_mata'], ['label' => 'HD', 'value' => 'rj_hd']];
             @endphp
-            <x-ts:select.styled wire:model.change='pilih_download_rajal' :options="$optionsRj" select="label:label|value:value" />
+            <x-ts:select.styled wire:model.live.change='pilih_download_rajal' :options="$optionsRj" select="label:label|value:value" />
         </label>
 
         <x-ts:button type='submit' loading='downloadRajal'>

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Karyawan\Document;
 
+use Throwable;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
 use Livewire\WithFileUploads;
@@ -63,7 +64,7 @@ class Add extends Component
             $this->toast()
                 ->success('Berhasil', 'Document karyawan berhasil disimpan.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             $this->toast()

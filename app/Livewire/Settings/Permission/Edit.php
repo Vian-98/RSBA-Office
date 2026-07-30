@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Settings\Permission;
 
+use Throwable;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Locked;
@@ -48,7 +49,7 @@ class Edit extends Component
             $this->toast()
                 ->success('Berhasil', "Update $nama_old menjadi $nama_new")
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             $this->toast()

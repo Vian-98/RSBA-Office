@@ -32,9 +32,9 @@
 
         <div class="grid grid-cols-2 gap-2">
             <x-ts:select.styled wire:model.defer='method_bayar' searchable :options="$caraBayarOptions" select="label:label|value:value" placeholder="Metode Bayar" />
-            <x-ts:select.styled wire:model.live.debounce='jabatan' searchable :options="$mengetahuiOptions" select="label:label|value:value" placeholder="Mengetahui" />
+            <x-ts:select.styled wire:model.live.debounce.300='jabatan' searchable :options="$mengetahuiOptions" select="label:label|value:value" placeholder="Mengetahui" />
         </div>
-        <div class="grid grid-cols-2 gap-2">
+        <div>
             <x-ts:textarea wire:model.defer='keterangan' placeholder="Subject / Berita / Keterangan" />
         </div>
 
@@ -46,12 +46,13 @@
             @enderror
         </div>
 
-        <div x-data="listSp3" class="mt-2 border-t-2 border-dashed py-4">
+        <div x-data="listSp3" class="mt-2 flex flex-col border-t-2 border-dashed py-4">
+            <span class="text-xs italic text-gray-500">Rincian Pembayaran</span>
             <template x-for="(item, index) in itemsSp3" :key="index">
                 <div class="flex w-full flex-row items-center gap-2">
                     {{-- item --}}
                     <div class="w-1/4">
-                        <x-ts:input type="number" x-model.number="item.nominal" @input="recalculateTotal" required placeholder="Nominal" />
+                        <x-ts:input type="text" x-model="item.nominal" @input="recalculateTotal" required placeholder="Nominal" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
 
                     </div>
                     <div class="w-3/4">
@@ -64,7 +65,9 @@
 
                 {{-- addin item --}}
             </template>
-            <span x-on:click="addingItem" class="text-indigo-500 hover:font-semibold" role="button">+ New Item</span>
+            <span class="mt-2 flex-row items-center rounded-md px-2 text-indigo-500 hover:bg-indigo-200/35 hover:font-semibold" role="button" x-on:click="addingItem">
+                + Tambah Item
+            </span>
 
 
             <div class="mt-2 flex w-full flex-col rounded-md bg-indigo-200/25 px-4 py-2">
@@ -75,12 +78,50 @@
         </div>
 
 
-        <div class="ml-auto flex justify-end gap-2">
-            <x-ts:button outline x-on:click="$dispatch('close-modal',{id:'modal-add-sp3'})">Tutup</x-ts:button>
-            <x-ts:button type="submit" icon="tabler.checks">Simpan</x-ts:button>
+        <div x-data="{ popUpConfirmSubmit: false }" class="ml-auto flex justify-end gap-2">
+            <x-ts:button outline sm x-on:click="$dispatch('close-modal',{id:'modal-add-sp3'})">Tutup</x-ts:button>
+            <x-ts:button x-on:click="popUpConfirmSubmit = true" x-ref="simpanSp3" sm icon="tabler.checks">Simpan</x-ts:button>
+
+
+            <div x-show="popUpConfirmSubmit" x-transition x-trap.noscroll="popUpConfirmSubmit" x-on:click.away="popUpConfirmSubmit = false" x-on:keydown.escape.window="popUpConfirmSubmit = false"
+                x-anchor.bottom-end="$refs.simpanSp3" class="absolute z-50 mt-2 w-max max-w-sm rounded-lg border border-gray-300 bg-white p-4 shadow-lg">
+
+
+                <div class="flex items-center justify-between">
+                    <span class="flex flex-row items-center gap-2 whitespace-nowrap text-sm font-medium text-indigo-500">
+                        <x-ts:icon name="tabler.alert-circle" class="h-5 w-5" />
+                        Simpan Surat SP3 ?
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between gap-4">
+                    <span class="ms-4 flex flex-row items-center gap-2 whitespace-nowrap text-wrap text-xs font-light text-gray-500">
+                        Pilih kirim untuk tanda tangan secara digital, atau manual untuk untuk printout.
+                    </span>
+                </div>
+                <!-- Actions -->
+                <div class="mt-2 flex justify-end gap-2">
+                    <x-ts:button outline xs color="indigo" icon="tabler.send" loading="submit" x-on:click="$wire.submit(true)">
+                        Kirim
+                    </x-ts:button>
+
+                    {{-- button action validasi --}}
+                    <x-ts:button xs loading="submitManual" icon="tabler.file" outline sm color="gray" x-on:click="$wire.submit(false)">
+                        Manual, Cetak
+                    </x-ts:button>
+                </div>
+
+            </div>
         </div>
 
     </form>
+
+
+    <div id="print-sp3" class="hidden" x-on:print-out-sp3.window="$nextTick(() => printArea('print-sp3'))">
+        @if ($suratSp3)
+            <livewire:Surat.Sp3.PrintSp3 :$suratSp3 :key="Str::random(5)" />
+        @endif
+    </div>
 
 </div>
 
@@ -104,7 +145,10 @@
                 },
 
                 recalculateTotal() {
-                    this.totalPembayaran = this.itemsSp3.reduce((sum, item) => sum + item.nominal, 0);
+                    this.totalPembayaran = this.itemsSp3.reduce((sum, item) => {
+                        let nom = String(item.nominal || '').replace(/\D/g, '');
+                        return sum + (Number(nom) || 0);
+                    }, 0);
                 },
             }
         })

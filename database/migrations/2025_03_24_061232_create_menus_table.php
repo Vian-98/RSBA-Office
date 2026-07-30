@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama', 50);
             $table->string('route')->nullable();
-            $table->string('icon', 25)->nullable();
+            $table->string('icon', 50)->nullable();
             $table->json('permission')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->string('group', 6)->nullable();

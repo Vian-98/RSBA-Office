@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Settings\Permission;
 
+use Throwable;
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
@@ -31,7 +32,7 @@ class Add extends Component
             $this->toast()
                 ->success('Disimpan', 'Permission baru disimpan.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             $this->toast()

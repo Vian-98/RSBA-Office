@@ -6,17 +6,14 @@ use Carbon\Carbon;
 use App\Models\JmJasa;
 use Livewire\Component;
 use App\Models\JmPasien;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Lazy;
 
 #[Lazy]
 class Dashboard extends Component
 {
-    public $bulan;
-    public array $options_bulan = [];
 
-    public $tahun;
-    public array $options_tahun = [];
-
+    public string $periode;
     public $layanan;
     public array $layanan_opt = [
         ['label' => 'Rajal', 'value' => 'rajal'],
@@ -28,6 +25,14 @@ class Dashboard extends Component
         ['label' => 'BPJS', 'value' => 'bpjs'],
         ['label' => 'Tunai', 'value' => 'tunai'],
         ['label' => 'JKMD', 'value' => 'jkmd']
+    ];
+
+
+    public $batch;
+    public $batchOptions = [
+        ['label' => '1', 'value' => 1],
+        ['label' => '2', 'value' => 2],
+        ['label' => '3', 'value' => 3]
     ];
 
     public $pasienDiajukan = 0;
@@ -42,159 +47,113 @@ class Dashboard extends Component
 
     public $total_jasa = 0;
 
-    function mount()
-    {
-        // populate array 5 years before $tahun_skr and 5 years after $tahun_skr
-        $this->tahun = Carbon::now()->format('Y');
-        for ($y = $this->tahun - 10; $y <= $this->tahun + 3; $y++) {
-            $push = [
-                'id' => $y,
-                'label' => $y
-            ];
-            array_push($this->options_tahun, $push);
-        }
+    // Menampilkan content detail
+    public $content;
 
-        //populate bulan
-        // $this->bulan = Carbon::now()->format('m');
-        for ($m = 1; $m <= 12; $m++) {
-            $push_bulan = [
-                'id' => $m,
-                'label' => Carbon::create()->month($m)->translatedFormat('M')
-            ];
-            array_push($this->options_bulan, $push_bulan);
-        }
+    public function detail($route)
+    {
+        $this->content = $route;
     }
 
+    function mount()
+    {
+        $this->periode = Carbon::now()->format('Y-m');
+    }
 
-    // #[Computed()]
+    function updated($propertyName)
+    {
+        $this->updateDashboard();
+    }
+
     function updateDashboard()
     {
-        for ($a = 1; $a <= 9; $a++) {
-            $this->bulan = str_pad($this->bulan, 2, "0", STR_PAD_LEFT);
-        }
-
-        $tahun_bulan = "$this->tahun-$this->bulan";
         $layanan = $this->layanan;
         $cabar = $this->cabar;
-        $this->periode = $tahun_bulan;
+        $periode = $this->periode;
+        $batch = $this->batch;
 
 
         // Stats Pasien
-        $this->getStatsPasien(periode: $tahun_bulan, layanan: $layanan, cabar: $cabar);
+        // $this->getStatsPasien(periode: $periode, layanan: $layanan, cabar: $cabar);
 
 
         // Stats Klaim
-        $this->getStatsKlaim(periode: $tahun_bulan, layanan: $layanan, cabar: $cabar);
+        // $this->getStatsKlaim(periode: $periode, layanan: $layanan, cabar: $cabar);
 
         // Stats Jasa
-        $this->getStatsJasa(periode: $tahun_bulan, layanan: $layanan, cabar: $cabar);
-    }
-
-    private function getStatsPasien($periode, $layanan, $cabar)
-    {
-        $pasienDiajukan = JmPasien::where('tgl_checkout', 'like', "$periode%")
-            ->when(
-                $layanan,
-                fn($query) => $query->where('layanan', $layanan)
-            )
-            ->when(
-                $cabar,
-                fn($query) => $query->where('cabar', $cabar)
-            )
-            ->count();
-        $this->pasienDiajukan = number_format($pasienDiajukan, 0, ',', '.');
-
-        // total pasien klaim
-        $pasienDisetujui = JmPasien::where('tgl_checkout', 'like', "$periode%")
-            ->when(
-                $layanan,
-                fn($query) => $query->where('layanan', $layanan)
-            )
-            ->when(
-                $cabar,
-                fn($query) => $query->where('cabar', $cabar)
-            )
-            ->where('disetujui', '>', 0)
-            ->count();
-        $this->pasienDisetujui = number_format($pasienDisetujui, 0, ',', '.');
-
-
-        // total Pasien Pending
-        $pasienPending = JmPasien::where('tgl_checkout', 'like', "$periode%")
-            ->when(
-                $layanan,
-                fn($query) => $query->where('layanan', $layanan)
-            )
-            ->when(
-                $cabar,
-                fn($query) => $query->where('cabar', $cabar)
-            )
-            ->where('disetujui', 0)
-            ->count();
-        $this->pasienPending = number_format($pasienPending, 0, ',', '.');
-
-        // persentase pasien disetjui
-        $this->prosentaseDisetujui = round(
-            ((
-                $pasienDisetujui  / ($pasienDiajukan ? $pasienDiajukan : 1)
-            ) * 100),
-            2
-        ) . "%";
+        // $this->getStatsJasa(periode: $periode, layanan: $layanan, cabar: $cabar);
     }
 
 
-    private function getStatsKlaim($periode, $layanan, $cabar)
+    #[Computed]
+    public function getStats(): array
     {
+        $baseQuery = JmPasien::where('tgl_checkout', 'like', "$this->periode%")
+            ->when(
+                $this->layanan,
+                fn($query) => $query->where('layanan', $this->layanan)
+            )
+            ->when(
+                $this->cabar,
+                fn($query) => $query->where('cabar', $this->cabar)
+            )
+            ->when(
+                $this->batch,
+                fn($query) => $query->where('batch', $this->batch)
+            );
+
+
         // Diajukan
-        $klaimDiajukan = JmPasien::where('tgl_checkout', 'like', "$periode%")
-            ->when(
-                $layanan,
-                fn($query) => $query->where('layanan', $layanan)
-            )
-            ->when(
-                $cabar,
-                fn($query) => $query->where('cabar', $cabar)
-            )
-            ->sum('klaim');
-        $this->klaimDiajukan = "Rp. " . number_format($klaimDiajukan, 0, ',', '.');
+        $totalDiajukan = (clone $baseQuery)->sum('klaim');
+        $pasienDiajukan = (clone $baseQuery)->count();
 
 
-        // klaim
-        $klaimDisetujui = JmPasien::where('tgl_checkout', 'like', "$periode%")
-            ->when(
-                $layanan,
-                fn($query) => $query->where('layanan', $layanan)
-            )
-            ->when(
-                $cabar,
-                fn($query) => $query->where('cabar', $cabar)
-            )
-            ->where('disetujui', '>', 0)
-            ->sum('disetujui');
-        $this->klaimDisetujui = "Rp. " . number_format($klaimDisetujui, 0, ',', '.');
+        // Disetujui
+        $queryDisetujui  = (clone $baseQuery)->where('disetujui', '>', 0);
+        $totalDisetujui = (clone $queryDisetujui)->sum('disetujui');
+        $pasienDisetujui = (clone $queryDisetujui)->count();
 
 
-        // Pending Klaim
-        $klaimPending = JmPasien::where('tgl_checkout', 'like', "$periode%")
-            ->when(
-                $layanan,
-                fn($query) => $query->where('layanan', $layanan)
-            )
-            ->when(
-                $cabar,
-                fn($query) => $query->where('cabar', $cabar)
-            )
-            ->where('disetujui', 0)
-            ->sum('klaim');
-        $this->klaimPending = "Rp. " . number_format($klaimPending, 0, ',', '.');
+        // Pending
+        $queryPending = (clone $baseQuery)->where('disetujui', 0);
+        $totalPending = (clone $queryPending)->sum('klaim');
+        $pasienPending = (clone $queryPending)->count();
+
+
+
+        return [
+            'totalDiajukan' => $this->rupiah($totalDiajukan),
+            'pasienDiajukan' => $this->rupiah($pasienDiajukan),
+            'totalDisetujui' => $this->rupiah($totalDisetujui),
+            'pasienDisetujui' => $this->rupiah($pasienDisetujui),
+            'persenteseDisetujui' =>  round(
+                ((
+                    $pasienDisetujui  / ($pasienDiajukan ? $pasienDiajukan : 1)
+                ) * 100),
+                2
+            ) . " %",
+            'totalPending' => $this->rupiah($totalPending),
+            'pasienPending' => $this->rupiah($pasienPending),
+        ];
     }
 
-    private function getStatsJasa($periode, $layanan, $cabar)
+    private function rupiah($value): string
     {
+        return number_format($value, 0, ',', '.');
+    }
+
+    #[Computed]
+    public function getStatsJasa()
+    {
+        $periode = $this->periode;
+        $layanan = $this->layanan;
+        $cabar = $this->cabar;
+        $batch = $this->batch;
+
         // total jasa
         $jasa = JmJasa::whereHas(
             'prosentase.pasien', //relation jmJasa => JmProsentase => JmPasien
-            function ($query) use ($periode, $layanan, $cabar) {
+            function ($query) use ($periode, $layanan, $cabar, $batch) {
                 $query //Query to relations JmPasien (as above)
                     ->where('tgl_checkout', 'like', "$periode%")
                     ->when(
@@ -205,11 +164,15 @@ class Dashboard extends Component
                         $cabar,
                         fn($query) => $query->where('cabar', $cabar)
                     )
+                    ->when(
+                        $batch,
+                        fn($query) => $query->where('batch', $batch)
+                    )
                 ;
             }
         )
             ->sum('jasa');
-        $this->total_jasa = "Rp. " . number_format($jasa, 0, ',', '.');
+        return number_format($jasa, 0, ',', '.');
     }
 
     public function render()

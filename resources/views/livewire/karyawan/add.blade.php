@@ -11,12 +11,18 @@
             <div class="w-full lg:w-1/4">
                 <x-ts:input wire:model.lazy="form.nip" placeholder="NIP [Auto Generate]" readonly />
             </div>
+            <div class="w-full lg:w-1/4">
+                <x-ts:select.styled wire:model.defer="form.kategori_kerja" placeholder="Kategori Kerja" :options="[
+                    ['label' => 'Pekerja Reguler (Jam Kantor)', 'value' => 'reguler'],
+                    ['label' => 'Pekerja Shift', 'value' => 'shift']
+                ]" select="label:label|value:value" />
+            </div>
         </div>
 
         {{-- identitas --}}
         <div class="space-y-2 pt-2">
             <hr>
-            <span class="flex gap-1 font-semibold text-primary-500">
+            <span class="text-primary-500 flex gap-1 font-semibold">
                 <x-ts:icon name="tabler.user" class="h-5 w-5" />
                 Identitas
             </span>
@@ -59,14 +65,32 @@
                 <x-ts:select.styled wire:model.lazy='form.jk' placeholder="Kelamin" :options="$jk_options" select="label:label|value:value" />
             </div>
             <div class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.lazy='form.status_pernikahan' placeholder="Status Pernikahan" :options="" :options="$pernikahan_options" select="label:label|value:value" />
+                <x-ts:select.styled wire:model.lazy='form.status_pernikahan' placeholder="Status Pernikahan" :options="$pernikahan_options" select="label:label|value:value" />
+            </div>
+        </div>
+
+        {{-- REKENING BANK --}}
+        <div class="space-y-2 pt-2">
+            <hr>
+            <span class="text-primary-500 flex gap-1 font-semibold">
+                <x-ts:icon name="tabler.building-bank" class="h-5 w-5" />
+                Rekening Pembayaran Gaji
+            </span>
+        </div>
+
+        <div class="flex flex-col gap-2 lg:flex-row">
+            <div class="w-full lg:w-1/2">
+                <x-ts:input wire:model.lazy='form.nama_bank' placeholder="Nama Bank (misal: BSI, Mandiri, BCA)" />
+            </div>
+            <div class="w-full lg:w-1/2">
+                <x-ts:input wire:model.lazy='form.no_rekening' placeholder="Nomor Rekening Bank" />
             </div>
         </div>
 
         {{-- KONTAK --}}
         <div class="space-y-2 pt-2">
             <hr>
-            <span class="flex gap-1 font-semibold text-primary-500">
+            <span class="text-primary-500 flex gap-1 font-semibold">
                 <x-ts:icon name="tabler.phone-plus" class="h-5 w-5" />
                 Kontak
             </span>
@@ -84,7 +108,7 @@
         {{-- ALAMAT --}}
         <div class="space-y-2 pt-2">
             <hr>
-            <span class="flex gap-1 font-semibold text-primary-500">
+            <span class="text-primary-500 flex gap-1 font-semibold">
                 <x-ts:icon name="tabler.map-plus" class="h-5 w-5" />
                 Alamat
             </span>
@@ -92,22 +116,22 @@
 
         <div class="flex flex-col gap-2 lg:flex-row">
             <div class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.blur="form.prov" searchable :request="route('api.prov')" select="label:nama|value:kode" placeholder="Provinsi" />
+                <x-ts:select.styled wire:model.live.blur="form.prov" searchable :request="route('api.prov')" select="label:nama|value:kode" placeholder="Provinsi" />
             </div>
             <div wire:key='{{ $form->prov }}' class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.blur='form.kab' searchable :request="route('api.kab', ['id' => $form->prov])" select="label:nama|value:kode" placeholder="Kabupaten" />
+                <x-ts:select.styled wire:model.live.blur='form.kab' searchable :request="route('api.kab', ['id' => $form->prov])" select="label:nama|value:kode" placeholder="Kabupaten" />
             </div>
             <div wire:key='{{ $form->kab }}' class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.blur='form.kec' searchable :request="route('api.kec', ['id' => $form->kab])" select="label:nama|value:kode" placeholder="Kecamatan" />
+                <x-ts:select.styled wire:model.live.blur='form.kec' searchable :request="route('api.kec', ['id' => $form->kab])" select="label:nama|value:kode" placeholder="Kecamatan" />
             </div>
             <div wire:key='{{ $form->kec }}' class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.blur='form.desa' searchable :request="route('api.desa', ['id' => $form->kec])" select="label:nama|value:kode" placeholder="Desa" />
+                <x-ts:select.styled wire:model.live.blur='form.desa' searchable :request="route('api.desa', ['id' => $form->kec])" select="label:nama|value:kode" placeholder="Desa" />
             </div>
         </div>
 
         <div class="flex flex-col lg:flex-row">
             <div class="w-full lg:w-1/2">
-                <x-ts:textarea wire:model.blur='form.alamat' placeholder="Alamat" />
+                <x-ts:textarea wire:model.live.blur='form.alamat' placeholder="Alamat" />
             </div>
         </div>
 
@@ -119,16 +143,16 @@
 
         <div class="flex flex-col gap-2 lg:flex-row">
             <div class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.blur="form.dom_prov" searchable :request="route('api.prov')" select="label:nama|value:kode" placeholder="Provinsi" />
+                <x-ts:select.styled wire:model.live.blur="form.dom_prov" searchable :request="route('api.prov')" select="label:nama|value:kode" placeholder="Provinsi" />
             </div>
             <div wire:key='{{ $form->dom_prov }}' class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.blur='form.dom_kab' searchable :request="route('api.kab', ['id' => $form->dom_prov])" select="label:nama|value:kode" placeholder="Kabupaten" />
+                <x-ts:select.styled wire:model.live.blur='form.dom_kab' searchable :request="route('api.kab', ['id' => $form->dom_prov])" select="label:nama|value:kode" placeholder="Kabupaten" />
             </div>
             <div wire:key='{{ $form->dom_kab }}' class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.blur='form.dom_kec' searchable :request="route('api.kec', ['id' => $form->dom_kab])" select="label:nama|value:kode" placeholder="Kecamatan" />
+                <x-ts:select.styled wire:model.live.blur='form.dom_kec' searchable :request="route('api.kec', ['id' => $form->dom_kab])" select="label:nama|value:kode" placeholder="Kecamatan" />
             </div>
             <div wire:key='{{ $form->dom_kec }}' class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.blur='form.dom_desa' searchable :request="route('api.desa', ['id' => $form->dom_kec])" select="label:nama|value:kode" placeholder="Desa" />
+                <x-ts:select.styled wire:model.live.blur='form.dom_desa' searchable :request="route('api.desa', ['id' => $form->dom_kec])" select="label:nama|value:kode" placeholder="Desa" />
             </div>
         </div>
 

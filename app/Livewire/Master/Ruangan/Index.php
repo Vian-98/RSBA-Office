@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Master\Ruangan;
 
+use Filament\Actions\Contracts\HasActions;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Action;
+use Throwable;
 use App\Models\Ruangan;
+use App\Traits\AuthorizesFromRoute;
 use Livewire\Component;
 use Filament\Tables\Table;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Title;
-use Filament\Tables\Actions\Action;
 use TallStackUi\Traits\Interactions;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\TextColumn;
@@ -17,8 +21,10 @@ use Filament\Tables\Concerns\InteractsWithTable;
 
 #[Lazy]
 #[Title('Data Ruangan')]
-class Index extends Component implements HasForms, HasTable
+class Index extends Component implements HasForms, HasTable, HasActions
 {
+    use InteractsWithActions;
+    use AuthorizesFromRoute;
     use InteractsWithTable, InteractsWithForms;
     use Interactions;
 
@@ -41,7 +47,7 @@ class Index extends Component implements HasForms, HasTable
                     })
                 // ->formatState(fn()=>)
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('edit')
                     ->iconButton()
                     ->icon('tabler-edit')
@@ -78,7 +84,7 @@ class Index extends Component implements HasForms, HasTable
             $this->toast()
                 ->success('Berhasil', 'Hapus data berhasil')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->toast()
                 ->error('Failed', 'Error : ' . $e->getMessage())
                 ->send();
@@ -86,6 +92,7 @@ class Index extends Component implements HasForms, HasTable
     }
     public function render()
     {
+        $this->authorizeFromRoute();
         return view('livewire.master.ruangan.index');
     }
 }

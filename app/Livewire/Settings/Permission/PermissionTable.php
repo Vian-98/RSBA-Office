@@ -2,10 +2,13 @@
 
 namespace App\Livewire\Settings\Permission;
 
+use Filament\Actions\Contracts\HasActions;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Action;
+use Throwable;
 use Livewire\Component;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
-use Filament\Tables\Actions\Action;
 use TallStackUi\Traits\Interactions;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\TextColumn;
@@ -14,8 +17,9 @@ use Spatie\Permission\Models\Permission;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Tables\Concerns\InteractsWithTable;
 
-class PermissionTable extends Component implements HasForms, HasTable
+class PermissionTable extends Component implements HasForms, HasTable, HasActions
 {
+    use InteractsWithActions;
     use InteractsWithForms, InteractsWithTable;
 
     use Interactions;
@@ -40,7 +44,7 @@ class PermissionTable extends Component implements HasForms, HasTable
                     ->label('Tanggal Dibuat')
                     ->sortable()
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('edit')
                     ->iconButton()
                     ->icon('tabler-edit')
@@ -87,7 +91,7 @@ class PermissionTable extends Component implements HasForms, HasTable
             $this->toast()
                 ->success('Berhasil', 'Hapus permission berhasil.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             $this->toast()

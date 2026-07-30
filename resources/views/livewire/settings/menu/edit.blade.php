@@ -16,13 +16,13 @@
 
         <x-ts:input wire:model.defer='icon' hint="Icon libr : tabler.io" />
 
-        <x-ts:select.styled wire:model.defer='parent' placeholder="Parent Menu" searchable :options="$parents" select="label:nama|value:id" />
+        <x-ts:select.styled wire:model.defer='parent' placeholder="Parent Menu" searchable :options="$this->parents" select="label:nama|value:id" />
 
         <x-ts:select.styled wire:model.defer='group' placeholder="Group Menu" searchable :options="$groups" select="label:label|value:value" />
 
         <div class="flex w-full flex-row items-stretch justify-items-center gap-2">
             <div class="w-10/12">
-                <x-ts:select.styled wire:model.defer='permission' placeholder="Permission" searchable multiple :options="$permission_options" select="label:name|value:name" />
+                <x-ts:select.styled wire:model.defer='permission' placeholder="Permission" searchable multiple :options="$this->permissionOptions" select="label:name|value:name" />
             </div>
 
             <div>

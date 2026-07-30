@@ -1,103 +1,75 @@
 <div class="flex flex-col gap-2" x-data="{ menu: @entangle('menu') }">
 
-    <form wire:submit.prevent='submit' class="space-y-2">
-        Role Permission{{ $rolePermission }}
-
-        @foreach ($menus as $menu)
-            @if (count($menu->submenus) > 0)
-                <table class="w-full rounded-lg">
-                    <thead>
-                        <tr class="bg-red-100 font-semibold">
-                            <td scope="col" class="px-3 py-2">{{ $menu->nama }}</td>
-                            <td scope="col" class="w-1/6 px-3 py-2 text-right">Role</td>
-                            <td scope="col" class="w-1/6 px-3 py-2 text-right">User</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($menu->permission as $permission)
-                            <tr class="border-b border-neutral-200 transition duration-300 ease-in-out even:bg-primary-50/35 hover:bg-gray-100 dark:border-white/10">
-                                <td scope="col" class="px-3 py-2">{{ $permission }}</td>
-                                <td scope="col" class="w-1/6 px-3 py-2 text-right">
-                                    <div class="flex justify-end">
-                                        <x-ts:checkbox wire:model='rolePermission' value="{{ $permission }}" />
-                                    </div>
-                                </td>
-                                <td scope="col" class="w-1/6 px-3 py-2 text-right">
-                                    <div class="flex justify-end">
-                                        <x-ts:checkbox wire:model='permission' value="{{ $permission }}" />
-                                    </div>
-
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @elseif(!$menu->parent_id)
-                <table class="w-full rounded-lg">
-                    <thead>
-                        <tr class="bg-primary-100 font-semibold">
-                            <td scope="col" class="px-3 py-2">{{ $menu->nama }}</td>
-                            <td scope="col" class="w-1/6 px-3 py-2 text-right">Role</td>
-                            <td scope="col" class="w-1/6 px-3 py-2 text-right">User</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($menu->permission as $permission)
-                            <tr class="border-b border-neutral-200 transition duration-300 ease-in-out even:bg-primary-50/35 hover:bg-gray-100 dark:border-white/10">
-                                <td scope="col" class="px-3 py-2">{{ $permission }}</td>
-                                <td scope="col" class="w-1/6 px-3 py-2 text-right">
-                                    <div class="flex justify-end">
-                                        <x-ts:checkbox wire:model='rolePermission' value="{{ $permission }}" />
-                                    </div>
-                                </td>
-                                <td scope="col" class="w-1/6 px-3 py-2 text-right">
-                                    <div class="flex justify-end">
-                                        <x-ts:checkbox wire:model='permission' value="{{ $permission }}" />
-                                    </div>
-
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @endif
-
-
-            {{-- submenu --}}
-            @foreach ($menu->submenus as $submenu)
-                <div class="ml-auto flex w-11/12 justify-end">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="bg-green-100 font-semibold">
-                                <td scope="col" class="px-3 py-2">{{ $submenu->nama }}</td>
-                                <td scope="col" class="w-1/6 px-3 py-2 text-right">Role</td>
-                                <td scope="col" class="w-1/6 px-3 py-2 text-right">User</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($submenu->permission as $permission)
-                                <tr class="border-b border-neutral-200 transition duration-300 ease-in-out even:bg-primary-50/35 hover:bg-gray-100 dark:border-white/10">
-                                    <td scope="col" class="px-3 py-2">{{ $permission }}</td>
-                                    <td scope="col" class="w-1/6 px-3 py-2 text-right">
-                                        <div class="flex justify-end">
-                                            <x-ts:checkbox wire:model='rolePermission' value="{{ $permission }}" />
-                                        </div>
-                                    </td>
-                                    <td scope="col" class="w-1/6 px-3 py-2 text-right">
-                                        <div class="flex justify-end">
-                                            <x-ts:checkbox wire:model='permission' value="{{ $permission }}" />
-                                        </div>
-
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endforeach
+    <div class="border-gray flex flex-row gap-4 overflow-auto rounded-md border p-4">
+        @foreach ($groups as $group)
+            <x-ts:radio wire:model.live.debounce.500='group' id="{{ $group['label'] }}" value="{{ $group['value'] ?? null }}" label="{{ $group['value'] ? $group['label'] : 'Dashboard' }}" />
         @endforeach
+    </div>
 
-        <div class="ml-auto flex justify-end gap-2">
+
+    <form wire:submit.prevent='submit' class="flex flex-col gap-2">
+
+        <span wire:loading wire:target='group' class="animate-pulse italic text-indigo-500">
+            loading...
+        </span>
+
+        <div wire:loading.remove wire:target='group' class="flex w-full flex-col gap-4">
+            @forelse ($this->menus as $groupId => $groupMenus)
+                <div class="w-full divide-y divide-indigo-200 overflow-hidden rounded-md border">
+                    <div class="grid grid-cols-6 bg-indigo-100 text-sm font-semibold uppercase text-secondary-500">
+                        <div class="col-span-4 px-2 py-1">{{ $this->groupMenu[$groupId] ?? 'Tanpa Group' }}</div>
+                        <div class="px-2 py-1">Role</div>
+                        <div class="px-2 py-1">User</div>
+                    </div>
+
+
+                    @foreach ($groupMenus as $menu)
+                        @if ($menu->parent_id === $mainMenu->id)
+                            <div class="bg-indigo-100/50 px-2 text-sm font-semibold text-indigo-500">{{ $menu->nama }}</div>
+                            <!-- Each Permission -->
+                            @foreach ($menu->permission ?? [] as $permission)
+                                <div class="grid grid-cols-6 text-sm text-gray-800 hover:bg-indigo-50">
+                                    <div class="col-span-4 px-2 py-1 italic text-gray-500">{{ $permission }}</div>
+                                    <div class="px-2 py-1">
+                                        <x-ts:checkbox sm color="cyan" wire:model.defer='rolePermission' value="{{ $permission }}" />
+                                    </div>
+                                    <div class="px-2 py-1">
+                                        <x-ts:checkbox sm wire:model.defer='permission' value="{{ $permission }}" />
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endif
+
+                        @foreach ($menu?->submenus as $sub)
+                            <div class="bg-sky-100/50 px-2 text-sm font-semibold text-indigo-500">
+                                <span class="ms-8">{{ $sub->nama }}</span>
+                            </div>
+                            <!-- Each Permission -->
+                            @foreach ($sub->permission ?? [] as $subPermission)
+                                <div class="grid grid-cols-6 text-sm text-gray-800 hover:bg-indigo-50">
+                                    <div class="col-span-4 px-2 py-1 italic text-gray-500">
+                                        <span class="ms-8"> {{ $subPermission }}</span>
+                                    </div>
+                                    <div class="px-2 py-1">
+                                        <x-ts:checkbox sm color="cyan" wire:model.defer='rolePermission' value="{{ $subPermission }}" />
+                                    </div>
+                                    <div class="px-2 py-1">
+                                        <x-ts:checkbox sm wire:model='permission' value="{{ $subPermission }}" />
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endforeach
+                    @endforeach
+
+                    {{-- group --}}
+                </div>
+            @empty
+                <span class="text-sm italic">Tidak ada menu</span>
+            @endforelse
+        </div>
+
+
+        <div class="ml-auto mt-4 flex justify-end gap-2">
             <x-ts:button outline x-on:click="$dispatch('close-modal',{id:'edit-user-permission'})">Batal</x-ts:button>
             <x-ts:button type="submit" loading="submit">Simpan</x-ts:button>
         </div>

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Jasmed\Dokter;
 
+use Throwable;
 use Carbon\Carbon;
 use Livewire\Component;
 use App\Models\JmDokter;
@@ -84,7 +85,7 @@ class CheckAnastesi extends Component
             $this->toast()
                 ->success('Berhasil', 'Dokter berhasil disimpan.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             $this->toast()

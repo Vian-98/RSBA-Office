@@ -2,29 +2,35 @@
 
 namespace App\Livewire\Forms;
 
-use Livewire\Form;
+use Throwable;
+use App\Models\Surat\CutiJenis;
 use App\Models\Surat\SuratCuti;
+use App\Models\Surat\SuratCutiApproval;
 use Illuminate\Support\Facades\DB;
+use Livewire\Form;
 
 class SuratCutiForm extends Form
 {
     public ?array $tgl_cuti = [];
-    public ?string $jenis_cuti;
+    public $jenis_cuti;
     public int $sisa_cuti = 0, $lama_cuti = 0;
     public ?array $atasan = [];
     public ?string $keterangan = null;
     public ?string $alamat = null;
-    public $options_urgensi = [
-        ['id' => 'tahunan', 'label' => 'Cuti Tahunan'],
-        ['id' => 'besar', 'label' => 'Cuti Besar'],
-        ['id' => 'sakit', 'label' => 'Sakit'],
-        ['id' => 'bersalin', 'label' => 'Bersalin'],
-        ['id' => 'penting', 'label' => 'Kepentingan Lain'],
-        ['id' => 'lain', 'label' => 'Lain-Lain'],
-    ];
+    public $options_urgensi = [];
+
+    // public $options_urgensi;
     public $options_atasan, $karyawan_options;
 
-    //
+
+    public function initOptionsUrgensi()
+    {
+        $this->options_urgensi = CutiJenis::all()->map(fn($item) => [
+            'label' => $item->nama,
+            'value' => $item->id
+        ])->toArray();
+    }
+    //s
     // validations
     public function rules()
     {
@@ -66,7 +72,6 @@ class SuratCutiForm extends Form
 
     public function submiting($karyawan)
     {
-        $sisaAkhirCuti = $this->sisa_cuti - $this->lama_cuti;
         sort($this->tgl_cuti); // sort array $tgl_cuti
         $tgl_mulai = $this->tgl_cuti[0]; // First date
         $tgl_akhir = $this->tgl_cuti[count($this->tgl_cuti) - 1]; // Last date
@@ -80,31 +85,40 @@ class SuratCutiForm extends Form
             'tgl_akhir' => $tgl_akhir,
             'tgl_cuti' => json_encode($this->tgl_cuti),
             'lama_cuti' => $this->lama_cuti,
-            'urgensi' => $this->jenis_cuti,
+            'urgensi_id' => $this->jenis_cuti,
             'keterangan' => $this->keterangan,
             'alamat' => $this->alamat,
-            'acc' => json_encode($this->atasan),
             'created_by' => auth()->user()->id
         ];
 
         DB::beginTransaction();
         try {
-            SuratCuti::create($dataSuratCuti); //create record 
+            $cuti = SuratCuti::create($dataSuratCuti); //create record 
+            foreach ($this->atasan as $acc) {
 
-            $karyawan->cuti = $sisaAkhirCuti; //update sisa cuti
+                SuratCutiApproval::insert([
+                    'surat_cuti_id' => $cuti->id,
+                    'disetujui_oleh' => $acc,
+                    'status' => 'waiting',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+
+            $karyawan->cuti += $this->lama_cuti; //update sisa cuti
             $karyawan->save();
             DB::commit();
 
             return [
-                'status' => 'sukses',
+                'success' => true,
                 'message' => 'Inserted'
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             return [
-                'status' => 'error',
-                'message' => $e->getMessage()
+                'success' => false,
+                'message' => $e->getMessage() . $e->getLine()
             ];
         }
     }

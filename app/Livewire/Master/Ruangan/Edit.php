@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Master\Ruangan;
 
+use Throwable;
 use App\Models\Ruangan;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
@@ -42,7 +43,7 @@ class Edit extends Component
                 ->send();
 
             $this->dispatch('new-ruangan-updated');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             $this->toast()

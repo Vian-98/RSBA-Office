@@ -309,7 +309,7 @@ class JasaMedisBpjsService
     }
 
     // Pembagian Jasa Dokter Operatif (50 : 50) (Operator : Anastesi)
-    private function pembagianOperatifBase(JmProsentase $prosentase, object $totalVisit, array $data, float $feeSpesialis, float $feeUmum): array
+    private function calcPembagianOperatifBase(JmProsentase $prosentase, object $totalVisit, array $data, float $feeSpesialis, float $feeUmum): array
     {
         if ($prosentase->jasa_medis <= 0) {
             return $data;
@@ -333,6 +333,26 @@ class JasaMedisBpjsService
         return $data;
     }
 
+    private function calcPembagianPartusCuretBase(JmProsentase $prosentase, object $totalVisit, array $data, float $feeSpesialis, float $feeUmum): array
+    {
+        if ($prosentase->jasa_medis <= 0) {
+            return $data;
+        }
+
+        $totalJasaVisit = ($totalVisit->totalSp * $feeSpesialis) + ($totalVisit->totalUm * $feeUmum);
+        $visitPercentage = ($totalJasaVisit * 100) / ($prosentase->jasa_medis ?: 1);
+
+        if ($visitPercentage < 100) {
+            $data['jasaSp'] = $feeSpesialis;
+            $data['jasaUm'] = $feeUmum;
+            $data['jasaDpjp'] = $prosentase->jasa_medis - $totalJasaVisit;
+        } else {
+            $data['jasaDpjp'] = $prosentase->jasa_medis;
+        }
+
+        return $data;
+    }
+
     private function pembagianNonOperatif(JmProsentase $prosentase, object $totalVisit, array $data): array
     {
         $data['status']  = 'RANAP NON OPERATIF';
@@ -350,7 +370,7 @@ class JasaMedisBpjsService
     private function pembagianOperatif(JmProsentase $prosentase, object $totalVisit, array $data): array
     {
         $data['status'] = "RANAP OPERATIF";
-        return $this->pembagianOperatifBase(
+        return $this->calcPembagianOperatifBase(
             $prosentase,
             $totalVisit,
             $data,
@@ -362,7 +382,7 @@ class JasaMedisBpjsService
     private function pembagianMata(JmProsentase $prosentase, object $totalVisit, array $data): array
     {
         $data['status'] = "OPERATIF MATA";
-        return $this->pembagianOperatifBase(
+        return $this->calcPembagianOperatifBase(
             $prosentase,
             $totalVisit,
             $data,
@@ -374,19 +394,19 @@ class JasaMedisBpjsService
     private function pembagianPartus(JmProsentase $prosentase, object $totalVisit, array $data): array
     {
         $data['status'] = "PARTUS";
-        return $this->pembagianOperatifBase(
+        return $this->calcPembagianPartusCuretBase(
             $prosentase,
             $totalVisit,
             $data,
             $this->visitFeeSpesialis,
-            $this->visitFeeUmumForMataPartusSc
+            $this->visitFeeUmumForMataPartusSc,
         );
     }
 
     private function pembagianSc(JmProsentase $prosentase, object $totalVisit, array $data): array
     {
         $data['status']  = "SC";
-        return $this->pembagianOperatifBase(
+        return $this->calcPembagianOperatifBase(
             $prosentase,
             $totalVisit,
             $data,
@@ -398,7 +418,7 @@ class JasaMedisBpjsService
     private function pembagianCuret(JmProsentase $prosentase, object $totalVisit, array $data): array
     {
         $data['status'] = "CURET";
-        return $this->pembagianOperatifBase(
+        return $this->calcPembagianPartusCuretBase(
             $prosentase,
             $totalVisit,
             $data,

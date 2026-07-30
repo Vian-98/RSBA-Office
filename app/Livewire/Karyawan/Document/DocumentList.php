@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Karyawan\Document;
 
+use Throwable;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,6 @@ class DocumentList extends Component
     function mount($id)
     {
         $this->karyawanId = $id;
-        $this->documents = KaryawanDocument::where('karyawan_id', $id)->get();
     }
 
 
@@ -70,7 +70,7 @@ class DocumentList extends Component
             }
 
             DB::commit();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollback();
 
             $this->toast()
@@ -91,8 +91,15 @@ class DocumentList extends Component
         return view('components.skeleton', ['paragraf' => 2, 'footer' => 0]);
     }
 
+    protected $listeners = [
+        'document-karyawan-created' => '$refresh',
+        'document-karyawan-deleted' => '$refresh',
+    ];
+
     public function render()
     {
+        $this->documents = KaryawanDocument::where('karyawan_id', $this->karyawanId)->get();
+
         return view('livewire.karyawan.document.document-list');
     }
 }

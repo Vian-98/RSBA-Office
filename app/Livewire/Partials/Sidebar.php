@@ -5,166 +5,305 @@ namespace App\Livewire\Partials;
 use App\Models\Menu;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Isolate;
+use Livewire\Attributes\On;
 
+#[Isolate]
 class Sidebar extends Component
 {
     public $menus = [];
-
     public string $searchMenu = '';
 
-    function mount()
+    public function mount(): void
     {
-        $menus = $this->getMenuSubmenus();
-        /**
-         * Main menu & submenu di filter berdasarkan permission user 
-         */
-        if (!Auth::user()->hasRole('Super-Admin')) {
+        $this->loadMenus();
+    }
 
+    public function updatedSearchMenu(): void
+    {
+        // saat pencarian
+        $this->loadMenus();
+    }
 
-            // Not Super-Admin
-            // $menus = collect($menus)->map(function ($menu) {
-            //     // Check if the user has 'view-*' permission for the parent menu
-            //     $hasParentPermission = collect($menu['permission'])->contains(
-            //         fn($permission) => str_starts_with($permission, 'view') && Auth::user()->hasPermissionTo($permission)
-            //     );
+    #[On('updated-role-user')]
+    #[On('updated-permission-user')]
+    #[On('new-role-created')]
+    #[On('new-permission-created')]
+    #[On('menu-updated')]
+    #[On('new-menu-created')]
+    public function refreshMenus(): void
+    {
+        // Hapus cache milik user yang sedang login agar perubahan role/permission langsung berefek di UI-nya
+        cache()->forget('user-sidebar-menu:' . auth()->id());
+        cache()->forget('user-permissions:view:' . auth()->id());
+        cache()->forget('user-sidebar-menu:base');
+        
+        $this->loadMenus();
+    }
 
-            //     // Filter submenus to include only those with permissions
-            //     $permittedSubmenus = collect($menu['submenus'])->filter(function ($submenu) {
-            //         return collect($submenu['permission'])->contains(
-            //             fn($permission) => str_starts_with($permission, 'view') && Auth::user()->hasPermissionTo($permission)
-            //         );
-            //     })->values()->toArray();
+    /**
+     * Main entry point: load + filter + search menus into $this->menus
+     */
+    private function loadMenus(): void
+    {
+        $allMenus = $this->getPermittedMenus(auth()->id());
+        $allMenus = $this->injectAkreditasiSubMenus($allMenus);
+        $this->menus = $this->applySearchFilter($allMenus);
+    }
 
-            //     // Include the menu if the user has permission for the parent or any of its submenus
-            //     if ($hasParentPermission || count($permittedSubmenus) > 0) {
-            //         $menu['submenus'] = $permittedSubmenus; // Set only the permitted submenus
-            //         return $menu;
-            //     }
+    /**
+     * Get full menu tree filtered by user permissions (cached per user)
+     */
+    private function getPermittedMenus(int $userId): array
+    {
+        $cacheKey = 'user-sidebar-menu:' . $userId;
 
-            //     return null; // Exclude this menu if no permissions
-            // })->filter()->toArray();
+        return cache()->remember($cacheKey, 60, function () use ($userId) {
+            $allMenus = $this->getCachedBaseMenus();
 
+            if (Auth::user()->hasRole('Super-Admin')) {
+                return $allMenus;
+            }
 
+            $userViewPermissions = $this->getCachedUserViewPermissions($userId);
 
-            // BUKAN ADMIN
-            // New With Group
-            $menus = collect($menus) //Mengubah array `$menus` menjadi koleksi untuk memanfaatkan fungsi-fungsi Laravel Collection
+            return collect($allMenus)
+                ->map(function ($groupedMenus, $groupName) use ($userViewPermissions) {
+                    $filtered = collect($groupedMenus)
+                        ->map(fn($menu) => $this->filterMenuWithViewPermissions($menu, $userViewPermissions))
+                        ->filter()
+                        ->values()
+                        ->toArray();
 
-                //[01] each menu pada group , eksekusi per group menu
-                ->map(function ($groupedMenus, $groupName) {
-
-                    // Proses by setiap menu dalam group
-                    $filteredMenus = collect($groupedMenus)->map(function ($menu) {
-
-                        // [02] Check jika user has 'view-*' permission pada menu utama
-                        // **Pastikan key 'permission' ada dan tidak kosong
-                        $hasParentPermission = !empty($menu['permission'])
-                            &&
-                            collect($menu['permission'])->contains(
-                                fn($permission) => str_starts_with($permission, 'view') && Auth::user()->hasPermissionTo($permission)
-                            );
-
-                        // [03] Filter submenus jika subemenu adaa item nya
-                        $permittedSubmenus = collect($menu['submenus'] ?? [])->filter(function ($submenu) {
-                            // Periksa izin untuk setiap submenu
-                            // ** Pastikan key 'permission' pada submenu ada dan tidak kosong
-                            return !empty($submenu['permission'])
-                                &&
-                                collect($submenu['permission'])->contains(
-                                    fn($permission) => str_starts_with($permission, 'view') && Auth::user()->hasPermissionTo($permission)
-                                );
-
-                            // Mengatur hasil filter submenu menjadi array yang rapi
-                        })->values()->toArray();
-
-                        // [04] return ke group
-                        // Sertakan menu induk jika user memiliki izin atau submenunya ada yang diizinkan
-                        if ($hasParentPermission || count($permittedSubmenus) > 0) {
-                            $menu['submenus'] = $permittedSubmenus; // Menyimpan submenu yang diizinkan saja
-                            return $menu; // Mengembalikan menu dengan submenu yang sudah difilter
-                        }
-
-
-                        // EXCLUDE  
-                        //Jika tidak memiliki izin, menu ini tidak disertakan
-                        return null;
-
-                        // Menghapus menu yang `null` dan menyusun ulang indeks array
-                    })->filter()->values()->toArray();
-
-                    // Sertakan grup jika masih memiliki menu setelah difilter
-                    return count($filteredMenus) > 0 ? [$groupName => $filteredMenus] : null;
+                    return count($filtered) > 0 ? [$groupName => $filtered] : null;
                 })
-                ->filter() // Menghapus grup menu yang kosong
-                ->collapse() // Menggabungkan hasil menjadi struktur array satu tingkat
-                ->toArray(); // Mengubah kembali menjadi array biasa
-        }
-
-        // merge ke menus
-        $this->menus = array_merge($this->menus, $menus);
+                ->filter()
+                ->collapse()
+                ->toArray();
+        });
     }
 
-
-    public function updatedSearchMenu()
+    /**
+     * Base menu structure — cached globally (no user/search context)
+     */
+    private function getCachedBaseMenus(): array
     {
-        // Update the menus when searchMenu changes
-        $this->menus = $this->getMenuSubmenus();
-    }
+        return cache()->remember('user-sidebar-menu:base', 60 * 720, function () {
+            $mainMenu = Menu::first();
+            if (!$mainMenu) {
+                return [];
+            }
 
-
-    function getMenuSubmenus()
-    {
-        return cache()->remember('menus', 60 * 60, function () {
-            $MainMenu = Menu::first();
-            $menus = Menu::where('parent_id', $MainMenu->id) // select menu yg bukan submenu, parent_id = 0
-                ->with(['submenus' => function ($query) {
-                    // Filter submenus if search is applied
-                    if ($this->searchMenu) {
-                        $query->where('nama', 'like', '%' . $this->searchMenu . '%');
-                    }
-                }])
-                ->when(
-                    $this->searchMenu,
-                    function ($query) {
-                        $query->where('nama', 'like', '%' . $this->searchMenu . '%')
-                            ->orWhereHas('submenus', function ($subQuery) {
-                                $subQuery->where('nama', 'like', '%' . $this->searchMenu . '%');
-                            });
-                    }
-                )
+            return Menu::where('parent_id', $mainMenu->id)
+                ->with('submenus')
                 ->orderBy('group')
                 ->orderBy('nama')
                 ->get()
-                ->map(function ($menu) {
-                    return [ //mapping menu utama
-                        'id' => $menu->id,
-                        'nama' => $menu->nama,
-                        'route' => $menu->route ?? '',
-                        'icon' => $menu->icon ?? '',
-                        'permission' => $menu->permission ?? '',
-                        'group' => $menu->group ? $menu->group->nama() : '',
-                        'submenus' => $menu->submenus
-                            ->sortBy('nama') //sort submenu
-                            ->map(
-                                function ($submenu) {
-                                    return [ //mapping submenu
-                                        'id' => $submenu->id,
-                                        'nama' => $submenu->nama,
-                                        'route' => $submenu->route ?? '',
-                                        'icon' => $submenu->icon ?? '',
-                                        'permission' => $submenu->permission ?? '',
-                                        'group' => $submenu->group ? $submenu->group->nama() : '',
-                                    ];
-                                }
-                            )->toArray(),
-                    ];
-                })
+                ->map(fn($menu) => [
+                    'id'         => $menu->id,
+                    'nama'       => $menu->nama,
+                    'route'      => $menu->route ?? '',
+                    'icon'       => $menu->icon ?? '',
+                    'permission' => $menu->permission ?? '',
+                    'group'      => $menu->group?->nama() ?? '',
+                    'submenus'   => $menu->submenus
+                        ->sortBy(fn($sub) => trim($sub->nama) === 'Rekap Bulanan' ? '00_rekap_bulanan' : $sub->nama)
+                        ->map(fn($sub) => [
+                            'id'           => $sub->id,
+                            'nama'         => $sub->nama,
+                            'route'        => $sub->route ?? '',
+                            'route_params' => $sub->route_params ?? [],
+                            'icon'         => $sub->icon ?? '',
+                            'permission'   => $sub->permission ?? '',
+                            'group'        => $sub->group?->nama() ?? '',
+                        ])->values()->toArray(),
+                ])
                 ->groupBy('group')
                 ->toArray();
-
-            return $menus;
         });
+    }
+
+    /**
+     * Inject dynamic akreditasi sub-menus (kegiatan + chapters) from DB
+     * under the Akreditasi parent menu (id = 40)
+     */
+    private function injectAkreditasiSubMenus(array $menus): array
+    {
+        $user = Auth::user();
+        $hasAccess = $user?->hasRole('Super-Admin')
+            || $user?->can('view-kepegawaian-akreditasi')
+            || $user?->can('assesor-akreditasi');
+
+        if (!$hasAccess) {
+            return $menus;
+        }
+
+        try {
+            $latestKegiatan = DB::table('akre_kegiatan')
+                ->orderByDesc('tanggal')
+                ->orderByDesc('id')
+                ->first();
+        } catch (\Throwable $e) {
+            return $menus;
+        }
+
+        $dynamicSubMenus = [];
+
+        if ($latestKegiatan) {
+            $dynamicSubMenus[] = [
+                'id'           => 'akre-standar-dinamis',
+                'nama'         => 'Standar Akreditasi',
+                'route'        => 'kepegawaian.akreditasi.chapters',
+                'route_params' => ['uuid' => $latestKegiatan->uuid],
+                'icon'         => '',
+                'permission'   => [],
+                'group'        => 'sdm',
+            ];
+        }
+
+        // Inject into Akreditasi parent (id = 40)
+        foreach ($menus as $group => &$groupMenus) {
+            foreach ($groupMenus as &$menu) {
+                if ((int)$menu['id'] === 40) {
+                    $menu['submenus'] = array_merge(
+                        $menu['submenus'],   // existing: "Semua Kegiatan" (id=64)
+                        $dynamicSubMenus
+                    );
+                    break 2;
+                }
+            }
+        }
+        unset($groupMenus, $menu);
+
+        return $menus;
+    }
+
+
+
+    private function applySearchFilter(array $menus): array
+    {
+        if (empty($this->searchMenu)) {
+            return $menus;
+        }
+
+        $search = strtolower($this->searchMenu);
+        $result = [];
+
+        foreach ($menus as $group => $groupMenus) {
+            $matched = array_values(array_filter(
+                array_map(function ($menu) use ($search) {
+                    $menuMatches = str_contains(strtolower($menu['nama']), $search);
+
+                    $menu['submenus'] = array_values(array_filter(
+                        $menu['submenus'],
+                        fn($sub) => str_contains(strtolower($sub['nama']), $search)
+                    ));
+
+                    // Include menu if its name matches OR it has matching submenus
+                    return ($menuMatches || !empty($menu['submenus'])) ? $menu : null;
+                }, $groupMenus)
+            ));
+
+            if (!empty($matched)) {
+                $result[$group] = $matched;
+            }
+        }
+
+        return $result;
+    }
+
+    private function getCachedUserViewPermissions(int $userId): array
+    {
+        return cache()->remember('user-permissions:view:' . $userId, 60, function () {
+            $user = Auth::user();
+
+            $all = method_exists($user, 'getAllPermissions')
+                ? $user->getAllPermissions()->pluck('name')->toArray()
+                : $user->permissions->pluck('name')->toArray();
+
+            $permissions = array_values(array_filter($all, fn($p) => str_starts_with($p, 'view')));
+
+            // Tambahkan permission view koordinator jika user adalah koordinator
+            if ($user && $user->isKoordinator()) {
+                $permissions = array_merge($permissions, [
+                    'view-kepegawaian-jadwal-kerja',
+                    'view-kepegawaian-konfigurasi-jadwal',
+                ]);
+            }
+
+            // Setiap Karyawan / Dokter otomatis memiliki akses ke menu "Jadwal Tugas Saya"
+            if ($user && ($user->karyawan_id || $user->isDokter())) {
+                if (!in_array('view-profile-jadwal-tugas-saya', $permissions)) {
+                    $permissions[] = 'view-profile-jadwal-tugas-saya';
+                }
+            }
+
+            // Dokter otomatis memiliki akses melihat "Jadwal Kerja"
+            if ($user && $user->isDokter()) {
+                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
+                }
+            }
+
+            // Filter ketersediaan menu Jadwal Kerja sesuai wewenang user
+            if ($user && ($user->can('view-kepegawaian-jadwal-kerja') || $user->isDokter() || $user->isKoordinator())) {
+                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
+                }
+            } else {
+                $permissions = array_values(array_filter($permissions, fn($p) => $p !== 'view-kepegawaian-jadwal-kerja'));
+            }
+
+            // Allow users with assigned ruangan to view the asset & pengajuan menu
+            if ($user?->karyawan?->ruangan_id) {
+                if (!in_array('view-umum-asset', $permissions)) {
+                    $permissions[] = 'view-umum-asset';
+                }
+                if (!in_array('view-umum-pengajuan', $permissions)) {
+                    $permissions[] = 'view-umum-pengajuan';
+                }
+            }
+
+            return $permissions;
+        });
+    }
+
+    /**
+     * Filter a single menu item and its submenus by view permissions
+     */
+    private function filterMenuWithViewPermissions(array $menu, array $userViewPermissions): ?array
+    {
+        $menuPermissions    = !empty($menu['permission']) ? $menu['permission'] : [];
+        $hasParentPermission = !empty(array_intersect($menuPermissions, $userViewPermissions));
+
+        $permittedSubmenus = collect($menu['submenus'] ?? [])
+            ->filter(function ($submenu) use ($userViewPermissions) {
+                $submenuPermissions = !empty($submenu['permission']) ? $submenu['permission'] : [];
+                return !empty(array_intersect($submenuPermissions, $userViewPermissions));
+            })
+            ->values()
+            ->toArray();
+
+        if ($hasParentPermission || count($permittedSubmenus) > 0) {
+            $menu['submenus'] = $permittedSubmenus;
+            return $menu;
+        }
+
+        return null;
+    }
+
+    public function logout(): void
+    {
+        try {
+            Auth::guard('web')->logout();
+            session()->invalidate();
+            session()->regenerateToken();
+
+            $this->redirect(\App\Livewire\Auth\Login::class, navigate: true);
+        } catch (\Throwable $e) {
+            // silent fail
+        }
     }
 
     public function render()

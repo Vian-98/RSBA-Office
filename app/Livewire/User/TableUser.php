@@ -2,18 +2,21 @@
 
 namespace App\Livewire\User;
 
+use Filament\Actions\Contracts\HasActions;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Action;
 use App\Models\User;
 use Livewire\Component;
 use Filament\Tables\Table;
-use Filament\Tables\Actions\Action;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Tables\Concerns\InteractsWithTable;
 
-class TableUser extends Component implements HasForms, HasTable
+class TableUser extends Component implements HasForms, HasTable, HasActions
 {
+    use InteractsWithActions;
     use InteractsWithTable;
     use InteractsWithForms;
 
@@ -48,7 +51,7 @@ class TableUser extends Component implements HasForms, HasTable
                     ->label('Tgl Registrasi')
                     ->dateTime(format: 'd M Y H:i:s'),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('Role')
                     ->icon('tabler-circle-key')
                     ->color('primary')

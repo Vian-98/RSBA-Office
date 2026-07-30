@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Master\Bagian;
 
+use Throwable;
 use Livewire\Component;
 use App\Models\Sdm\Bagian;
 use Livewire\Attributes\Lazy;
@@ -43,7 +44,7 @@ class Add extends Component
             $this->toast()
                 ->success('Berhasil', 'Bagian / Divisi baru berhasil dibuat.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->toast()
                 ->error('Error', 'Failed : ' . $e->getMessage())
                 ->send();

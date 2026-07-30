@@ -2,9 +2,12 @@
 
 namespace App\Livewire\Karyawan;
 
+use Throwable;
 use App\Models\Sdm\Karyawan;
 use Livewire\Attributes\Lazy;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use TallStackUi\Traits\Interactions;
 
@@ -15,12 +18,20 @@ class Edit extends Component
 {
     use Interactions;
 
+    #[Locked]
     public ?Karyawan $karyawan;
 
     public function mount($id)
     {
         $this->karyawan = Karyawan::findOrFail($id);
-        $this->dispatch('update-title', title: $this->karyawan->nama);
+    }
+
+    #[On('updated-karywan')]
+    #[On('status-updated')]
+    #[On('new-jabatan-created')]
+    public function refreshKaryawan()
+    {
+        $this->karyawan->refresh();
     }
 
     function directback()
@@ -49,7 +60,7 @@ class Edit extends Component
             $this->toast()
                 ->success('Berhasil', "<b>$karyawan->nama</b>  berhasil dihapus.")
                 ->send();
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             $this->toast()
                 ->error('Failed', "Error : " . $th->getMessage())
                 ->send();
@@ -85,7 +96,7 @@ class Edit extends Component
 
     public function render()
     {
-        $this->authorize('edit-karyawan');
+        $this->authorize('edit-kepegawaian-karyawan');
         return view('livewire.karyawan.edit');
     }
 }

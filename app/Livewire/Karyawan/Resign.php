@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Karyawan;
 
+use Throwable;
 use Livewire\Component;
 use App\Models\Sdm\Karyawan;
 use Livewire\Attributes\Lazy;
@@ -46,10 +47,12 @@ class Resign extends Component
 
             DB::commit();
 
+            $this->dispatch('karyawan-resign-updated');
+
             $this->toast()
                 ->success('Berhasil', 'Karyawan berhasil diupdate.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
 
             $this->toast()

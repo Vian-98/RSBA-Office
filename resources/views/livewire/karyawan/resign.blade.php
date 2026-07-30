@@ -8,7 +8,7 @@
             <x-ts:date wire:model.lazy='tgl_resign' placeholder="Tgl Resign" />
         </div>
         <div class="ml-auto flex justify-end gap-2">
-            <x-ts:button outline x-on:click="$modalClose('modal-resign-karyawan')">
+            <x-ts:button outline x-on:click="$tsui.close.modal('modal-resign-karyawan')">
                 Batal
             </x-ts:button>
             <x-ts:button type="submit" wire:click='submit' icon="tabler.checks">

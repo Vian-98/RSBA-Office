@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Master\Supplier;
 
+use Throwable;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
 use App\Models\Master\Supplier;
@@ -14,7 +15,7 @@ class Edit extends Component
 {
     use Interactions;
 
-    public string $nama, $telp, $email, $npwp, $bank, $norek, $an, $alamat;
+    public string $nama = '', $telp = '', $email = '', $npwp = '', $bank = '', $norek = '', $an = '', $alamat = '';
 
     public function rules(): array
     {
@@ -36,14 +37,14 @@ class Edit extends Component
 
     function loadData()
     {
-        $this->nama = $this->supplier->nama;
-        $this->telp = $this->supplier->telp;
-        $this->email = $this->supplier->email;
-        $this->npwp = $this->supplier->npwp;
-        $this->bank = $this->supplier->bank;
-        $this->norek = $this->supplier->norek;
-        $this->an = $this->supplier->an;
-        $this->alamat = $this->supplier->alamat;
+        $this->nama = $this->supplier->nama ?? '';
+        $this->telp = $this->supplier->telp ?? '';
+        $this->email = $this->supplier->email ?? '';
+        $this->npwp = $this->supplier->npwp ?? '';
+        $this->bank = $this->supplier->bank ?? '';
+        $this->norek = $this->supplier->norek ?? '';
+        $this->an = $this->supplier->an ?? '';
+        $this->alamat = $this->supplier->alamat ?? '';
     }
 
     function submit()
@@ -71,7 +72,7 @@ class Edit extends Component
             $this->toast()
                 ->success('Berhasil', 'Supplier berhasil disimpan.')
                 ->send();
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             DB::rollBack();
 
             $this->toast()

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Karyawan;
 
+use Throwable;
 use App\Enums\Agama;
 use App\Enums\Kelamin;
 use Livewire\Component;
@@ -27,6 +28,17 @@ class EditIdentitas extends Component
         ['value' => 'single', 'label' => 'Janda/Duda']
     ];
 
+    public $ptkp_options = [
+        ['value' => 'TK0', 'label' => 'TK/0 (Tidak Kawin, 0 Tanggungan)'],
+        ['value' => 'TK1', 'label' => 'TK/1 (Tidak Kawin, 1 Tanggungan)'],
+        ['value' => 'TK2', 'label' => 'TK/2 (Tidak Kawin, 2 Tanggungan)'],
+        ['value' => 'TK3', 'label' => 'TK/3 (Tidak Kawin, 3 Tanggungan)'],
+        ['value' => 'K0',  'label' => 'K/0 (Kawin, 0 Tanggungan)'],
+        ['value' => 'K1',  'label' => 'K/1 (Kawin, 1 Tanggungan)'],
+        ['value' => 'K2',  'label' => 'K/2 (Kawin, 2 Tanggungan)'],
+        ['value' => 'K3',  'label' => 'K/3 (Kawin, 3 Tanggungan)'],
+    ];
+
     public $isDomisiliKTP = false;
 
     public function mount($id)
@@ -48,12 +60,19 @@ class EditIdentitas extends Component
         try {
             $this->form->updateIdentitas();
 
+            // Clear cache for updated employee's user, and current logged-in user
+            $karyawan = $this->form->karyawan;
+            if ($karyawan && $karyawan->user) {
+                \Illuminate\Support\Facades\Cache::forget("navbar-user:" . $karyawan->user->id);
+            }
+            \Illuminate\Support\Facades\Cache::forget("navbar-user:" . auth()->id());
+
             $this->dispatch('updated-karywan');
 
             $this->toast()
                 ->success('Updated', 'Update identitas karyawan berhasil.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->toast()
                 ->error('Failed', 'Error ' . $e->getMessage())
                 ->send();
@@ -80,6 +99,7 @@ class EditIdentitas extends Component
 
     public function render()
     {
-        return view('livewire.karyawan.edit-identitas');
+        $canEditTglMasuk = auth()->user()->hasRole('Staff-SDM') || auth()->user()->hasRole('Super-Admin');
+        return view('livewire.karyawan.edit-identitas', compact('canEditTglMasuk'));
     }
 }

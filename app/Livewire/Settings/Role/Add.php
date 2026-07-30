@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Settings\Role;
 
+use Throwable;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
 use Spatie\Permission\Models\Role;
@@ -34,7 +35,7 @@ class Add extends Component
             $this->toast()
                 ->success('Berhasil', 'Role baru berhasil dibuat.')
                 ->send();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->toast()
                 ->success('Failed', 'Error : ' . $e->getMessage())
                 ->send();

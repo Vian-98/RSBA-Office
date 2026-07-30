@@ -1,0 +1,116 @@
+@import './loader.css';
+@import "tailwindcss";
+@tailwind utilities;
+
+
+
+@source "../../../vendor/tallstackui/tallstackui/src";
+@import '../../vendor/tallstackui/tallstackui/css/v4.css';
+@plugin "@tailwindcss/forms";
+@source '../../vendor/tallstackui/tallstackui/**/*.php';
+
+@source '../../vendor/tallstack-ui/tallstack-ui/src/**/*.php';
+@source '../../vendor/tallstack-ui/tallstack-ui/src/**/*.blade.php';
+
+/* Fix: TallStackUI toast overlay blocking clicks on Tailwind v4 */
+[x-data^="tallstackui_toastBase"] {
+    pointer-events: none !important;
+}
+
+[x-data^="tallstackui_toastBase"] [class*="pointer-events-auto"] {
+    pointer-events: auto !important;
+}
+
+
+/* TallStackUI v3 requires this */
+/* @import "@tailwindcss/forms"; */
+@plugin "@tailwindcss/typography";
+
+
+/* filament */
+@import '../../vendor/filament/tables/resources/css/index.css';
+@import '../../vendor/filament/actions/resources/css/index.css';
+@import '../../vendor/filament/forms/resources/css/index.css';
+@import '../../vendor/filament/schemas/resources/css/index.css';
+
+/* end filament */
+
+/* Scrollbar */
+@layer utilities {
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .scrollbar-hidden::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .scrollbar-hidden {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
+
+
+    /* CV Style */
+    .skill-bar {
+        @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden;
+    }
+
+    .skill-level {
+        @apply h-full bg-indigo-500 rounded-full;
+    }
+
+    .section-title {
+        @apply text-xl font-bold text-indigo-500 mb-4 pb-2 border-b-2 border-indigo-500;
+    }
+
+    .timeline-item {
+        @apply relative pl-8 pb-6 border-l-2 border-indigo-500;
+    }
+
+    .timeline-item:last-child {
+        @apply pb-0;
+    }
+
+    .timeline-dot {
+        @apply absolute w-2 h-2 rounded-full bg-indigo-500 left-[-5px] top-3;
+    }
+
+    /* end CV Style */
+
+}
+
+
+#sidebar.hidden {
+    display: none;
+}
+
+#main-content.w-full {
+    width: 100%;
+}
+
+
+/* filament table reduce rows padding */
+.fi-ta-ctn .py-4 {
+    padding-top: .625rem !important;
+    padding-bottom: .625rem !important;
+}
+
+/* Hide print area on screen */
+/* .print-hidden {
+    display: none;
+} */
+
+/* Print area */
+/* @media print {
+    body.print-mode>*:not(#print-permintaan-approval) {
+        display: none !important;
+    }
+
+    body.print-mode #print-permintaan-approval {
+        display: block !important;
+        position: static !important;
+        left: auto !important;
+    }
+} */
