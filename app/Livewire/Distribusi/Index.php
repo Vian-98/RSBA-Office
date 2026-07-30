@@ -20,7 +20,7 @@ class Index extends Component
     #[Locked]
     public ?Distribusi $distribusi;
 
-    public bool $stats = false;
+
     public $search = '';
 
 
@@ -33,6 +33,12 @@ class Index extends Component
                 return null;
             }
         );
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function getHasNewRequestProperty(): bool
+    {
+        return \App\Models\Gudang\PembelianRequest::where('status', 'pending')->exists();
     }
 
     public function render()

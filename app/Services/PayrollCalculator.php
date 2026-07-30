@@ -48,40 +48,43 @@ class PayrollCalculator
         if ($isTetap) {
             // --- KARYAWAN TETAP ---
             // 1. Determine education row
-            $latestPendidikan = DB::table('sdm_kary_pendidikan')
-                ->where('karyawan_id', $karyawan->id)
-                ->orderBy('tahun_lulus', 'desc')
-                ->first();
+            // Try manual override first (pendidikan_setara directly matches matrix group)
+            if (!empty($karyawan->pendidikan_setara)) {
+                $rowKey = $karyawan->pendidikan_setara;
+            } else {
+                // Fallback to real highest education
+                $allPendidikan = DB::table('sdm_kary_pendidikan')
+                    ->where('karyawan_id', $karyawan->id)
+                    ->get();
 
-            $tingkat = $latestPendidikan ? $latestPendidikan->tingkat : 'sma';
-            $rowKey = match ($tingkat) {
-                'sd', 'smp', 'sma', 'lain' => 'SMA/SMK',
-                'd3', 'd4' => 'DIII/DIV',
-                's1', 'profesi', 'dokter' => 'SI/Profesi',
-                's2', 's3', 'spesialis' => 'SII',
-                default => 'SMA/SMK',
-            };
+                $tingkat = 'sma';
+                $maxScore = 0;
+                $scoreMap = [
+                    's2' => 4, 's3' => 4, 'spesialis' => 4,
+                    's1' => 3, 'profesi' => 3, 'dokter' => 3,
+                    'd3' => 2, 'd4' => 2,
+                    'sd' => 1, 'smp' => 1, 'sma' => 1, 'lain' => 1,
+                ];
 
-            // 2. Determine years of service column (step interval: 0, 3, 6, ..., 39)
-            $masaKerjaKeys = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39];
-            $selectedKey = 0;
-            foreach ($masaKerjaKeys as $key) {
-                if ($yearsOfService >= $key) {
-                    $selectedKey = $key;
-                } else {
-                    break;
+                foreach ($allPendidikan as $p) {
+                    $score = $scoreMap[$p->tingkat] ?? 1;
+                    if ($score > $maxScore) {
+                        $maxScore = $score;
+                        $tingkat = $p->tingkat;
+                    }
                 }
+
+                $rowKey = match ($tingkat) {
+                    'sd', 'smp', 'sma', 'lain' => 'SMA/SMK',
+                    'd3', 'd4' => 'DIII/DIV',
+                    's1', 'profesi', 'dokter' => 'SI/Profesi',
+                    's2', 's3', 'spesialis' => 'SII',
+                    default => 'SMA/SMK',
+                };
             }
 
-            // 3. Matrix lookup for Golongan (1 to 15)
-            $grid = [
-                'SMA/SMK' => [0 => 15, 3 => 15, 6 => 14, 9 => 13, 12 => 12, 15 => 11, 18 => 10, 21 => 9, 24 => 8, 27 => 7, 30 => 6, 33 => 5, 36 => 4, 39 => 3],
-                'DIII/DIV' => [0 => 15, 3 => 14, 6 => 13, 9 => 12, 12 => 11, 15 => 10, 18 => 9, 21 => 8, 24 => 7, 27 => 6, 30 => 5, 33 => 4, 36 => 3, 39 => 2],
-                'SI/Profesi' => [0 => 14, 3 => 13, 6 => 12, 9 => 11, 12 => 10, 15 => 9, 18 => 8, 21 => 7, 24 => 6, 27 => 5, 30 => 4, 33 => 3, 36 => 2, 39 => 1],
-                'SII' => [0 => 13, 3 => 12, 6 => 11, 9 => 10, 12 => 9, 15 => 8, 18 => 7, 21 => 6, 24 => 5, 27 => 4, 30 => 3, 33 => 2, 36 => 1, 39 => 1],
-            ];
-
-            $golonganGrade = $grid[$rowKey][$selectedKey] ?? 15;
+            // 2. Matrix lookup for Golongan (1 to 15) using database
+            $golonganGrade = \App\Models\Sdm\PayrollGolonganMatrix::lookup($rowKey, $yearsOfService);
 
             // 4. Calculate Basic Salary (Gapok) based on Golongan Grade
             // Formula: 75% * UMK * (1 + (15 - Golongan) * 0.05)
@@ -128,11 +131,13 @@ class PayrollCalculator
             $allocationsBreakdown = [];
         }
 
-        // 7. Calculate Tunjangan Jabatan based on Jabatan
+        // 7. Calculate Tunjangan Jabatan based on Jabatan (Only for Karyawan Tetap)
         $tunjanganJabatan = 0.0;
-        $latestJab = $karyawan->jabatan->first();
-        if ($latestJab) {
-            $tunjanganJabatan = (double) $latestJab->tunjangan_jabatan;
+        if ($isTetap) {
+            $latestJab = $karyawan->jabatan->first();
+            if ($latestJab) {
+                $tunjanganJabatan = (double) $latestJab->tunjangan_jabatan;
+            }
         }
 
         return [
@@ -144,6 +149,7 @@ class PayrollCalculator
             'tunjangan_golongan_value' => round($tunjanganGolonganVal),
             'umk' => $umk,
             'allocations_breakdown' => $allocationsBreakdown,
+            'masa_kerja_tahun' => $yearsOfService,
         ];
     }
 
@@ -154,11 +160,13 @@ class PayrollCalculator
      * @param double $tunjanganTetap
      * @param double $totalPendapatan
      * @param int $bpjsKeluargaTambahan
+     * @param Karyawan|null $karyawan
+     * @param string|null $periode
      * @return array
      */
-    public static function calculateDeductions($gajiPokok, $tunjanganTetap, $totalPendapatan, int $bpjsKeluargaTambahan = 0): array
+    public static function calculateDeductions($gajiPokok, $tunjanganTetap, $totalPendapatan, int $bpjsKeluargaTambahan = 0, ?Karyawan $karyawan = null, ?string $periode = null): array
     {
-        // BPJS calculation basis: Gapok + Tunjangan Tetap
+        // 1. BPJS calculation basis: Gapok + Tunjangan Tetap
         $basis = $gajiPokok + $tunjanganTetap;
 
         // BPJS Kesehatan (BPJS Kes)
@@ -168,17 +176,130 @@ class PayrollCalculator
         // BPJS Ketenagakerjaan (BPJS TK)
         $potonganBpjsTk = $basis * 0.03;
 
-        // PPh 21 Calculation: 5% flat of taxable income
-        $taxableIncome = $totalPendapatan - ($potonganBpjsKes + $potonganBpjsTk);
-        if ($taxableIncome < 0) {
-            $taxableIncome = 0;
+        // 2. PPh 21 Calculation
+        $pph21_calculated = 0.0;
+        
+        $hasNpwp = true;
+        $ptkpStatus = 'TK0';
+        if ($karyawan) {
+            $hasNpwp = !empty($karyawan->npwp);
+            $ptkpStatus = $karyawan->ptkp_status ?: 'TK0';
         }
-        $potonganPph21 = $taxableIncome * 0.05;
 
+        $periode = $periode ?: date('Y-m');
+        $month = (int) substr($periode, 5, 2);
+        $year = (int) substr($periode, 0, 4);
+
+        // Check if it is the reconciliation month (December or resignation month)
+        $isReconciliationMonth = ($month === 12);
+        if ($karyawan && !empty($karyawan->resign_at)) {
+            $resignDate = Carbon::parse($karyawan->resign_at);
+            if ($resignDate->year === $year && $resignDate->month === $month) {
+                $isReconciliationMonth = true;
+            }
+        }
+
+        if ($karyawan && $isReconciliationMonth) {
+            // Skema Desember / Bulan Terakhir (Progresif Pasal 17)
+            $priorSlips = DB::table('sdm_payroll_slips')
+                ->where('karyawan_id', $karyawan->id)
+                ->where('periode', 'like', "$year-%")
+                ->where('periode', '!=', $periode)
+                ->get();
+
+            $priorBruto = $priorSlips->sum('total_gaji');
+            $priorPph21 = $priorSlips->sum('potongan_pph21');
+            $priorBpjsTk = $priorSlips->sum('potongan_bpjs_tk');
+
+            $total_bruto_ytd = $priorBruto + $totalPendapatan;
+            $total_bpjs_tk_ytd = $priorBpjsTk + $potonganBpjsTk;
+
+            // Biaya Jabatan (5% of gross, max 6,000,000 per year)
+            $biaya_jabatan = min(0.05 * $total_bruto_ytd, 6000000.00);
+
+            // Neto setahun
+            $neto_setahun = $total_bruto_ytd - $biaya_jabatan - $total_bpjs_tk_ytd;
+
+            // Get PTKP threshold
+            $ptkpNominal = DB::table('sdm_payroll_ptkp')
+                ->where('status', $ptkpStatus)
+                ->where('berlaku_mulai_tahun', '<=', $year)
+                ->orderBy('berlaku_mulai_tahun', 'desc')
+                ->value('nominal_setahun') ?: 54000000.00;
+
+            // PKP
+            $pkp = $neto_setahun - $ptkpNominal;
+            if ($pkp < 0) {
+                $pkp = 0;
+            }
+            // Round down PKP to nearest 1,000
+            $pkp = floor($pkp / 1000) * 1000;
+
+            // Compute Progressive Pasal 17
+            $pasal17Brackets = DB::table('sdm_payroll_pasal17')
+                ->where('berlaku_mulai_tahun', '<=', $year)
+                ->orderBy('pkp_bawah', 'asc')
+                ->get();
+
+            $pajakSetahun = 0;
+            $remainingPkp = $pkp;
+
+            foreach ($pasal17Brackets as $bracket) {
+                $bawah = (double) $bracket->pkp_bawah;
+                $atas = $bracket->pkp_atas ? (double) $bracket->pkp_atas : null;
+                $tarif = (double) $bracket->tarif_persen / 100;
+
+                if ($atas !== null) {
+                    $range = $atas - $bawah;
+                    if ($remainingPkp > $range) {
+                        $pajakSetahun += $range * $tarif;
+                        $remainingPkp -= $range;
+                    } else {
+                        $pajakSetahun += $remainingPkp * $tarif;
+                        $remainingPkp = 0;
+                        break;
+                    }
+                } else {
+                    $pajakSetahun += $remainingPkp * $tarif;
+                    $remainingPkp = 0;
+                    break;
+                }
+            }
+
+            // Current month PPh 21
+            $pph21_calculated = $pajakSetahun - $priorPph21;
+        } else {
+            // Skema Bulanan Biasa (Jan - Nov) -> Tarif Efektif Rata-rata (TER)
+            // Kategori TER berdasarkan status PTKP
+            $kategoriTer = match ($ptkpStatus) {
+                'TK0', 'TK1', 'K0' => 'A',
+                'TK2', 'TK3', 'K1', 'K2' => 'B',
+                'K3' => 'C',
+                default => 'A',
+            };
+
+            // Lookup TER rate
+            $tarif_persen = DB::table('sdm_payroll_ter')
+                ->where('kategori', $kategoriTer)
+                ->where('bruto_bawah', '<=', $totalPendapatan)
+                ->where('bruto_atas', '>=', $totalPendapatan)
+                ->where('berlaku_mulai_tahun', '<=', $year)
+                ->orderBy('berlaku_mulai_tahun', 'desc')
+                ->value('tarif_persen') ?: 0.0;
+
+            $pph21_calculated = $totalPendapatan * ($tarif_persen / 100);
+        }
+
+        // Apply 20% surcharge if NPWP is empty
+        if (!$hasNpwp) {
+            $pph21_calculated = $pph21_calculated * 1.2;
+        }
+
+        // Return results
         return [
             'potongan_bpjs_kes' => round($potonganBpjsKes),
             'potongan_bpjs_tk' => round($potonganBpjsTk),
-            'potongan_pph21' => round($potonganPph21),
+            'potongan_pph21' => max(0, round($pph21_calculated)),
         ];
     }
 }

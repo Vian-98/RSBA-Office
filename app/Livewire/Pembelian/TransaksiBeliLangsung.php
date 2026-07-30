@@ -41,6 +41,7 @@ class TransaksiBeliLangsung extends Component
     public int $supplier;
     public string $no_faktur, $keterangan;
     public $status_pembayaran = 'lunas';
+    public bool $isSaving = false;
     public array $cabarOptions = [
         ['value' => 'lunas', 'nama' => 'Tunai / Lunas'],
         ['value' => 'tempo', 'nama' => 'Tempo'],
@@ -129,18 +130,38 @@ class TransaksiBeliLangsung extends Component
 
     public function loadProducts($selectedDetIds)
     {
-        $pengajuan = PembelianRequestDetails::with(['barang', 'barang.satuan'])
+        $pengajuan = PembelianRequestDetails::with(['barang', 'barang.satuan', 'barang.konversiSatuans.satuan'])
             ->whereIn('id', $selectedDetIds)
             ->selectRaw('barang_id, SUM(jml_disetujui) as total_jml_disetujui')
             ->groupBy('barang_id')
             ->get()
             ->map(function ($item): array {
+                $barang = $item->barang;
+                
+                $konversiList = [];
+                $konversiList[] = [
+                    'satuan_id' => $barang->satuan_id,
+                    'nama_satuan' => $barang->satuan->nama,
+                    'rasio' => 1
+                ];
+                foreach ($barang->konversiSatuans as $k) {
+                    $konversiList[] = [
+                        'satuan_id' => $k->satuan_id,
+                        'nama_satuan' => $k->satuan->nama,
+                        'rasio' => $k->rasio
+                    ];
+                }
+
                 return [
-                    'id' => $item->barang_id,
-                    'bhp' => $item->barang->bhp,
-                    'sku' => $item->barang->sku,
-                    'nama' => $item->barang->nama,
-                    'satuan' => $item->barang->satuan->nama,
+                    'id' => $barang->id,
+                    'bhp' => $barang->bhp,
+                    'sku' => $barang->sku,
+                    'nama' => $barang->nama,
+                    'satuan' => $barang->satuan->nama,
+                    'satuan_beli_id' => $barang->satuan_id,
+                    'rasio' => 1,
+                    'selected_satuan_val' => $barang->satuan_id . '_1',
+                    'pilihan_satuan' => $konversiList,
                     'jumlah' => $item->total_jml_disetujui,
                     'harga' => 0,
                     'diskon' => 0,
@@ -157,18 +178,36 @@ class TransaksiBeliLangsung extends Component
 
     public function getBarang($id): ?object
     {
-        $barang = Barang::with('satuan')
+        $barang = Barang::with(['satuan', 'konversiSatuans.satuan'])
             ->where('id', $id)
             ->orWhere('sku', $id)
             ->first();
 
         if ($barang) {
+            $konversiList = [];
+            // Add base unit as konversi ratio 1
+            $konversiList[] = [
+                'satuan_id' => $barang->satuan_id,
+                'nama_satuan' => $barang->satuan->nama,
+                'rasio' => 1
+            ];
+            // Add alternative units
+            foreach ($barang->konversiSatuans as $k) {
+                $konversiList[] = [
+                    'satuan_id' => $k->satuan_id,
+                    'nama_satuan' => $k->satuan->nama,
+                    'rasio' => $k->rasio
+                ];
+            }
+
             $items = (object) [
                 'id' => $barang->id,
                 'bhp' => $barang->bhp == 1 ? true : false,
                 'sku' => $barang->sku,
                 'nama' => $barang->nama,
                 'satuan' => $barang->satuan->nama,
+                'satuan_id' => $barang->satuan_id,
+                'pilihan_satuan' => $konversiList,
             ];
             return $items;
         }
@@ -199,6 +238,11 @@ class TransaksiBeliLangsung extends Component
          */
 
         $this->validate();
+
+        if ($this->isSaving) {
+            return;
+        }
+        $this->isSaving = true;
 
         DB::beginTransaction();
         try {
@@ -259,14 +303,23 @@ class TransaksiBeliLangsung extends Component
 
             // 03. Detail
             foreach ($this->cartItems as $item) {
+                // Calculate base quantity
+                $rasio = $item['rasio'] ?? 1;
+                $qtyBeli = $item['jumlah'] ?? 0;
+                $jumlahBase = $qtyBeli * $rasio;
+                $hargaSatuanBase = $item['harga'] / $rasio; // convert package price to base unit price
+
                 // 03.01 Pembelian Detail
                 $dets = PembelianDetail::create([
                     'pembelian_id' => $pembelian->id,
                     'barang_id' => $item['id'],
-                    'jumlah' => $item['jumlah'] ?? 0,
+                    'satuan_beli_id' => $item['satuan_beli_id'] ?? $item['satuan_id'],
+                    'qty_beli' => $qtyBeli,
+                    'rasio' => $rasio,
+                    'jumlah' => $jumlahBase,
                     'batch' => $item['batch'] ?? null,
                     'warranty' => $item['waranty_date'] ?? null,
-                    'harga_satuan' => $item['harga'] ?? 0,
+                    'harga_satuan' => $hargaSatuanBase,
                     'diskon' => $item['diskon'] ?? 0,
                     'ppn' => $item['ppn'] ?? 0
                 ]);
@@ -275,38 +328,20 @@ class TransaksiBeliLangsung extends Component
                 $terimaDets = PenerimaanDetail::create([
                     'penerimaan_id' => $penerimaan->id,
                     'pembelian_det_id' => $dets->id,
-                    'jumlah' => $dets->jumlah,
+                    'jumlah' => $jumlahBase,
                 ]);
 
                 // 03.03 Stok In
                 $stok = Stok::create([
                     'penerimaan_det_id' => $terimaDets->id,
                     'barang_id' => $dets->barang_id,
-                    'stok' => $dets->jumlah,
+                    'stok' => $jumlahBase,
                     'batch' => $dets->batch,
-                    'harga_satuan' => $dets->harga_satuan,
+                    'harga_satuan' => $hargaSatuanBase,
                 ]);
 
                 // 03.04 Mutasi Stok
-                StokMutasi::insert(
-                    [
-                        "stok_id" => $stok->id,
-                        "barang_id" => $dets->barang_id,
-                        "jenis_mutasi" => 'PEMBELIAN',
-                        "jumlah" => $dets->jumlah,
-                        "multiplier" => 1,
-                        "stok_sebelum" => 0,
-                        "stok_sesudah" => $dets->jumlah,
-                        "keterangan" => 'Pembelian No. ' . $pembelian->no,
-                        "referensi_type" => Pembelian::class,
-                        "referensi_id" => $pembelian->id,
-                        "created_by" => auth()->id(),
-                        "is_posted" => 1,
-                        "is_reversed" => 0,
-                        "created_at" => now(),
-                        "updated_at" => now()
-                    ]
-                );
+                $this->createMutasiPembelian($stok, $dets, $pembelian, $jumlahBase);
             }
             // Update permintaan details
             if (!empty($this->selectedPermintaan)) {
@@ -317,6 +352,7 @@ class TransaksiBeliLangsung extends Component
             DB::commit();
 
             $this->dispatch('new-transaksi-langsung-created');
+            $this->dispatch('close-modal', id: 'modal-pengajuan-to-langsung');
 
             $this->toast()
                 ->success('Berhasil', 'Pembelian berhasil disimpan.')
@@ -324,6 +360,7 @@ class TransaksiBeliLangsung extends Component
         } catch (Throwable $e) {
             // Rollback
             DB::rollBack();
+            $this->isSaving = false;
 
             $this->toast()
                 ->error('Failed', 'Error:' . $e->getMessage())
@@ -331,6 +368,40 @@ class TransaksiBeliLangsung extends Component
         }
     }
 
+
+    /**
+     * Catat mutasi stok untuk transaksi pembelian langsung.
+     * stok_sebelum = 0 karena ini adalah baris stok (batch) baru yang baru pertama kali dibuat.
+     */
+    private function createMutasiPembelian(
+        object $stok,
+        object $dets,
+        object $pembelian,
+        int $jumlahBase
+    ): void {
+        $keterangan = sprintf(
+            'Pembelian Langsung No. %s | Barang ID: %d | Qty: %d',
+            $pembelian->no,
+            $dets->barang_id,
+            $jumlahBase
+        );
+
+        StokMutasi::create([
+            'stok_id'       => $stok->id,
+            'barang_id'     => $dets->barang_id,
+            'jenis_mutasi'  => 'PEMBELIAN',
+            'jumlah'        => $jumlahBase,
+            'multiplier'    => 1,
+            'stok_sebelum'  => 0,          // Batch stok baru, belum pernah ada sebelumnya
+            'stok_sesudah'  => $jumlahBase,
+            'keterangan'    => $keterangan,
+            'referensi_type' => PembelianDetail::class,
+            'referensi_id'  => $dets->id,
+            'created_by'    => auth()->id(),
+            'is_posted'     => 1,
+            'is_reversed'   => 0,
+        ]);
+    }
 
     // generate nomor
     // urutan nomor berganti setiap tahun

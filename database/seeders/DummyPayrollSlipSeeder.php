@@ -8,6 +8,8 @@ use App\Services\PayrollCalculator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
+use Illuminate\Support\Facades\Schema;
+
 class DummyPayrollSlipSeeder extends Seeder
 {
     /**
@@ -22,7 +24,19 @@ class DummyPayrollSlipSeeder extends Seeder
         }
 
         // Hapus data lama agar tidak duplikat saat di-seed ulang
-        DB::table('sdm_payroll_slips')->truncate();
+        Schema::disableForeignKeyConstraints();
+        if (DB::getDriverName() === 'sqlite') {
+            DB::table('sdm_payroll_slip_allocations')->delete();
+            DB::table('sdm_payroll_slip_allowances')->delete();
+            DB::table('sdm_payroll_pph21_override_logs')->delete();
+            DB::table('sdm_payroll_slips')->delete();
+        } else {
+            DB::table('sdm_payroll_slip_allocations')->truncate();
+            DB::table('sdm_payroll_slip_allowances')->truncate();
+            DB::table('sdm_payroll_pph21_override_logs')->truncate();
+            DB::table('sdm_payroll_slips')->truncate();
+        }
+        Schema::enableForeignKeyConstraints();
 
         $months = [];
         $currentDate = Carbon::parse('2026-07-01');
@@ -30,6 +44,7 @@ class DummyPayrollSlipSeeder extends Seeder
             $months[] = $currentDate->copy()->subMonths($i)->format('Y-m');
         }
 
+        /** @var Karyawan $karyawan */
         foreach ($karyawans as $karyawan) {
             $base = PayrollCalculator::calculate($karyawan);
             
@@ -63,7 +78,9 @@ class DummyPayrollSlipSeeder extends Seeder
                     $base['gaji_pokok'],
                     $base['tunjangan_tetap'],
                     $totalEarnings,
-                    $bpjsKeluargaTambahan
+                    $bpjsKeluargaTambahan,
+                    $karyawan,
+                    $m
                 );
                 
                 $bpjsKes = $deductions['potongan_bpjs_kes'];
@@ -105,7 +122,7 @@ class DummyPayrollSlipSeeder extends Seeder
                     'total_gaji' => $totalEarnings,
                     'total_potongan' => $totalPotongan,
                     'gaji_bersih' => $gajiBersih,
-                    'created_by' => 1,
+                    'created_by' => \App\Models\User::first()?->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

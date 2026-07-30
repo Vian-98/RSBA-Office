@@ -12,8 +12,9 @@ class Menu extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'permission' => 'array',
-        'group' => MenuGroup::class
+        'permission'   => 'array',
+        'route_params' => 'array',
+        'group'        => MenuGroup::class
     ];
 
     function parent(): BelongsTo

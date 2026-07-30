@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <!-- Breadcrumb & Header -->
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
         <div>
             <nav class="flex text-xs text-slate-400 font-semibold mb-1" aria-label="Breadcrumb">
                 <ol class="inline-flex items-center space-x-1 md:space-x-2">
@@ -13,12 +13,12 @@
                     <li>
                         <div class="flex items-center">
                             <x-tabler-chevron-right class="h-3 w-3 text-slate-400 mx-1" />
-                            <span class="text-slate-600">Aturan Pajak PPh 21</span>
+                            <span class="text-slate-650">Aturan Pajak PPh 21</span>
                         </div>
                     </li>
                 </ol>
             </nav>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-800">
+            <h1 class="text-lg font-bold text-slate-800">
                 Konfigurasi Aturan Pajak PPh 21
             </h1>
         </div>
@@ -72,7 +72,7 @@
                                         <span class="text-sm font-bold text-slate-700 block">{{ $data['status'] }}</span>
                                     </div>
                                     <div>
-                                        <x-ts:input wire:model.defer="ptkpForm.{{ $id }}.nominal_setahun" type="text" prefix="Rp" class="font-semibold text-slate-700" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                        <x-ts:input wire:model.defer="ptkpForm.{{ $id }}.nominal_setahun" type="text" prefix="Rp" class="font-semibold text-slate-700" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                     </div>
                                 </div>
                             @endforeach
@@ -188,10 +188,10 @@
                                     @foreach($pasal17Form as $id => $data)
                                         <tr class="hover:bg-slate-50/50 transition-colors">
                                             <td class="px-6 py-3">
-                                                <x-ts:input wire:model.defer="pasal17Form.{{ $id }}.pkp_bawah" type="text" prefix="Rp" class="font-semibold text-slate-700" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                                <x-ts:input wire:model.defer="pasal17Form.{{ $id }}.pkp_bawah" type="text" prefix="Rp" class="font-semibold text-slate-700" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                             </td>
                                             <td class="px-6 py-3">
-                                                <x-ts:input wire:model.defer="pasal17Form.{{ $id }}.pkp_atas" type="text" prefix="Rp" placeholder="Tak Terbatas" class="font-semibold text-slate-700" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="$el.value = ($el.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
+                                                <x-ts:input wire:model.defer="pasal17Form.{{ $id }}.pkp_atas" type="text" prefix="Rp" placeholder="Tak Terbatas" class="font-semibold text-slate-700" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                                             </td>
                                             <td class="px-6 py-3">
                                                 <x-ts:input wire:model.defer="pasal17Form.{{ $id }}.tarif_persen" type="number" step="0.1" min="0" max="100" suffix="%" class="text-right font-semibold" />

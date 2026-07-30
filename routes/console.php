@@ -15,3 +15,15 @@ Schedule::command('cuti:reset')
     ->runInBackground() //jalankan di background
     ->appendOutputTo(storage_path('logs/cuti-reset.log'))
     ->description('Reset cuti tahunan berdasarkan tgl masuk karyawan');
+
+// jalankan pengecekan pengiriman otomatis slip gaji setiap menit (diniatkan sesuai jam dinamis di UI)
+Schedule::command('payroll:send-scheduled-slips')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/payroll-auto-send.log'))
+    ->description('Pengiriman otomatis slip gaji karyawan via email');
+
+
+
+

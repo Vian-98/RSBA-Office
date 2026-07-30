@@ -122,6 +122,13 @@ class TerimaBarang extends Component
                 ->values();
 
             if ($items->isEmpty()) {
+                if ($status === 'selesai') {
+                    Pembelian::where('id', $this->pembelianId)->update(['status' => 'selesai']);
+                    $this->dispatch('penerimaan-beli-saved');
+                    $this->dispatch('tutup-modal-terima');
+                    $this->toast()->success('Berhasil', 'Status pesanan berhasil diselesaikan.')->send();
+                    return;
+                }
                 throw new Exception("Tidak ada item diterima");
             }
 
@@ -163,6 +170,18 @@ class TerimaBarang extends Component
 
             Stok::insert($stokRows);
 
+            // [04] Catat Mutasi Stok untuk setiap batch yang baru diterima
+            // Query-after-insert: ambil stok rows yang baru saja diinsert menggunakan penerimaan_det_id
+            $penerimaanDetIds = collect($stokRows)->pluck('penerimaan_det_id');
+            $insertedStoks = Stok::whereIn('penerimaan_det_id', $penerimaanDetIds)->get();
+
+            foreach ($insertedStoks as $stok) {
+                $penerimaanDet = PenerimaanDetail::find($stok->penerimaan_det_id);
+                if ($penerimaanDet) {
+                    $this->createMutasiPenerimaan($stok, $penerimaanDet, $penerimaan);
+                }
+            }
+
 
             // Update Detail Pembelian
             $ids = $items->pluck('pembelian_det_id');
@@ -196,8 +215,22 @@ WHERE id IN (" . $ids->implode(',') . ")";
         SUM(diskon) as total_diskon,
 
         SUM(((jumlah * harga_satuan) - diskon) * (ppn/100)) as total_ppn
-    ")
+            ")
                 ->first();
+
+            // Auto-complete status if all items are fully received
+            $allReceived = true;
+            $poDetails = DB::table('um_pembelian_det')->where('pembelian_id', $this->pembelianId)->get();
+            foreach ($poDetails as $det) {
+                $receivedQty = DB::table('um_penerimaan_beli_det')->where('pembelian_det_id', $det->id)->sum('jumlah');
+                if ($receivedQty < $det->jumlah) {
+                    $allReceived = false;
+                    break;
+                }
+            }
+            if ($allReceived) {
+                $status = 'selesai';
+            }
 
             Pembelian::where('id', $this->pembelianId)
                 ->update([
@@ -205,7 +238,9 @@ WHERE id IN (" . $ids->implode(',') . ")";
                     'total_diskon' => $total->total_diskon,
                     'total_ppn' => $total->total_ppn,
                     'total' => ($total->subtotal_gross - $total->total_diskon) + $total->total_ppn,
-                    'status' => $status === 'selesai' ? 'selesai' : DB::raw('status')
+                    'status' => $status === 'selesai' ? 'selesai' : DB::raw('status'),
+                    'status_pembayaran' => $status === 'selesai' ? 'lunas' : DB::raw('status_pembayaran'),
+                    'tgl_pembayaran' => $status === 'selesai' ? now()->format('Y-m-d') : DB::raw('tgl_pembayaran'),
                 ]);
 
 
@@ -226,39 +261,40 @@ WHERE id IN (" . $ids->implode(',') . ")";
     }
 
 
-    private function createMutasi(object $stok, int $jumlah, object $penerimaanDetails): ?StokMutasi
-    {
+    /**
+     * Catat mutasi stok untuk penerimaan PO.
+     * stok_sebelum = 0 karena setiap penerimaan menciptakan baris stok (batch) baru.
+     * Penting untuk audit trail di sistem inventaris RS Bintang Amin.
+     */
+    private function createMutasiPenerimaan(
+        object $stok,
+        object $penerimaanDet,
+        object $penerimaan
+    ): void {
+        $jumlah = (int) $stok->stok;
 
-        $stokSebelum = 0;
-        $stokSesudah = $stokSebelum + $jumlah;
         $keterangan = sprintf(
-            "Penerimaan: {id: %s, oleh: %s}\n" .
-                "Stok: {id: %d, awal: %s, akhir: %s }\n",
-            $penerimaanDetails->id,
-            $penerimaanDetails->penerimaan->user->karyawan?->nama,
+            'Penerimaan PO | No. Faktur: %s | Stok ID: %d | Qty: %d',
+            $penerimaan->no_faktur ?? '-',
             $stok->id,
-            $stokSebelum,
-            $stokSesudah
+            $jumlah
         );
 
-        $mutasi =  StokMutasi::create([
-            'stok_id' => $stok->id,
-            'barang_id' => $stok->barang_id,
-            'jenis_mutasi' => 'PEMBELIAN',
-            'jumlah' => abs($jumlah),
-            'multiplier' => 1,
-            'stok_sebelum' => $stokSebelum,
-            'stok_sesudah' => $stokSesudah,
-            'keterangan' => $keterangan,
+        StokMutasi::create([
+            'stok_id'        => $stok->id,
+            'barang_id'      => $stok->barang_id,
+            'jenis_mutasi'   => 'PEMBELIAN',
+            'jumlah'         => $jumlah,
+            'multiplier'     => 1,
+            'stok_sebelum'   => 0,         // Batch stok baru dari penerimaan PO
+            'stok_sesudah'   => $jumlah,
+            'keterangan'     => $keterangan,
             'referensi_type' => PenerimaanDetail::class,
-            'referensi_id' => $penerimaanDetails->id,
-            'created_by' => auth()->user()->id,
-            'is_posted' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'referensi_id'   => $penerimaanDet->id,
+            'created_by'     => auth()->id(),
+            'is_posted'      => 1,
+            'is_reversed'    => 0,
         ]);
-
-        return $mutasi;
     }
 
 

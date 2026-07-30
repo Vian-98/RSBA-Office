@@ -1,7 +1,7 @@
 <div id="print-po" style="width: 100%; margin: 0; padding: 15px; font-family: Arial, sans-serif;">
     {{-- Header --}}
     <div align="center">
-        <img src="{{ asset('storage/' . $rs->logo) }}" style="height: 60px;">
+        <img src="{{ ($rs && $rs->logo) ? asset('storage/' . $rs->logo) : asset('logo-fallback.png') }}" style="height: 60px;">
         <h2 style="font-size: 18px; font-weight: bold; text-transform: uppercase; margin:4px 0;">{{ $rs->nama }}</h2>
         <p style="margin: 0; font-size: 11px;">{{ $rs->alamat ?? '' }}</p>
         <p style="margin: 0; font-size: 11px;">Telp: {{ $rs->telepon ?? '' }}</p>

@@ -43,6 +43,7 @@ Route::prefix('maintenance')
     ->name('maintenance.')
     ->group(function () {
         Route::get('/', App\Livewire\Maintenance\Index::class)->name('index');
+        Route::get('/ticket/{id}', App\Livewire\Maintenance\Ticket\Detail::class)->name('ticket.detail');
         // Route::get('/create', App\Livewire\Maintenance\Create::class)->name('create');
     });
 

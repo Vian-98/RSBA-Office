@@ -30,22 +30,74 @@ class Cuti extends Component implements HasTable, HasForms, HasActions
     #[Locked]
     public ?SuratCuti $surat;
 
+    public ?array $cutiStats = null;
+
     public function mount($id)
     {
         $this->karyawan = Karyawan::findOrFail($id);
+        $this->loadCutiStats();
+    }
+
+    private function loadCutiStats()
+    {
+        $k = $this->karyawan;
+        if (!$k) return;
+
+        $tglMasuk = \Carbon\Carbon::parse($k->tgl_masuk);
+        $now = \Carbon\Carbon::now();
+
+        // Calculate next reset date (next anniversary)
+        $anniversaryThisYear = $tglMasuk->copy()->year($now->year);
+        if ($now->gte($anniversaryThisYear)) {
+            $startDate = $anniversaryThisYear;
+            $nextReset = $anniversaryThisYear->copy()->addYear();
+        } else {
+            $startDate = $anniversaryThisYear->copy()->subYear();
+            $nextReset = $anniversaryThisYear;
+        }
+
+        $quota = 12; // Standard annual quota
+        
+        $sisa = $k->sisa_cuti; // uses our dynamic accessor!
+        
+        if ($sisa < 0) {
+            $this->cutiStats = [
+                'eligible' => false,
+                'quota' => $quota,
+                'used' => 0,
+                'sisa' => 0,
+                'next_reset' => $tglMasuk->copy()->addYear()->translatedFormat('d F Y'),
+            ];
+        } else {
+            // Count used/pending cuti in the current anniversary period
+            $used = $k->suratCuti()
+                ->where('urgensi_id', 1)
+                ->where('status', '!=', 'rejected')
+                ->whereBetween('tgl_mulai', [$startDate->format('Y-m-d'), $nextReset->format('Y-m-d')])
+                ->sum('lama_cuti');
+
+            $this->cutiStats = [
+                'eligible' => true,
+                'quota' => $quota,
+                'used' => $used,
+                'sisa' => $sisa,
+                'next_reset' => $nextReset->translatedFormat('d F Y'),
+            ];
+        }
     }
 
     public static function table(Table $tableCuti): Table
     {
         return $tableCuti
             ->query(
-                SuratCuti::where('karyawan_id', Auth::user()->karyawan_id)
+                SuratCuti::query()->where('karyawan_id', Auth::user()->karyawan_id)
                     ->latest()
             )
             ->deferLoading(false)
             ->columns([
                 TextColumn::make('no_surat')
-                    ->label('No Surat Cuti'),
+                    ->label('No Surat Cuti')
+                    ->description(fn(SuratCuti $record) => $record->sumber === 'cuti_bersama' ? 'Cuti Bersama Sistem' : null),
 
                 TextColumn::make('status')
                     ->label('Status')

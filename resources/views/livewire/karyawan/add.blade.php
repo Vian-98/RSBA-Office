@@ -11,6 +11,12 @@
             <div class="w-full lg:w-1/4">
                 <x-ts:input wire:model.lazy="form.nip" placeholder="NIP [Auto Generate]" readonly />
             </div>
+            <div class="w-full lg:w-1/4">
+                <x-ts:select.styled wire:model.defer="form.kategori_kerja" placeholder="Kategori Kerja" :options="[
+                    ['label' => 'Pekerja Reguler (Jam Kantor)', 'value' => 'reguler'],
+                    ['label' => 'Pekerja Shift', 'value' => 'shift']
+                ]" select="label:label|value:value" />
+            </div>
         </div>
 
         {{-- identitas --}}
@@ -59,7 +65,25 @@
                 <x-ts:select.styled wire:model.lazy='form.jk' placeholder="Kelamin" :options="$jk_options" select="label:label|value:value" />
             </div>
             <div class="w-full lg:w-1/4">
-                <x-ts:select.styled wire:model.lazy='form.status_pernikahan' placeholder="Status Pernikahan" :options="" :options="$pernikahan_options" select="label:label|value:value" />
+                <x-ts:select.styled wire:model.lazy='form.status_pernikahan' placeholder="Status Pernikahan" :options="$pernikahan_options" select="label:label|value:value" />
+            </div>
+        </div>
+
+        {{-- REKENING BANK --}}
+        <div class="space-y-2 pt-2">
+            <hr>
+            <span class="text-primary-500 flex gap-1 font-semibold">
+                <x-ts:icon name="tabler.building-bank" class="h-5 w-5" />
+                Rekening Pembayaran Gaji
+            </span>
+        </div>
+
+        <div class="flex flex-col gap-2 lg:flex-row">
+            <div class="w-full lg:w-1/2">
+                <x-ts:input wire:model.lazy='form.nama_bank' placeholder="Nama Bank (misal: BSI, Mandiri, BCA)" />
+            </div>
+            <div class="w-full lg:w-1/2">
+                <x-ts:input wire:model.lazy='form.no_rekening' placeholder="Nomor Rekening Bank" />
             </div>
         </div>
 
