@@ -45,4 +45,9 @@ class Barang extends Model
         return $this->hasOne(Stok::class)->latestOfMany();
         // Or: return $this->hasOne(Stok::class)->latest();
     }
+
+    public function konversiSatuans(): HasMany
+    {
+        return $this->hasMany(BarangKonversiSatuan::class, 'barang_id', 'id');
+    }
 }

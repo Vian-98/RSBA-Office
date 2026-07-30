@@ -339,48 +339,31 @@
                                         </td>
                                         <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $item['doctor_name'] ?? '-' }}</td>
                                         <td class="px-4 py-3 text-center">
-                                            @switch($item['status'])
-                                                @case('menunggu')
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">Menunggu</span>
-                                                    @break
-                                                @case('dilayani')
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Dilayani</span>
-                                                    @break
-                                                @case('selesai')
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Selesai</span>
-                                                    @break
-                                                @case('terlewat')
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">Terlewat</span>
-                                                    @break
-                                            @endswitch
+                                            <select 
+                                                wire:change="changeQueueStatus('{{ $item['id'] }}', $event.target.value)"
+                                                class="text-xs font-bold rounded-full px-2.5 py-1.5 border-0 ring-1 ring-inset focus:ring-2 focus:ring-violet-500 bg-transparent cursor-pointer transition
+                                                {{ $item['status'] === 'menunggu' ? 'text-gray-600 bg-gray-50 ring-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:ring-gray-700' : '' }}
+                                                {{ $item['status'] === 'dilayani' ? 'text-amber-700 bg-amber-50 ring-amber-200 dark:text-amber-400 dark:bg-amber-950/20 dark:ring-amber-900/30' : '' }}
+                                                {{ $item['status'] === 'selesai' ? 'text-emerald-700 bg-emerald-50 ring-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/20 dark:ring-emerald-900/30' : '' }}
+                                                {{ $item['status'] === 'terlewat' ? 'text-rose-700 bg-rose-50 ring-rose-200 dark:text-rose-400 dark:bg-rose-950/20 dark:ring-rose-900/30' : '' }}"
+                                            >
+                                                <option value="menunggu" class="text-gray-800 bg-white dark:text-white dark:bg-gray-900" {{ $item['status'] === 'menunggu' ? 'selected' : '' }}>Menunggu</option>
+                                                <option value="dilayani" class="text-gray-800 bg-white dark:text-white dark:bg-gray-900" {{ $item['status'] === 'dilayani' ? 'selected' : '' }}>Dilayani</option>
+                                                <option value="selesai" class="text-gray-800 bg-white dark:text-white dark:bg-gray-900" {{ $item['status'] === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                                                <option value="terlewat" class="text-gray-800 bg-white dark:text-white dark:bg-gray-900" {{ $item['status'] === 'terlewat' ? 'selected' : '' }}>Terlewat</option>
+                                            </select>
                                         </td>
                                         <td class="px-4 py-3 text-center text-xs text-gray-400">
                                             {{ $item['called_at'] ? \Carbon\Carbon::parse($item['called_at'])->format('H:i') : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-right">
-                                            <div class="flex items-center justify-end gap-1.5">
-                                                @if($item['status'] === 'menunggu')
-                                                    <button wire:click="callPatient('{{ $item['id'] }}')" class="px-2.5 py-1 text-xs font-semibold text-amber-600 hover:bg-amber-50 rounded-lg transition dark:text-amber-400 dark:hover:bg-amber-900/20" title="Panggil">
-                                                        Panggil
-                                                    </button>
-                                                    <button wire:click="skipPatient('{{ $item['id'] }}')" class="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition dark:text-rose-400 dark:hover:bg-rose-900/20" title="Lewati">
-                                                        Lewati
-                                                    </button>
-                                                @elseif($item['status'] === 'dilayani')
-                                                    <button wire:click="completePatient('{{ $item['id'] }}')" class="px-2.5 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 rounded-lg transition dark:text-emerald-400 dark:hover:bg-emerald-900/20" title="Selesai">
-                                                        Selesai
-                                                    </button>
-                                                @elseif($item['status'] === 'terlewat')
-                                                    <button wire:click="requeuePatient('{{ $item['id'] }}')" class="px-2.5 py-1 text-xs font-semibold text-violet-600 hover:bg-violet-50 rounded-lg transition dark:text-violet-400 dark:hover:bg-violet-900/20" title="Panggil Ulang">
-                                                        Panggil Ulang
-                                                    </button>
-                                                @endif
-                                                @if($item['status'] !== 'selesai')
-                                                    <button wire:click="deleteQueueItem('{{ $item['id'] }}')" wire:confirm="Hapus antrian ini?" class="px-2.5 py-1 text-xs font-semibold text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition dark:hover:text-rose-400 dark:hover:bg-rose-900/20" title="Hapus">
-                                                        ✕
-                                                    </button>
-                                                @endif
-                                            </div>
+                                            @if($item['status'] !== 'selesai')
+                                                <button wire:click="deleteQueueItem('{{ $item['id'] }}')" wire:confirm="Hapus antrian ini?" class="px-2.5 py-1 text-xs font-semibold text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition dark:hover:text-rose-400 dark:hover:bg-rose-900/20" title="Hapus">
+                                                    Hapus ✕
+                                                </button>
+                                            @else
+                                                <span class="text-xs text-gray-400 italic">-</span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

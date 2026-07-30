@@ -292,6 +292,33 @@ class PoliAdmin extends Component
         }
     }
 
+    public function changeQueueStatus(DmsMiddlewareClient $client, string $id, string $newStatus): void
+    {
+        $item = collect($this->queueItems)->firstWhere('id', $id);
+        if (!$item) return;
+
+        $currentStatus = $item['status'];
+        if ($currentStatus === $newStatus) return;
+
+        try {
+            $this->successMessage = '';
+            $this->errorMessage = '';
+
+            $client->updateQueueStatus($this->queuePoliId, $id, $newStatus);
+            $statusLabels = [
+                'menunggu' => 'menunggu',
+                'dilayani' => 'sedang dilayani',
+                'selesai' => 'selesai dilayani',
+                'terlewat' => 'dilewati',
+            ];
+            $label = $statusLabels[$newStatus] ?? $newStatus;
+            $this->successMessage = "Status pasien berhasil diubah menjadi '{$label}'!";
+            $this->loadQueue($client);
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
     public function deleteQueueItem(DmsMiddlewareClient $client, string $id): void
     {
         try {

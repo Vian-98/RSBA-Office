@@ -17,13 +17,19 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 
+use TallStackUi\Traits\Interactions;
+
 class TableCuti extends Component implements HasTable, HasForms, HasActions
 {
     use InteractsWithActions;
     use InteractsWithTable, InteractsWithForms;
+    use Interactions;
 
     #[Locked]
     public ?SuratCuti $surat;
+
+    public ?string $tglMelahirkanAktual = null;
+    public ?string $catatanPenyesuaian = null;
 
     public static function table(Table $tableCuti): Table
     {
@@ -86,15 +92,20 @@ class TableCuti extends Component implements HasTable, HasForms, HasActions
                         }
                     )
                     ->visible(
-                        fn($record) => $record->status === StatusApproval::APPROVED || $record->status === StatusApproval::WAITING || $record->status === StatusApproval::PENDING
+                        fn($record) => in_array($record->status, [
+                            StatusApproval::APPROVED,
+                            StatusApproval::MANUAL,
+                            StatusApproval::WAITING,
+                            StatusApproval::PENDING,
+                        ])
                     )
                     ->action(
                         function ($record, $livewire) {
 
-                            $livewire->surat = $record;
+                            $livewire->surat = $record->fresh();
 
                             return match ($record->status) {
-                                StatusApproval::APPROVED, StatusApproval::MANUAL => $livewire->dispatch('trigger-print'),
+                                StatusApproval::APPROVED, StatusApproval::MANUAL => $livewire->dispatch('trigger-print', noSurat: $record->no_surat),
                                 StatusApproval::WAITING, StatusApproval::PENDING => $livewire->modal(modal: 'modal-options-approval-manual', id: $record->getKey()),
                             };
                         }
@@ -120,14 +131,60 @@ class TableCuti extends Component implements HasTable, HasForms, HasActions
                             return ($record->status === StatusApproval::WAITING || $record->status === StatusApproval::PENDING)
                                 && ($approved_me || $isSuperAdmin);
                         }
+                    ),
+
+                Action::make('adjustMelahirkan')
+                    ->label('Penyesuaian Tanggal Melahirkan')
+                    ->iconButton()
+                    ->icon('tabler-baby-carriage')
+                    ->color('warning')
+                    ->tooltip('Penyesuaian Tanggal Persalinan (SDM)')
+                    ->visible(
+                        function (SuratCuti $record) {
+                            $isMelahirkan = (int)$record->urgensi_id === 3 || str_contains(strtolower($record->jenis?->nama ?? ''), 'melahirkan') || str_contains(strtolower($record->jenis?->nama ?? ''), 'bersalin');
+                            $hasPermission = auth()->user()->hasRole('Super-Admin') || auth()->user()->can('view-kepegawaian-cuti') || auth()->user()->can('edit-kepegawaian-cuti');
+                            return $isMelahirkan && $hasPermission;
+                        }
                     )
+                    ->action(
+                        function ($record, $livewire) {
+                            $livewire->surat = $record->fresh();
+                            $livewire->tglMelahirkanAktual = $record->tgl_melahirkan_aktual ?? date('Y-m-d');
+                            $livewire->catatanPenyesuaian = $record->catatan_penyesuaian ?? '';
+                            $livewire->dispatch('open-modal', id: 'modal-adjust-cuti-melahirkan');
+                        }
+                    ),
             ]);
     }
 
     public function modal($modal, $id)
     {
         $this->surat = SuratCuti::findOrFail($id);
+        if ($modal === 'modal-adjust-cuti-melahirkan') {
+            $this->tglMelahirkanAktual = $this->surat->tgl_melahirkan_aktual ?? date('Y-m-d');
+            $this->catatanPenyesuaian = $this->surat->catatan_penyesuaian ?? '';
+        }
         $this->dispatch('open-modal', id: $modal);
+    }
+
+    public function saveAdjustmentMelahirkan()
+    {
+        $this->validate([
+            'tglMelahirkanAktual' => 'required|date',
+        ]);
+
+        if (!$this->surat) {
+            return;
+        }
+
+        $this->surat->adjustCutiMelahirkan($this->tglMelahirkanAktual, $this->catatanPenyesuaian);
+
+        $this->dispatch('close-modal', id: 'modal-adjust-cuti-melahirkan');
+        $this->toast()
+            ->success('Berhasil', 'Tanggal Cuti Melahirkan berhasil disesuaikan H+45 dari tanggal persalinan.')
+            ->send();
+
+        $this->resetTable();
     }
 
 

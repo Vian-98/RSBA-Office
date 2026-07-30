@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -16,7 +17,9 @@ return new class extends Migration
             $table->unsignedBigInteger('akre_bab_id');
             $table->string('nomor', 4);
             $table->longText('element');
-            $table->fullText('element');
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->fullText('element');
+            }
             $table->json('methode')->comment("R = Regulasi W = Wawancara O = Observasi T = Telusur D = Dokumen S = Simulasi");
             $table->longText('kelengkapan');
             $table->integer('target_nilai');

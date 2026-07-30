@@ -16,6 +16,7 @@ class DisplayMonitorAdmin extends Component
     // Device form
     public string $displayId = '';
     public string $deviceName = '';
+    public string $ipAddress = '';
 
     // Mapping form
     public string $selectedDeviceId = '';
@@ -31,6 +32,7 @@ class DisplayMonitorAdmin extends Component
     public array $wards          = [];
     public array $rooms          = [];
     public array $inpatientRooms = [];
+    public array $polyclinics    = [];
     public array $auditLogs      = [];
 
     // Inpatient Room form
@@ -60,6 +62,7 @@ class DisplayMonitorAdmin extends Component
         $this->wards          = $client->getWards();
         $this->rooms          = $client->getRooms();
         $this->inpatientRooms = $client->getInpatientRooms();
+        $this->polyclinics    = $client->getPolyclinics();
         $this->auditLogs      = $client->getAuditLogs();
     }
 
@@ -78,6 +81,7 @@ class DisplayMonitorAdmin extends Component
             'wards'           => $this->wards,
             'rooms'           => $this->rooms,
             'inpatientRooms'  => $this->inpatientRooms,
+            'polyclinics'     => $this->polyclinics,
             'auditLogs'       => $this->auditLogs,
             'totalMonitors'   => $totalMonitors,
             'onlineMonitors'  => $onlineMonitors,
@@ -98,45 +102,49 @@ class DisplayMonitorAdmin extends Component
     // Edit form
     public string $editDisplayId = '';
     public string $editDeviceName = '';
+    public string $editIpAddress = '';
 
     public function registerDevice(DmsMiddlewareClient $client): void
     {
         $this->validate([
             'displayId'  => 'required|string|max:50',
             'deviceName' => 'required|string|max:255',
+            'ipAddress'  => 'nullable|string|max:45',
         ]);
 
         try {
-            $client->registerDisplay(strtoupper($this->displayId), $this->deviceName);
+            $client->registerDisplay(strtoupper($this->displayId), $this->deviceName, $this->ipAddress);
             $this->successMessage = "Perangkat monitor {$this->displayId} berhasil terdaftar!";
-            $this->reset(['displayId', 'deviceName']);
+            $this->reset(['displayId', 'deviceName', 'ipAddress']);
             $this->loadData($client);
         } catch (\Exception $e) {
             $this->errorMessage = $e->getMessage();
         }
     }
 
-    public function editDevice(string $displayId, string $currentName): void
+    public function editDevice(string $displayId, string $currentName, ?string $currentIp = null): void
     {
         $this->editDisplayId = $displayId;
         $this->editDeviceName = $currentName;
+        $this->editIpAddress = $currentIp ?? '';
     }
 
     public function cancelEdit(): void
     {
-        $this->reset(['editDisplayId', 'editDeviceName']);
+        $this->reset(['editDisplayId', 'editDeviceName', 'editIpAddress']);
     }
 
     public function updateDevice(DmsMiddlewareClient $client): void
     {
         $this->validate([
             'editDeviceName' => 'required|string|max:255',
+            'editIpAddress'  => 'nullable|string|max:45',
         ]);
 
         try {
-            $client->updateDisplay($this->editDisplayId, $this->editDeviceName);
-            $this->successMessage = "Nama perangkat {$this->editDisplayId} berhasil diubah!";
-            $this->reset(['editDisplayId', 'editDeviceName']);
+            $client->updateDisplay($this->editDisplayId, $this->editDeviceName, $this->editIpAddress);
+            $this->successMessage = "Data perangkat {$this->editDisplayId} berhasil diubah!";
+            $this->reset(['editDisplayId', 'editDeviceName', 'editIpAddress']);
             $this->loadData($client);
         } catch (\Exception $e) {
             $this->errorMessage = $e->getMessage();
@@ -147,7 +155,7 @@ class DisplayMonitorAdmin extends Component
     {
         $this->validate([
             'selectedDeviceId' => 'required|string',
-            'targetType'       => 'required|string|in:ward_class,operating_room,ward_summary,inpatient_room',
+            'targetType'       => 'required|string|in:ward_class,operating_room,ward_summary,inpatient_room,polyclinic',
             'targetId'         => 'required|string',
         ]);
 

@@ -37,8 +37,8 @@ class AddSp3Pembelian extends Component
 
     public $mengetahuiOptions;
     public $tgl;
-    public string $rekanan, $keterangan = '', $method_bayar;
-    public ?int $mengetahui, $jabatan, $rekananId, $userApprove;
+    public ?string $rekanan = null, $keterangan = '', $method_bayar = null;
+    public ?int $mengetahui = null, $jabatan = null, $rekananId = null, $userApprove = null;
     public array $listSp3 = [];
     public $totalPembayaran = 0;
 
@@ -152,8 +152,9 @@ class AddSp3Pembelian extends Component
 
             if ($karyawanJabatan) {
                 $this->mengetahui = $karyawanJabatan->karyawan?->id;
-                $this->userApprove = $karyawanJabatan->karyawan?->user?->id;
+                $this->userApprove = $karyawanJabatan->karyawan?->user?->id ?? auth()->id() ?? 1;
             } else {
+                $this->userApprove = auth()->id() ?? 1;
                 $this->toast()
                     ->error('Pejabat tidak ditemukan.', "Tidak ada karyawan dengan jabatan <b>{$jabatan->nama}</b>.")
                     ->send();
@@ -167,6 +168,13 @@ class AddSp3Pembelian extends Component
 
     public function submit($send = true)
     {
+        if (is_array($this->listSp3)) {
+            foreach ($this->listSp3 as $key => $item) {
+                if (isset($item['nominal']) && is_string($item['nominal'])) {
+                    $this->listSp3[$key]['nominal'] = (double) str_replace('.', '', $item['nominal']);
+                }
+            }
+        }
         $this->validate();
         $data = [
             'no' => $this->createNomor(),
@@ -208,6 +216,9 @@ class AddSp3Pembelian extends Component
                 $this->signManual($suratSp3);
             }
 
+            // Sync immediately to docstore
+            app(\App\Services\DocstoreSyncService::class)->syncSp3($suratSp3);
+
             DB::commit();
             $this->dispatch('created-sp3');
 
@@ -231,69 +242,71 @@ class AddSp3Pembelian extends Component
 
     public function signManual($suratSp3)
     {
+        if (!$this->userApprove) {
+            if ($this->jabatan) {
+                $this->updatedJabatan($this->jabatan);
+            }
+            if (!$this->userApprove) {
+                $this->userApprove = auth()->id() ?? 1;
+            }
+        }
+
         $data = [
             'surat_sp3_id' => $suratSp3->id,
             'disetujui' => $this->userApprove,
-            'status' => 'manual',
-            'keterangan' => null,
+            'status' => 'manual',  // Status manual cetak, tanda tangan basah
+            'keterangan' => 'Manual cetak, tanda tangan basah',
             'approved_at' => now()->toIso8601String(),
         ];
 
-        DB::beginTransaction();
-        try {
-            // ambil data signature user [p12 path] , jika manual, gunakan tanda tangan Super Admin,
-            // Super Admin credential mewakili credential sistem,
-            $user = User::find(1);
-            $certificate = $user->certificate()->latest('id')->first();
-
-            if (!$certificate) {
-                throw new Exception("Tidak memiliki certificate.");
-            }
-
-            // buat signature hash dari p12
-            $dataToSign = json_encode($data);
-
-            $passwordCertificate = null;
-
-            // Proses tanda tangan data
-            $signature = $this->digitalSignatureService->signData(
-                user: $user,
-                data: $dataToSign,
-                password: $passwordCertificate,
-                type: 'persetujuan_sp3',
-                id: $suratSp3->id
-            );
-
-            if (!$signature['status']) {
-                $this->toast()
-                    ->error('Proses tanda tangan tidak berhasil.', "<i>{$signature['message']}</i>")
-                    ->send();
-                return;
-            }
-
-            $data['signature_hash'] = $signature['data_hash']; //adding hash to data
-
-            SuratSp3Approval::create($data);
-            $suratSp3->update(
-                [
-                    'status' => 'approved'
-                ]
-            );
-
-            // return
-            $this->suratSp3 = $suratSp3;
-            DB::commit();
-
-            $this->toast()
-                ->success('Berhasil.', "Surat SP3 {$suratSp3->no} berhasil diupdate.")
-                ->send();
-        } catch (Throwable $e) {
-            DB::rollback();
-
-            $this->toast()
-                ->error('Tidak Berhasil.', "Error : {$e->getMessage()}")
-                ->send();
+        // ambil data signature user [p12 path] , jika manual, gunakan tanda tangan Super Admin,
+        // Super Admin credential mewakili credential sistem,
+        $user = User::find(1);
+        if (!$user) {
+            throw new Exception("User Super Admin tidak ditemukan.");
         }
+        $certificate = $user->certificate()->latest('id')->first();
+
+        if (!$certificate) {
+            throw new Exception("Tidak memiliki certificate.");
+        }
+
+        // buat signature hash dari p12
+        $dataToSign = json_encode($data);
+
+        $passwordCertificate = null;
+
+        // Proses tanda tangan data
+        $signature = $this->digitalSignatureService->signData(
+            user: $user,
+            data: $dataToSign,
+            password: $passwordCertificate,
+            type: 'persetujuan_sp3',
+            id: $suratSp3->id
+        );
+
+        if (!$signature['status']) {
+            throw new Exception($signature['message']);
+        }
+
+        $data['signature_hash'] = $signature['data_hash']; //adding hash to data
+
+        SuratSp3Approval::create($data);
+        $suratSp3->update(
+            [
+                'status' => 'manual'
+            ]
+        );
+
+        // Update status pembayaran PO karena SP3 otomatis disetujui (manual sign)
+        Pembelian::where('sp3_id', $suratSp3->id)
+            ->update([
+                'status_pembayaran' => 'lunas',
+                'tgl_pembayaran' => now()->format('Y-m-d')
+            ]);
+
+        // return
+        $this->suratSp3 = $suratSp3;
     }
 
     private function createNomor()

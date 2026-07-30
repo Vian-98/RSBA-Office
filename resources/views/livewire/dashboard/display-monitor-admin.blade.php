@@ -138,22 +138,25 @@
                         <tbody class="text-sm text-gray-600 dark:text-gray-300">
                             @forelse($devices as $dev)
                                 <tr class="border-b border-gray-50 dark:border-gray-700/30 hover:bg-gray-50/50 dark:hover:bg-gray-900/10">
-                                    <td class="py-3 font-mono"><code>{{ $dev['display_id'] }}</code></td>
+                                    <td class="py-3 font-mono">
+                                        <code title="{{ !empty($dev['ip_address']) ? $dev['ip_address'] : 'ip belum dimasukkan' }}" class="cursor-help underline decoration-dotted decoration-gray-400 hover:decoration-sky-500">
+                                            {{ $dev['display_id'] }}
+                                        </code>
+                                    </td>
                                     <td class="py-3 font-semibold text-gray-800 dark:text-white">
                                         @if($editDisplayId === $dev['display_id'])
-                                            <div class="flex items-center gap-2">
-                                                <input wire:model="editDeviceName" wire:keydown.enter="updateDevice" type="text" class="px-2 py-1 w-full min-w-[150px] bg-gray-50 border border-gray-200 dark:bg-gray-900 dark:border-gray-700 rounded text-sm text-gray-800 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500">
-                                                <button wire:click="updateDevice" class="text-emerald-600 hover:text-emerald-700" title="Simpan">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                                </button>
-                                                <button wire:click="cancelEdit" class="text-rose-600 hover:text-rose-700" title="Batal">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                                </button>
+                                            <div class="flex flex-col gap-1.5">
+                                                <input wire:model="editDeviceName" wire:keydown.enter="updateDevice" type="text" placeholder="Nama Lokasi" class="px-2 py-1 w-full min-w-[150px] bg-gray-50 border border-gray-200 dark:bg-gray-900 dark:border-gray-700 rounded text-sm text-gray-800 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500">
+                                                <input wire:model="editIpAddress" wire:keydown.enter="updateDevice" type="text" placeholder="IP Armbian (opsional)" class="px-2 py-1 w-full min-w-[150px] bg-gray-50 border border-gray-200 dark:bg-gray-900 dark:border-gray-700 rounded text-xs text-gray-800 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500">
+                                                <div class="flex items-center gap-2 mt-1">
+                                                    <button wire:click="updateDevice" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded" title="Simpan">Simpan</button>
+                                                    <button wire:click="cancelEdit" class="px-2.5 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs font-semibold rounded" title="Batal">Batal</button>
+                                                </div>
                                             </div>
                                         @else
                                             <div class="flex items-center gap-2 group">
                                                 <span>{{ $dev['name'] }}</span>
-                                                <button wire:click="editDevice('{{ $dev['display_id'] }}', '{{ $dev['name'] }}')" class="opacity-0 group-hover:opacity-100 text-sky-500 hover:text-sky-600 transition-opacity" title="Ubah Nama">
+                                                <button wire:click="editDevice('{{ $dev['display_id'] }}', '{{ $dev['name'] }}', '{{ $dev['ip_address'] ?? '' }}')" class="opacity-0 group-hover:opacity-100 text-sky-500 hover:text-sky-600 transition-opacity" title="Ubah Perangkat">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                 </button>
                                             </div>
@@ -175,6 +178,8 @@
                                                     Summary Inap
                                                 @elseif($dev['mappings'][0]['target_type'] === 'inpatient_room')
                                                     Ruang Inap
+                                                @elseif($dev['mappings'][0]['target_type'] === 'polyclinic')
+                                                    Poliklinik
                                                 @else
                                                     Kamar Operasi
                                                 @endif
@@ -224,6 +229,12 @@
                             @error('deviceName') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
                         </div>
 
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-400 mb-1" for="ipAddress">IP Armbian (Opsional)</label>
+                            <input wire:model="ipAddress" type="text" id="ipAddress" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 dark:bg-gray-900 dark:border-gray-700 rounded-lg text-sm text-gray-800 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500" placeholder="MISAL: 192.168.1.100">
+                            @error('ipAddress') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                        </div>
+
                         <button type="submit" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold transition duration-150">
                             Daftarkan Perangkat
                         </button>
@@ -252,6 +263,7 @@
                                 <option value="ward_summary">Summary Rawat Inap (Semua Kamar)</option>
                                 <option value="operating_room">Jadwal Kamar Operasi</option>
                                 <option value="inpatient_room">Ruangan Custom (Lantai & Gedung)</option>
+                                <option value="polyclinic">Poliklinik</option>
                             </select>
                         </div>
 
@@ -270,6 +282,10 @@
                                 @elseif($targetType === 'inpatient_room')
                                     @foreach($inpatientRooms as $ir)
                                         <option value="{{ $ir['id'] }}">{{ $ir['room_code'] }} - {{ $ir['name'] }} (Fl. {{ $ir['floor'] }} / {{ $ir['building'] }})</option>
+                                    @endforeach
+                                @elseif($targetType === 'polyclinic')
+                                    @foreach($polyclinics as $p)
+                                        <option value="{{ $p['id'] }}">{{ $p['code'] }} - {{ $p['name'] }}</option>
                                     @endforeach
                                 @elseif($targetType === 'ward_summary')
                                     <option value="all">Semua Ruangan</option>

@@ -3,15 +3,17 @@
 namespace App\Livewire\Surat\Cuti;
 
 use App\Traits\AuthorizesFromRoute;
-use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
-#[Title('Surat Cuti')]
-#[Lazy]
+#[Title('Izin dan Cuti')]
 class Index extends Component
 {
     use AuthorizesFromRoute;
+
+    #[Url]
+    public string $tab = 'izin-cuti';
 
     public function render()
     {
