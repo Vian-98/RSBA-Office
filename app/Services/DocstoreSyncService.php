@@ -201,6 +201,16 @@ class DocstoreSyncService
     }
 
     /**
+     * Invalidate cache dokumen lokal docstore jika ada perubahan/approval baru.
+     */
+    public function invalidateCache(?string $docstoreKey): void
+    {
+        if (!empty($docstoreKey)) {
+            Cache::forget('docstore_doc_' . $docstoreKey);
+        }
+    }
+
+    /**
      * Ambil daftar surat dari docstore (untuk Audit Bank Surat).
      */
     public function listFromDocstore(
