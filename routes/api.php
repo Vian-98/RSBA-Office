@@ -14,6 +14,11 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+Route::prefix('bpjs')->name('api.bpjs.')->group(function () {
+    Route::get('/wards', [\App\Http\Controllers\Api\BpjsDataController::class, 'wards'])->name('wards');
+    Route::get('/rooms', [\App\Http\Controllers\Api\BpjsDataController::class, 'rooms'])->name('rooms');
+});
+
 
 Route::prefix('karyawan')
     ->name('api.karyawan.')

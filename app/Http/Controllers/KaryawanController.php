@@ -25,11 +25,9 @@ class KaryawanController extends Controller
     }
 
 
-    // get all with jabatan
+    // get all with jabatan — filter by jabatan_id = $atasan (parent_id of karyawan's jabatan)
     public function listWithJabatan(Request $request, $atasan = null)
     {
-        // parameter
-        // $atasan = $request->input('atasan');
         $input = $request->input('search');
 
         $karyawan = Karyawan::with('jabatan')
@@ -39,16 +37,17 @@ class KaryawanController extends Controller
             })
             ->when(
                 $atasan,
-                fn($query) => $query->whereHas('jabatan', fn($q) => $q->where('sdm_jabatan.id', '<=', $atasan))
+                // Filter: karyawan whose current jabatan id == $atasan (the parent_id)
+                fn($query) => $query->whereHas('jabatan', fn($q) => $q->where('sdm_jabatan.id', $atasan))
             )
             ->orderBy('nama')
-            ->limit(10)
+            ->limit(20)
             ->get()
             ->map(
                 fn($data) => [
                     'id' => $data->id,
                     'nama' => $data->nama,
-                    'description' => $data->jabatan?->first()?->nama ?? null
+                    'description' => $data->jabatan?->first()?->nama ?? 'Belum ada jabatan'
                 ]
             )->toArray();
 

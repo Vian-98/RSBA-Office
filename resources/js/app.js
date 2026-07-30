@@ -39,7 +39,7 @@ import './bootstrap';
 
 
 // Print Area
-window.printArea = function (elementId) {
+window.printArea = function (elementId, title = 'Print') {
     // Get the content
     const printElement = document.getElementById(elementId);
     let printContents = printElement.innerHTML;
@@ -56,7 +56,7 @@ window.printArea = function (elementId) {
     });
 
     // Fix background images in style attributes
-    printContents = printContents.replace(/url\(['"]?(?!http|data:)([^'")\s]+)['"]?\)/g, (match, url) => {
+    printContents = printContents.replace(/url\(['"']?(?!http|data:)([^'")\s]+)['"']?\)/g, (match, url) => {
         if (url.startsWith('/')) {
             return `url('${baseUrl}${url}')`;
         }
@@ -103,7 +103,7 @@ window.printArea = function (elementId) {
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Print</title>
+            <title>${title}</title>
             <base href="${baseUrl}/">
             ${styles}
             <style>
@@ -135,13 +135,28 @@ window.printArea = function (elementId) {
         });
 
         Promise.all(imagePromises).then(() => {
+            // Simpan title asli dan set ke nomor surat sebelum print
+            const originalTitle = document.title;
+            document.title = title;
+
+            // Restore title setelah dialog print benar-benar ditutup
+            const restoreAndCleanup = () => {
+                document.title = originalTitle;
+                iframeWindow.removeEventListener('afterprint', restoreAndCleanup);
+                window.removeEventListener('afterprint', restoreAndCleanup);
+                setTimeout(() => {
+                    if (document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                    }
+                }, 100);
+            };
+
+            // Listen di kedua window (iframe & parent) agar tidak terlewat
+            iframeWindow.addEventListener('afterprint', restoreAndCleanup);
+            window.addEventListener('afterprint', restoreAndCleanup);
+
             iframeWindow.focus();
             iframeWindow.print();
-
-            // Remove iframe after print dialog closes
-            setTimeout(() => {
-                document.body.removeChild(iframe);
-            }, 100);
         });
     }, 500);
 };

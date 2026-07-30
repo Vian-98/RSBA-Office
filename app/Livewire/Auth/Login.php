@@ -45,7 +45,7 @@ class Login extends Component
                     ->flash()
                     ->send();
 
-                return $this->redirect(route('profile.index'), navigate: true);
+                return $this->redirect(route('dashboard'), navigate: true);
             }
         } catch (ValidationException $e) {
             $this->toast()

@@ -29,4 +29,9 @@ class PembelianDetail extends Model
     {
         return $this->hasMany(PenerimaanDetail::class, 'pembelian_det_id', 'id');
     }
+
+    function satuanBeli(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Master\BarangSatuan::class, 'satuan_beli_id', 'id');
+    }
 }

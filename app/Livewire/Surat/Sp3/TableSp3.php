@@ -9,11 +9,11 @@ use Livewire\Component;
 use Filament\Tables\Table;
 use App\Enums\StatusApproval;
 use App\Models\Surat\SuratSp3;
+use App\Models\Sdm\Jabatan;
 use Livewire\Attributes\Locked;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Livewire\Attributes\On;
@@ -26,6 +26,11 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
 
     #[Locked]
     public ?SuratSp3 $suratSp3;
+
+    // Manual filter properties
+    public ?string $filterStatus   = null;
+    public ?string $filterKategori = null;
+    public ?int    $filterJabatan  = null;
 
     public function table(Table $table): Table
     {
@@ -46,6 +51,10 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
                             }
                         });
                     })
+                    ->when($this->filterStatus, fn($q) => $q->where('status', $this->filterStatus))
+                    ->when($this->filterKategori === 'gaji', fn($q) => $q->whereNotNull('payroll_periode'))
+                    ->when($this->filterKategori === 'umum', fn($q) => $q->whereNull('payroll_periode'))
+                    ->when($this->filterJabatan, fn($q) => $q->where('jabatan_id', $this->filterJabatan))
                     ->latest()
             )
             ->columns([
@@ -83,16 +92,6 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
                     ->money('IDR')
 
             ])
-            ->filters([
-                SelectFilter::make('status')
-                    ->label('Status')
-                    ->searchable()
-                    ->options(
-                        fn(): array => collect(StatusApproval::options())
-                            ->pluck('label', 'value')
-                            ->toArray()
-                    )
-            ])
             ->recordActions([
                 Action::make('view')
                     ->iconButton()
@@ -129,6 +128,24 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
             ]);
     }
 
+    public function updatedFilterStatus()   { $this->resetTable(); }
+    public function updatedFilterKategori() { $this->resetTable(); }
+    public function updatedFilterJabatan()  { $this->resetTable(); }
+
+    public function resetFilters(): void
+    {
+        $this->filterStatus   = null;
+        $this->filterKategori = null;
+        $this->filterJabatan  = null;
+        $this->resetTable();
+    }
+
+    public function hasActiveFilters(): bool
+    {
+        return $this->filterStatus !== null
+            || $this->filterKategori !== null
+            || $this->filterJabatan !== null;
+    }
 
     function openModal($modal, $id)
     {
@@ -144,6 +161,9 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
 
     public function render()
     {
-        return view('livewire.surat.sp3.table-sp3');
+        return view('livewire.surat.sp3.table-sp3', [
+            'statusOptions'  => collect(StatusApproval::options())->pluck('label', 'value')->toArray(),
+            'jabatanOptions' => Jabatan::pluck('nama', 'id')->toArray(),
+        ]);
     }
 }
