@@ -1,6 +1,6 @@
 <div class="w-full">
     <div align="center" class="mb-2 flex flex-col items-center text-center">
-        <img src="{{ asset('storage/' . $rs->logo) }}" class="h-[60px] w-auto" alt="Logo">
+        <img src="{{ ($rs && $rs->logo) ? asset('storage/' . $rs->logo) : asset('logo-fallback.png') }}" class="h-[60px] w-auto" alt="Logo">
         <span class="text-lg font-bold uppercase">{{ $rs->nama }}</span>
         <span class="text-sm">SURAT PERMINTAAN PENGADAAN<br>(Barang, Jasa, dll)</span>
     </div>

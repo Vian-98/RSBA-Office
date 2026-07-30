@@ -1,10 +1,11 @@
 <div>
     <nav class="text-primary-700 flex h-16 items-center px-6 text-xl">
-        <div x-show="!isOpen()" class="flex flex-row items-center gap-2">
-            <a x-show="!isOpen()" @click.prevent="handleOpen()" @keyup.enter="alert('Submitted!')" class="hover:text-danger-500" href="#">
+        <div class="flex flex-row items-center gap-2">
+            <a @click.prevent="toggle()" @keyup.enter="alert('Submitted!')" class="hover:text-danger-500" href="#">
                 <div x-data="{ isHover: false }">
                     <x-tabler-menu-2 x-show="!isHover" @mouseover="isHover = true" />
-                    <x-tabler-layout-sidebar-left-expand x-show="isHover" @mouseleave="isHover = false" />
+                    <x-tabler-layout-sidebar-left-expand x-show="isHover && !isSidebarExpanded()" @mouseleave="isHover = false" />
+                    <x-tabler-layout-sidebar-left-collapse x-show="isHover && isSidebarExpanded()" @mouseleave="isHover = false" />
                 </div>
             </a>
             <a href="">
@@ -15,16 +16,29 @@
         <div class="ml-auto flex">
             <div class="flex items-center">
                 <div class="me-6 hidden space-x-4 lg:block">
-                    <x-ts:button.circle flat outline x-on:click="$dispatch('open-modal',{id:'pesan-drawer'})" class="relative">
-                        <x-tabler-mail />
-                        <span class="absolute right-0.5 top-1 block h-1 w-1 rounded-full bg-red-500 ring-2 ring-red-300"></span>
+                    <x-ts:dropdown position="bottom-end" width="lg">
+                        <x-slot:action>
+                            <x-ts:button.circle flat outline class="relative" x-on:click="show = !show">
+                                <x-tabler-bell />
+                                @if ($hasUnread)
+                                    <span class="absolute right-0.5 top-1 block h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-red-300"></span>
+                                @endif
+                            </x-ts:button.circle>
+                        </x-slot:action>
 
-                    </x-ts:button.circle>
-
-                    <x-ts:button.circle flat outline x-on:click="$dispatch('open-modal',{id:'notif-drawer'})" class="relative">
-                        <x-tabler-bell />
-                        <span class="absolute right-0.5 top-1 block h-1 w-1 rounded-full bg-red-500 ring-2 ring-red-300"></span>
-                    </x-ts:button.circle>
+                        <div class="w-full p-4 flex flex-col max-h-96">
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-2 mb-3 shrink-0">
+                                <span class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                                    <x-tabler-bell class="size-4 text-indigo-500" />
+                                    Notifikasi
+                                </span>
+                                <a href="{{ route('profile.notif') }}" class="text-xs font-semibold text-indigo-600 hover:underline">Lihat Semua</a>
+                            </div>
+                            <div class="flex-1 overflow-y-auto scrollbar-hidden">
+                                <livewire:Profile.Notif :key="auth()->user()->id" />
+                            </div>
+                        </div>
+                    </x-ts:dropdown>
                 </div>
                 <x-ts:dropdown>
                     <x-slot:action>
@@ -37,62 +51,10 @@
                         </div>
                     </x-slot:action>
 
-                    <a href="{{ route('profile.index') }}" wire:navigate>
-                        <x-ts:dropdown.items icon="tabler.user" text="Profile" />
-                    </a>
-                    <a href="{{ route('profile.pesan') }}" wire:navigate>
-                        <x-ts:dropdown.items icon="tabler.mail" text="Pesan" />
-                    </a>
-
-                    <a href="{{ route('profile.notif') }}" wire:navigate>
-                        <x-ts:dropdown.items icon="tabler.bell" text="Notifikasi" />
-                    </a>
-                    <a href="{{ route('profile.setting') }}" wire:navigate>
-                        <x-ts:dropdown.items icon="tabler.settings" text="Settings" />
-                    </a>
-
-                    <x-ts:dropdown.items separator wire:click="logout">
-                        <span class="flex gap-2 text-red-500">
-                            <x-spinner target="logout" sm />
-                            <x-tabler-logout-2 wire:loading.remove wire:target="logout" class="size-5" />
-                            Logout
-                        </span>
-                    </x-ts:dropdown.items>
-
+                    <x-ts:dropdown.items text="Profile" icon="user" :href="route('profile.index')" />
+                    <x-ts:dropdown.items text="Notifikasi" icon="bell" :href="route('profile.notif')" />
+                    <x-ts:dropdown.items text="Settings" icon="cog" :href="route('profile.setting')" />
+                    <x-ts:dropdown.items text="Logout" icon="arrow-left-on-rectangle" wire:click="logout" separator />
                 </x-ts:dropdown>
             </div>
         </div>
-
-
-        {{-- drawer notification --}}
-        <x-filament::modal slide-over id="notif-drawer">
-            <x-slot:heading>
-                <div class="flex flex-row items-center gap-2 text-lg text-indigo-500">
-                    <x-tabler-bell class="size-6" />
-                    Notification
-                </div>
-            </x-slot:heading>
-
-            <livewire:Profile.Notif :key="auth()->user()->id" />
-        </x-filament::modal>
-
-
-        {{-- drawer Pesan --}}
-        <x-filament::modal slide-over id="pesan-drawer">
-            <x-slot:heading>
-                <div class="flex flex-row items-center gap-2 text-lg text-indigo-500">
-                    <x-tabler-mail class="size-6" />
-                    Pesan
-                </div>
-            </x-slot:heading>
-            <div class="scrollbar-hidden relative max-h-screen w-full flex-col gap-4 overflow-y-auto pb-16">
-                <livewire:Profile.Pesan.ListPesan :key="auth()->user()->id" />
-            </div>
-            <x-slot name="footerActions">
-                <a href="{{ route('profile.pesan') }}" wire:navigate>
-                    <span role="button" class="rounded-lg p-2 text-sm italic hover:bg-indigo-50 hover:text-indigo-500"> Lihat Semua Pesan</span>
-                </a>
-            </x-slot>
-        </x-filament::modal>
-    </nav>
-</div>

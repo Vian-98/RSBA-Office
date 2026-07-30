@@ -5,7 +5,6 @@ namespace App\Livewire\Maintenance\Permintaan;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
-#[Lazy]
 class PermintaanLampiran extends Component
 {
     public ?array $lampirans;

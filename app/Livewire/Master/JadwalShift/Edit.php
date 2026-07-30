@@ -16,6 +16,13 @@ class Edit extends Component
 
     public ?JadwalShift $shift;
 
+    public function mount($id = null)
+    {
+        if ($id) {
+            $this->loadData($id);
+        }
+    }
+
     public $kode;
     public $nama;
     public $jam_masuk;

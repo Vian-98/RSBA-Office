@@ -26,8 +26,7 @@
             Edit Shift
         </x-slot>
         @if($editingId)
-            <livewire:Master.JadwalShift.Edit lazy :key="$editingId" />
-            <div x-init="$dispatch('load-shift-data', { id: {{ $editingId }} })"></div>
+            <livewire:Master.JadwalShift.Edit lazy :key="$editingId" :id="$editingId" />
         @endif
     </x-filament::modal>
 </div>

@@ -4,9 +4,10 @@ namespace App\Livewire\Master\BagianKoordinator;
 
 use Throwable;
 use Livewire\Component;
-use App\Models\Sdm\BagianKoordinator;
-use App\Models\Sdm\Bagian;
+use App\Models\Sdm\RuanganKoordinator;
+use App\Models\Ruangan;
 use App\Models\Sdm\Karyawan;
+use App\Models\User;
 use Livewire\Attributes\Lazy;
 use TallStackUi\Traits\Interactions;
 
@@ -15,53 +16,97 @@ class Add extends Component
 {
     use Interactions;
 
-    public $bagian_id;
+    public $ruangan_id;
     public $karyawan_id;
+    public $user_id = null; // user login yang akan jadi koordinator (opsional)
     public $aktif = true;
 
     protected $rules = [
-        'bagian_id' => 'required|exists:bagian,id',
+        'ruangan_id'  => 'required|exists:ruangan,id',
         'karyawan_id' => 'required|exists:sdm_karyawan,id',
-        'aktif' => 'boolean'
+        'user_id'     => 'nullable|exists:users,id',
+        'aktif'       => 'boolean',
     ];
+
+    /**
+     * Jika karyawan dipilih, auto-suggest user yang punya karyawan_id sama
+     */
+    public function updatedKaryawanId($value)
+    {
+        if ($value) {
+            $user = User::where('karyawan_id', $value)->first();
+            $this->user_id = $user?->id;
+        }
+    }
 
     public function submit()
     {
+        $this->aktif = filter_var($this->aktif, FILTER_VALIDATE_BOOLEAN);
         $this->validate();
 
-        $exists = BagianKoordinator::where('bagian_id', $this->bagian_id)
+        $exists = RuanganKoordinator::where('ruangan_id', $this->ruangan_id)
             ->where('karyawan_id', $this->karyawan_id)
             ->exists();
 
         if ($exists) {
-            $this->toast()->error('Error', 'Karyawan tersebut sudah ditugaskan sebagai koordinator di bagian ini.')->send();
+            $this->toast()->error('Error', 'Karyawan tersebut sudah ditugaskan sebagai koordinator di ruangan ini.')->send();
             return;
         }
 
         try {
-            BagianKoordinator::create([
-                'bagian_id' => $this->bagian_id,
+            RuanganKoordinator::create([
+                'ruangan_id'  => $this->ruangan_id,
                 'karyawan_id' => $this->karyawan_id,
-                'aktif' => $this->aktif,
+                'user_id'     => $this->user_id ?: null,
+                'aktif'       => $this->aktif,
             ]);
 
-            $this->dispatch('new-bagian-koordinator-created');
-            $this->dispatch('close-modal', id: 'new-bagian-koordinator');
+            // Hapus cache sidebar/permissions user jika ada akun login
+            if ($this->user_id) {
+                \Illuminate\Support\Facades\Cache::forget('user-sidebar-menu:' . $this->user_id);
+                \Illuminate\Support\Facades\Cache::forget('user-permissions:view:' . $this->user_id);
+            }
 
-            $this->toast()->success('Berhasil', 'Koordinator Bagian berhasil ditambahkan.')->send();
-            
-            $this->reset(['bagian_id', 'karyawan_id']);
+            $this->dispatch('new-ruangan-koordinator-created');
+            $this->dispatch('close-modal', id: 'new-ruangan-koordinator');
+
+            $this->toast()->success('Berhasil', 'Koordinator Ruangan berhasil ditambahkan.')->send();
+
+            $this->reset(['ruangan_id', 'karyawan_id', 'user_id']);
             $this->aktif = true;
         } catch (Throwable $e) {
             $this->toast()->error('Error', 'Failed : ' . $e->getMessage())->send();
         }
     }
 
+    public string $kategoriFilter = 'all';
+
     public function render()
     {
+        $karyawanQuery = Karyawan::with('dokterRecord.spesialis')
+            ->where('resign', null);
+
+        if ($this->kategoriFilter === 'dokter') {
+            $karyawanQuery->whereHas('dokterRecord');
+        } elseif ($this->kategoriFilter === 'non_dokter') {
+            $karyawanQuery->whereDoesntHave('dokterRecord');
+        }
+
+        $karyawanOptions = $karyawanQuery->get()->map(function ($k) {
+            $isDokter = $k->dokterRecord ? true : false;
+            $spesialis = $k->dokterRecord?->spesialis?->nama;
+            $tag = $isDokter ? " [DOKTER" . ($spesialis ? " - $spesialis" : "") . "]" : " [KARYAWAN]";
+
+            return [
+                'value' => $k->id,
+                'label' => $k->full_nama . $tag,
+            ];
+        })->toArray();
+
         return view('livewire.master.bagian-koordinator.add', [
-            'bagianOptions' => Bagian::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
-            'karyawanOptions' => Karyawan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'ruanganOptions'  => Ruangan::select('id', 'nama')->where('is_active', true)->orderBy('nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'karyawanOptions' => $karyawanOptions,
+            'userOptions'     => User::with('karyawan')->get()->map(fn($u) => ['value' => $u->id, 'label' => $u->email . ($u->karyawan ? ' — ' . $u->karyawan->nama : '')])->toArray(),
         ]);
     }
 }

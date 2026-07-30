@@ -27,7 +27,7 @@
                         @if ($menu->parent_id === $mainMenu->id)
                             <div class="bg-indigo-100/50 px-2 text-sm font-semibold text-indigo-500">{{ $menu->nama }}</div>
                             <!-- Each Permission -->
-                            @foreach ($menu?->permission as $permission)
+                            @foreach ($menu->permission ?? [] as $permission)
                                 <div class="grid grid-cols-6 text-sm text-gray-800 hover:bg-indigo-50">
                                     <div class="col-span-4 px-2 py-1 italic text-gray-500">{{ $permission }}</div>
                                     <div class="px-2 py-1">
@@ -45,7 +45,7 @@
                                 <span class="ms-8">{{ $sub->nama }}</span>
                             </div>
                             <!-- Each Permission -->
-                            @foreach ($sub->permission as $subPermission)
+                            @foreach ($sub->permission ?? [] as $subPermission)
                                 <div class="grid grid-cols-6 text-sm text-gray-800 hover:bg-indigo-50">
                                     <div class="col-span-4 px-2 py-1 italic text-gray-500">
                                         <span class="ms-8"> {{ $subPermission }}</span>

@@ -9,33 +9,37 @@
             <div class="overflow-x-auto lg:-mx-8">
                 <div class="inline-block min-w-full py-2 lg:px-8">
 
-                    <div class="overflow-hidden">
-                        <table class="text-surface min-w-full text-left text-sm dark:text-white">
-                            <thead class="border-b border-neutral-200 font-semibold dark:border-white/10">
+                    <div class="overflow-hidden border border-gray-100 rounded-lg shadow-2xs">
+                        <table class="min-w-full text-left text-sm text-gray-700 divide-y divide-gray-100">
+                            <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
                                 <tr>
-                                    <th scope="col" class="px-6 py-2">Pendidikan</th>
-                                    <th scope="col" class="px-6 py-2">Tahun Lulus</th>
-                                    <th scope="col" class="px-6 py-2">Institusi</th>
-                                    <th scope="col" class="px-6 py-2">Gelar</th>
-                                    <th scope="col" class="px-6 py-2">Tingkat Pendidikan</th>
-                                    <th scope="col" class="px-6 py-2"></th>
+                                    <th scope="col" class="px-6 py-3">Pendidikan</th>
+                                    <th scope="col" class="px-6 py-3">Tahun Lulus</th>
+                                    <th scope="col" class="px-6 py-3">Institusi</th>
+                                    <th scope="col" class="px-6 py-3">Gelar</th>
+                                    <th scope="col" class="px-6 py-3">Tingkat Pendidikan</th>
+                                    <th scope="col" class="px-6 py-3"></th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody class="divide-y divide-gray-100 bg-white">
                                 @forelse ($pendidikans as $item)
-                                    <tr class="border-b border-neutral-200 transition duration-300 ease-in-out hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-neutral-600">
-                                        <td class="whitespace-nowrap px-6 py-2">{{ $item->nama }}</td>
-                                        <td class="whitespace-nowrap px-6 py-2">{{ $item->tahun_lulus }}</td>
-                                        <td class="whitespace-nowrap px-6 py-2">{{ $item->instansi }}</td>
-                                        <td class="whitespace-nowrap px-6 py-2">{{ $item->gelar }}</td>
-                                        <td class="whitespace-nowrap px-6 py-2">{{ $item->tingkat->nama() }}</td>
-                                        <td class="flex flex-row gap-2 whitespace-nowrap px-6 py-2">
-                                            <x-ts:button sm icon="tabler.trash" color="red" wire:click='delete({{ $item->id }})' loading="delete({{ $item->id }})" />
+                                    <tr class="transition-colors duration-200 hover:bg-gray-50/50">
+                                        <td class="whitespace-nowrap px-6 py-3 font-medium text-gray-900">{{ $item->nama }}</td>
+                                        <td class="whitespace-nowrap px-6 py-3 text-gray-600">{{ $item->tahun_lulus }}</td>
+                                        <td class="whitespace-nowrap px-6 py-3 text-gray-600">{{ $item->instansi }}</td>
+                                        <td class="whitespace-nowrap px-6 py-3 text-gray-600">{{ $item->gelar }}</td>
+                                        <td class="whitespace-nowrap px-6 py-3 text-gray-600">{{ $item->tingkat->nama() }}</td>
+                                        <td class="whitespace-nowrap px-6 py-3 text-right">
+                                            <x-ts:button xs icon="tabler.trash" color="red" wire:click='delete({{ $item->id }})' loading="delete({{ $item->id }})" />
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr class="border-b border-neutral-200 transition duration-300 ease-in-out hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-neutral-600">
-                                        <td colspan="6" class="bg-red-100/75 text-center italic">Tidak ada pendidikan
+                                    <tr>
+                                        <td colspan="6" class="py-8 text-center text-gray-400">
+                                            <div class="flex flex-col items-center justify-center gap-1.5 py-4">
+                                                <x-tabler-school class="h-8 w-8 text-gray-300" />
+                                                <span class="text-xs font-semibold text-gray-400">Belum ada data pendidikan</span>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforelse

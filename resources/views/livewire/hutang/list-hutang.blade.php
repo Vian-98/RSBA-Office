@@ -2,7 +2,7 @@
 
     {{ $this->table }}
 
-    <x-filament::modal id="modal-pembayaran-hutang" width="w-full" :closew-by-clicking-away="false">
+    <x-filament::modal id="modal-pembayaran-hutang" width="7xl" :closew-by-clicking-away="false">
         <x-slot:heading>Pembayaran Hutang</x-slot:heading>
         <livewire:Hutang.Bayar.Add :id="$selectedId" :key="'pembayaran-add-' . $selectedId" />
     </x-filament::modal>

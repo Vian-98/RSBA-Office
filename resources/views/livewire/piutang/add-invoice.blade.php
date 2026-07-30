@@ -1,3 +1,4 @@
+
 <div>
     <form wire:submit.prevent='submit' class="flex flex-col gap-2" x-data="listDetailInvoice">
         <div class="flex flex-col gap-4 lg:flex-row">
@@ -16,7 +17,7 @@
                     <template x-for="(item, index) in itemInvoice" :key="index">
                         <div class="flex w-full flex-row items-center gap-2">
                             <div class="w-1/4">
-                                <x-ts:input type="number" x-model.number="item.nominal" @input="recalculateTotal" required placeholder="Nominal" />
+                                <x-ts:input type="text" x-model="item.nominal" @input="recalculateTotal" required placeholder="Nominal" x-on:input="$event.target.value = $event.target.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" x-effect="let inp = $el.querySelector('input') || $el; inp.value = (inp.value || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')" />
                             </div>
                             <div class="w-3/4">
                                 <x-ts:input x-model="item.keterangan" placeholder="Keterangan Pembayaran" required />
@@ -105,7 +106,10 @@
                 },
 
                 recalculateTotal() {
-                    this.totalPembayaran = this.itemInvoice.reduce((sum, item) => sum + item.nominal, 0);
+                    this.totalPembayaran = this.itemInvoice.reduce((sum, item) => {
+                        let nom = String(item.nominal || '').replace(/\D/g, '');
+                        return sum + (Number(nom) || 0);
+                    }, 0);
                 },
             }
         })

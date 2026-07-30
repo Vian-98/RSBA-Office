@@ -9,4 +9,9 @@ class BarangPenyimpanan extends Model
 {
     protected $table = 'um_penyimpanan';
     protected $guarded = [];
+
+    public function lemaris(): HasMany
+    {
+        return $this->hasMany(BarangPenyimpananLemari::class, 'penyimpanan_id', 'id');
+    }
 }

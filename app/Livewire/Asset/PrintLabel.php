@@ -36,11 +36,13 @@ class PrintLabel extends Component
         //     'QRCODE',
         //     5,
         //     5
-        // );
+        if (empty($this->assetBarang?->kode)) {
+            return null;
+        }
 
         // Baris 
         return $barcode->getBarcodePNG(
-            $this->assetBarang?->kode,
+            $this->assetBarang->kode,
             'C128',
             2,
             60
