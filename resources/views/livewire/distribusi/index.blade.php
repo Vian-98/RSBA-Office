@@ -94,11 +94,7 @@
     <div x-show="!transaksiPanel" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" class="flex flex-col gap-2">
         {{-- stats --}}
         <div class="w-full rounded-md border-2 border-white p-1">
-            <x-ts:toggle sm wire:model.live.debounce='stats' label="Stats" />
-            @if ($stats)
-                {{-- Stats Pembelian --}}
-                <livewire:Distribusi.Stats :key="Str::random()" />
-            @endif
+            <livewire:Distribusi.Stats :key="Str::random()" />
         </div>
         {{-- end stats --}}
 
@@ -107,9 +103,11 @@
             <x-ts:tab selected="Permintaan" class="rounded-lg bg-white p-2">
 
                 <x-ts:tab.items tab="Permintaan">
-                    <x-slot:left>
-                        <span class="absolute block h-1 w-1 animate-pulse rounded-full bg-red-500 ring-2 ring-red-300"></span>
-                    </x-slot:left>
+                    @if ($this->getHasNewRequestProperty())
+                        <x-slot:left>
+                            <span class="absolute block h-1 w-1 animate-pulse rounded-full bg-red-500 ring-2 ring-red-300"></span>
+                        </x-slot:left>
+                    @endif
                 </x-ts:tab.items>
 
                 <x-ts:tab.items tab="Terdistribusi">

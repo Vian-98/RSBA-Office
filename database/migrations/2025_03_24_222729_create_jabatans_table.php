@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama', 35);
             $table->string('kode_surat', 25)->nullable();
-            $table->unsignedBigInteger('parent_id');
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->unsignedBigInteger('bagian_id')->nullable();
             $table->timestamps();
 

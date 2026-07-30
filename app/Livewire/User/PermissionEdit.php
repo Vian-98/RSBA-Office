@@ -40,9 +40,11 @@ class PermissionEdit extends Component
 
         $this->permission = $this->user->getAllPermissions()->pluck('name')->toArray();
 
-        $roleUser = Role::findByName($this->user->getRoleNames()[0]);
-        $this->rolePermission = $roleUser->permissions->pluck('name');
+        $roleName = $this->user->getRoleNames()->first();
+        $roleUser = $roleName ? Role::findByName($roleName) : null;
+        $this->rolePermission = $roleUser ? $roleUser->permissions->pluck('name') : collect();
     }
+
 
     #[Computed]
     public function groupMenu()

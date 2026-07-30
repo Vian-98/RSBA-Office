@@ -74,8 +74,10 @@ class TableGudang extends Component implements HasTable, HasForms, HasActions
                 TextColumn::make('tgl_terakhir_masuk')
                     ->label('Terakhir Masuk')
                     ->getStateUsing(
-                        fn($record) => $record->stoks->max('penerimaanDet.penerimaan.tanggal')
-                            ? Carbon::parse($record->stoks->max('penerimaanDet.penerimaan.tanggal'))->diffForHumans()
+                        fn($record) => $record->stoks->max('penerimaanDet.penerimaan.created_at')
+                            ? Carbon::parse($record->stoks->max('penerimaanDet.penerimaan.created_at'))
+                                ->timezone('Asia/Jakarta')
+                                ->format('H:i d/m/Y')
                             : 'Belum pernah beli barang ini.'
                     ),
 
@@ -137,7 +139,6 @@ class TableGudang extends Component implements HasTable, HasForms, HasActions
                     Action::make('detil')
                         ->label('Stocks')
                         ->icon('tabler-file-symlink')
-                        ->tooltip('Detil Stok')
                         ->action(
                             fn(Barang $barang, $livewire) => $livewire->modalForm(modal: 'modal-detil-stok', id: $barang->getKey())
                         ),
@@ -145,7 +146,6 @@ class TableGudang extends Component implements HasTable, HasForms, HasActions
                     Action::make('print-kartu-stok-by-trans')
                         ->label('Kartu Stok Transaksi')
                         ->icon('tabler-printer')
-                        ->tooltip('Kartu Stok')
                         ->action(
                             fn(Barang $barang) => $this->printKartuStok(
                                 barang: $barang,
@@ -156,7 +156,6 @@ class TableGudang extends Component implements HasTable, HasForms, HasActions
                     Action::make('print-kartu-stok')
                         ->label('Kartu Stok')
                         ->icon('tabler-printer')
-                        ->tooltip('Kartu Stok')
                         ->action(
                             fn(Barang $barang) => $this->printKartuStok(
                                 barang: $barang,

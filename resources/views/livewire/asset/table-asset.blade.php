@@ -10,7 +10,7 @@
     </x-filament::modal>
 
     {{-- modal asset --}}
-    <x-filament::modal id="modal-asset-details" width="w-full">
+    <x-filament::modal id="modal-asset-details" width="7xl">
         <x-slot:heading>Asset Details</x-slot:heading>
         <livewire:Asset.Details :id="$selectedId" :key="Str::random()" />
     </x-filament::modal>
