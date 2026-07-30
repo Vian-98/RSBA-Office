@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -16,7 +17,9 @@ return new class extends Migration
             $table->unsignedBigInteger('chapter_id');
             $table->char('no');
             $table->longText('nama');
-            $table->fullText('nama');
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->fullText('nama');
+            }
             $table->longText('deskripsi')->nullable();
             $table->longText('maksud_tujuan')->nullable();
             $table->enum('bab', ['bab', 'sub']);

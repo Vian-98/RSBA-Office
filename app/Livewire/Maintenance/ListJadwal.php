@@ -56,9 +56,11 @@ class ListJadwal extends Component implements HasTable, HasForms, HasActions
 
             )
             ->columns([
-                TextColumn::make('id')
-                    ->label('Jadwal ID')
+                TextColumn::make('request.nomor_tiket')
+                    ->label('No. Tiket')
                     ->searchable()
+                    ->fontFamily('mono')
+                    ->placeholder('-')
                     ->sortable(),
 
                 TextColumn::make('asset.kode')
@@ -164,6 +166,19 @@ class ListJadwal extends Component implements HasTable, HasForms, HasActions
                             'mulai_by' => auth()->id(),
                             'status' => 'in_progress',
                         ]);
+
+                        // Log sistem
+                        if ($record->request_id ?? $record->maintc_request_id ?? null) {
+                            $reqId = $record->request->id ?? null;
+                            if ($reqId) {
+                                \App\Models\Maintenance\TicketComment::create([
+                                    'request_id' => $reqId,
+                                    'user_id'    => null,
+                                    'body'       => 'Pekerjaan dimulai oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name ?? 'Teknisi'),
+                                    'type'       => 'log',
+                                ]);
+                            }
+                        }
                     })
                     ->after(
                         fn($record) => $this->openModal(
@@ -173,6 +188,13 @@ class ListJadwal extends Component implements HasTable, HasForms, HasActions
 
                     )
                     ->visible(fn($record) => $record->work === null || $record->work->status === 'pending'),
+
+                Action::make('lihat_tiket')
+                    ->iconButton()
+                    ->icon('tabler-ticket')
+                    ->color('gray')
+                    ->url(fn($record) => $record->request ? route('umum.maintenance.ticket.detail', $record->request->id) : null)
+                    ->openUrlInNewTab(false),
             ]);
     }
 

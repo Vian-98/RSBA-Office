@@ -40,6 +40,19 @@ class Add extends Component
         'satuan' => 'required'
     ];
 
+    public $konversiSatuans = [];
+
+    public function addKonversi()
+    {
+        $this->konversiSatuans[] = ['satuan_id' => '', 'rasio' => ''];
+    }
+
+    public function removeKonversi($index)
+    {
+        unset($this->konversiSatuans[$index]);
+        $this->konversiSatuans = array_values($this->konversiSatuans);
+    }
+
     public function submit()
     {
         $this->validate();
@@ -55,7 +68,17 @@ class Add extends Component
                 'bhp' => $this->bhp,
                 'min_stok' => $this->min_stok
             ];
-            Barang::create($data);
+            $barang = Barang::create($data);
+
+            // Simpan konversi satuan
+            foreach ($this->konversiSatuans as $konversi) {
+                if (!empty($konversi['satuan_id']) && !empty($konversi['rasio'])) {
+                    $barang->konversiSatuans()->create([
+                        'satuan_id' => $konversi['satuan_id'],
+                        'rasio' => $konversi['rasio'],
+                    ]);
+                }
+            }
 
             DB::commit();
 

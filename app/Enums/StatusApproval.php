@@ -17,7 +17,7 @@ enum StatusApproval: string
             self::WAITING => 'Menunggu',
             self::APPROVED => 'Disetujui',
             self::REJECTED => 'Tidak Disetujui',
-            self::MANUAL => 'Manual',
+            self::MANUAL => 'Disetujui Manual',
         };
     }
 
@@ -28,7 +28,7 @@ enum StatusApproval: string
             self::WAITING => 'info',
             self::APPROVED => 'success',
             self::REJECTED => 'danger',
-            self::MANUAL => 'gray'
+            self::MANUAL => 'warning'
         };
     }
 
@@ -39,7 +39,7 @@ enum StatusApproval: string
             self::WAITING  => '#3b82f6', // info - blue
             self::APPROVED => '#22c55e', // success - green
             self::REJECTED => '#ef4444', // danger - red
-            self::MANUAL   => '#6b7280', // gray
+            self::MANUAL   => '#6366f1', // primary - indigo
         };
     }
 

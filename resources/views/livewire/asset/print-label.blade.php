@@ -4,7 +4,7 @@
 
              <!-- Header RS -->
              <div class="header">
-                 <img src="{{ asset('storage/' . $rs->logo) }}" class="logo">
+                 <x-logo class="logo" />
                  <div class="rs-info">
                      <div class="rs-name">{{ $rs->nama }}</div>
                      <div class="rs-address">{{ $rs->alamat }}</div>
@@ -15,9 +15,11 @@
 
              <!-- Barcode -->
 
+             @if($this->generateBarcode)
              <div class="barcode">
                  <img src="data:image/png;base64,{{ $this->generateBarcode }}" alt="barcode">
              </div>
+             @endif
 
              <!-- Asset Info -->
              <div class="asset-info">

@@ -411,7 +411,7 @@ return [
                 | position: controls the default toast position (Allowed: top-right, top-left, bottom-right, bottom-left).
                 | timeout: controls the default timeout in seconds.j
                 */
-                'z-index' => 'z-50',
+                'z-index' => 'z-[60]',
                 'progress' => true,
                 'expandable' => false,
                 'position' => 'top-right',

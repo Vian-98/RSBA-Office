@@ -21,14 +21,24 @@ class Index extends Component
 
     public $state;
 
-    public $tab;
-    public bool $stats = false;
+    public $tab = 'Permintaan';
+
 
 
     #[Computed]
     public function getRequestPembelianProperty()
     {
-        return PembelianRequest::where('status', 'pending')->orWhere('status', 'approved')->count();
+        return PembelianRequest::whereNotIn('status', ['completed', 'rejected'])
+            ->whereHas('details', function ($query) {
+                $query->whereNull('pembelian_id')
+                    ->where(function ($q) {
+                        $q->whereHas('request', function ($sub) {
+                            $sub->where('status', '!=', 'approved');
+                        })
+                        ->orWhere('jml_disetujui', '>', 0);
+                    });
+            })
+            ->count();
     }
 
     public function render()

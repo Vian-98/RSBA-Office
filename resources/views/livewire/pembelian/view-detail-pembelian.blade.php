@@ -44,9 +44,9 @@
             </div>
             <div class="flex items-center">
                 <span class="w-[150px]">Lampiran</span> :
-                @if (count($pembelian?->lampirans))
+                @if (count($pembelian?->lampirans ?? []))
                     <span x-on:click="$dispatch('open-modal',{id:'modal-view-lampiran-pembelian'})" class="rounded-md px-1 hover:cursor-pointer hover:bg-indigo-100 hover:text-indigo-500">
-                        {{ count($pembelian?->lampirans) }}
+                        {{ count($pembelian?->lampirans ?? []) }}
                         File
                     </span>
                 @else
@@ -57,7 +57,7 @@
         </div>
 
         {{-- modal view lampiran --}}
-        <x-filament::modal id="modal-view-lampiran-pembelian" width="w-full" :close-by-escaping="true" :close-button="true">
+        <x-filament::modal id="modal-view-lampiran-pembelian" width="7xl" :close-by-escaping="true" :close-button="true">
             <x-slot:heading></x-slot:heading>
             <livewire:Pembelian.ViewLampiran :lampirans="$pembelian->lampirans" />
         </x-filament::modal>
