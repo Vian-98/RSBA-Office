@@ -176,28 +176,53 @@ class DocstoreSyncService
     {
         $cacheKey = 'docstore_doc_' . $docstoreKey;
 
-        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($docstoreKey) {
-            try {
-                $token = $this->getM2mToken();
-                $response = Http::withOptions(['verify' => $this->verifySsl])
-                    ->when($token, fn($q) => $q->withToken($token))
-                    ->timeout(10)
-                    ->get(rtrim($this->apiUrl, '/') . '/documents/' . $docstoreKey);
-
-                if ($response->successful()) {
-                    return $response->json();
-                }
-
-                Log::warning('Docstore fetch failed', [
-                    'docstore_key' => $docstoreKey,
-                    'status'       => $response->status(),
-                ]);
-                return null;
-            } catch (\Throwable $e) {
-                Log::error('Docstore fetch error: ' . $e->getMessage());
-                return null;
+        if (Cache::has($cacheKey)) {
+            $cached = Cache::get($cacheKey);
+            if (!empty($cached)) {
+                return $cached;
             }
-        });
+        }
+
+        try {
+            $token = $this->getM2mToken();
+            $url = rtrim($this->apiUrl, '/') . '/documents/' . $docstoreKey;
+
+            $response = Http::withOptions(['verify' => $this->verifySsl])
+                ->when($token, fn($q) => $q->withToken($token))
+                ->timeout(10)
+                ->get($url);
+
+            // Handle token expired (401) -> Retry 1x dengan token baru
+            if ($response->status() === 401) {
+                Cache::forget('docstore_m2m_token_' . md5($this->clientId));
+                $newToken = $this->getM2mToken();
+
+                if ($newToken) {
+                    $response = Http::withOptions(['verify' => $this->verifySsl])
+                        ->withToken($newToken)
+                        ->timeout(10)
+                        ->get($url);
+                }
+            }
+
+            if ($response->successful()) {
+                $json = $response->json();
+                if (!empty($json) && ($json['success'] ?? false)) {
+                    Cache::put($cacheKey, $json, now()->addMinutes(5));
+                    return $json;
+                }
+            }
+
+            Log::warning('Docstore fetch failed', [
+                'docstore_key' => $docstoreKey,
+                'status'       => $response->status(),
+                'body'         => $response->body(),
+            ]);
+            return null;
+        } catch (\Throwable $e) {
+            Log::error('Docstore fetch error: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
