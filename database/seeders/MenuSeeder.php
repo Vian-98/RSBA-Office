@@ -13,128 +13,547 @@ class MenuSeeder extends Seeder
      */
     public function run(): void
     {
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            Menu::query()->delete();
+        } else {
+            Menu::truncate();
+        }
+
         $menus = [
             [
+                'id' => 1,
                 'nama' => 'Main Menu',
                 'route' => null,
                 'icon' => null,
                 'permission' => null,
+                'parent_id' => null,
                 'group' => null,
-                'submenus' => [
-                    [
-                        'nama' => 'Dashboard',
-                        'route' => 'dashboard',
-                        'icon' => 'home',
-                        'permission' => 'view-dashboard',
-                        'group' => null,
-                        'submenus' => []
-                    ],
-                    [
-                        'nama' => 'Dashboard Kamar',
-                        'route' => 'dashboard.kamar',
-                        'icon' => 'home',
-                        'permission' => 'view-dashboard-kamar',
-                        'group' => null,
-                        'submenus' => []
-                    ],
-                    [
-                        'nama' => 'User',
-                        'route' => 'admin.user.index',
-                        'icon' => 'users',
-                        'permission' => 'view-admin-user',
-                        'group' => 'adm',
-                        'submenus' => []
-                    ],
-                    [
-                        'nama' => 'Settings',
-                        'route' => null,
-                        'icon' => 'settings',
-                        'permission' => 'view-settings',
-                        'group' => 'adm',
-                        'submenus' => [
-                            [
-                                'nama' => 'Menu',
-                                'route' => 'admin.settings.menu',
-                                'icon' => null,
-                                'permission' => 'view-admin-settings-menu',
-                                'group' => 'adm',
-                                'submenus' => []
-                            ],
-                            [
-                                'nama' => 'Perusahaan',
-                                'route' => 'admin.settings.perusahaan',
-                                'icon' => null,
-                                'permission' => 'view-admin-settings-perusahaan',
-                                'group' => 'adm',
-                                'submenu' => []
-                            ]
-                        ],
-
-                    ],
-                    [
-                        'nama' => 'Role Permission',
-                        'route' => null,
-                        'icon' => 'circle-key',
-                        'permission' => 'view-role-permission',
-                        'group' => 'adm',
-                        'submenus' => [
-                            [
-                                'nama' => 'Role',
-                                'route' => 'admin.settings.role',
-                                'icon' => null,
-                                'permission' => 'view-admin-settings-role',
-                                'group' => 'adm',
-                                'submenus' => []
-                            ],
-                            [
-                                'nama' => 'Permission',
-                                'route' => 'admin.settings.permission',
-                                'icon' => null,
-                                'permission' => 'view-admin-settings-permission',
-                                'group' => 'adm',
-                                'submenus' => []
-                            ]
-                        ],
-
-                    ],
-                ]
+            ],
+            [
+                'id' => 2,
+                'nama' => 'Dashboard',
+                'route' => 'dashboard',
+                'icon' => 'home',
+                'permission' => ['view-dashboard'],
+                'parent_id' => 1,
+                'group' => null,
+            ],
+            [
+                'id' => 3,
+                'nama' => 'Display Monitor',
+                'route' => 'dashboard.display-monitor.admin',
+                'icon' => 'bed',
+                'permission' => ['view-dashboard-kamar'],
+                'parent_id' => 1,
+                'group' => null,
+            ],
+            [
+                'id' => 4,
+                'nama' => 'User',
+                'route' => 'admin.user.index',
+                'icon' => 'users',
+                'permission' => ['tanda-tangan-digital', 'view-admin-user'],
+                'parent_id' => 1,
+                'group' => 'admin',
+            ],
+            [
+                'id' => 5,
+                'nama' => 'Settings',
+                'route' => null,
+                'icon' => 'settings',
+                'permission' => [],
+                'parent_id' => 1,
+                'group' => 'admin',
+            ],
+            [
+                'id' => 6,
+                'nama' => 'Menu',
+                'route' => 'admin.settings.menu',
+                'icon' => null,
+                'permission' => ['view-admin-settings-menu'],
+                'parent_id' => 5,
+                'group' => 'admin',
+            ],
+            [
+                'id' => 7,
+                'nama' => 'Perusahaan',
+                'route' => 'admin.settings.perusahaan',
+                'icon' => null,
+                'permission' => ['view-admin-settings-perusahaan'],
+                'parent_id' => 5,
+                'group' => 'admin',
+            ],
+            [
+                'id' => 8,
+                'nama' => 'Role Permission',
+                'route' => null,
+                'icon' => 'circle-key',
+                'permission' => [],
+                'parent_id' => 1,
+                'group' => 'admin',
+            ],
+            [
+                'id' => 9,
+                'nama' => 'Role',
+                'route' => 'admin.settings.role',
+                'icon' => null,
+                'permission' => ['view-admin-settings-role'],
+                'parent_id' => 8,
+                'group' => 'admin',
+            ],
+            [
+                'id' => 10,
+                'nama' => 'Permission',
+                'route' => 'admin.settings.permission',
+                'icon' => null,
+                'permission' => ['view-admin-settings-permission'],
+                'parent_id' => 8,
+                'group' => 'admin',
+            ],
+            [
+                'id' => 11,
+                'nama' => 'Karyawan',
+                'route' => 'kepegawaian.karyawan.index',
+                'icon' => 'user-square',
+                'permission' => ['edit-kepegawaian-karyawan', 'export-karyawan', 'view-dokter', 'view-kepegawaian-karyawan'],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 12,
+                'nama' => 'Master',
+                'route' => null,
+                'icon' => 'database',
+                'permission' => [],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 13,
+                'nama' => 'Bagian',
+                'route' => 'kepegawaian.master.bagian.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-bagian'],
+                'parent_id' => 12,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 14,
+                'nama' => 'Jabatan',
+                'route' => 'kepegawaian.master.jabatan.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-jabatan'],
+                'parent_id' => 12,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 15,
+                'nama' => 'Ruangan',
+                'route' => 'kepegawaian.master.ruangan.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-ruangan'],
+                'parent_id' => 12,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 16,
+                'nama' => 'Spesialis',
+                'route' => 'kepegawaian.master.spesialisasi.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-spesialisasi'],
+                'parent_id' => 12,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 17,
+                'nama' => 'Surat',
+                'route' => null,
+                'icon' => 'mail-opened',
+                'permission' => [],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 19,
+                'nama' => 'Izin dan Cuti',
+                'route' => 'kepegawaian.surat.cuti',
+                'icon' => 'file-text',
+                'permission' => ['view-kepegawaian-surat-cuti', 'create-cuti-other-karyawan'],
+                'parent_id' => 17,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 20,
+                'nama' => 'SP3',
+                'route' => 'kepegawaian.surat.sp3',
+                'icon' => 'file-alert',
+                'permission' => ['view-kepegawaian-surat-sp3'],
+                'parent_id' => 17,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 21,
+                'nama' => 'Verifikasi',
+                'route' => 'surat.verification',
+                'icon' => 'file-check',
+                'permission' => ['view-surat-verification'],
+                'parent_id' => 17,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 22,
+                'nama' => 'Master',
+                'route' => null,
+                'icon' => 'database',
+                'permission' => [],
+                'parent_id' => 1,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 23,
+                'nama' => 'Supplier',
+                'route' => 'umum.master.supplier',
+                'icon' => null,
+                'permission' => ['view-umum-master-supplier'],
+                'parent_id' => 22,
+                'group' => 'umu',
             ],
 
+            [
+                'id' => 25,
+                'nama' => 'Kategori Barang',
+                'route' => 'umum.master.kategori',
+                'icon' => null,
+                'permission' => ['view-umum-master-kategori'],
+                'parent_id' => 22,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 26,
+                'nama' => 'Satuan Barang',
+                'route' => 'umum.master.satuan',
+                'icon' => null,
+                'permission' => ['view-umum-master-satuan'],
+                'parent_id' => 22,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 27,
+                'nama' => 'Penyimpanan',
+                'route' => 'umum.master.penyimpanan',
+                'icon' => null,
+                'permission' => ['view-umum-master-penyimpanan'],
+                'parent_id' => 22,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 28,
+                'nama' => 'Barang',
+                'route' => 'umum.master.barang',
+                'icon' => null,
+                'permission' => ['view-umum-master-barang'],
+                'parent_id' => 22,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 29,
+                'nama' => 'Pembelian',
+                'route' => 'umum.pembelian.index',
+                'icon' => 'shopping-cart-plus',
+                'permission' => ['view-umum-pembelian'],
+                'parent_id' => 1,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 30,
+                'nama' => 'Distribusi',
+                'route' => 'umum.distribusi.index',
+                'icon' => 'shopping-cart-share',
+                'permission' => ['view-umum-distribusi'],
+                'parent_id' => 1,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 31,
+                'nama' => 'Gudang',
+                'route' => 'umum.gudang.index',
+                'icon' => 'package',
+                'permission' => ['view-umum-gudang'],
+                'parent_id' => 1,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 32,
+                'nama' => 'Asset',
+                'route' => 'umum.asset.index',
+                'icon' => 'device-ipad-horizontal-check',
+                'permission' => ['view-umum-asset'],
+                'parent_id' => 1,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 33,
+                'nama' => 'Hutang',
+                'route' => 'keuangan.hutang.index',
+                'icon' => 'file-invoice',
+                'permission' => ['view-keuangan-hutang'],
+                'parent_id' => 1,
+                'group' => 'keu',
+            ],
+            [
+                'id' => 34,
+                'nama' => 'Piutang',
+                'route' => 'keuangan.piutang.index',
+                'icon' => 'file-dollar',
+                'permission' => ['view-keuangan-piutang'],
+                'parent_id' => 1,
+                'group' => 'keu',
+            ],
+            [
+                'id' => 35,
+                'nama' => 'Laporan',
+                'route' => 'umum.laporan.index',
+                'icon' => 'file-analytics',
+                'permission' => ['view-umum-laporan'],
+                'parent_id' => 1,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 36,
+                'nama' => 'Stok Opname',
+                'route' => 'umum.opname.index',
+                'icon' => 'align-box-left-stretch',
+                'permission' => ['finish-opname-gudang', 'view-umum-opname'],
+                'parent_id' => 1,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 37,
+                'nama' => 'Laporan',
+                'route' => 'keuangan.laporan.index',
+                'icon' => 'file-analytics',
+                'permission' => ['view-keuangan-laporan'],
+                'parent_id' => 1,
+                'group' => 'keu',
+            ],
+            [
+                'id' => 38,
+                'nama' => 'Maintenance',
+                'route' => 'umum.maintenance.index',
+                'icon' => 'device-desktop-cog',
+                'permission' => ['approval-maintenance', 'view-umum-maintenance'],
+                'parent_id' => 1,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 39,
+                'nama' => 'Pengajuan',
+                'route' => 'umum.pengajuan.index',
+                'icon' => 'send',
+                'permission' => ['view-umum-pengajuan'],
+                'parent_id' => 1,
+                'group' => 'umu',
+            ],
+            [
+                'id' => 40,
+                'nama' => 'Akreditasi',
+                'route' => null,
+                'icon' => 'brand-google-drive',
+                'permission' => ['assesor-akreditasi', 'view-kepegawaian-akreditasi'],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 41,
+                'nama' => 'Semua Kegiatan',
+                'route' => 'kepegawaian.akreditasi.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-akreditasi'],
+                'parent_id' => 40,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 42,
+                'nama' => 'Pengaturan Cuti',
+                'route' => 'kepegawaian.master.cuti.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-cuti'],
+                'parent_id' => 12,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 45,
+                'nama' => 'Akuntansi',
+                'route' => null,
+                'icon' => 'align-box-center-stretch',
+                'permission' => [],
+                'parent_id' => 1,
+                'group' => 'keu',
+            ],
+            [
+                'id' => 46,
+                'nama' => 'COA',
+                'route' => 'keuangan.akuntansi.coa',
+                'icon' => null,
+                'permission' => ['view-keuangan-akuntansi-coa'],
+                'parent_id' => 45,
+                'group' => 'keu',
+            ],
+            [
+                'id' => 47,
+                'nama' => 'Jurnal',
+                'route' => 'keuangan.akuntansi.jurnal.umum',
+                'icon' => null,
+                'permission' => ['view-keuangan-akuntansi-jurnal-umum'],
+                'parent_id' => 45,
+                'group' => 'keu',
+            ],
+            [
+                'id' => 48,
+                'nama' => 'Tunjangan Golongan',
+                'route' => 'kepegawaian.master.tunjangan-golongan.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-tunjangan-golongan'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 49,
+                'nama' => 'Master',
+                'route' => null,
+                'icon' => 'database',
+                'permission' => [],
+                'parent_id' => 1,
+                'group' => 'keu',
+            ],
+            [
+                'id' => 50,
+                'nama' => 'Rekanan',
+                'route' => 'keuangan.master.rekanan',
+                'icon' => null,
+                'permission' => ['view-keuangan-master-rekanan', 'add-keuangan-master-rekanan', 'edit-keuangan-master-rekanan', 'delete-keuangan-master-rekanan'],
+                'parent_id' => 49,
+                'group' => 'keu',
+            ],
+            [
+                'id' => 52,
+                'nama' => 'Pasien',
+                'route' => 'administrasi.pasien.index',
+                'icon' => 'users',
+                'permission' => ['view-administrasi-pasien-index', 'add-administrasi-pasien-index', 'edit-administrasi-pasien-index', 'delete-administrasi-pasien-index'],
+                'parent_id' => 1,
+                'group' => 'admin',
+            ],
+            [
+                'id' => 53,
+                'nama' => 'Penggajian',
+                'route' => null,
+                'icon' => 'moneybag',
+                'permission' => [],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 531,
+                'nama' => 'Rekap Bulanan',
+                'route' => 'kepegawaian.gaji.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-gaji'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 54,
+                'nama' => 'Pendaftaran',
+                'route' => 'administrasi.registrasi.index',
+                'icon' => 'notes',
+                'permission' => ['view-administrasi-registrasi-index', 'add-administrasi-registrasi-index', 'edit-administrasi-registrasi-index', 'delete-administrasi-registrasi-index'],
+                'parent_id' => 1,
+                'group' => 'admin',
+            ],
+            [
+                'id' => 55,
+                'nama' => 'Jasa Medis',
+                'route' => 'kepegawaian.jasmed.index',
+                'icon' => 'medical-cross',
+                'permission' => ['view-kepegawaian-jasmed'],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 56,
+                'nama' => 'Laporan',
+                'route' => 'kepegawaian.laporan.index',
+                'icon' => 'file-analytics',
+                'permission' => ['view-kepegawaian-laporan'],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+
+
+            [
+                'id' => 69,
+                'nama' => 'Aturan Pajak PPh 21',
+                'route' => 'kepegawaian.master.aturan-pajak.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-aturan-pajak'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+
+            // ── Modul Jadwal & Kehadiran (Fase 0 & 1) ──
+            [
+                'id' => 70,
+                'nama' => 'Jadwal & Kehadiran',
+                'route' => null,
+                'icon' => 'calendar-time',
+                'permission' => ['view-kepegawaian-jadwal-kerja'],
+                'parent_id' => 1,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 71,
+                'nama' => 'Jadwal Kerja',
+                'route' => 'kepegawaian.jadwal-kerja.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-jadwal-kerja'],
+                'parent_id' => 70,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 72,
+                'nama' => 'Kontrol Absensi',
+                'route' => 'kepegawaian.absensi.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-absensi'],
+                'parent_id' => 70,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 73,
+                'nama' => 'Konfigurasi Jadwal',
+                'route' => 'kepegawaian.konfigurasi-jadwal.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-konfigurasi-jadwal'],
+                'parent_id' => 70,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 74,
+                'nama' => 'Jadwal Tugas Saya',
+                'route' => 'profile.jadwal-tugas-saya',
+                'icon' => null,
+                'permission' => ['view-profile-jadwal-tugas-saya'],
+                'parent_id' => 70,
+                'group' => 'sdm',
+            ],
         ];
 
-        // Process menus recursively
-        foreach ($menus as $menuData) {
-            $this->createMenu($menuData);
-        }
-    }
-
-
-    private function createMenu(array $menuData, ?int $parentId = null): void
-    {
-        // DB::beginTransaction();
-        try {
-
-            if (!empty($menuData['permission'])) {
-                Permission::firstOrCreate(['name' => $menuData['permission']]);
-                $collectionPermission[] = $menuData['permission'];
-            }
-
-            $menu = Menu::create([
-                'nama' => $menuData['nama'],
-                'route' => $menuData['route'] ?? null,
-                'icon' => $menuData['icon'] ?? null,
-                'permission' => !empty($collectionPermission) ? $collectionPermission : null,
-                'group' => $menuData['group'] ?? null,
-                'parent_id' => $parentId,
-            ]);
-        } catch (\Throwable $e) {
-            throw $e;
+        foreach ($menus as $menu) {
+            Menu::create($menu);
         }
 
-        if (!empty($menuData['submenus'])) {
-            foreach ($menuData['submenus'] as $submenuData) {
-                $this->createMenu($submenuData, $menu->id);
-            }
-        }
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
     }
 }

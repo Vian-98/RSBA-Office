@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama');
             $table->integer('lama')->default(0);
-            $table->tinyText('periode')->nullable()->default('Y');
+            $table->String('periode')->nullable()->default('Y');
             $table->timestamps();
         });
     }

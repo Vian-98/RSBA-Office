@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('disetujui_oleh');
             $table->enum('status', ['waiting', 'approved', 'rejected']);
             $table->string('keterangan')->nullable();
-            $table->longText('signature_hash')->nullable()->unique();
+            $table->longText('signature_hash')->nullable();
             $table->string('approved_at', 25)->nullable();
             $table->timestamps();
 

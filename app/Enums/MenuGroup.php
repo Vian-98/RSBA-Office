@@ -5,7 +5,7 @@ namespace App\Enums;
 enum MenuGroup: string
 {
     case NULL = '';
-    case ADM = 'adm';
+    case ADM = 'admin';
     case SDM = 'sdm';
     case UMU = 'umu';
     case KEU = 'keu';

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->enum('status', ['approved', 'rejected']);
             $table->string('keterangan')->nullable();
             $table->string('approved_at', 25);
-            $table->longText('signature_hash')->unique();
+            $table->longText('signature_hash');
             $table->timestamps();
 
             $table->foreign('surat_sp3_id')->references('id')->on('surat_sp3')->onDelete('cascade');

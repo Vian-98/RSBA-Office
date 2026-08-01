@@ -29,9 +29,15 @@ class ListPermintaanBarang extends Component implements HasTable, HasForms, HasA
     {
         return $table->query(
             PembelianRequestDetails::with(['request', 'barang'])
-                ->where('pembelian_id', null)
+                ->whereNull('pembelian_id')
                 ->whereHas('request', function ($query) {
-                    $query->where('status', '!=', 'completed');
+                    $query->whereNotIn('status', ['completed', 'rejected']);
+                })
+                ->where(function ($query) {
+                    $query->whereHas('request', function ($q) {
+                        $q->where('status', '!=', 'approved');
+                    })
+                    ->orWhere('jml_disetujui', '>', 0);
                 })
         )
             ->defaultGroup('barang.nama')
@@ -131,7 +137,10 @@ class ListPermintaanBarang extends Component implements HasTable, HasForms, HasA
                 fn(Model $record): bool => $this->getComputedStatus($record) === 'approved',
             )
             ->selectCurrentPageOnly()
-            ->recordActions([]);
+            ->recordActions([])
+            ->emptyStateIcon('tabler-shopping-cart')
+            ->emptyStateHeading('Pada saat ini Pembelian sedang kosong')
+            ->emptyStateDescription('Tidak ada permintaan pembelian barang yang aktif saat ini.');
     }
 
     // to update request.status

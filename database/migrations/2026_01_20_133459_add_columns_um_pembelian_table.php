@@ -15,7 +15,7 @@ return new class extends Migration
             $table->decimal('subtotal', 16, 2)->default(0)->after('status');
             $table->decimal('total_diskon', 16, 2)->nullable()->after('subtotal');
             $table->integer('total_ppn')->nullable()->after('total_diskon');
-            $table->json('lampirans')->default(json_encode([]))->nullable()->after('total');
+            $table->json('lampirans')->nullable()->after('total');
             $table->unsignedBigInteger('created_by')->nullable()->after('lampirans');
             $table->unsignedBigInteger('sp3_id')->nullable()->after('created_by');
 

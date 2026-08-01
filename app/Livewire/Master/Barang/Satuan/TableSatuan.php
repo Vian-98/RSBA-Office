@@ -54,6 +54,7 @@ class TableSatuan extends Component implements HasTable, HasForms, HasActions
                     ->iconButton()
                     ->icon('tabler-trash')
                     ->color('danger')
+                    ->requiresConfirmation()
                     ->action(
                         fn($record, $livewire) => $livewire->delete(modal: 'modal-edit-satuan', id: $record->getKey())
                     )

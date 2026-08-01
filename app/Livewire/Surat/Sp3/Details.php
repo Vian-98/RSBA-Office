@@ -47,11 +47,13 @@ class Details extends Component
     {
         // return $approved->approvals;
         $data = $this->suratSp3->approvals->map(function ($item) {
+            $isManual = $item->status === \App\Enums\StatusApproval::MANUAL || str_contains(strtolower($item->keterangan ?? ''), 'manual');
             return [
-                'status' => $item->status->nama(),
-                'nama' => $item->users->karyawan->nama,
+                'status' => $isManual ? 'Manual' : $item->status->nama(),
+                'nama' => $item->users->karyawan->nama ?? $item->users->nama,
                 'approved_at' => $item->approved_at,
-                'signature' => $item->signature_hash
+                'signature' => $item->signature_hash,
+                'is_manual' => $isManual,
             ];
         });
 

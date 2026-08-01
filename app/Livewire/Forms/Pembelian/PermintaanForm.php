@@ -88,8 +88,8 @@ class PermintaanForm extends Form
                 'pembelian_req_id' => $pembelianReq->id,
                 'barang_id' => $item['id'], //barang_id
                 'jml_req' => $item['jumlah'],
-                'harga_est' => $item['harga_est'],
-                'specs' => $item['specs']
+                'harga_est' => $item['harga_est'] ?? 0,
+                'specs' => $item['specs'] ?? null
             ]);
         }
     }

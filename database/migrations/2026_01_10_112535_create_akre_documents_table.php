@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -34,7 +35,9 @@ return new class extends Migration
                 ->onDelete('set null');
 
             // Fulltext index untuk search nama dokumen
-            $table->fullText('nama', 'ft_documents_nama');
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->fullText('nama', 'ft_documents_nama');
+            }
 
             // Composite index untuk query utama: filter dokumen aktif per user
             $table->index(['is_deleted', 'uploaded_by'], 'idx_deleted_uploader');

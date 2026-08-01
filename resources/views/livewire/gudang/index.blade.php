@@ -6,7 +6,7 @@
         <div class="ml-auto flex justify-end gap-2">
             <x-ts:button outline color="violet" x-show="history.length === 0 " sm x-on:click="togglePanel('permintaan')">
                 <x-slot:left>
-                    <x-ts:badge color="violet" :text="rand(1, 100)" round light />
+                    <x-ts:badge color="violet" :text="$permintaanCount" :round="true" light />
                 </x-slot:left>
                 Permintaan
             </x-ts:button>
@@ -25,10 +25,7 @@
 
     <div x-show="panelActive === 'main'" class="flex flex-col gap-2">
         <div class="rounded-md border-2 border-white p-1">
-            <x-ts:toggle sm wire:model.live.debounce='stats' label="Stats" />
-            @if ($stats)
-                <livewire:Gudang.stats :key="Str::random()" />
-            @endif
+            <livewire:Gudang.stats :key="Str::random()" />
         </div>
         <div class="w-full rounded-lg bg-white p-4">
             <livewire:Gudang.TableGudang key="table-gudang" />
