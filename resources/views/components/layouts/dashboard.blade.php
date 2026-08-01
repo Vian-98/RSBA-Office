@@ -7,22 +7,27 @@
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <title>{{ $title ?? config('app.name') }}</title>
 
+        <script>
+            document.addEventListener('alpine:init', () => {
+                if (window.Alpine && !window.Alpine.store('theme')) {
+                    window.Alpine.store('theme', localStorage.getItem('theme') || 'light');
+                }
+            });
+        </script>
         <tallstackui:script />
         @filamentStyles
-        @livewireStyles
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
 
-    <body class="h-screen">
+    <body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
         <x-ts:toast />
-        <div class="min-h-screen rounded-lg py-6 shadow-lg sm:px-6 lg:px-8">
-            <div class="space-y-auto flex w-full flex-col rounded-lg border border-gray-200 p-2">
+        <div class="min-h-screen py-4 px-3 sm:py-6 sm:px-6 lg:px-8">
+            <div class="flex w-full flex-col rounded-2xl bg-white border border-slate-200/80 p-3 sm:p-5 shadow-sm">
                 {{ $slot }}
             </div>
         </div>
 
         @filamentScripts
-        @livewireScripts
     </body>
 
 </html>

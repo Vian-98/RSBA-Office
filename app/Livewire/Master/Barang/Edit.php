@@ -43,6 +43,10 @@ class Edit extends Component
         $this->satuan = $this->barang?->satuan_id;
         $this->min_stok = $this->barang?->min_stok;
         $this->bhp = $this->barang->bhp;
+        
+        $this->konversiSatuans = $this->barang->konversiSatuans->map(function ($k) {
+            return ['id' => $k->id, 'satuan_id' => $k->satuan_id, 'rasio' => $k->rasio];
+        })->toArray();
 
         // $this->rules = [
         //     'nama' => "required|unique:um_barang,nama,{$this->barang->id}",
@@ -63,6 +67,19 @@ class Edit extends Component
         ];
     }
 
+    public $konversiSatuans = [];
+
+    public function addKonversi()
+    {
+        $this->konversiSatuans[] = ['id' => null, 'satuan_id' => '', 'rasio' => ''];
+    }
+
+    public function removeKonversi($index)
+    {
+        unset($this->konversiSatuans[$index]);
+        $this->konversiSatuans = array_values($this->konversiSatuans);
+    }
+
     function submit()
     {
         $this->validate();
@@ -78,6 +95,17 @@ class Edit extends Component
                 'bhp' => $this->bhp,
                 'min_stok' => $this->min_stok
             ]);
+
+            // Sync konversi satuan
+            $this->barang->konversiSatuans()->delete();
+            foreach ($this->konversiSatuans as $konversi) {
+                if (!empty($konversi['satuan_id']) && !empty($konversi['rasio'])) {
+                    $this->barang->konversiSatuans()->create([
+                        'satuan_id' => $konversi['satuan_id'],
+                        'rasio' => $konversi['rasio'],
+                    ]);
+                }
+            }
 
             DB::commit();
 

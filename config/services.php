@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    'dms' => [
+        'base_url' => env('DMS_MIDDLEWARE_API_URL', 'http://127.0.0.1:8000'),
+        'email' => env('DMS_MIDDLEWARE_EMAIL', 'admin@dms.local'),
+        'password' => env('DMS_MIDDLEWARE_PASSWORD', 'password'),
+    ],
+
+    'docstore' => [
+        'base_url'     => env('DOCSTORE_BASE_URL', 'http://localhost:8000'),
+        'api_url'      => env('DOCSTORE_API_URL', 'http://localhost:8000/api'),
+        'client_id'    => env('DOCSTORE_OAUTH_CLIENT_ID', ''),
+        'client_secret'=> env('DOCSTORE_OAUTH_CLIENT_SECRET', ''),
+        'hmac_secret'  => env('DOCSTORE_HMAC_SECRET', ''),
+        'verify_ssl'   => env('DOCSTORE_VERIFY_SSL', false),
+    ],
+
 ];

@@ -12,14 +12,12 @@ use Livewire\Attributes\Lazy;
 #[Lazy]
 class PrintCv extends Component
 {
-    public ?Karyawan $karyawan;
+    public ?Karyawan $karyawan = null;
 
-    public function mount($karyawanId)
+    public function mount($karyawanId = null)
     {
-        $this->karyawan = Karyawan::find($karyawanId);
-
-        if (!$this->karyawan) {
-            abort(404);
+        if ($karyawanId) {
+            $this->karyawan = Karyawan::find($karyawanId);
         }
     }
 

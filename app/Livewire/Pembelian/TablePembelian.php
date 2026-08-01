@@ -129,7 +129,7 @@ class TablePembelian extends Component implements HasTable, HasForms, HasActions
                             ->label('Dari')
                             ->placeholder('Pilih Tanggal'),
                         DatePicker::make('tgl_selesai')
-                            ->default(now())
+                            ->default(now()->endOfMonth())
                             ->label('Sampai')
                             ->placeholder('Pilih Tanggal')
                     ])

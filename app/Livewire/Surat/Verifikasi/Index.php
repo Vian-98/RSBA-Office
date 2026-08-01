@@ -9,13 +9,13 @@ use Livewire\Component;
 
 #[Lazy]
 #[Title('Verifikasi Surat')]
-#[Layout('components.layouts.dashboard')]
 class Index extends Component
 {
-    public string $tab;
+    public string $tab = 'sp3';
 
     public function render()
     {
-        return view('livewire.surat.verifikasi.index');
+        $layout = auth()->check() ? 'components.layouts.app' : 'components.layouts.dashboard';
+        return view('livewire.surat.verifikasi.index')->layout($layout);
     }
 }
