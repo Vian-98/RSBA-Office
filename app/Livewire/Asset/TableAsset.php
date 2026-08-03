@@ -46,7 +46,6 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
             ->query(
                 AssetBarang::with(['barang', 'ruangan', 'barang.kategori', 'maintenanceRequests' => fn($q) => $q->active()])
                     ->withHierarchySort()
-                    ->when(
                         !$this->canManageAsset(),
                         function (Builder $query) {
                             $user = auth()->user();

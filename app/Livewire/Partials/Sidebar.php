@@ -228,6 +228,7 @@ class Sidebar extends Component
             if ($user && $user->isKoordinator()) {
                 $permissions = array_merge($permissions, [
                     'view-kepegawaian-jadwal-kerja',
+                    'view-kepegawaian-absensi',
                     'view-kepegawaian-konfigurasi-jadwal',
                 ]);
             }

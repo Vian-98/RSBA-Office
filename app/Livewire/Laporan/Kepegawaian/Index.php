@@ -343,16 +343,4 @@ class Index extends Component
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
-
-    public function render()
-    {
-        $this->authorizeFromRoute();
-
-        return view('livewire.laporan.kepegawaian.index', [
-            'karyawans' => $this->activeTab === 'detail' ? $this->karyawans : null,
-            'bagianList' => $this->bagianList,
-            'bagianBreakdown' => $this->activeTab === 'bagian' || $this->activeTab === 'overview' ? $this->bagianBreakdown : null,
-            'kehadiranList' => $this->activeTab === 'kehadiran' ? $this->kehadiranHariIniList : null,
-        ]);
-    }
 }
