@@ -132,6 +132,17 @@ class AnnualSchedule extends Component
 
             $asset = AssetBarang::findOrFail($this->asset_id);
 
+            // Check if asset is already under active maintenance
+            $hasActiveTicket = MaintenanceRequest::where('asset_id', $asset->id)
+                ->active()
+                ->exists();
+
+            if ($hasActiveTicket || $asset->status === 'diperbaiki') {
+                DB::rollBack();
+                $this->toast()->error('Gagal', 'Aset sedang dalam perbaikan/maintenance aktif. Selesaikan perbaikan yang berjalan terlebih dahulu.')->send();
+                return;
+            }
+
             // Buat tiket perbaikan/inspeksi rutin
             $maintReq = MaintenanceRequest::create([
                 'asset_id' => $asset->id,

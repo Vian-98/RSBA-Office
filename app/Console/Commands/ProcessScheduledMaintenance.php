@@ -52,6 +52,17 @@ class ProcessScheduledMaintenance extends Command
                     continue;
                 }
 
+                $hasActiveTicket = MaintenanceRequest::where('asset_id', $asset->id)
+                    ->active()
+                    ->exists();
+
+                if ($hasActiveTicket || $asset->status === 'diperbaiki') {
+                    $namaBarang = $asset->barang?->nama ?? 'Aset';
+                    $this->warn("Aset {$asset->kode} ({$namaBarang}) sedang dalam perbaikan/maintenance aktif. Melewati pemicuan tiket berkala...");
+                    DB::rollBack();
+                    continue;
+                }
+
                 $systemUserId = \App\Models\User::first()?->id ?? 1;
 
                 // Buat tiket perbaikan/inspeksi rutin otomatis

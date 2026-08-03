@@ -196,7 +196,7 @@ class AnnualMaintenanceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->artisan('maintenance:process-scheduled')
+        $this->artisan(\App\Console\Commands\ProcessScheduledMaintenance::class)
             ->expectsOutput('Memeriksa jadwal maintenance berkala aset yang jatuh tempo...')
             ->assertExitCode(0);
 
