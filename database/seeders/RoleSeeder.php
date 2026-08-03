@@ -25,9 +25,9 @@ class RoleSeeder extends Seeder
         $bagianUmum = Role::firstOrCreate(['name' => 'Bagian-Umum']);
         $keuangan = Role::firstOrCreate(['name' => 'Keuangan']);
         $administrasi = Role::firstOrCreate(['name' => 'Administrasi']);
+        $perencanaan = Role::firstOrCreate(['name' => 'Perencanaan']);
+        $staffIt = Role::firstOrCreate(['name' => 'IT']);
         $guest = Role::firstOrCreate(['name' => 'Guest']);
-        // Role 'Koordinator' dihapus — koordinator kini merupakan tugas tambahan
-        // yang di-assign via tabel sdm_ruangan_koordinator, bukan role Spatie
         $staffBedah = Role::firstOrCreate(['name' => 'Staff-Bedah']);
         $staffUgd = Role::firstOrCreate(['name' => 'Staff-UGD']);
         $pajak = Role::firstOrCreate(['name' => 'Pajak']);
@@ -76,7 +76,6 @@ class RoleSeeder extends Seeder
             return false;
         });
         $sdmSyncedPermissions = collect(array_unique(array_merge($sdmPermissions, $commonPermissions)))
-            ->filter(fn($permission) => !str_contains($permission, 'aturan-pajak'))
             ->toArray();
         $staffSdm->syncPermissions($sdmSyncedPermissions);
 
@@ -93,7 +92,7 @@ class RoleSeeder extends Seeder
         $bagianUmum->syncPermissions(array_unique(array_merge($umumPermissions, $commonPermissions)));
 
         // 3. Keuangan permissions
-        $keuanganKeywords = ['keuangan', 'hutang', 'piutang', 'rekanan', 'coa', 'jurnal', 'akuntansi'];
+        $keuanganKeywords = ['keuangan', 'kas', 'rekening', 'transaksi', 'jurnal', 'coa', 'piutang', 'hutang', 'rekanan'];
         $keuanganPermissions = array_filter($allPermissions, function ($permission) use ($keuanganKeywords) {
             foreach ($keuanganKeywords as $keyword) {
                 if (str_contains(strtolower($permission), strtolower($keyword))) {
@@ -104,19 +103,13 @@ class RoleSeeder extends Seeder
         });
         $keuangan->syncPermissions(array_unique(array_merge($keuanganPermissions, $commonPermissions)));
 
-        // 4. Administrasi permissions
-        $admKeywords = ['administrasi', 'pasien', 'registrasi'];
-        $admPermissions = array_filter($allPermissions, function ($permission) use ($admKeywords) {
-            foreach ($admKeywords as $keyword) {
-                if (str_contains(strtolower($permission), strtolower($keyword))) {
-                    return true;
-                }
-            }
-            return false;
-        });
-        $administrasi->syncPermissions(array_unique(array_merge($admPermissions, $commonPermissions)));
+        // 4. Perencanaan & Evaluasi basic permissions
+        $perencanaan->syncPermissions($commonPermissions);
 
-        // 5. Guest permissions
+        // 5. IT permissions (Full Access like Super-Admin)
+        $staffIt->syncPermissions($allPermissions);
+
+        // Common Guest / Staff Basic permissions
         $guest->syncPermissions($commonPermissions);
         
         // 6. Bedah & UGD basic permissions
@@ -135,6 +128,8 @@ class RoleSeeder extends Seeder
             'view-kepegawaian-master-aturan-pajak',
             'view-kepegawaian-karyawan',
             'edit-kepegawaian-karyawan',
+            'export-karyawan',
+            'view-dokter',
         ];
         $pajakRole = Role::firstOrCreate(['name' => 'Pajak']);
         $pajakRole->syncPermissions($pajakPermissions);

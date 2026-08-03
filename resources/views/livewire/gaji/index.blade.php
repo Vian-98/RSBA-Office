@@ -225,15 +225,19 @@
 
                                     @if($isLocked)
                                         @if($karyawan->payroll_status === 'generated')
-                                            <x-ts:button flat color="indigo" class="text-xs font-bold" wire:click="viewSlip({{ $karyawan->id }})">
+                                            <x-ts:button flat color="indigo" class="text-xs font-bold" wire:click="viewSlip({{ $karyawan->id }})" title="Lihat Slip Gaji Cetak">
                                                 <x-tabler-file-text class="h-4 w-4" />
                                                 Slip
                                             </x-ts:button>
+                                            <x-ts:button flat color="slate" class="text-xs font-bold" wire:click="openInputModal({{ $karyawan->id }})" title="Lihat Rincian Gaji">
+                                                <x-tabler-eye class="h-4 w-4" />
+                                                Detail
+                                            </x-ts:button>
                                         @else
-                                            <span class="text-xs font-semibold text-slate-400 flex items-center gap-1">
-                                                <x-tabler-lock class="h-3.5 w-3.5" />
-                                                Terkunci
-                                            </span>
+                                            <x-ts:button flat color="slate" class="text-xs font-bold" wire:click="openInputModal({{ $karyawan->id }})" title="Lihat Rincian Gaji">
+                                                <x-tabler-eye class="h-4 w-4" />
+                                                Detail
+                                            </x-ts:button>
                                         @endif
                                     @else
                                         @if($karyawan->payroll_status === 'generated')
@@ -291,7 +295,7 @@
         <x-slot:title>
             <span class="flex items-center gap-1.5 font-bold text-slate-800">
                 <x-tabler-calculator class="h-5 w-5 text-indigo-500" />
-                Input Data Gaji - Periode {{ \Carbon\Carbon::parse($this->periode . '-01')->translatedFormat('F Y') }}
+                {{ $isLocked ? 'Rincian Data Gaji (Terkunci)' : 'Input Data Gaji' }} - Periode {{ \Carbon\Carbon::parse($this->periode . '-01')->translatedFormat('F Y') }}
             </span>
         </x-slot:title>
 
@@ -411,6 +415,7 @@
                                 <div class="border-t border-slate-100 pt-4 mt-2">
                                     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-3">Tunjangan Lain-Lain Dinamis</span>
                                     
+                                    @if(!$isLocked)
                                     <div class="flex flex-col sm:flex-row gap-3 items-end mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
                                         <div class="flex-1 w-full">
                                             <span class="block text-xs font-semibold text-slate-500 mb-1">Pilih Jenis Tunjangan</span>
@@ -430,6 +435,7 @@
                                             </x-ts:button>
                                         </div>
                                     </div>
+                                    @endif
 
                                     <!-- Table / List of dynamic items -->
                                     <div class="overflow-hidden rounded-xl border border-slate-100 bg-white">
@@ -438,7 +444,9 @@
                                                 <tr class="bg-slate-50 font-semibold text-slate-400 border-b border-slate-100">
                                                     <th class="px-4 py-2">Nama Tunjangan</th>
                                                     <th class="px-4 py-2 text-right">Nominal</th>
-                                                    <th class="px-4 py-2 text-center w-16">Aksi</th>
+                                                    @if(!$isLocked)
+                                                        <th class="px-4 py-2 text-center w-16">Aksi</th>
+                                                    @endif
                                                 </tr>
                                             </thead>
                                             <tbody class="divide-y divide-slate-50">
@@ -446,15 +454,17 @@
                                                     <tr>
                                                         <td class="px-4 py-2 font-bold text-slate-700">{{ $item['nama'] }}</td>
                                                         <td class="px-4 py-2 text-right font-semibold text-slate-800">Rp {{ number_format($item['nominal'], 0, ',', '.') }}</td>
+                                                        @if(!$isLocked)
                                                         <td class="px-4 py-2 text-center">
                                                             <button type="button" wire:click="removeTunjanganLain({{ $index }})" class="text-red-500 hover:text-red-700">
                                                                 <x-tabler-trash class="h-4 w-4 mx-auto" />
                                                             </button>
                                                         </td>
+                                                        @endif
                                                     </tr>
                                                 @empty
                                                     <tr>
-                                                        <td colspan="3" class="px-4 py-3 text-center text-slate-400 italic">Belum ada tunjangan lain-lain tambahan.</td>
+                                                        <td colspan="{{ $isLocked ? '2' : '3' }}" class="px-4 py-3 text-center text-slate-400 italic">Belum ada tunjangan lain-lain tambahan.</td>
                                                     </tr>
                                                 @endforelse
                                             </tbody>

@@ -249,6 +249,11 @@ class Index extends Component
     // Dynamic allowances actions
     public function addTunjanganLain()
     {
+        if ($this->isLocked) {
+            $this->toast()->error('Gagal !', 'Periode ini telah disetujui dan terkunci. Data tidak dapat diubah.')->send();
+            return;
+        }
+
         $this->validate([
             'temp_allowance_type_id' => 'required|exists:sdm_payroll_allowance_types,id',
             'temp_allowance_nominal' => 'required|numeric|min:1',
@@ -287,6 +292,11 @@ class Index extends Component
 
     public function removeTunjanganLain(int $index)
     {
+        if ($this->isLocked) {
+            $this->toast()->error('Gagal !', 'Periode ini telah disetujui dan terkunci. Data tidak dapat diubah.')->send();
+            return;
+        }
+
         if (isset($this->form_tunjangan_lain_items[$index])) {
             unset($this->form_tunjangan_lain_items[$index]);
             $this->form_tunjangan_lain_items = array_values($this->form_tunjangan_lain_items);
@@ -726,7 +736,7 @@ class Index extends Component
 
     public function savePayroll()
     {
-        if (DB::table('sdm_payroll_period_locks')->where('periode', $this->periode)->where('is_approved', true)->exists()) {
+        if ($this->isLocked || DB::table('sdm_payroll_period_locks')->where('periode', $this->periode)->where('is_approved', true)->exists()) {
             $this->toast()->error('Gagal !', 'Periode ini telah disetujui dan terkunci. Data tidak dapat diubah.')->send();
             return;
         }

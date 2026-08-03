@@ -72,12 +72,22 @@
                     <dd class="font-medium text-slate-700">{{ $karyawan->nip }}</dd>
                 </div>
                 <div class="flex justify-between border-b border-slate-50 pb-2">
-                    <dt class="text-slate-400">NIK</dt>
-                    <dd class="font-medium text-slate-700">{{ $karyawan->nik ?? '-' }}</dd>
+                    <dt class="text-slate-400">NIK (KTP)</dt>
+                    <dd class="font-bold text-slate-800">{{ $karyawan->nik ?? '-' }}</dd>
                 </div>
                 <div class="flex justify-between border-b border-slate-50 pb-2">
                     <dt class="text-slate-400">NPWP</dt>
                     <dd class="font-medium text-slate-700">{{ $karyawan->npwp ?? '-' }}</dd>
+                </div>
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <dt class="text-slate-400">Status PTKP (PPh 21)</dt>
+                    <dd class="font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md text-xs">
+                        {{ $karyawan->ptkp_status ?? 'TK0' }}
+                    </dd>
+                </div>
+                <div class="flex justify-between border-b border-slate-50 pb-2">
+                    <dt class="text-slate-400">Status Pernikahan</dt>
+                    <dd class="font-medium text-slate-700">{{ ucfirst($karyawan->status_pernikahan ?? '-') }}</dd>
                 </div>
                 <div class="flex justify-between border-b border-slate-50 pb-2">
                     <dt class="text-slate-400">BPJS Kesehatan</dt>
@@ -106,6 +116,13 @@
                     <dd class="font-medium text-slate-700">{{ $karyawan->usia }}</dd>
                 </div>
             </dl>
+            <div class="mt-4 rounded-xl border border-sky-100 bg-sky-50/70 p-3 text-xs text-sky-800 flex items-start gap-2">
+                <x-tabler-info-circle class="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+                <div>
+                    <span class="font-bold block text-sky-900 mb-0.5">Konfirmasi Data Perpajakan</span>
+                    Pastikan NIK, NPWP, dan Status PTKP (PPh 21) Anda sudah sesuai. Jika ada perubahan status keluarga / tanggungan, harap laporkan ke Tim SDM / Pajak.
+                </div>
+            </div>
         </div>
 
         {{-- Riwayat cuti terbaru --}}

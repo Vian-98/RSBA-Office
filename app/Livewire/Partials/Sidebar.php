@@ -232,10 +232,23 @@ class Sidebar extends Component
                 ]);
             }
 
-            // Setiap Karyawan / Dokter otomatis memiliki akses ke menu "Jadwal Tugas Saya"
+            // Every Karyawan / Dokter automatically has access to "Jadwal Tugas Saya"
             if ($user && ($user->karyawan_id || $user->isDokter())) {
                 if (!in_array('view-profile-jadwal-tugas-saya', $permissions)) {
                     $permissions[] = 'view-profile-jadwal-tugas-saya';
+                }
+            }
+
+            // Tim Pajak otomatis mendapatkan akses menu Pajak PPh 21, Karyawan, & Dokter
+            if ($user && ($user->hasRole('Pajak') || $user->hasRole('Super-Admin'))) {
+                if (!in_array('view-kepegawaian-master-aturan-pajak', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-master-aturan-pajak';
+                }
+                if (!in_array('view-kepegawaian-karyawan', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-karyawan';
+                }
+                if (!in_array('view-dokter', $permissions)) {
+                    $permissions[] = 'view-dokter';
                 }
             }
 
