@@ -17,8 +17,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 
 class TableAsset extends Component implements HasTable, HasForms, HasActions
 {
@@ -214,8 +214,8 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                             ->live(),
                         \Filament\Forms\Components\TextInput::make('ket_priority')
                             ->label('Keterangan Prioritas')
-                            ->required(fn (\Filament\Forms\Get $get) => $get('priority') !== 'normal')
-                            ->visible(fn (\Filament\Forms\Get $get) => $get('priority') !== 'normal')
+                            ->required(fn (Get $get) => $get('priority') !== 'normal')
+                            ->visible(fn (Get $get) => $get('priority') !== 'normal')
                             ->maxLength(255),
                         \Filament\Forms\Components\Textarea::make('note')
                             ->label('Keluhan / Masalah (Note)')
