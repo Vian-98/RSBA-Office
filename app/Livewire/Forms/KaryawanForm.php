@@ -206,6 +206,7 @@ class KaryawanForm extends Form
     {
         $data = [
             'nama' => $this->nama,
+            'tgl_masuk' => $this->tgl_masuk,  // fix: tgl_masuk tidak pernah tersimpan sebelumnya
             'gelar_depan' => $this->gelar_depan,
             'gelar_belakang' => $this->gelar_belakang,
             'nik' => $this->nik,
