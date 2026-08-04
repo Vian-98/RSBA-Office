@@ -47,8 +47,19 @@ class AnnualSchedule extends Component
         $this->tgl_mulai = now()->format('Y-m-d');
     }
 
+    private function checkAuthorization(): bool
+    {
+        if (!auth()->user()?->can('approval-maintenance')) {
+            $this->toast()->error('Terlarang', 'Anda tidak memiliki hak akses untuk mengelola jadwal maintenance berkala.')->send();
+            return false;
+        }
+        return true;
+    }
+
     public function saveSchedule()
     {
+        if (!$this->checkAuthorization()) return;
+
         $this->validate();
 
         $asset = AssetBarang::findOrFail($this->asset_id);
@@ -88,6 +99,8 @@ class AnnualSchedule extends Component
 
     public function editSchedule(int $id)
     {
+        if (!$this->checkAuthorization()) return;
+
         $schedule = AssetMaintenanceSchedule::where('asset_barang_id', $this->asset_id)
             ->findOrFail($id);
 
@@ -101,6 +114,8 @@ class AnnualSchedule extends Component
 
     public function toggleSchedule(int $id)
     {
+        if (!$this->checkAuthorization()) return;
+
         $schedule = AssetMaintenanceSchedule::where('asset_barang_id', $this->asset_id)
             ->findOrFail($id);
 
@@ -112,6 +127,8 @@ class AnnualSchedule extends Component
 
     public function deleteSchedule(int $id)
     {
+        if (!$this->checkAuthorization()) return;
+
         AssetMaintenanceSchedule::where('asset_barang_id', $this->asset_id)
             ->where('id', $id)
             ->delete();
@@ -125,6 +142,8 @@ class AnnualSchedule extends Component
 
     public function triggerNow(int $id)
     {
+        if (!$this->checkAuthorization()) return;
+
         DB::beginTransaction();
         try {
             $schedule = AssetMaintenanceSchedule::where('asset_barang_id', $this->asset_id)
