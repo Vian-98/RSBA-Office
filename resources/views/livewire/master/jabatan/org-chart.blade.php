@@ -25,11 +25,23 @@
         </div>
     </div>
 
+    @if (!empty($chartWarnings))
+        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div class="font-semibold">Struktur organisasi perlu diverifikasi</div>
+            <ul class="mt-1 list-disc space-y-0.5 pl-5">
+                @foreach ($chartWarnings as $warning)
+                    <li>{{ $warning }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <!-- Container Org Chart -->
     <div class="relative min-h-[650px] w-full overflow-hidden rounded-xl bg-slate-900 shadow-inner border border-slate-800">
-        <div id="bumbeishvili-org-chart" class="h-[650px] w-full"></div>
+        <div wire:ignore id="bumbeishvili-org-chart" class="h-[650px] w-full"></div>
     </div>
 
+    @script
     <script>
         (function() {
             const nodesData = @js($chartData);
@@ -50,14 +62,23 @@
             }
 
             async function initBumbeishviliChart() {
-                if (typeof d3 === 'undefined') {
-                    await injectScript('https://d3js.org/d3.v7.min.js');
-                }
-                if (typeof d3?.flexTree === 'undefined') {
-                    await injectScript('https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js');
-                }
-                if (typeof d3?.OrgChart === 'undefined') {
-                    await injectScript('https://cdn.jsdelivr.net/npm/d3-org-chart@3');
+                try {
+                    if (typeof d3 === 'undefined') {
+                        await injectScript('https://d3js.org/d3.v7.min.js');
+                    }
+                    if (typeof d3?.flexTree === 'undefined') {
+                        await injectScript('https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js');
+                    }
+                    if (typeof d3?.OrgChart === 'undefined') {
+                        await injectScript('https://cdn.jsdelivr.net/npm/d3-org-chart@3');
+                    }
+                } catch (e) {
+                    console.error('Gagal memuat library D3 OrgChart:', e);
+                    const container = document.querySelector('#bumbeishvili-org-chart');
+                    if (container) {
+                        container.innerHTML = '<div class="flex h-full items-center justify-center px-6 text-center text-sm text-amber-200">Bagan tidak dapat dimuat. Periksa koneksi ke CDN D3 atau gunakan asset lokal.</div>';
+                    }
+                    return;
                 }
                 renderBumbeishviliChart();
             }
@@ -65,7 +86,9 @@
             function renderBumbeishviliChart() {
                 const container = document.querySelector('#bumbeishvili-org-chart');
                 if (!container || typeof d3 === 'undefined' || typeof d3.OrgChart === 'undefined') {
-                    setTimeout(renderBumbeishviliChart, 150);
+                    if (container) {
+                        container.innerHTML = '<div class="flex h-full items-center justify-center px-6 text-center text-sm text-amber-200">Library D3 OrgChart belum tersedia.</div>';
+                    }
                     return;
                 }
                 container.innerHTML = '';
@@ -153,4 +176,5 @@
             setTimeout(initBumbeishviliChart, 100);
         })();
     </script>
+    @endscript
 </div>

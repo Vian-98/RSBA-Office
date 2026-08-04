@@ -44,9 +44,3 @@
         <livewire:Master.Jabatan.Add @new-jabatan-created="$refresh" :key="Str::random()" />
     </x-filament::modal>
 </div>
-
-@push('scripts')
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/d3-org-chart@3"></script>
-@endpush
