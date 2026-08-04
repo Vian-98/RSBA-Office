@@ -14,8 +14,8 @@ class UmumSeeder extends Seeder
     public function run(): void
     {
         // Mendapatkan referensi IDs yang diperlukan
-        $userReq = User::where('email', 'admin@rsba.com')->first() ?? User::first();
-        $userVerif = User::where('email', 'sdm@rsba.com')->first() ?? $userReq;
+        $userReq = User::where('email', 'admin@rsba.com')->first();
+        $userVerif = User::where('email', 'superadmin@rsba.com')->first();
         
         $barangIds = DB::table('um_barang')->pluck('id', 'nama')->toArray();
         $satuanIds = DB::table('um_satuan')->pluck('id', 'nama')->toArray();
@@ -28,8 +28,8 @@ class UmumSeeder extends Seeder
         $barang1 = array_values($barangIds)[0] ?? 1;
         $barang2 = array_values($barangIds)[1] ?? 1;
         
-        $userId = $userReq ? $userReq->id : User::value('id');
-        $verifId = $userVerif ? $userVerif->id : $userId;
+        $userId = $userReq ? $userReq->id : 1;
+        $verifId = $userVerif ? $userVerif->id : 1;
 
         // 1. Seed Permintaan Barang (Pembelian Request) - Dummy Data
         for ($i = 1; $i <= 5; $i++) {

@@ -4,19 +4,13 @@ namespace App\Livewire\Jasmed\Verify;
 
 use App\Models\JmProsentase;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Lazy;
+use Livewire\Attributes\Reactive;
 use Livewire\Component;
 
-#[Lazy]
 class Prosentase extends Component
 {
-    public ?JmProsentase $jmProsentase;
-
-    public function mount($id)
-    {
-        $this->jmProsentase = JmProsentase::findOrFail($id);
-        // dd($id, $this->jmJasa);
-    }
+    #[Reactive]
+    public ?JmProsentase $jmProsentase = null;
 
     #[Computed]
     public function headers(): array
@@ -35,11 +29,6 @@ class Prosentase extends Component
         ];
     }
 
-    // #[Computed]
-    // public function prosentase()  {
-    //     return $this->jmJasa;
-    // }
-
     #[Computed]
     public function rows(): array
     {
@@ -57,8 +46,6 @@ class Prosentase extends Component
             'jasa_resus' =>  $jmProsentase->jasa_resus,
             'jasa_pekerja' =>  $jmProsentase->jasa_pekerja,
         ]];
-        // return [];
-        // })->toArray();
     }
 
     public function render()

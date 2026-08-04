@@ -15,7 +15,6 @@ Route::middleware('auth')
     ->group(function () {
 
         Route::get('/', App\Livewire\Profile\Index::class)->name('index');
-        Route::get('/pesan', App\Livewire\Profile\Pesan\Index::class)->name('pesan');
         Route::get('/notif', App\Livewire\Profile\Notif::class)->name('notif');
         Route::get('/setting', App\Livewire\Profile\Setting::class)->name('setting');
         Route::get('/jadwal-tugas-saya', App\Livewire\Profile\JadwalTugasSaya::class)->name('jadwal-tugas-saya');
@@ -24,7 +23,14 @@ Route::middleware('auth')
 Route::prefix('dashboard')
     ->name('dashboard.')
     ->group(function () {
-        Route::get('/kamar', App\Livewire\Dashboard\Kamar::class)->name('kamar');
+        // Admin Panel URL
+        Route::middleware(['auth'])
+            ->get('/display-monitor/admin', App\Livewire\Dashboard\DisplayMonitorAdmin::class)
+            ->name('display-monitor.admin');
+
+        Route::middleware(['auth'])
+            ->get('/poli/admin', App\Livewire\Dashboard\PoliAdmin::class)
+            ->name('poli.admin');
     });
 
 
@@ -35,6 +41,9 @@ Route::middleware('auth')
     });
 
 Route::get('surat/verification', App\Livewire\Surat\Verifikasi\Index::class)->name('surat.verification');
+
+// Public Document Verification Portal
+Route::get('/verifikasi-surat/{hash?}', App\Livewire\Public\VerifyDocument::class)->name('surat.verifikasi.publik');
 
 // // Administrator
 // Route::middleware('auth')

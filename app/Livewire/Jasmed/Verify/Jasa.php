@@ -4,17 +4,17 @@ namespace App\Livewire\Jasmed\Verify;
 
 use App\Models\JmDokterJasa;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Lazy;
+use Livewire\Attributes\Reactive;
 use Livewire\Component;
 
-#[Lazy]
 class Jasa extends Component
 {
-    public $jmDokterJasa;
+    #[Reactive]
+    public int $prosentaseId;
 
-    public function mount($prosentaseId)
+    public function getDokterJasa()
     {
-        $this->jmDokterJasa = JmDokterJasa::where('jm_prosentase_id', $prosentaseId)->get();
+        return JmDokterJasa::where('jm_prosentase_id', $this->prosentaseId)->get();
     }
 
 
@@ -33,7 +33,7 @@ class Jasa extends Component
     #[Computed]
     public function rows(): array
     {
-        return $this->jmDokterJasa->map(function ($item) {
+        return $this->getDokterJasa()->map(function ($item) {
             return [
                 'dokter' => $item->dokter,
                 'status_label' => $item->status_label,

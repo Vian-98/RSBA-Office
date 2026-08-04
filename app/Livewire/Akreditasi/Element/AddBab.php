@@ -2,8 +2,6 @@
 
 namespace App\Livewire\Akreditasi\Element;
 
-use Filament\Actions\Contracts\HasActions;
-use Filament\Actions\Concerns\InteractsWithActions;
 use Throwable;
 use Livewire\Component;
 use Livewire\Attributes\Lazy;
@@ -12,28 +10,29 @@ use Illuminate\Support\Facades\DB;
 use TallStackUi\Traits\Interactions;
 use App\Models\Akreditasi\AkreBabElement;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Schemas\Schema;
 
 #[Lazy]
-class AddBab extends Component implements HasForms, HasActions
+class AddBab extends Component implements HasSchemas
 {
-    use InteractsWithActions;
     use Interactions;
-    use InteractsWithForms;
+    use InteractsWithSchemas;
 
     public ?int $chapter_id;
     public ?string $jenisPenomoran = 'alfabet';
     public ?int $parent = null;
-    public ?string $nama, $deskripsi, $maksud_tujuan;
+    public ?string $nama;
     public ?string $bab = 'bab';
+
+    // filament form
+    public ?array $formData = [];
 
     public function rules(): array
     {
         return [
             'nama' => 'required',
-            'deskripsi' => 'required',
-            'maksud_tujuan' => 'required',
             'parent' => $this->bab === 'sub' ? 'required' : ''
         ];
     }
@@ -42,14 +41,18 @@ class AddBab extends Component implements HasForms, HasActions
     public function submit()
     {
         $this->validate();
+
+        // form data filament
+        $formData = $this->form->getState();
+
         DB::beginTransaction();
         try {
             $data = [
                 'no' => $this->generateNomorOtomatis(),
                 'chapter_id' => $this->chapter_id,
                 'nama' => $this->nama,
-                'deskripsi' => $this->deskripsi,
-                'maksud_tujuan' => $this->maksud_tujuan,
+                'deskripsi' => $formData['deskripsi'],
+                'maksud_tujuan' => $formData['maksud_tujuan'],
                 'bab' => $this->bab,
                 'parent_id' => $this->parent,
             ];
@@ -124,15 +127,16 @@ class AddBab extends Component implements HasForms, HasActions
             ->toArray();
     }
 
-    public function mount($chapterId)
+    public function mount(?int $chapterId)
     {
         $this->chapter_id = $chapterId;
+        $this->form->fill();
     }
 
     // filament schema for text-rich-editor
-    public function getFormSchema(): array
+    public function form(Schema $schema): Schema
     {
-        return [
+        return $schema->components([
             RichEditor::make('deskripsi')
                 ->required()
                 ->hiddenLabel()
@@ -168,7 +172,8 @@ class AddBab extends Component implements HasForms, HasActions
                     'redo'
                 ])
                 ->columnSpanFull(),
-        ];
+        ])
+            ->statePath('formData');
     }
 
 

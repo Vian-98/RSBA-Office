@@ -6,10 +6,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <title>{{ $title ?? config('app.name') }}</title>
+        <script>
+            document.addEventListener('alpine:init', () => {
+                if (window.Alpine && !window.Alpine.store('theme')) {
+                    window.Alpine.store('theme', localStorage.getItem('theme') || 'light');
+                }
+            });
+        </script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <tallstackui:script />
-        @livewireStyles
         @filamentStyles
     </head>
 
@@ -32,7 +38,7 @@
                                     Pelayanan Prima, Sehat Milik Semua <br>
                                     <span class="italic">We Care, We Cure</span>
                                 </p>
-                            </div>
+                             </div>
                         </div>
                     </div>
                     <div class="w-full rounded-lg bg-white shadow-lg shadow-indigo-300 lg:w-6/12 xl:w-5/12">
@@ -42,7 +48,6 @@
             </div>
         </div>
 
-        @livewireScripts
         @filamentScripts
     </body>
 

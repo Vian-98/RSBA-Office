@@ -49,6 +49,7 @@ class DummyDataSeeder extends Seeder
             'asset_maintc_teknisi_assigment',
             'asset_maintc_work',
             'asset_maintc_work_parts',
+            'dokter_spesialisasi',
             'dokter',
             'jm_pasien',
             'jm_dokter',
@@ -74,16 +75,12 @@ class DummyDataSeeder extends Seeder
         }
 
         if (Schema::hasTable('surat_cuti_jenis')) {
-            $items = [
-                ['id' => 1, 'nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y'],
-                ['id' => 2, 'nama' => 'Izin Sakit', 'lama' => 0, 'periode' => 'Y'],
-                ['id' => 3, 'nama' => 'Cuti Melahirkan', 'lama' => 90, 'periode' => 'Y'],
-                ['id' => 4, 'nama' => 'Cuti Alasan Penting', 'lama' => 0, 'periode' => 'Y'],
-            ];
-            foreach ($items as $item) {
-                DB::table('surat_cuti_jenis')->updateOrInsert(['id' => $item['id']], array_merge($item, ['updated_at' => now(), 'created_at' => now()]));
-            }
-            DB::table('surat_cuti_jenis')->where('id', '>', count($items))->delete();
+            DB::table('surat_cuti_jenis')->insert([
+                ['id' => 1, 'nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
+                ['id' => 2, 'nama' => 'Cuti Sakit', 'lama' => 0, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
+                ['id' => 3, 'nama' => 'Cuti Melahirkan', 'lama' => 90, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
+                ['id' => 4, 'nama' => 'Cuti Alasan Penting', 'lama' => 5, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
+            ]);
         }
 
         // 3. Re-enable Foreign Key Checks
@@ -116,10 +113,7 @@ class DummyDataSeeder extends Seeder
                 ['id' => 6, 'nama' => 'Staff Pelaksana Umum', 'kode_surat' => 'STF-UM', 'parent_id' => 3, 'bagian_id' => $bagianIds['Umum & Logistik'], 'tunjangan_jabatan' => 500000, 'created_at' => now(), 'updated_at' => now()],
                 ['id' => 7, 'nama' => 'Staff Pelaksana Keuangan', 'kode_surat' => 'STF-KEU', 'parent_id' => 4, 'bagian_id' => $bagianIds['Keuangan'], 'tunjangan_jabatan' => 500000, 'created_at' => now(), 'updated_at' => now()],
             ];
-            $filteredJabatans = array_map(function ($j) {
-                return array_filter($j, fn($val, $key) => Schema::hasColumn('sdm_jabatan', $key), ARRAY_FILTER_USE_BOTH);
-            }, $jabatans);
-            DB::table('sdm_jabatan')->insert($filteredJabatans);
+            DB::table('sdm_jabatan')->insert($jabatans);
             Schema::enableForeignKeyConstraints();
         }
 
@@ -317,11 +311,7 @@ class DummyDataSeeder extends Seeder
             ];
         }
 
-        $filteredDummyPegawai = array_map(function ($p) {
-            return array_filter($p, fn($val, $key) => Schema::hasColumn('sdm_karyawan', $key), ARRAY_FILTER_USE_BOTH);
-        }, $dummyPegawai);
-
-        DB::table('sdm_karyawan')->insertOrIgnore($filteredDummyPegawai);
+        DB::table('sdm_karyawan')->insert($dummyPegawai);
 
         // --- Create User for Perawat UGD 1 ---
         $karyawanPerawat = Karyawan::where('nip', '22210264')->first(); // Arif Pamungkas
@@ -373,7 +363,14 @@ class DummyDataSeeder extends Seeder
         }
         DB::table('sdm_kary_pendidikan')->insert($pendidikans);
 
-        // 9. Fetch CutiJenis IDs
+        // 9. Seed CutiJenis
+        $cutiJenis = [
+            ['nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Cuti Sakit', 'lama' => 3, 'periode' => 'M', 'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Cuti Melahirkan', 'lama' => 90, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Cuti Alasan Penting', 'lama' => 5, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
+        ];
+        DB::table('surat_cuti_jenis')->insert($cutiJenis);
         $cutiJenisIds = DB::table('surat_cuti_jenis')->pluck('id')->toArray();
 
         // 10. Seed SuratCuti
@@ -1135,6 +1132,11 @@ class DummyDataSeeder extends Seeder
         ]);
 
         // 18. Seed Dokter & Jasa Medis (Payroll / Doctor Fees)
+        $dokterSpesialisasi = [
+            ['nama' => 'Spesialis Anak', 'singkatan' => 'Sp.A', 'kategori' => 'spesialis', 'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Spesialis Bedah', 'singkatan' => 'Sp.B', 'kategori' => 'spesialis', 'created_at' => now(), 'updated_at' => now()],
+        ];
+        DB::table('dokter_spesialisasi')->insert($dokterSpesialisasi);
         $spesialisIds = DB::table('dokter_spesialisasi')->pluck('id')->toArray();
 
         // Create Dokter Karyawan record

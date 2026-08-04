@@ -2,37 +2,39 @@
 
 namespace App\Livewire\Akreditasi\Ep;
 
-use Filament\Actions\Contracts\HasActions;
-use Filament\Actions\Concerns\InteractsWithActions;
-use Throwable;
-use Livewire\Component;
-use Livewire\Attributes\Lazy;
-use Livewire\Attributes\Computed;
-use Illuminate\Support\Facades\DB;
 use App\Models\Akreditasi\AkreBabElement;
 use App\Models\Akreditasi\AkreElement;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Lazy;
+use Livewire\Component;
 use TallStackUi\Traits\Interactions;
+use Throwable;
 
 #[Lazy]
-class AddElementPenilaian extends Component implements HasForms, HasActions
+class AddElementPenilaian extends Component implements HasSchemas
 {
-    use InteractsWithActions;
     use Interactions;
-    use InteractsWithForms;
+    use InteractsWithSchemas;
 
     public ?int $chapter_id;
     public ?int $bab_id;
     public ?array $methode = [];
     public ?string $jenisPenomoran = 'alfabet';
-    public ?string $element, $kelengkapan;
+    public ?string $element;
     public ?int $target_nilai = 10;
+
+    // data form filaments
+    public ?array $data = [];
 
     public function mount(?int $chapterId)
     {
         $this->chapter_id = $chapterId;
+        $this->form->fill();
     }
 
     #[Computed]
@@ -55,7 +57,7 @@ class AddElementPenilaian extends Component implements HasForms, HasActions
     public function methode(): array
     {
         return [
-            ['value' => 'D', 'label' => 'Dokument'],
+            ['value' => 'D', 'label' => 'Dokumen'],
             ['value' => 'O', 'label' => 'Observasi'],
             ['value' => 'R', 'label' => 'Regulasi'],
             ['value' => 'S', 'label' => 'Simulasi'],
@@ -72,7 +74,6 @@ class AddElementPenilaian extends Component implements HasForms, HasActions
             'bab_id' => 'required',
             'element' => 'required',
             'methode' => 'required',
-            'kelengkapan' => 'required',
             'target_nilai' => 'required',
         ];
     }
@@ -82,6 +83,8 @@ class AddElementPenilaian extends Component implements HasForms, HasActions
     {
         $this->validate();
 
+        $form = $this->form->getState();
+
         DB::beginTransaction();
         try {
 
@@ -90,7 +93,7 @@ class AddElementPenilaian extends Component implements HasForms, HasActions
                 'nomor' => $this->generateNomorOtomatis(),
                 'element' => $this->element,
                 'methode' => $this->methode,
-                'kelengkapan' => $this->kelengkapan,
+                'kelengkapan' => $form['kelengkapan'],
                 'target_nilai' => $this->target_nilai,
             ];
 
@@ -166,28 +169,30 @@ class AddElementPenilaian extends Component implements HasForms, HasActions
     }
 
 
-    public function getFormSchema(): array
+    public function form(Schema $schema): Schema
     {
-        return [
-            RichEditor::make('kelengkapan')
-                ->required()
-                ->hiddenLabel()
-                ->placeholder('Kelengkapan Bukti')
-                ->toolbarButtons([
-                    'bold',
-                    'italic',
-                    'underline',
-                    'strike',
-                    'bulletList',
-                    'orderedList',
-                    'link',
-                    'blockquote',
-                    'undo',
-                    'redo'
-                ])
-                ->columnSpanFull()
+        return $schema
+            ->components([
+                RichEditor::make('kelengkapan')
+                    ->required()
+                    ->hiddenLabel()
+                    ->placeholder('Kelengkapan Bukti')
+                    ->toolbarButtons([
+                        'bold',
+                        'italic',
+                        'underline',
+                        'strike',
+                        'bulletList',
+                        'orderedList',
+                        'link',
+                        'blockquote',
+                        'undo',
+                        'redo'
+                    ])
+                    ->columnSpanFull()
 
-        ];
+            ])
+            ->statePath('data');
     }
 
     public function render()

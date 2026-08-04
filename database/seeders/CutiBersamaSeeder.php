@@ -17,11 +17,8 @@ class CutiBersamaSeeder extends Seeder
      */
     public function run(): void
     {
-        $cutiTahunan = CutiJenis::firstOrCreate(
-            ['nama' => 'Cuti Tahunan'],
-            ['lama' => 12, 'periode' => 'Y']
-        );
-        $jenisCutiId = $cutiTahunan->id;
+        $cutiTahunan = CutiJenis::where('nama', 'like', '%tahunan%')->first();
+        $jenisCutiId = $cutiTahunan ? $cutiTahunan->id : 1;
 
         // Pastikan detail jadwal kerja untuk pegawai di bulan Agustus 2026 sudah ter-generate
         $tahun = 2026;

@@ -20,13 +20,24 @@ Route::prefix('jadwal-kerja')
         Route::get('/kelola/{id}', App\Livewire\Kepegawaian\JadwalKerja\Kelola::class)->name('kelola');
     });
 
+
+// Absensi
+Route::prefix('absensi')
+    ->name('absensi.')
+    ->group(function () {
+        Route::get('/', App\Livewire\Kepegawaian\AbsensiContainer::class)->name('index');
+        Route::get('/import', App\Livewire\Kepegawaian\Absensi\Import::class)->name('import');
+        Route::get('/duplicate-report/{logId?}', App\Livewire\Kepegawaian\Absensi\DuplicateTapReport::class)->name('duplicate-report');
+        Route::get('/rekonsiliasi/{batchId}', App\Livewire\Kepegawaian\Absensi\Rekonsiliasi::class)->name('rekonsiliasi');
+        Route::get('/rekap', App\Livewire\Kepegawaian\Absensi\Rekap::class)->name('rekap');
+    });
+
 // Konfigurasi Jadwal
 Route::prefix('konfigurasi-jadwal')
     ->name('konfigurasi-jadwal.')
     ->group(function () {
         Route::get('/', App\Livewire\Kepegawaian\KonfigurasiJadwal::class)->name('index');
     });
-
 
 
 // Master data
@@ -88,6 +99,30 @@ Route::prefix('master')
             ->group(function () {
                 Route::get('/', App\Livewire\Master\JadwalAturan\Index::class)->name('index');
             });
+
+        Route::prefix('tunjangan-golongan')
+            ->name('tunjangan-golongan.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\TunjanganGolongan\Index::class)->name('index');
+            });
+
+        Route::prefix('tunjangan-lain')
+            ->name('tunjangan-lain.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\TunjanganLain\Index::class)->name('index');
+            });
+
+        Route::prefix('tunjangan-jabatan')
+            ->name('tunjangan-jabatan.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\TunjanganJabatan\Index::class)->name('index');
+            });
+
+        Route::prefix('aturan-pajak')
+            ->name('aturan-pajak.')
+            ->group(function () {
+                Route::get('/', App\Livewire\Master\AturanPajak\Index::class)->name('index');
+            });
     });
 
 
@@ -95,10 +130,19 @@ Route::prefix('master')
 Route::prefix('surat')
     ->name('surat.')
     ->group(function () {
+        Route::redirect('/', '/kepegawaian/cuti-bersama');
         Route::get('cuti', App\Livewire\Surat\Cuti\Index::class)->name('cuti');
-        // Route::get('cuti/approval/{id?}', App\Livewire\Surat\Cuti\Approval::class)->name('cuti.approval');
-
         Route::get('sp3', App\Livewire\Surat\Sp3\Index::class)->name('sp3');
+        // Audit Bank Surat — laporan keaslian surat dari docstore (source of truth)
+        Route::get('audit-bank-surat', App\Livewire\Surat\AuditBankSurat::class)->name('audit-bank-surat');
+    });
+
+// Cuti Bersama
+Route::prefix('cuti-bersama')
+    ->name('cuti-bersama.')
+    ->group(function () {
+        Route::redirect('/', '/kepegawaian/surat/cuti?tab=cuti-bersama')->name('index');
+        Route::get('/{id}', App\Livewire\Kepegawaian\CutiBersama\Show::class)->name('show');
     });
 
 
@@ -113,6 +157,13 @@ Route::prefix('laporan')
     ->name('laporan.')
     ->group(function () {
         Route::get('/', App\Livewire\Laporan\Kepegawaian\Index::class)->name('index');
+    });
+
+Route::prefix('gaji')
+    ->name('gaji.')
+    ->group(function () {
+        Route::get('/', App\Livewire\Gaji\Rekap\Index::class)->name('index');
+        Route::get('/detail', App\Livewire\Gaji\Index::class)->name('detail');
     });
 
 Route::prefix('akreditasi')

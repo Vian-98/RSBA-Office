@@ -17,10 +17,6 @@ class DummyPayrollSlipSeeder extends Seeder
      */
     public function run(): void
     {
-        if (!class_exists(\App\Services\PayrollCalculator::class)) {
-            return;
-        }
-
         $karyawans = Karyawan::with(['jabatan.bagian'])->take(15)->get();
 
         if ($karyawans->isEmpty()) {

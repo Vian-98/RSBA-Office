@@ -312,7 +312,7 @@ class UserSeeder extends Seeder
                 'gelar_belakang'     => 'S.Farm.',
                 'hp'                 => '08199999998',
                 'prov'               => 'Lampung',
-                'kab'                => 'Bandar Lampung',
+                'kab'               => 'Bandar Lampung',
                 'kec'                => 'Kedaton',
                 'desa'               => 'Kedaton',
                 'alamat'             => 'Jl. Kedaton No. 45',
@@ -328,6 +328,7 @@ class UserSeeder extends Seeder
                 'nama_bank'          => 'Mandiri',
                 'no_rekening'        => '9876543008',
                 'ruangan_id'         => null,
+                'jabatan_nama'       => null,
             ],
             [
                 'email'              => 'wadir@rsba.com',

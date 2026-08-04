@@ -13,6 +13,22 @@ class Index extends Component
 {
     use AuthorizesFromRoute;
 
+    protected function authorizeFromRoute(): void
+    {
+        $permission = $this->buildPermission();
+        
+        $user = auth()->user();
+        if ($user?->can($permission)) {
+            return;
+        }
+        
+        if ($user?->karyawan?->ruangan_id) {
+            return;
+        }
+        
+        abort(403, "Tidak memiliki akses: {$permission}");
+    }
+
     public function render()
     {
         $this->authorizeFromRoute();
