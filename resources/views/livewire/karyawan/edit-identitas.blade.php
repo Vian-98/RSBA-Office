@@ -6,7 +6,12 @@
                 <x-ts:input wire:model.lazy="form.nip" placeholder="NIP [Auto Generate]" readonly />
             </div>
             <div class="w-full lg:w-1/4">
-                <x-ts:date wire:model.lazy='form.tgl_masuk' placeholder="Tgl. Masuk" />
+                <x-ts:date
+                    label="Tanggal Mulai Kerja"
+                    wire:model.lazy="form.tgl_masuk"
+                    placeholder="Pilih tanggal mulai kerja"
+                    :disabled="!$canEditTglMasuk"
+                />
             </div>
         </div>
 
