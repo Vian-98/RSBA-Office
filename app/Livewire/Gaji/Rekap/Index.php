@@ -3,19 +3,15 @@
 namespace App\Livewire\Gaji\Rekap;
 
 use App\Models\Sdm\Karyawan;
-use App\Models\Sdm\Bagian;
+use App\Models\Sdm\Jabatan;
 use App\Traits\AuthorizesFromRoute;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use App\Models\Sdm\PayrollSendLog;
-use App\Mail\SlipGajiMail;
-use App\Services\PayrollCalculator;
-use Illuminate\Support\Facades\Mail;
-
-
 use TallStackUi\Traits\Interactions;
+use App\Services\PayrollPeriodService;
+use App\Services\PayrollRekapService;
+use App\Services\PayrollNotificationService;
 
 #[Title('Rekap Penggajian Bulanan')]
 class Index extends Component
@@ -64,8 +60,6 @@ class Index extends Component
     public int $batchFailedCount = 0;
     public string $currentSendingStatus = '';
 
-
-
     public function mount()
     {
         $this->periode = now()->format('Y-m');
@@ -104,7 +98,7 @@ class Index extends Component
         }
 
         // Load management Jabatans for SP3
-        $this->mengetahuiOptions = \App\Models\Sdm\Jabatan::whereHas('bagian', function ($query) {
+        $this->mengetahuiOptions = Jabatan::whereHas('bagian', function ($query) {
             $query->where('group', 'manajemen');
         })->get()->map(function ($item) {
             return [
@@ -166,27 +160,22 @@ class Index extends Component
             'allocations.*.persen.required' => 'Persentase wajib diisi.',
         ]);
 
-        // Validate total percentage sum equals 100%
         $totalPersen = 0.0;
         foreach ($this->allocations as $alloc) {
             $totalPersen += (double) $alloc['persen'];
         }
 
         if ($totalPersen !== 100.0) {
-            $this->toast()
-                ->error('Gagal !', 'Total persentase alokasi tunjangan harus tepat 100% (saat ini ' . $totalPersen . '%).')
-                ->send();
+            $this->toast()->error('Gagal !', 'Total persentase alokasi tunjangan harus tepat 100% (saat ini ' . $totalPersen . '%).')->send();
             return;
         }
 
         DB::beginTransaction();
         try {
-            // Save settings
             DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'umk'], ['value' => $this->config_umk, 'updated_at' => now()]);
             DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'potongan_telat_per_kejadian'], ['value' => $this->config_potongan_telat, 'updated_at' => now()]);
             DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'toleransi_telat_menit'], ['value' => $this->config_toleransi_telat, 'updated_at' => now()]);
 
-            // Save allocations
             $keptIds = [];
             foreach ($this->allocations as $alloc) {
                 if (!empty($alloc['id'])) {
@@ -211,14 +200,12 @@ class Index extends Component
                 }
             }
 
-            // Delete removed allocations
             DB::table('sdm_payroll_allowance_allocations')
                 ->whereNotIn('id', $keptIds)
                 ->delete();
 
             DB::commit();
 
-            // Reload configurations to fetch fresh IDs
             $this->allocations = [];
             $dbAllocations = DB::table('sdm_payroll_allowance_allocations')->get();
             foreach ($dbAllocations as $alloc) {
@@ -238,145 +225,32 @@ class Index extends Component
         }
     }
 
-    public function render()
+    public function render(PayrollRekapService $rekapService)
     {
         $this->authorizeFromRoute();
 
-        // 1. Current Month's Slips
-        $slips = DB::table('sdm_payroll_slips')
-            ->where('periode', $this->periode)
-            ->get();
-
-        $totalGajiBersih = $slips->sum('gaji_bersih');
-        
-        // Total Potongan is total_potongan + potongan_pph21 + potongan_bank
-        $totalPotongan = $slips->sum('total_potongan') + $slips->sum('potongan_pph21') + $slips->sum('potongan_bank');
-        $jumlahKaryawan = $slips->count();
-
-        // 2. Last Month's Net Salary & Percent Change
-        $lastMonthPeriode = Carbon::parse($this->periode . '-01')->subMonth()->format('Y-m');
-        $lastMonthNet = DB::table('sdm_payroll_slips')
-            ->where('periode', $lastMonthPeriode)
-            ->sum('gaji_bersih');
-
-        $percentChange = 0;
-        if ($lastMonthNet > 0) {
-            $percentChange = (($totalGajiBersih - $lastMonthNet) / $lastMonthNet) * 100;
-        }
-
-        // 3. Next Month Estimate (Routine component execution)
-        $estimasiBulanDepan = 0;
-        foreach ($slips as $slip) {
-            // Routine Earnings: Gaji Pokok, Tunjangan Tetap, Tunjangan Absensi, Tunjangan Jabatan, Tunjangan Shift, Tunjangan Radiologi, Tunjangan Lain
-            $routineEarnings = (double) $slip->gaji_pokok + 
-                (double) $slip->tunjangan_tetap + 
-                (double) $slip->tunjangan_absensi + 
-                (double) $slip->tunjangan_jabatan + 
-                (double) $slip->tunjangan_shift + 
-                (double) $slip->tunjangan_radiologi + 
-                (double) $slip->tunjangan_lain;
-
-            // Routine Deductions: BPJS Kesehatan, BPJS Ketenagakerjaan, PPh21, Potongan Bank
-            $routineDeductions = (double) $slip->potongan_bpjs_kes + 
-                (double) $slip->potongan_bpjs_tk + 
-                (double) $slip->potongan_pph21 + 
-                (double) $slip->potongan_bank;
-
-            $estimasiBulanDepan += ($routineEarnings - $routineDeductions);
-        }
-
-        // 4. Department Breakdown
-        $karyawanIds = $slips->pluck('karyawan_id')->unique()->toArray();
-        $karyawans = Karyawan::with(['jabatan.bagian'])
-            ->whereIn('id', $karyawanIds)
-            ->get()
-            ->keyBy('id');
-
-        $bagianBreakdown = [];
-        foreach ($slips as $slip) {
-            $karyawan = $karyawans->get($slip->karyawan_id);
-            $bagianNama = $karyawan && $karyawan->jabatan->first() && $karyawan->jabatan->first()->bagian 
-                ? $karyawan->jabatan->first()->bagian->nama 
-                : 'Umum';
-
-            if (!isset($bagianBreakdown[$bagianNama])) {
-                $bagianBreakdown[$bagianNama] = [
-                    'total_gaji_bersih' => 0,
-                    'karyawan_count' => 0,
-                ];
-            }
-            $bagianBreakdown[$bagianNama]['total_gaji_bersih'] += $slip->gaji_bersih;
-            $bagianBreakdown[$bagianNama]['karyawan_count'] += 1;
-        }
-
-        // Sort breakdown by salary expense descending
-        uasort($bagianBreakdown, fn($a, $b) => $b['total_gaji_bersih'] <=> $a['total_gaji_bersih']);
-
-        // 5. 6-Month Trend
-        $currentDate = Carbon::parse($this->periode . '-01');
-        $months = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $months[] = $currentDate->copy()->subMonths($i)->format('Y-m');
-        }
-
-        $trendMonths = [];
-        foreach ($months as $m) {
-            $mSlips = DB::table('sdm_payroll_slips')->where('periode', $m)->get();
-            $lock = DB::table('sdm_payroll_period_locks')->where('periode', $m)->first();
-            $trendMonths[] = [
-                'periode' => $m,
-                'label' => Carbon::parse($m . '-01')->translatedFormat('F Y'),
-                'total_gaji_bersih' => $mSlips->sum('gaji_bersih'),
-                'total_potongan' => $mSlips->sum('total_potongan') + $mSlips->sum('potongan_pph21') + $mSlips->sum('potongan_bank'),
-                'karyawan_count' => $mSlips->count(),
-                'is_approved' => $lock ? (bool)$lock->is_approved : false,
-                'status' => $lock->status ?? 'draft',
-                'sp3_status' => DB::table('surat_sp3')->where('payroll_periode', $m)->value('status'),
-            ];
-        }
-
-        // 6. Generate dynamic monthly insight text
-        $insightText = "";
-        if ($jumlahKaryawan === 0) {
-            $insightText = "Belum ada data slip gaji yang dicatat untuk periode " . Carbon::parse($this->periode . '-01')->translatedFormat('F Y') . ". Silakan kelola gaji karyawan terlebih dahulu.";
-        } else {
-            if ($lastMonthNet > 0) {
-                $absChange = abs(round($percentChange, 1));
-                if ($percentChange > 0) {
-                    $insightText = "Pengeluaran gaji bulan ini meningkat " . $absChange . "% dibandingkan bulan lalu (" . Carbon::parse($this->periode . '-01')->subMonth()->translatedFormat('F Y') . "). Hal ini dipengaruhi oleh penambahan slip gaji baru atau peningkatan jam lembur karyawan.";
-                } elseif ($percentChange < 0) {
-                    $insightText = "Pengeluaran gaji bulan ini menurun " . $absChange . "% dibandingkan bulan lalu (" . Carbon::parse($this->periode . '-01')->subMonth()->translatedFormat('F Y') . "). Hal ini menunjukkan adanya efisiensi biaya atau pengurangan jumlah potongan/lembur pada periode ini.";
-                } else {
-                    $insightText = "Pengeluaran gaji bulan ini sama persis dengan bulan lalu (" . Carbon::parse($this->periode . '-01')->subMonth()->translatedFormat('F Y') . "). Anggaran belanja pegawai terpantau stabil.";
-                }
-            } else {
-                $insightText = "Bulan lalu (" . Carbon::parse($this->periode . '-01')->subMonth()->translatedFormat('F Y') . ") belum memiliki data penggajian. Ini adalah bulan awal rekapitulasi data penggajian yang tercatat di sistem.";
-            }
-        }
+        $summary = $rekapService->getSummary($this->periode);
+        $bagianBreakdown = $rekapService->getDepartmentBreakdown($summary['slips']);
+        $trendMonths = $rekapService->getSixMonthTrend($this->periode);
+        $insightText = $rekapService->generateInsight(
+            $this->periode,
+            $summary['jumlahKaryawan'],
+            $summary['lastMonthNet'],
+            $summary['percentChange']
+        );
 
         $user = auth()->user();
-        $isOnlyPajak = $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
-        $isSDM = $user->hasRole('Staff-SDM') || $user->hasRole('Super-Admin');
-
-        $potonganBreakdown = [
-            'bpjs_kes' => (double) $slips->sum('potongan_bpjs_kes'),
-            'bpjs_tk' => (double) $slips->sum('potongan_bpjs_tk'),
-            'pph21' => (double) $slips->sum('potongan_pph21'),
-            'absensi' => (double) $slips->sum('potongan_absensi'),
-            'cash_bon' => (double) $slips->sum('potongan_cash_bon'),
-            'obat' => (double) $slips->sum('potongan_obat'),
-            'bank' => (double) $slips->sum('potongan_bank'),
-            'lain' => (double) $slips->sum('potongan_lain'),
-        ];
+        $isOnlyPajak = $user && $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
+        $isSDM = $user && ($user->hasRole('Staff-SDM') || $user->hasRole('Super-Admin'));
 
         return view('livewire.gaji.rekap.index', [
-            'totalGajiBersih' => $totalGajiBersih,
-            'totalPotongan' => $totalPotongan,
-            'potonganBreakdown' => $potonganBreakdown,
-            'jumlahKaryawan' => $jumlahKaryawan,
-            'percentChange' => $percentChange,
-            'lastMonthNet' => $lastMonthNet,
-            'estimasiBulanDepan' => $estimasiBulanDepan,
+            'totalGajiBersih' => $summary['totalGajiBersih'],
+            'totalPotongan' => $summary['totalPotongan'],
+            'potonganBreakdown' => $summary['potonganBreakdown'],
+            'jumlahKaryawan' => $summary['jumlahKaryawan'],
+            'percentChange' => $summary['percentChange'],
+            'lastMonthNet' => $summary['lastMonthNet'],
+            'estimasiBulanDepan' => $summary['estimasiBulanDepan'],
             'bagianBreakdown' => $bagianBreakdown,
             'trendMonths' => $trendMonths,
             'insightText' => $insightText,
@@ -397,7 +271,6 @@ class Index extends Component
         
         $this->formSp3JabatanId = null;
         if (!empty($this->mengetahuiOptions)) {
-            // Find Direktur Utama (DIR) or first available
             $dirOpt = collect($this->mengetahuiOptions)->first(function ($opt) {
                 return str_contains(strtolower($opt['label']), 'direktur utama');
             });
@@ -420,75 +293,37 @@ class Index extends Component
         $this->finalisasiTotalGajiBersih = 0;
     }
 
-    /**
-     * SDM submits draft payroll to Pajak team for review.
-     */
-    public function submitToReviewPajak(string $periode)
+    public function submitToReviewPajak(string $periode, PayrollPeriodService $periodService)
     {
-        $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
-        $currentStatus = $lock->status ?? 'draft';
-
-        if ($currentStatus !== 'draft') {
-            $this->toast()->error('Gagal !', 'Periode ini sudah tidak dalam status draft.')->send();
-            return;
+        try {
+            $periodService->submitToReviewPajak($periode);
+            $this->toast()->success('Berhasil !', 'Payroll periode ' . $periode . ' telah dikirim ke Tim Pajak untuk direview.')->send();
+        } catch (\Throwable $e) {
+            $this->toast()->error('Gagal !', $e->getMessage())->send();
         }
-
-        DB::table('sdm_payroll_period_locks')->updateOrInsert(
-            ['periode' => $periode],
-            [
-                'status' => 'review_pajak',
-                'is_approved' => false,
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]
-        );
-
-        $this->toast()->success('Berhasil !', 'Payroll periode ' . $periode . ' telah dikirim ke Tim Pajak untuk direview.')->send();
     }
 
-    /**
-     * Pajak team approves & sends back to SDM for final approval.
-     */
-    public function approveByPajak(string $periode)
+    public function approveByPajak(string $periode, PayrollPeriodService $periodService)
     {
-        $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
-        $currentStatus = $lock->status ?? 'draft';
-
-        if ($currentStatus !== 'review_pajak') {
-            $this->toast()->error('Gagal !', 'Periode ini tidak dalam status review pajak.')->send();
-            return;
+        try {
+            $periodService->approveByPajak($periode);
+            $this->toast()->success('Berhasil !', 'Review pajak selesai. Payroll periode ' . $periode . ' telah dikembalikan ke SDM untuk finalisasi.')->send();
+        } catch (\Throwable $e) {
+            $this->toast()->error('Gagal !', $e->getMessage())->send();
         }
-
-        DB::table('sdm_payroll_period_locks')->where('periode', $periode)->update([
-            'status' => 'review_sdm',
-            'updated_at' => now(),
-        ]);
-
-        $this->toast()->success('Berhasil !', 'Review pajak selesai. Payroll periode ' . $periode . ' telah dikembalikan ke SDM untuk finalisasi.')->send();
     }
 
-    /**
-     * Pajak team rejects and sends back to SDM draft.
-     */
-    public function rejectByPajak(string $periode)
+    public function rejectByPajak(string $periode, PayrollPeriodService $periodService)
     {
-        $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
-        $currentStatus = $lock->status ?? 'draft';
-
-        if ($currentStatus !== 'review_pajak') {
-            $this->toast()->error('Gagal !', 'Periode ini tidak dalam status review pajak.')->send();
-            return;
+        try {
+            $periodService->rejectByPajak($periode);
+            $this->toast()->warning('Ditolak', 'Data gaji dikembalikan ke SDM untuk diperbaiki.')->send();
+        } catch (\Throwable $e) {
+            $this->toast()->error('Gagal !', $e->getMessage())->send();
         }
-
-        DB::table('sdm_payroll_period_locks')->where('periode', $periode)->update([
-            'status' => 'draft',
-            'updated_at' => now(),
-        ]);
-
-        $this->toast()->warning('Ditolak', 'Data gaji dikembalikan ke SDM untuk diperbaiki.')->send();
     }
 
-    public function submitFinalisasi()
+    public function submitFinalisasi(PayrollPeriodService $periodService)
     {
         $this->validate([
             'formSp3Tgl' => 'required|date',
@@ -500,129 +335,45 @@ class Index extends Component
             'formSp3JabatanId.required' => 'Pejabat menyetujui wajib dipilih.',
         ]);
 
-        // Ensure status is review_sdm before final approval
-        $lock = DB::table('sdm_payroll_period_locks')->where('periode', $this->finalisasiPeriode)->first();
-        if (!$lock || $lock->status !== 'review_sdm') {
-            $this->toast()->error('Gagal !', 'Periode ini belum mendapat persetujuan dari Tim Pajak.')->send();
-            return;
-        }
-
-        DB::beginTransaction();
         try {
-            // 1. Lock period & set approved status
-            DB::table('sdm_payroll_period_locks')->where('periode', $this->finalisasiPeriode)->update([
-                'is_approved' => true,
-                'status' => 'approved',
-                'approved_by' => auth()->id(),
-                'approved_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // 2. Generate automatic SP3 number
-            $last = DB::table('surat_sp3')
-                ->select('no')
-                ->where('jabatan_id', $this->formSp3JabatanId)
-                ->orderBy('id', 'desc')
-                ->first();
-
-            $jab = DB::table('sdm_jabatan')->where('id', $this->formSp3JabatanId)->first();
-            $tanggal = date('d.m.Y', strtotime($this->formSp3Tgl));
-            $no = 1;
-            if ($last) {
-                $fullNomor = explode('/', $last->no);
-                $lastNomor = $fullNomor[0];
-                $no = (int)$lastNomor + 1;
-            }
-            $noSurat = "{$no}/S4/SP.3/PBA-{$jab->kode_surat}/{$tanggal}";
-
-            // 3. Create SP3
-            $sp3Id = DB::table('surat_sp3')->insertGetId([
-                'no' => $noSurat,
-                'tahun' => date('Y', strtotime($this->formSp3Tgl)),
-                'tgl' => $this->formSp3Tgl,
-                'rekanan' => 'Gaji Karyawan',
-                'bayar' => $this->formSp3Bayar,
-                'keterangan' => 'Pembayaran Gaji Karyawan RSBA Periode ' . Carbon::parse($this->finalisasiPeriode . '-01')->translatedFormat('F Y'),
-                'status' => 'pending',
-                'payroll_periode' => $this->finalisasiPeriode,
-                'jabatan_id' => $this->formSp3JabatanId,
-                'created_by' => auth()->id(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // 4. Create SP3 details
-            DB::table('surat_sp3_details')->insert([
-                'sp3_id' => $sp3Id,
-                'keterangan' => 'Total Gaji Bersih Periode ' . Carbon::parse($this->finalisasiPeriode . '-01')->translatedFormat('F Y') . ' (' . $this->finalisasiKaryawanCount . ' Karyawan)',
-                'nominal' => $this->finalisasiTotalGajiBersih,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            DB::commit();
+            $periodService->submitFinalisasi(
+                $this->finalisasiPeriode,
+                $this->formSp3Tgl,
+                $this->formSp3Bayar,
+                $this->formSp3JabatanId,
+                $this->finalisasiKaryawanCount,
+                $this->finalisasiTotalGajiBersih
+            );
 
             $this->closeFinalisasiModal();
             $this->toast()->success('Berhasil !', 'Payroll periode ' . $this->finalisasiPeriode . ' berhasil disetujui & dikunci. Surat SP3 telah dikirim ke sistem persetujuan.')->send();
         } catch (\Throwable $e) {
-            DB::rollBack();
             $this->toast()->error('Gagal !', 'Error: ' . $e->getMessage())->send();
         }
     }
 
-    public function unlockPeriode(string $periode)
+    public function unlockPeriode(string $periode, PayrollPeriodService $periodService)
     {
-        $isSuperAdmin = auth()->user()?->hasRole('Super-Admin');
-
-        // Check associated SP3 status
-        $sp3 = DB::table('surat_sp3')->where('payroll_periode', $periode)->first();
-        if ($sp3) {
-            if ($sp3->status === 'approved') {
-                if (!$isSuperAdmin) {
-                    $this->toast()->error('Akses Ditolak', 'Surat SP3 untuk periode ini telah disetujui Direksi. Hanya Super Admin yang dapat membuka kunci.')->send();
-                    return;
-                }
-                // Super Admin can force-unlock — falls through to unlock logic below
-            }
-            // rejected: semua user dengan approve permission boleh buka kunci untuk revisi
-        }
-
-        DB::beginTransaction();
         try {
-            // Reset lock status back to draft instead of deleting
-            DB::table('sdm_payroll_period_locks')->where('periode', $periode)->update([
-                'status' => 'draft',
-                'is_approved' => false,
-                'approved_by' => null,
-                'approved_at' => null,
-                'updated_at' => now(),
-            ]);
-
-            // Delete associated SP3 and its details if still pending
-            if ($sp3) {
-                DB::table('surat_sp3_details')->where('sp3_id', $sp3->id)->delete();
-                DB::table('surat_sp3')->where('id', $sp3->id)->delete();
-            }
-
-            DB::commit();
+            $isSuperAdmin = (bool) auth()->user()?->hasRole('Super-Admin');
+            $periodService->unlockPeriode($periode, $isSuperAdmin);
             $this->toast()->success('Berhasil !', 'Kunci payroll periode ' . $periode . ' berhasil dibuka. Status dikembalikan ke draft.')->send();
         } catch (\Throwable $e) {
-            DB::rollBack();
-            $this->toast()->error('Gagal !', 'Error: ' . $e->getMessage())->send();
+            $this->toast()->error('Gagal !', $e->getMessage())->send();
         }
     }
 
-    public function openAutoSendModal(): void
+    public function openAutoSendModal(PayrollNotificationService $notifService): void
     {
         $this->authorizeFromRoute();
-        $this->autoSendEnabled = DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_enabled')->value('value') === '1';
-        $this->autoSendDay = DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_day')->value('value') ?: '25';
-        $this->autoSendTime = DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_time')->value('value') ?: '08:00';
-        $this->autoSendChunkSize = (int) (DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_chunk_size')->value('value') ?: 10);
-        $this->autoSendDelaySeconds = (int) (DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_delay_seconds')->value('value') ?: 3);
-        
-        $lastRunRaw = DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_last_run')->value('value');
-        $this->autoSendLastRun = $lastRunRaw ? json_decode($lastRunRaw, true) : null;
+        $settings = $notifService->getAutoSendSettings();
+
+        $this->autoSendEnabled = $settings['autoSendEnabled'];
+        $this->autoSendDay = $settings['autoSendDay'];
+        $this->autoSendTime = $settings['autoSendTime'];
+        $this->autoSendChunkSize = $settings['autoSendChunkSize'];
+        $this->autoSendDelaySeconds = $settings['autoSendDelaySeconds'];
+        $this->autoSendLastRun = $settings['autoSendLastRun'];
         
         $this->isAutoSendModalOpen = true;
     }
@@ -632,21 +383,21 @@ class Index extends Component
         $this->isAutoSendModalOpen = false;
     }
 
-    public function saveAutoSendSettings(): void
+    public function saveAutoSendSettings(PayrollNotificationService $notifService): void
     {
         $this->authorizeFromRoute();
 
-        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_enabled'], ['value' => $this->autoSendEnabled ? '1' : '0', 'updated_at' => now()]);
-        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_day'], ['value' => $this->autoSendDay, 'updated_at' => now()]);
-        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_time'], ['value' => $this->autoSendTime, 'updated_at' => now()]);
-        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_chunk_size'], ['value' => (string) $this->autoSendChunkSize, 'updated_at' => now()]);
-        DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_delay_seconds'], ['value' => (string) $this->autoSendDelaySeconds, 'updated_at' => now()]);
+        $notifService->saveAutoSendSettings([
+            'enabled' => $this->autoSendEnabled,
+            'day' => $this->autoSendDay,
+            'time' => $this->autoSendTime,
+            'chunkSize' => $this->autoSendChunkSize,
+            'delaySeconds' => $this->autoSendDelaySeconds,
+        ]);
 
         $this->isAutoSendModalOpen = false;
         $this->toast()->success('Berhasil !', 'Pengaturan jadwal pengiriman otomatis slip gaji berhasil disimpan.')->send();
     }
-
-
 
     public function openBatchSendModal(): void
     {
@@ -654,7 +405,7 @@ class Index extends Component
 
         $employees = Karyawan::whereNull('resign_at')->get();
         $this->batchTotalCount = $employees->count();
-        $this->refreshBatchProgress();
+        $this->refreshBatchProgress(app(PayrollNotificationService::class));
 
         $this->isBatchSendModalOpen = true;
     }
@@ -665,94 +416,30 @@ class Index extends Component
         $this->isBatchSending = false;
     }
 
-    public function triggerQueueWorker(): void
+    public function sendEmail(int $karyawanId, PayrollNotificationService $notifService): void
     {
-        if (str_contains(PHP_OS_FAMILY, 'Windows')) {
-            pclose(popen("start /B php artisan queue:work --stop-when-empty", "r"));
+        $res = $notifService->sendSingleEmail($karyawanId, $this->periode);
+        if ($res['status'] === 'success') {
+            $this->toast()->success('Diproses !', $res['message'])->send();
+        } elseif ($res['status'] === 'warning') {
+            $this->toast()->warning('Peringatan !', $res['message'])->send();
         } else {
-            exec("php artisan queue:work --stop-when-empty > /dev/null 2>&1 &");
+            $this->toast()->error('Gagal !', $res['message'])->send();
         }
     }
 
-    public function sendEmail(int $karyawanId): void
+    public function sendSingleEmail(int $karyawanId, PayrollNotificationService $notifService): void
     {
-        $karyawan = Karyawan::with(['user'])->find($karyawanId);
-
-        if (!$karyawan) {
-            $this->toast()->error('Gagal !', 'Karyawan tidak ditemukan.')->send();
-            return;
-        }
-
-        $email = $karyawan->email ?: optional($karyawan->user)->email;
-        if (!$email) {
-            $this->toast()->warning('Peringatan !', 'Karyawan ini tidak memiliki alamat email terdaftar.')->send();
-            return;
-        }
-
-        PayrollSendLog::updateOrCreate(
-            ['periode' => $this->periode, 'karyawan_id' => $karyawanId],
-            ['email' => $email, 'status' => 'pending', 'tipe_pengiriman' => 'manual', 'error_message' => null]
-        );
-
-        \App\Jobs\SendPayrollSlipJob::dispatch($karyawanId, $this->periode, 'manual');
-        $this->triggerQueueWorker();
-
-        $this->toast()->success('Diproses !', 'Pengiriman email slip gaji ke ' . $email . ' sedang berjalan di background.')->send();
+        $this->sendEmail($karyawanId, $notifService);
     }
 
-    public function sendSingleEmail(int $karyawanId): void
-    {
-        $this->sendEmail($karyawanId);
-    }
-
-    public function dispatchBulkQueue(): void
+    public function dispatchBulkQueue(PayrollNotificationService $notifService): void
     {
         $this->authorizeFromRoute();
 
-        $employees = Karyawan::whereNull('resign_at')->get();
-
-        $dispatchedCount = 0;
-        foreach ($employees as $karyawan) {
-            $log = PayrollSendLog::where('periode', $this->periode)
-                ->where('karyawan_id', $karyawan->id)
-                ->first();
-
-            if (!$log || $log->status !== 'sent') {
-                $email = $karyawan->email ?: optional($karyawan->user)->email;
-                if (!$email) {
-                    PayrollSendLog::updateOrCreate(
-                        [
-                            'periode' => $this->periode,
-                            'karyawan_id' => $karyawan->id,
-                        ],
-                        [
-                            'email' => '-',
-                            'status' => 'failed',
-                            'tipe_pengiriman' => 'instant_batch',
-                            'error_message' => 'Email karyawan belum terdaftar/kosong di sistem.',
-                        ]
-                    );
-                } else {
-                    PayrollSendLog::updateOrCreate(
-                        [
-                            'periode' => $this->periode,
-                            'karyawan_id' => $karyawan->id,
-                        ],
-                        [
-                            'email' => $email,
-                            'status' => 'pending',
-                            'tipe_pengiriman' => 'instant_batch',
-                        ]
-                    );
-                    \App\Jobs\SendPayrollSlipJob::dispatch($karyawan->id, $this->periode, 'instant_batch');
-                    $dispatchedCount++;
-                }
-            }
-        }
-
+        $dispatchedCount = $notifService->dispatchBulkQueue($this->periode);
         $this->isBatchSending = true;
-        $this->triggerQueueWorker();
-        $this->refreshBatchProgress();
+        $this->refreshBatchProgress($notifService);
 
         if ($dispatchedCount > 0) {
             $this->toast()->success('Antrean Dimulai !', "{$dispatchedCount} slip gaji telah dimasukkan ke dalam antrean pengiriman background.")->send();
@@ -761,21 +448,14 @@ class Index extends Component
         }
     }
 
-
-    public function refreshBatchProgress(): void
+    public function refreshBatchProgress(PayrollNotificationService $notifService): void
     {
-        $this->batchSuccessCount = PayrollSendLog::where('periode', $this->periode)->where('status', 'sent')->count();
-        $this->batchFailedCount = PayrollSendLog::where('periode', $this->periode)->where('status', 'failed')->count();
-        $this->batchProcessedCount = $this->batchSuccessCount + $this->batchFailedCount;
+        $progress = $notifService->refreshBatchProgress($this->periode, $this->batchTotalCount);
 
-        if ($this->batchTotalCount > 0 && $this->batchProcessedCount >= $this->batchTotalCount) {
-            $this->isBatchSending = false;
-            $this->currentSendingStatus = 'Pengiriman antrean background selesai!';
-        } else {
-            $pendingCount = DB::table('jobs')->count();
-            $this->currentSendingStatus = "Memproses antrean background... ({$this->batchProcessedCount}/{$this->batchTotalCount} selesai, {$pendingCount} dalam antrean)";
-        }
+        $this->batchSuccessCount = $progress['batchSuccessCount'];
+        $this->batchFailedCount = $progress['batchFailedCount'];
+        $this->batchProcessedCount = $progress['batchProcessedCount'];
+        $this->isBatchSending = $progress['isBatchSending'];
+        $this->currentSendingStatus = $progress['currentSendingStatus'];
     }
-
 }
-
