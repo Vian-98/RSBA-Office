@@ -43,13 +43,36 @@ class Register extends Component
                 'password' => Hash::make($this->password),
             ]);
 
+            // Backfill user_id di penugasan koordinator yang sudah ada jika karyawan_id cocok
+            \Illuminate\Support\Facades\DB::table('sdm_ruangan_koordinator')
+                ->where('karyawan_id', $user->karyawan_id)
+                ->whereNull('user_id')
+                ->update(['user_id' => $user->id, 'updated_at' => now()]);
+
             Auth::login($user, true);
+
+            $user->refresh();
+            $user->load(['karyawan', 'karyawan.jabatan']);
 
             $user->assignRole('Guest');
             $user->syncRoleFromJabatan();
 
+            // Fallback role sync jika syncRoleFromJabatan menetapkan Guest namun user adalah Dokter / Koordinator
+            if ($user->hasRole('Guest')) {
+                if ($user->isDokter() && $user->isKoordinator()) {
+                    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Koordinator-Dokter']);
+                    $user->syncRoles(['Koordinator-Dokter']);
+                } elseif ($user->isKoordinator()) {
+                    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Koordinator']);
+                    $user->syncRoles(['Koordinator']);
+                }
+            }
+
+            // Invalidate sidebar permissions cache
+            cache()->forget('user-permissions:view:' . $user->id);
+
             $this->toast()
-                ->success('Selamat Bergabung!', Auth::user()->karyawan->nama)
+                ->success('Selamat Bergabung!', $user->karyawan?->nama ?? 'User')
                 ->flash()
                 ->send();
 

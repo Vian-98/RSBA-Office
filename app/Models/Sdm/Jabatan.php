@@ -98,7 +98,14 @@ class Jabatan extends Model
             return 'Staff-SDM';
         }
 
-        if (str_contains($namaJabatan, 'umum') || str_contains($namaJabatan, 'sarpras') || str_contains($namaJabatan, 'logistik')) {
+        $isMedisContext = str_contains($namaJabatan, 'dokter')
+            || str_contains($namaJabatan, 'dr.')
+            || str_contains($namaJabatan, 'medis')
+            || str_contains($namaJabatan, 'klinik')
+            || str_contains($namaJabatan, 'perawat')
+            || str_contains($namaJabatan, 'bidan');
+
+        if (!$isMedisContext && (str_contains($namaJabatan, 'umum') || str_contains($namaJabatan, 'sarpras') || str_contains($namaJabatan, 'logistik'))) {
             return 'Bagian-Umum';
         }
 

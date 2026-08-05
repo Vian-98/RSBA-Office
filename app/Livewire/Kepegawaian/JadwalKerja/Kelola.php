@@ -107,9 +107,11 @@ class Kelola extends Component
             if ($koorIds === null) {
                 // Access all rooms for Super-Admin / SDM / Wadir
                 if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+                    $canView = true;
                     $canManage = true;
                 }
             } else if (in_array($this->jadwalKerja->ruangan_id, $koorIds)) {
+                $canView = true;
                 $canManage = true;
             }
 

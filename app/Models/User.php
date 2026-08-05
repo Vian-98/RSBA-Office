@@ -233,7 +233,7 @@ class User extends Authenticatable
         $karyawan = $this->karyawan;
         if (!$karyawan) return;
 
-        $jabatanAktif = $karyawan->jabatan->first();
+        $jabatanAktif = $karyawan->jabatan()->first();
         if (!$jabatanAktif) return;
 
         $targetRoleName = $jabatanAktif->resolveTargetRoleName();
@@ -391,7 +391,7 @@ class User extends Authenticatable
      */
     public function isKoordinatorDokter(): bool
     {
-        if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur', 'Kepala-Bidang'])) {
             return false;
         }
         return $this->hasRole('Koordinator-Dokter') || ($this->isKoordinator() && $this->isDokter());
@@ -402,7 +402,7 @@ class User extends Authenticatable
      */
     public function isKoordinatorKaryawan(): bool
     {
-        if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Koordinator-Dokter'])) {
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur', 'Kepala-Bidang', 'Koordinator-Dokter'])) {
             return false;
         }
         return $this->isKoordinator() && !$this->isDokter();
