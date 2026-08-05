@@ -4,7 +4,6 @@ namespace App\Livewire\Surat\Cuti;
 
 use App\Livewire\Forms\SuratCutiForm;
 use App\Models\Surat\CutiJenis;
-use App\Models\Sdm\Jabatan;
 use App\Models\Sdm\Karyawan;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Locked;
@@ -22,7 +21,6 @@ class Add extends Component
 
     public function mount()
     {
-        $this->form->options_atasan = Jabatan::pluck('nama', 'id');
         $this->form->initOptionsUrgensi();
     }
 
