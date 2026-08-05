@@ -373,7 +373,6 @@ class User extends Authenticatable
         }
 
         return false;
->>>>>>> c95edb0201af430db6b2905431832aab1577e34f
     }
 
     /**
@@ -384,30 +383,7 @@ class User extends Authenticatable
         if (!$this->karyawan_id) {
             return false;
         }
-<<<<<<< HEAD
-
-        try {
-            return \App\Models\Sdm\Dokter::where('karyawan_id', $this->karyawan_id)->exists();
-        } catch (\Throwable $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Cek apakah user ini merupakan Dokter atau Pengawas (Wadir/SDM/Super-Admin)
-     */
-    public function isDokterOrApprover(): bool
-    {
-        if ($this->hasRole(['Super-Admin', 'Wakil-Direktur', 'Staff-SDM']) || $this->can('approve-jadwal-wadir')) {
-            return true;
-        }
-        if ($this->hasRole(['Koordinator-Dokter', 'Dokter'])) {
-            return true;
-        }
-        return $this->isDokter();
-=======
         return \App\Models\Sdm\Dokter::where('karyawan_id', $this->karyawan_id)->exists();
->>>>>>> c95edb0201af430db6b2905431832aab1577e34f
     }
 
     /**
@@ -415,17 +391,10 @@ class User extends Authenticatable
      */
     public function isKoordinatorDokter(): bool
     {
-<<<<<<< HEAD
-        if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
-            return false;
-        }
-        return $this->isKoordinator() && $this->isDokter();
-=======
         if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur', 'Kepala-Bidang'])) {
             return false;
         }
         return $this->hasRole('Koordinator-Dokter') || ($this->isKoordinator() && $this->isDokter());
->>>>>>> c95edb0201af430db6b2905431832aab1577e34f
     }
 
     /**
@@ -433,11 +402,7 @@ class User extends Authenticatable
      */
     public function isKoordinatorKaryawan(): bool
     {
-<<<<<<< HEAD
-        if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
-=======
         if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur', 'Kepala-Bidang', 'Koordinator-Dokter'])) {
->>>>>>> c95edb0201af430db6b2905431832aab1577e34f
             return false;
         }
         return $this->isKoordinator() && !$this->isDokter();
