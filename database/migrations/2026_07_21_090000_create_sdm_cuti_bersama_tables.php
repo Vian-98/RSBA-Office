@@ -47,7 +47,9 @@ return new class extends Migration
             $table->foreign('cuti_bersama_id')->references('id')->on('sdm_cuti_bersama')->onDelete('set null');
         });
 
-        DB::statement("ALTER TABLE sdm_jadwal_kerja_detail MODIFY COLUMN status_kehadiran ENUM('belum_dicek', 'hadir', 'terlambat', 'pulang_cepat', 'tidak_hadir', 'cuti', 'izin', 'perlu_verifikasi', 'cuti_bersama') DEFAULT 'belum_dicek'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE sdm_jadwal_kerja_detail MODIFY COLUMN status_kehadiran ENUM('belum_dicek', 'hadir', 'terlambat', 'pulang_cepat', 'tidak_hadir', 'cuti', 'izin', 'perlu_verifikasi', 'cuti_bersama') DEFAULT 'belum_dicek'");
+        }
     }
 
     /**

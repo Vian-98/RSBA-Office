@@ -33,6 +33,17 @@ class Pembelian extends Component
     #[Locked]
     public $total = 0;
 
+    public function mount()
+    {
+        $this->init = false;
+        $periode = [
+            now()->startOfMonth()->toDateString(),
+            now()->endOfMonth()->toDateString(),
+        ];
+        $this->getDataBeli($periode, [], null, null);
+    }
+
+
     #[On('filterPembelianLaporan')]
     public function cariDataBeli($data): void
     {

@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Sdm\Karyawan;
 use App\Models\Surat\SuratSp3Approval;
+use App\Models\Sdm\RuanganKoordinator;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,7 +15,9 @@ class User extends Authenticatable
 {
     use Notifiable;
 
-    use HasRoles;
+    use HasRoles {
+        hasPermissionTo as traitHasPermissionTo;
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -47,6 +50,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'read_notifications' => 'array',
         ];
     }
 
@@ -65,17 +69,12 @@ class User extends Authenticatable
         return $this->hasMany(SuratSp3Approval::class, 'disetujui', 'id');
     }
 
-    // -------------------------------------------------------------------------
-    // Helper methods required by Sidebar & Jadwal Kerja permission filtering
-    // -------------------------------------------------------------------------
-
     /**
      * Relasi ke tabel penugasan koordinator (via user_id)
      */
     public function koordinatorRuangans(): HasMany
     {
-        // Tabel ini mungkin belum ada di branch ini — gunakan try/catch di caller
-        return $this->hasMany(\App\Models\Sdm\RuanganKoordinator::class, 'user_id')->where('aktif', true);
+        return $this->hasMany(RuanganKoordinator::class, 'user_id')->where('aktif', true);
     }
 
     /**
@@ -83,33 +82,298 @@ class User extends Authenticatable
      */
     public function isKoordinator(): bool
     {
-        // Super-Admin dan Staff-SDM selalu lolos
+        // Super-Admin, Staff-SDM, Manajemen Wadir, dan Koordinator (termasuk Koordinator-Dokter) selalu lolos
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum', 'Koordinator', 'Koordinator-Dokter'])) {
+            return true;
+        }
+
+        if ($this->koordinatorRuangans()->exists()) {
+            return true;
+        }
+
+        // Auto-check dari Jabatan Level 4 (Koordinator) / is_penyusun_jadwal
+        $karyawan = $this->karyawan;
+        if ($karyawan) {
+            $hasKoorJabatan = $karyawan->jabatan()
+                ->whereHas('tingkat', function ($q) {
+                    $q->where('is_penyusun_jadwal', true)->orWhere('urutan', 4);
+                })
+                ->exists();
+
+            if ($hasKoorJabatan) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function hasPermissionTo($permission, $guardName = null): bool
+    {
+        if (is_string($permission)) {
+            if (in_array($permission, ['view-kepegawaian-jadwal-kerja', 'view-kepegawaian-konfigurasi-jadwal'])) {
+                if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum', 'Wadir-Medis-Keperawatan', 'Kepala-Bidang', 'Koordinator', 'Koordinator-Dokter']) 
+                    || $this->isDokter() 
+                    || $this->isKoordinator() 
+                    || $this->isKepalaDept() 
+                    || $this->isWadir()
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return $this->traitHasPermissionTo($permission, $guardName);
+    }
+
+    /**
+     * Cek apakah user ini merupakan Kepala Bagian / Kepala Bidang / Kepala Dept (Tingkat 3)
+     */
+    public function isKepalaDept(): bool
+    {
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum', 'Wadir-Medis-Keperawatan', 'Kabid', 'Kepala-Bagian'])) {
+            return true;
+        }
+
+        $karyawan = $this->karyawan;
+        if ($karyawan) {
+            return $karyawan->jabatan()
+                ->whereHas('tingkat', function ($q) {
+                    $q->where('urutan', 3);
+                })
+                ->exists();
+        }
+
+        return false;
+    }
+
+    /**
+     * Cek apakah user ini merupakan Wakil Direktur (Tingkat 2)
+     */
+    public function isWadir(): bool
+    {
+        if ($this->hasRole(['Super-Admin', 'Wakil-Direktur', 'Wadir-SDM-Umum', 'Wadir-Medis-Keperawatan', 'Direktur'])) {
+            return true;
+        }
+
+        $karyawan = $this->karyawan;
+        if ($karyawan) {
+            return $karyawan->jabatan()
+                ->whereHas('tingkat', function ($q) {
+                    $q->where('urutan', 2);
+                })
+                ->exists();
+        }
+
+        return false;
+    }
+
+    public function isKabagSDM(): bool
+    {
         if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
             return true;
         }
 
-        try {
-            return $this->koordinatorRuangans()->exists();
-        } catch (\Throwable $e) {
-            return false;
+        $karyawan = $this->karyawan;
+        if ($karyawan) {
+            $jabatan = $karyawan->jabatan->first();
+            if ($jabatan && $this->isKepalaDept()) {
+                $namaJ = strtolower($jabatan->nama ?? '');
+                $namaB = strtolower($jabatan->bagian?->nama ?? '');
+                return str_contains($namaJ, 'sdm') || str_contains($namaJ, 'kepegawaian') || str_contains($namaB, 'sdm');
+            }
         }
+
+        return false;
+    }
+
+    public function isKabagUmum(): bool
+    {
+        if ($this->hasRole(['Super-Admin', 'Bagian-Umum'])) {
+            return true;
+        }
+
+        $karyawan = $this->karyawan;
+        if ($karyawan) {
+            $jabatan = $karyawan->jabatan->first();
+            if ($jabatan && $this->isKepalaDept()) {
+                $namaJ = strtolower($jabatan->nama ?? '');
+                $namaB = strtolower($jabatan->bagian?->nama ?? '');
+                return str_contains($namaJ, 'umum') || str_contains($namaJ, 'sarpras') || str_contains($namaB, 'umum');
+            }
+        }
+
+        return false;
+    }
+
+    public function isKabagKeuangan(): bool
+    {
+        if ($this->hasRole(['Super-Admin', 'Keuangan'])) {
+            return true;
+        }
+
+        $karyawan = $this->karyawan;
+        if ($karyawan) {
+            $jabatan = $karyawan->jabatan->first();
+            if ($jabatan && $this->isKepalaDept()) {
+                $namaJ = strtolower($jabatan->nama ?? '');
+                $namaB = strtolower($jabatan->bagian?->nama ?? '');
+                return str_contains($namaJ, 'keuangan') || str_contains($namaB, 'keuangan');
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Dapatkan daftar ruangan_id yang dikoordinasi user ini.
-     * Return null jika Super-Admin/Staff-SDM (artinya akses semua ruangan)
+     * Sinkronkan Role Spatie akun berdasarkan Jabatan Karyawan
+     */
+    public function syncRoleFromJabatan(): void
+    {
+        $karyawan = $this->karyawan;
+        if (!$karyawan) return;
+
+        $jabatanAktif = $karyawan->jabatan()->first();
+        if (!$jabatanAktif) return;
+
+        $targetRoleName = $jabatanAktif->resolveTargetRoleName();
+
+        if ($targetRoleName && !$this->hasRole(['Super-Admin'])) {
+            $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => $targetRoleName]);
+            $this->syncRoles([$role]);
+        }
+
+        // Hapus cache sidebar permissions user agar menu langsung ter-refresh
+        cache()->forget('user-permissions:view:' . $this->id);
+    }
+
+    /**
+     * Dapatkan daftar ruangan_id yang dinaungi oleh bagian dari jabatan aktif user (khusus Kabid/Kepala Bagian).
+     * Return null jika Super-Admin/Staff-SDM/Wadir/Direktur (akses semua ruangan).
+     */
+    public function getBagianScopedRuanganIds(): ?array
+    {
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'])) {
+            return null; // null = akses semua ruangan
+        }
+
+        $karyawan = $this->karyawan;
+        if ($karyawan) {
+            $bagianId = $karyawan->active_bagian_id;
+            if ($bagianId) {
+                return \App\Models\Ruangan::where('bagian_id', $bagianId)
+                    ->pluck('id')
+                    ->toArray();
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Return the effective departments of the user's active assignments.
+     * Assignment-level department takes precedence over the job master default.
+     */
+    public function getActiveBagianIds(): array
+    {
+        return $this->karyawan?->jabatan
+            ?->map(fn ($jabatan) => $jabatan->pivot?->bagian_id ?? $jabatan->bagian_id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->map(fn ($id) => (int) $id)
+            ->all() ?? [];
+    }
+
+    /**
+     * Ruangan aktif milik karyawan yang terhubung ke user ini.
+     *
+     * Ruangan utama tetap dipertahankan sebagai fallback karena beberapa
+     * data lama belum memiliki baris pada sdm_kary_ruangan.
+     */
+    public function getOwnRuanganIds(): array
+    {
+        $karyawan = $this->karyawan;
+
+        if (!$karyawan || $karyawan->resign_at) {
+            return [];
+        }
+
+        $ids = $karyawan->ruangans()->pluck('ruangan.id')->all();
+
+        if ($karyawan->ruangan_id) {
+            $ids[] = (int) $karyawan->ruangan_id;
+        }
+
+        return collect($ids)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Dapatkan daftar ruangan_id yang dikoordinasi user ini
+     * Return null jika Super-Admin/Staff-SDM/Wadir (artinya akses semua ruangan)
      */
     public function getRuanganKoordinatorIds(): ?array
     {
-        if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
-            return null;
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum'])) {
+            return null; // null = akses semua ruangan
         }
 
-        try {
-            return $this->koordinatorRuangans()->pluck('ruangan_id')->toArray();
-        } catch (\Throwable $e) {
-            return [];
+        $idsFromPivot = $this->koordinatorRuangans()->pluck('ruangan_id')->toArray();
+
+        // Auto-check ruangan dari sdm_kary_ruangan atau ruangan_id utama jika user memegang Jabatan Level 4
+        $karyawan = $this->karyawan;
+        if ($karyawan) {
+            $hasKoorJabatan = $karyawan->jabatan()
+                ->whereHas('tingkat', function ($q) {
+                    $q->where('is_penyusun_jadwal', true)->orWhere('urutan', 4);
+                })
+                ->exists();
+
+            if ($hasKoorJabatan) {
+                $assignedRooms = $karyawan->ruangans()->pluck('ruangan.id')->toArray();
+                if ($karyawan->ruangan_id) {
+                    $assignedRooms[] = $karyawan->ruangan_id;
+                }
+                return array_unique(array_merge($idsFromPivot, $assignedRooms));
+            }
         }
+
+        return $idsFromPivot;
+    }
+
+    /**
+     * Cek apakah user ini merupakan Dokter atau Manajemen Medis/SDM (Wadir/SDM/Super-Admin)
+     */
+    public function isDokterOrApprover(): bool
+    {
+        if ($this->hasRole(['Super-Admin', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Staff-SDM', 'Direktur'])) {
+            return true;
+        }
+
+        if ($this->hasRole(['Koordinator-Dokter', 'Dokter'])) {
+            return true;
+        }
+
+        if (!$this->karyawan_id) {
+            return false;
+        }
+
+        if (\Illuminate\Support\Facades\DB::table('dokter')->where('karyawan_id', $this->karyawan_id)->exists()) {
+            return true;
+        }
+
+        $karyawan = $this->karyawan;
+        if ($karyawan && (str_contains(strtolower($karyawan->gelar_depan ?? ''), 'dr') || str_contains(strtolower($karyawan->gelar_belakang ?? ''), 'sp'))) {
+            return true;
+        }
+
+        return false;
+>>>>>>> c95edb0201af430db6b2905431832aab1577e34f
     }
 
     /**
@@ -120,6 +384,7 @@ class User extends Authenticatable
         if (!$this->karyawan_id) {
             return false;
         }
+<<<<<<< HEAD
 
         try {
             return \App\Models\Sdm\Dokter::where('karyawan_id', $this->karyawan_id)->exists();
@@ -140,6 +405,9 @@ class User extends Authenticatable
             return true;
         }
         return $this->isDokter();
+=======
+        return \App\Models\Sdm\Dokter::where('karyawan_id', $this->karyawan_id)->exists();
+>>>>>>> c95edb0201af430db6b2905431832aab1577e34f
     }
 
     /**
@@ -147,10 +415,17 @@ class User extends Authenticatable
      */
     public function isKoordinatorDokter(): bool
     {
+<<<<<<< HEAD
         if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
             return false;
         }
         return $this->isKoordinator() && $this->isDokter();
+=======
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur', 'Kepala-Bidang'])) {
+            return false;
+        }
+        return $this->hasRole('Koordinator-Dokter') || ($this->isKoordinator() && $this->isDokter());
+>>>>>>> c95edb0201af430db6b2905431832aab1577e34f
     }
 
     /**
@@ -158,7 +433,11 @@ class User extends Authenticatable
      */
     public function isKoordinatorKaryawan(): bool
     {
+<<<<<<< HEAD
         if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
+=======
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur', 'Kepala-Bidang', 'Koordinator-Dokter'])) {
+>>>>>>> c95edb0201af430db6b2905431832aab1577e34f
             return false;
         }
         return $this->isKoordinator() && !$this->isDokter();

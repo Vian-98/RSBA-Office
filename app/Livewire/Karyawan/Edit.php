@@ -7,6 +7,7 @@ use App\Models\Sdm\Karyawan;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use TallStackUi\Traits\Interactions;
 
@@ -23,6 +24,14 @@ class Edit extends Component
     public function mount($id)
     {
         $this->karyawan = Karyawan::findOrFail($id);
+    }
+
+    #[On('updated-karywan')]
+    #[On('status-updated')]
+    #[On('new-jabatan-created')]
+    public function refreshKaryawan()
+    {
+        $this->karyawan->refresh();
     }
 
     function directback()

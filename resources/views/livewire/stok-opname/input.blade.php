@@ -1,4 +1,4 @@
-<div class="flex h-screen flex-col gap-2">
+<div class="flex h-screen flex-col gap-2 pl-24">
 
     <div class="flex-shrink-0">
         <span class="inline-flex max-w-fit flex-row items-center gap-2 rounded-lg border border-orange-200 bg-orange-100 px-2 py-1 text-xs text-orange-500">

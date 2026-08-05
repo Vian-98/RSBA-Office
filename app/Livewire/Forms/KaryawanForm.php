@@ -14,6 +14,8 @@ class KaryawanForm extends Form
     public ?Karyawan $karyawan;
 
     public $status = 'kontrak';
+    public $status_pernikahan = 'belum_menikah';
+    public $jk = 'L';
 
     public $tgl_masuk;
     public $nip;
@@ -26,8 +28,6 @@ class KaryawanForm extends Form
     public $tgl_lahir;
     public $agama;
     public $suku;
-    public $jk;
-    public $status_pernikahan;
     public $hp;
     public $hp2;
     public $prov;
@@ -42,6 +42,7 @@ class KaryawanForm extends Form
     public $dom_alamat;
 
     public $jabatan;
+    public $bagian;
     public $tgl_jabatan;
     public $dinas;
     public $tgl_dinas;
@@ -50,6 +51,8 @@ class KaryawanForm extends Form
     public $tgl_status;
 
     public $ruangan;
+    public $tgl_ruangan;
+    public $kategori_kerja = 'shift';
 
     function mount($karyawan)
     {
@@ -60,18 +63,35 @@ class KaryawanForm extends Form
     protected function rules(): array
     {
         return [
-            'status' => 'required',
-            'nama' => 'required|string',
-            'nik' => 'required|int|digits_between:16,16',
-            'tempat_lahir' => 'required|string',
+            // Kolom wajib di database.
+            'status' => 'required|in:kontrak,tetap,mitra,bantuan,magang',
+            'tgl_masuk' => 'required|date',
+            'nama' => 'required|string|max:50',
+            'nik' => 'required|string|digits:16',
             'tgl_lahir' => 'required|date',
-            'jk' => 'required',
-            'hp' => 'required',
-            'prov' => 'required',
-            'kab' => 'required',
-            'kec' => 'required',
-            'desa' => 'required',
-            'alamat' => 'required'
+            'hp' => 'required|string|max:15',
+            'status_pernikahan' => 'required|in:belum_menikah,menikah,janda_duda',
+            'agama' => 'required|in:islam,kristen,katolik,hindu,budha,khonghucu',
+            'prov' => 'required|string|max:50',
+            'kab' => 'required|string|max:50',
+            'kec' => 'required|string|max:50',
+            'desa' => 'required|string|max:50',
+            'alamat' => 'required|string|max:225',
+
+            // Kolom nullable/default di database.
+            'jk' => 'nullable|in:L,P',
+            'kategori_kerja' => 'required|in:shift,reguler',
+            'tempat_lahir' => 'nullable|string|max:30',
+            'gelar_depan' => 'nullable|string|max:50',
+            'gelar_belakang' => 'nullable|string|max:150',
+            'npwp' => 'nullable|string|max:50',
+            'suku' => 'nullable|string|max:25',
+            'hp2' => 'nullable|string|max:15',
+            'dom_prov' => 'nullable|string|max:50',
+            'dom_kab' => 'nullable|string|max:50',
+            'dom_kec' => 'nullable|string|max:50',
+            'dom_desa' => 'nullable|string|max:50',
+            'dom_alamat' => 'nullable|string|max:255',
         ];
     }
 
@@ -90,7 +110,11 @@ class KaryawanForm extends Form
         $this->agama = $karyawan->agama;
         $this->suku = $karyawan->suku;
         $this->jk = $karyawan->jk;
-        $this->status_pernikahan = $karyawan->status_pernikahan;
+        $this->status_pernikahan = match ($karyawan->status_pernikahan) {
+            'belum', 'belum_menikah', null, '' => 'belum_menikah',
+            'single', 'janda_duda' => 'janda_duda',
+            default => $karyawan->status_pernikahan,
+        };
         $this->hp = $karyawan->hp;
         $this->hp2 = $karyawan->hp2;
         $this->prov = $karyawan->prov;
@@ -109,13 +133,21 @@ class KaryawanForm extends Form
     function setKedinasan(Karyawan $karyawan)
     {
         $this->status = $karyawan->status;
-        $this->jabatan = $karyawan->jabatan[0]->id ?? '';
+        $jabatan = $karyawan->jabatan->first();
+        $this->jabatan = $jabatan?->id ?? '';
+        $this->bagian = $jabatan?->pivot?->bagian_id ?? $jabatan?->bagian_id ?? '';
+        $this->ruangan = $karyawan->ruangan_id ?? '';
         $this->dinas = $karyawan->resign ?? '';
+        $this->kategori_kerja = $karyawan->kategori_kerja?->value ?? 'shift';
     }
 
     // simpan data
     public function store()
     {
+        if (empty($this->tgl_masuk)) {
+            $this->tgl_masuk = now()->toDateString();
+        }
+
         $this->nip = $this->createNip($this->status, $this->tgl_masuk);
 
         $data = [
@@ -133,6 +165,7 @@ class KaryawanForm extends Form
             "gelar_depan" => $this->gelar_depan,
             "gelar_belakang" => $this->gelar_belakang,
             "status" => $this->status,
+            "kategori_kerja" => $this->kategori_kerja ?? 'shift',
             "prov" => $this->prov,
             "kab" => $this->kab,
             "kec" => $this->kec,
@@ -173,6 +206,7 @@ class KaryawanForm extends Form
     {
         $data = [
             'nama' => $this->nama,
+            'tgl_masuk' => $this->tgl_masuk,  // fix: tgl_masuk tidak pernah tersimpan sebelumnya
             'gelar_depan' => $this->gelar_depan,
             'gelar_belakang' => $this->gelar_belakang,
             'nik' => $this->nik,
@@ -182,6 +216,7 @@ class KaryawanForm extends Form
             'agama' => $this->agama,
             'suku' => $this->suku,
             'jk' => $this->jk,
+            'status_pernikahan' => $this->status_pernikahan,
             'hp' => $this->hp,
             'hp2' => $this->hp2,
             'prov' => $this->prov,
@@ -212,27 +247,34 @@ class KaryawanForm extends Form
     {
         /**
          * eg : 22240001
-         * mean : 2 fixed, 2 based on statusKarywan, 24 tahun , 0001 nomor urut based on statusKaryawan
+         * mean : 2 fixed, 2 based on statusKaryawan, 24 tahun , 0001 nomor urut based on statusKaryawan
          */
 
         $statusKode = StatusKaryawan::from($status)->idNIP();
         $tahun  = Carbon::parse($tanggal)->format('y');
+        $prefix = "2" . $statusKode . $tahun;
 
-        $lastNip = Karyawan::where('status', $status)
-            // ->whereYear('created_at', Carbon::now()->year)
+        // Cari NIP tertinggi dengan prefix yang sama
+        $lastNip = Karyawan::where('nip', 'like', $prefix . '%')
             ->orderBy('nip', 'desc')
             ->first();
 
-        $incrementNumber = 1; // Default if no NIP exists for the status in this year
+        $incrementNumber = 1;
 
         if ($lastNip) {
-            // Extract the last four digits and increment by 1
             $incrementNumber = (int)substr($lastNip->nip, -4) + 1;
         }
 
-        // Format increment number to be four digits
-        $incrementNumber = str_pad($incrementNumber, 4, '0', STR_PAD_LEFT);
+        // Garansi NIP Unik: terus increment sampai menemukan NIP yang belum digunakan di DB
+        do {
+            $formattedIncrement = str_pad($incrementNumber, 4, '0', STR_PAD_LEFT);
+            $nip = $prefix . $formattedIncrement;
+            $exists = Karyawan::where('nip', $nip)->exists();
+            if ($exists) {
+                $incrementNumber++;
+            }
+        } while ($exists);
 
-        return "2" . $statusKode . $tahun . $incrementNumber;
+        return $nip;
     }
 }

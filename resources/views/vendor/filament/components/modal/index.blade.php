@@ -119,7 +119,7 @@
                 x-transition:leave-end="fi-transition-leave-end" @endif
             @if (filled($wireSubmitHandler)) wire:submit.prevent="{!! $wireSubmitHandler !!}" @endif
             @if (filled($id)) wire:key="{{ isset($this) ? "{$this->getId()}." : '' }}modal.{{ $id }}.window" @endif
-            {{ ($extraModalWindowAttributeBag ?? new \Illuminate\View\ComponentAttributeBag())->class([
+            {{ ($extraModalWindowAttributeBag ?? new ComponentAttributeBag())->class([
                 'fi-modal-window',
                 'fi-modal-window-has-close-btn' => $closeButton,
                 'fi-modal-window-has-content' => $hasContent,
@@ -148,7 +148,7 @@
                     @else
                         @if ($hasIcon)
                             <div class="fi-modal-icon-ctn">
-                                <div {{ new ComponentAttributeBag()->color(IconComponent::class, $iconColor)->class(['fi-modal-icon-bg']) }}>
+                                <div {{ (new ComponentAttributeBag)->color(IconComponent::class, $iconColor)->class(['fi-modal-icon-bg']) }}>
                                     {{ \Filament\Support\generate_icon_html($icon, $iconAlias, size: \Filament\Support\Enums\IconSize::Large) }}
                                 </div>
                             </div>

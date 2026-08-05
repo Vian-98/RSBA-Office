@@ -245,6 +245,17 @@ class Add extends Component
                 total_biaya: $totalBiaya
             );
 
+            // Log sistem: Selesai Pekerjaan
+            $reqId = $this->maintenanceWork->jadwal?->maintc_request_id ?? $this->maintenanceWork->jadwal()->first()?->maintc_request_id;
+            if ($reqId) {
+                \App\Models\Maintenance\TicketComment::create([
+                    'request_id' => $reqId,
+                    'user_id'    => auth()->id(),
+                    'body'       => 'Pekerjaan diselesaikan oleh ' . (auth()->user()?->karyawan?->nama ?? auth()->user()?->name) . ($this->keterangan ? ' dengan catatan: ' . $this->keterangan : '') . ($totalBiaya > 0 ? ' (Biaya: Rp ' . number_format($totalBiaya, 2, ',', '.') . ')' : ''),
+                    'type'       => 'log',
+                ]);
+            }
+
             DB::commit();
 
             $this->dispatch('close-modal', id: 'modal-maintenance-work-add');
@@ -253,6 +264,9 @@ class Add extends Component
             $this->toast()
                 ->success('Berhasil', "Work Order <b>#{$this->maintenanceWork->id}</b> berhasil diselesaikan.")
                 ->send();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollback();
+            throw $e;
         } catch (Throwable $e) {
             DB::rollback();
 
@@ -283,59 +297,40 @@ class Add extends Component
 
     private function updateMainAssetStatus(): void
     {
-        $this->maintenanceWork->asset->update(['status' => $this->status]);
-    }
+        $asset = $this->maintenanceWork->asset;
+        if (!$asset) return;
 
-    private function processAvailableComponents(array $dokumentasi): float
-    {
-        $komponens = $this->komponens;
+        $asset->update(['status' => $this->status]);
 
-        // Create distribution transaction
-        $distribusi = $this->prosesTransaksiDistribusi($komponens);
+        if ($asset->jenis === 'main') {
+            // Update components if main asset status is updated
+            $asset->components?->each(function ($komponen) {
+                $komponen->update(['status' => $this->status]);
+            });
+        } else if ($asset->jenis === 'component' && $asset->main_asset_id) {
+            // If component maintenance is finished, check parent asset
+            $parent = $asset->mainAsset;
+            if ($parent) {
+                if ($this->status === 'diperbaiki') {
+                    $parent->update(['status' => 'diperbaiki']);
+                } else if ($this->status === 'baik') {
+                    // Check if parent or any other component of the parent is still under repair
+                    $hasOtherUnderRepair = AssetBarang::where('main_asset_id', $parent->id)
+                        ->where('id', '!=', $asset->id)
+                        ->whereIn('status', ['diperbaiki', 'rusak'])
+                        ->exists();
 
-        // Process asset recording and work parts for asset items
-        if (!empty($distribusi['distrb_asset_id'])) {
-            $assetItems = $this->filterItemsByType($komponens, 'asset');
-            $this->prosesPencatatanAsset($assetItems, $distribusi['distrb_asset_id']);
-
-            $this->insertWorkParts(
-                items: $assetItems,
-                status: 'distributed',
-                transId: $distribusi['distrb_asset_id']->id
-            );
+                    if (!$hasOtherUnderRepair) {
+                        $parent->update(['status' => 'baik']);
+                    }
+                }
+            }
         }
-
-        // Insert work parts for BHP items
-        if (!empty($distribusi['distrb_bhp_id'])) {
-            $bhpItems = $this->filterItemsByType($komponens, 'bhp');
-            $this->insertWorkParts(
-                items: $bhpItems,
-                status: 'distributed',
-                transId: $distribusi['distrb_bhp_id']->id
-            );
-        }
-
-        $totalBiaya = $this->hitungTotalDistribusi($distribusi);
-
-        return $totalBiaya;
-    }
-
-    private function processRequestedComponents(): void
-    {
-        $requestId = $this->prosesPengajuanPembelian($this->komponens_diajukan);
-
-        $this->insertWorkParts(
-            items: $this->komponens_diajukan,
-            status: 'requested',
-            transId: $requestId
-        );
     }
 
     private function updateAllComponentsStatus(): void
     {
-        $this->maintenanceWork->asset->components?->each(function ($komponen) {
-            $komponen->update(['status' => $this->status]);
-        });
+        // Handled directly inside updateMainAssetStatus()
     }
 
     private function filterItemsByType(array $items, string $type): array

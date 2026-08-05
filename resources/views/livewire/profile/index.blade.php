@@ -48,7 +48,7 @@
                     @endif
                 </div>
                 <div class="flex">
-                    <span class="w-1/4">Role </span> : {{ $user?->getRoleNames()[0] ?? 'Not Assign Roles' }}
+                    <span class="w-1/4">Role </span> : {{ $user?->getRoleNames()->isEmpty() ? 'Not Assign Roles' : $user->getRoleNames()->implode(', ') }}
                 </div>
             </div>
         </div>

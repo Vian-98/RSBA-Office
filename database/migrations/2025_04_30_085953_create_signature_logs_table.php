@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('signature_logs', function (Blueprint $table) {
             $table->id();
             $table->json('data');
-            $table->longText('signature_hash')->unique();
+            $table->longText('signature_hash');
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('certificate_id');
             $table->timestamps();

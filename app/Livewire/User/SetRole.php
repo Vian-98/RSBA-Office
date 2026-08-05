@@ -9,6 +9,7 @@ use Livewire\Attributes\Lazy;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use TallStackUi\Traits\Interactions;
+use Illuminate\Support\Facades\Cache;
 
 #[Lazy]
 class SetRole extends Component
@@ -29,9 +30,9 @@ class SetRole extends Component
     {
         $this->user = User::findOrFail($id);
         $this->roles = Role::all();
-        $roleUser = Role::findByName($this->user->getRoleNames()[0]);
-        $this->role = $roleUser->name;
+        $this->role = $this->user->getRoleNames()->first();
     }
+
 
     function submit()
     {
@@ -42,7 +43,12 @@ class SetRole extends Component
             $this->user->syncRoles($this->role);
             DB::commit();
 
+            Cache::forget('user-sidebar-menu:' . $this->user->id);
+            Cache::forget('user-permissions:view:' . $this->user->id);
+
             $this->dispatch('updated-role-user');
+            $this->dispatch('close-modal', id: 'set-user-role');
+            
             $this->toast()
                 ->success('Sukses', 'Set role user berhasil.')
                 ->send();

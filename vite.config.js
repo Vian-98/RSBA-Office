@@ -4,8 +4,8 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
     server: {
-        port: 5173, // Fixed port
-        strictPort: true, // Fail if the port is already in use
+        port: 5173,
+        strictPort: true,
         watch: {
             ignored: ['**/storage/**', '**/.git/**', '**/vendor/**']
         }
@@ -13,7 +13,6 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
-            // refresh: true,
             refresh: [
                 ...refreshPaths,
                 'app/Livewire/**',

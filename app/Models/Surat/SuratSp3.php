@@ -15,7 +15,8 @@ class SuratSp3 extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'status' => StatusApproval::class
+        'status' => StatusApproval::class,
+        'docstore_synced_at' => 'datetime',
     ];
 
     public function details()
@@ -52,5 +53,10 @@ class SuratSp3 extends Model
     function approvals()
     {
         return $this->hasMany(SuratSp3Approval::class, 'surat_sp3_id', 'id');
+    }
+
+    public function penyetuju()
+    {
+        return $this->belongsTo(Karyawan::class, 'disetujui', 'id');
     }
 }

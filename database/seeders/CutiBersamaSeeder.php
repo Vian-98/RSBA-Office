@@ -37,7 +37,7 @@ class CutiBersamaSeeder extends Seeder
                 'jenis_cuti_id' => $jenisCutiId,
                 'potong_cuti_tahunan' => true,
                 'status' => 'disimulasikan',
-                'created_by' => 1,
+                'created_by' => \App\Models\User::first()?->id,
             ]
         );
 
@@ -57,7 +57,7 @@ class CutiBersamaSeeder extends Seeder
                 'jenis_cuti_id' => $jenisCutiId,
                 'potong_cuti_tahunan' => true,
                 'status' => 'draft',
-                'created_by' => 1,
+                'created_by' => \App\Models\User::first()?->id,
             ]
         );
 

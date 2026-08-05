@@ -13,13 +13,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-<<<<<<< HEAD
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-=======
         $this->call([
             PermissionSeeder::class,
             RoleSeeder::class,
@@ -28,7 +21,8 @@ class DatabaseSeeder extends Seeder
             MenuSeeder::class,
             PerusahaanSeeder::class,
             WilayahSeeder::class,
-            DummyDataSeeder::class,
+            UmDataSeeder::class,
+            UmumSeeder::class,
             JadwalSeeder::class, // Master shift, aturan jadwal, bagian-shift
             PayrollSeeder::class,
             SdmPayrollGolonganMatrixSeeder::class,
@@ -39,7 +33,8 @@ class DatabaseSeeder extends Seeder
             SkenarioTriRahayuSeeder::class, // Skenario absensi tes Tri Rahayu
             JadwalDuaTahunSeeder::class, // Generate jadwal dan absensi 2023 - 2024
             CutiBersamaSeeder::class, // Event Cuti Bersama
->>>>>>> 543c2f5 (feat(cuti-bersama): implement core architecture, models, and services for cuti bersama v2)
         ]);
+
     }
 }
+

@@ -15,13 +15,13 @@ class Edit extends Component
     use Interactions;
 
     public ?BarangKategori $kategori;
-    public string $nama, $deskripsi, $prefix;
+    public string $nama = '', $deskripsi = '', $prefix = '';
 
     public function mount($id)
     {
         $this->kategori = BarangKategori::findOrFail($id);
-        $this->nama = $this->kategori?->nama;
-        $this->deskripsi = $this->kategori?->deskripsi;
+        $this->nama = $this->kategori?->nama ?? '';
+        $this->deskripsi = $this->kategori?->deskripsi ?? '';
         $this->prefix = $this->kategori->prefix ?? '';
     }
 
