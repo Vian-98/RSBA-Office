@@ -171,10 +171,10 @@
     <hr class="my-2 border-gray-300">
     <div>
         <span class="text-indgo-500 font-semibold italic"> Prosentase Jasa</span>
-        <livewire:Jasmed.Verify.Prosentase :id="$jmPasien?->prosentase?->id" :key="'prosentase-' . Str::random(3)" />
+        <livewire:Jasmed.Verify.Prosentase :jmProsentase="$jmProsentase" key="prosentase" />
     </div>
     <div>
         <span class="font-semibold italic text-indigo-500">Jasa Dokter</span>
-        <livewire:Jasmed.Verify.Jasa :prosentaseId="$jmPasien?->prosentase?->id" :key="'jasa-' . Str::random(3)" />
+        <livewire:Jasmed.Verify.Jasa :prosentaseId="$jmPasien?->prosentase?->id" key="jasa" />
     </div>
 </div>

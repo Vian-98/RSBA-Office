@@ -519,7 +519,7 @@ class MenuSeeder extends Seeder
             ],
             [
                 'id' => 69,
-                'nama' => 'Aturan Pajak PPh 21',
+                'nama' => 'Pajak PPh 21',
                 'route' => 'kepegawaian.master.aturan-pajak.index',
                 'icon' => null,
                 'permission' => ['view-kepegawaian-master-aturan-pajak'],

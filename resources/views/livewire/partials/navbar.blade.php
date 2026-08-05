@@ -51,10 +51,24 @@
                         </div>
                     </x-slot:action>
 
-                    <x-ts:dropdown.items text="Profile" icon="user" :href="route('profile.index')" />
-                    <x-ts:dropdown.items text="Notifikasi" icon="bell" :href="route('profile.notif')" />
-                    <x-ts:dropdown.items text="Settings" icon="cog" :href="route('profile.setting')" />
-                    <x-ts:dropdown.items text="Logout" icon="arrow-left-on-rectangle" wire:click="logout" separator />
+                    <a href="{{ route('profile.index') }}" wire:navigate>
+                        <x-ts:dropdown.items icon="tabler.user" text="Profile" />
+                    </a>
+
+                    <a href="{{ route('profile.notif') }}" wire:navigate>
+                        <x-ts:dropdown.items icon="tabler.bell" text="Notifikasi" />
+                    </a>
+                    <a href="{{ route('profile.setting') }}" wire:navigate>
+                        <x-ts:dropdown.items icon="tabler.settings" text="Settings" />
+                    </a>
+
+                    <x-ts:dropdown.items separator wire:click="logout">
+                        <span class="flex gap-2 text-red-500">
+                            <x-spinner target="logout" sm />
+                            <x-tabler-logout-2 wire:loading.remove wire:target="logout" class="size-5" />
+                            Logout
+                        </span>
+                    </x-ts:dropdown.items>
                 </x-ts:dropdown>
             </div>
         </div>
