@@ -225,11 +225,13 @@ class Sidebar extends Component
 
             $permissions = array_values(array_filter($all, fn($p) => str_starts_with($p, 'view')));
 
-            // Tambahkan permission view koordinator jika user adalah koordinator
-            if ($user && $user->isKoordinator()) {
+            // Tambahkan permission view koordinator & atasan jika user adalah koordinator / kepala dept / wadir
+            if ($user && ($user->isKoordinator() || $user->isKepalaDept() || $user->isWadir())) {
                 $permissions = array_merge($permissions, [
                     'view-kepegawaian-jadwal-kerja',
                     'view-kepegawaian-konfigurasi-jadwal',
+                    'view-kepegawaian-surat-cuti',
+                    'view-kepegawaian-surat-sp3',
                 ]);
             }
 

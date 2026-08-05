@@ -111,7 +111,12 @@ class User extends Authenticatable
     public function hasPermissionTo($permission, $guardName = null): bool
     {
         if (is_string($permission)) {
-            if (in_array($permission, ['view-kepegawaian-jadwal-kerja', 'view-kepegawaian-konfigurasi-jadwal'])) {
+            if (in_array($permission, [
+                'view-kepegawaian-jadwal-kerja',
+                'view-kepegawaian-konfigurasi-jadwal',
+                'view-kepegawaian-surat-cuti',
+                'view-kepegawaian-surat-sp3',
+            ])) {
                 if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum', 'Wadir-Medis-Keperawatan', 'Kepala-Bidang', 'Koordinator', 'Koordinator-Dokter']) 
                     || $this->isDokter() 
                     || $this->isKoordinator() 
