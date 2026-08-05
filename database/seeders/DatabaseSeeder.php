@@ -17,12 +17,12 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
-            DokterSeeder::class,           // Spesialisasi, 3 Koor Dokter (IGD/Rawat Inap/HD), user login
             SuperAdminSignatureSeeder::class,
             MenuSeeder::class,
             PerusahaanSeeder::class,
             WilayahSeeder::class,
-            DummyDataSeeder::class,
+            UmDataSeeder::class,
+            UmumSeeder::class,
             JadwalSeeder::class, // Master shift, aturan jadwal, bagian-shift
             PayrollSeeder::class,
             SdmPayrollGolonganMatrixSeeder::class,
@@ -32,7 +32,10 @@ class DatabaseSeeder extends Seeder
             JadwalDummyJuniSeeder::class, // Generate draf jadwal kerja Juni 2026
             SkenarioTriRahayuSeeder::class, // Skenario absensi tes Tri Rahayu
             JadwalDuaTahunSeeder::class, // Generate jadwal dan absensi 2023 - 2024
+            CutiJenisSeeder::class, // Jenis-jenis cuti (Cuti Tahunan, Izin, Cuti Melahirkan)
             CutiBersamaSeeder::class, // Event Cuti Bersama
         ]);
+
     }
 }
+

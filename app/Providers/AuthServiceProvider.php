@@ -42,6 +42,7 @@ class AuthServiceProvider extends ServiceProvider
                 }
             }
 
+
             // Halaman Jadwal Kerja hanya untuk Manajemen SDM/Kabid/Wadir, Koordinator Ruangan, Dokter, dan Pegawai Shift
             if ($ability === 'view-kepegawaian-jadwal-kerja') {
                 if (
@@ -59,3 +60,4 @@ class AuthServiceProvider extends ServiceProvider
         });
     }
 }
+

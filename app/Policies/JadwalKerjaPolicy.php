@@ -34,7 +34,19 @@ class JadwalKerjaPolicy
         }
 
         $ruanganIds = $user->getRuanganKoordinatorIds();
-        return $ruanganIds !== null && in_array($jadwalKerja->ruangan_id, $ruanganIds);
+        if ($ruanganIds === null) {
+            return true;
+        }
+
+        if (in_array($jadwalKerja->ruangan_id, $ruanganIds)) {
+            return true;
+        }
+
+        if ($user->karyawan?->ruangan_id === $jadwalKerja->ruangan_id) {
+            return true;
+        }
+
+        return false;
     }
 
     public function ajukanKabid(User $user, JadwalKerja $jadwalKerja): bool

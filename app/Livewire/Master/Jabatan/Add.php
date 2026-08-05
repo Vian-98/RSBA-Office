@@ -30,7 +30,8 @@ class Add extends Component
 
     function mount()
     {
-        $this->atasan_options = Jabatan::select('nama', 'id')->get();
+        $this->atasan_options = Jabatan::select('nama', 'id')->orderByDesc('tunjangan_jabatan')->orderBy('id')->get();
+
         $this->bagian_options = Bagian::select('nama', 'id')->get();
     }
 

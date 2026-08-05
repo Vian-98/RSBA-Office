@@ -44,11 +44,34 @@ class RoleSeeder extends Seeder
             $role->syncPermissions($perms);
         };
 
-        // Assign permissions to Kepala-Bidang & Wakil-Direktur
-        $safeSync($kabid, array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'approve-jadwal-kabid'])));
-        $safeSync($wadir, array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'approve-jadwal-wadir'])));
-        
-        // (Koordinator tidak lagi memerlukan permission khusus via Role)
+        // Assign comprehensive executive permissions to Kepala-Bidang & Wakil-Direktur
+        $systemSettingsOnly = [
+            'view-admin-settings-menu',
+            'view-admin-settings-perusahaan',
+            'view-admin-settings-role',
+            'view-admin-settings-permission',
+            'view-role-permission',
+            'view-roles',
+            'view-permissions',
+            'view-menus',
+            'add-menu',
+            'view-settings'
+        ];
+        $executivePermissions = array_values(array_filter($allPermissions, fn($p) => !in_array($p, $systemSettingsOnly)));
+
+        $wadirMedis = Role::firstOrCreate(['name' => 'Wadir-Medis-Keperawatan']);
+        $wadirSdm   = Role::firstOrCreate(['name' => 'Wadir-SDM-Umum']);
+        $wadirKeu   = Role::firstOrCreate(['name' => 'Wadir-Keuangan']);
+        $direktur   = Role::firstOrCreate(['name' => 'Direktur']);
+
+        $safeSync($kabid, $executivePermissions);
+        $safeSync($wadir, $executivePermissions);
+        $safeSync($wadirMedis, $executivePermissions);
+        $safeSync($wadirSdm, $executivePermissions);
+        $safeSync($wadirKeu, $executivePermissions);
+        $safeSync($direktur, $executivePermissions);
+
+
 
 
         // 1. SDM permissions
@@ -102,8 +125,12 @@ class RoleSeeder extends Seeder
         });
         $administrasi->syncPermissions(array_unique(array_merge($admPermissions, $commonPermissions)));
 
-        // 5. Guest permissions
-        $guest->syncPermissions($commonPermissions);
+        // 5. Guest permissions: hanya dapat melihat jadwal pada ruangan
+        // penempatan karyawannya sendiri (scope ruangan ditegakkan di kode).
+        $guest->syncPermissions(array_unique(array_merge(
+            $commonPermissions,
+            ['view-kepegawaian-jadwal-kerja']
+        )));
         
         // 6. Bedah & UGD basic permissions
         $staffBedah->syncPermissions($commonPermissions);
@@ -124,5 +151,12 @@ class RoleSeeder extends Seeder
         ];
         $pajakRole = Role::firstOrCreate(['name' => 'Pajak']);
         $pajakRole->syncPermissions($pajakPermissions);
+
+        // 8. Dokter & Koordinator Dokter permissions
+        $dokterRole = Role::firstOrCreate(['name' => 'Dokter']);
+        $dokterRole->syncPermissions(array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja'])));
+
+        $koorDokterRole = Role::firstOrCreate(['name' => 'Koordinator-Dokter']);
+        $koorDokterRole->syncPermissions(array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'view-kepegawaian-konfigurasi-jadwal'])));
     }
 }

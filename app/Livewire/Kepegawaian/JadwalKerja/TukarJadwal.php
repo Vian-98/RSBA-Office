@@ -26,6 +26,10 @@ class TukarJadwal extends Component
     public ?int $jadwalDetailPenggantiId = null;
     public ?string $alasan = '';
 
+    public array $doktersList = [];
+    public array $jadwalPengajuList = [];
+    public array $jadwalPenggantiList = [];
+
     // Modal action attributes
     public ?int $selectedTukarId = null;
     public string $confirmAction = ''; // setuju_dokter, tolak_dokter, setuju_wadir, tolak_wadir
@@ -61,6 +65,18 @@ class TukarJadwal extends Component
 
     public function submitPengajuan(TukarJadwalDokterService $service)
     {
+        $user = Auth::user();
+        if (!$user || !$user->isDokterOrApprover()) {
+            abort(403, 'Akses ditolak. Halaman Tukar Shift Dokter hanya dapat diakses oleh Dokter atau Manajemen Medis/SDM.');
+        }
+
+        $canSelectDokterA = $user?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Koordinator-Dokter']);
+
+        // Jika dokter biasa, kunci pengaju ke dirinya sendiri
+        if (!$canSelectDokterA && $user?->karyawan_id) {
+            $this->dokterPengajuId = $user->karyawan_id;
+        }
+
         $this->validate([
             'dokterPengajuId'          => 'required|exists:sdm_karyawan,id',
             'jadwalDetailPengajuId'   => 'required|exists:sdm_jadwal_kerja_detail,id',
@@ -112,6 +128,7 @@ class TukarJadwal extends Component
         if (!$this->selectedTukarId) return;
 
         $tukar = TukarJadwalDokter::findOrFail($this->selectedTukarId);
+        $user  = Auth::user();
 
         try {
             switch ($this->confirmAction) {
@@ -126,12 +143,18 @@ class TukarJadwal extends Component
                     break;
 
                 case 'setuju_wadir':
-                    $service->approveWadir($tukar, true, Auth::user(), $this->catatanWadir);
+                    if (!$user?->hasRole(['Wakil-Direktur', 'Super-Admin']) && !$user?->can('approve-jadwal-wadir')) {
+                        abort(403, 'Akses ditolak. Anda tidak memiliki wewenang untuk melakukan approval Wadir.');
+                    }
+                    $service->approveWadir($tukar, true, $user, $this->catatanWadir);
                     session()->flash('message', 'Pengajuan tukar jadwal disetujui Wadir. Shift kedua dokter telah otomatis bertukar.');
                     break;
 
                 case 'tolak_wadir':
-                    $service->approveWadir($tukar, false, Auth::user(), $this->catatanWadir);
+                    if (!$user?->hasRole(['Wakil-Direktur', 'Super-Admin']) && !$user?->can('approve-jadwal-wadir')) {
+                        abort(403, 'Akses ditolak. Anda tidak memiliki wewenang untuk melakukan approval Wadir.');
+                    }
+                    $service->approveWadir($tukar, false, $user, $this->catatanWadir);
                     session()->flash('message', 'Pengajuan tukar jadwal ditolak Wadir.');
                     break;
             }
@@ -147,21 +170,36 @@ class TukarJadwal extends Component
         $user = Auth::user();
         $myKaryawanId = $user?->karyawan_id;
 
-        // List dokter
-        $dokters = Karyawan::query()
+        // List dokter terkelompok per Ruangan/Poli
+        $doktersQuery = Karyawan::query()
             ->where(function ($q) {
-                $q->whereHas('user', function ($u) {
-                    $u->whereHas('roles', fn($r) => $r->where('name', 'like', '%Dokter%'));
-                })
-                ->orWhere('gelar_depan', 'like', '%dr%')
-                ->orWhere('gelar_belakang', 'like', '%Sp%');
+                $q->whereHas('dokterRecord')
+                  ->orWhereHas('user', function ($u) {
+                      $u->whereHas('roles', fn($r) => $r->where('name', 'like', '%Dokter%'));
+                  })
+                  ->orWhere('gelar_depan', 'like', '%dr%')
+                  ->orWhere('gelar_belakang', 'like', '%Sp%');
             })
+            ->with('ruangan')
             ->orderBy('nama')
             ->get();
 
-        if ($dokters->isEmpty()) {
-            $dokters = Karyawan::orderBy('nama')->get();
+        if ($doktersQuery->isEmpty()) {
+            $doktersQuery = Karyawan::with('ruangan')->orderBy('nama')->get();
         }
+
+        $dokters = $doktersQuery->groupBy(function ($k) {
+            return $k->ruangan->nama ?? 'Dokter Lainnya';
+        });
+
+        $this->doktersList = $doktersQuery->map(function ($d) {
+            return [
+                'id'      => $d->id,
+                'nama'    => $d->full_nama,
+                'nip'     => $d->nip,
+                'ruangan' => $d->ruangan->nama ?? 'Dokter Lainnya',
+            ];
+        })->values()->toArray();
 
         // List jadwal detail untuk dropdown
         $jadwalPengaju = $this->dokterPengajuId
@@ -180,6 +218,32 @@ class TukarJadwal extends Component
                 ->get()
             : collect();
 
+        $this->jadwalPengajuList = $jadwalPengaju->map(function ($j) {
+            $tgl = \Carbon\Carbon::parse($j->tanggal)->translatedFormat('l, d M Y');
+            $shiftNama = $j->shift?->nama ?? 'Libur';
+            $jam = ($j->shift?->jam_masuk ?? '-') . ' - ' . ($j->shift?->jam_keluar ?? '-');
+            return [
+                'id'      => $j->id,
+                'label'   => "{$tgl} - {$shiftNama} ({$jam})",
+                'tanggal' => $tgl,
+                'shift'   => $shiftNama,
+                'jam'     => $jam,
+            ];
+        })->values()->toArray();
+
+        $this->jadwalPenggantiList = $jadwalPengganti->map(function ($j) {
+            $tgl = \Carbon\Carbon::parse($j->tanggal)->translatedFormat('l, d M Y');
+            $shiftNama = $j->shift?->nama ?? 'Libur';
+            $jam = ($j->shift?->jam_masuk ?? '-') . ' - ' . ($j->shift?->jam_keluar ?? '-');
+            return [
+                'id'      => $j->id,
+                'label'   => "{$tgl} - {$shiftNama} ({$jam})",
+                'tanggal' => $tgl,
+                'shift'   => $shiftNama,
+                'jam'     => $jam,
+            ];
+        })->values()->toArray();
+
         // Data list per tab
         $listKonfirmasiSaya = TukarJadwalDokter::query()
             ->when($myKaryawanId, fn($q) => $q->where('dokter_pengganti_id', $myKaryawanId))
@@ -195,17 +259,25 @@ class TukarJadwal extends Component
             ->get();
 
         $listRiwayat = TukarJadwalDokter::query()
-            ->with(['dokterPengaju', 'dokterPengganti', 'jadwalDetailPengaju.shift', 'jadwalDetailPengganti.shift', 'disetujuiOleh'])
+            ->with(['dokterPengaju', 'dokterPengganti', 'jadwalDetailPengaju.shift', 'jadwalDetailPengganti.shift', 'disetujuiOleh.karyawan'])
             ->latest()
             ->paginate(15);
 
+        $isWadir          = $user?->hasRole(['Wakil-Direktur', 'Super-Admin']) || $user?->can('approve-jadwal-wadir');
+        $canSelectDokterA = $user?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang']);
+
         return view('livewire.kepegawaian.jadwal-kerja.tukar-jadwal', [
-            'dokters'            => $dokters,
-            'jadwalPengaju'      => $jadwalPengaju,
-            'jadwalPengganti'    => $jadwalPengganti,
-            'listKonfirmasiSaya' => $listKonfirmasiSaya,
-            'listAntreanWadir'   => $listAntreanWadir,
-            'listRiwayat'        => $listRiwayat,
+            'dokters'              => $dokters,
+            'doktersList'          => $this->doktersList,
+            'jadwalPengaju'        => $jadwalPengaju,
+            'jadwalPengganti'      => $jadwalPengganti,
+            'jadwalPengajuList'    => $this->jadwalPengajuList,
+            'jadwalPenggantiList'  => $this->jadwalPenggantiList,
+            'listKonfirmasiSaya'   => $listKonfirmasiSaya,
+            'listAntreanWadir'     => $listAntreanWadir,
+            'listRiwayat'          => $listRiwayat,
+            'isWadir'              => $isWadir,
+            'canSelectDokterA'     => $canSelectDokterA,
         ]);
     }
 }

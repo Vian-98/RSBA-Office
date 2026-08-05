@@ -26,6 +26,87 @@
                     window.Alpine.store('theme', localStorage.getItem('theme') || 'light');
                 }
             });
+
+            // sidebar() must be defined before Alpine evaluates x-data="sidebar()" on <body>
+            function sidebar() {
+                const breakpoint = 768
+                return {
+                    open: {
+                        sidebar: true,
+                        navbar: false,
+                    },
+                    isCollapsed: localStorage.getItem('sidebar-collapsed') === 'true',
+
+                    isAboveBreakpoint: window.innerWidth >= breakpoint,
+
+                    handleResize() {
+                        this.isAboveBreakpoint = window.innerWidth >= breakpoint
+                    },
+
+                    isOpen() {
+                        if (this.isAboveBreakpoint) {
+                            return this.open.sidebar
+                        }
+                        return this.open.navbar
+                    },
+
+                    isSidebarExpanded() {
+                        if (this.isAboveBreakpoint) {
+                            return !this.isCollapsed
+                        }
+                        return this.open.navbar
+                    },
+
+                    handleOpen() {
+                        if (this.isAboveBreakpoint) {
+                            this.open.sidebar = true
+                        } else {
+                            this.open.navbar = true
+                        }
+                    },
+
+                    toggle() {
+                        if (this.isAboveBreakpoint) {
+                            this.isCollapsed = !this.isCollapsed
+                            localStorage.setItem('sidebar-collapsed', this.isCollapsed)
+                        } else {
+                            this.open.navbar = !this.open.navbar
+                        }
+                    },
+
+                    toggleCollapse() {
+                        this.isCollapsed = !this.isCollapsed
+                        localStorage.setItem('sidebar-collapsed', this.isCollapsed)
+                    },
+
+                    handleClose() {
+                        if (this.isAboveBreakpoint) {
+                            this.open.sidebar = false
+                        } else {
+                            this.open.navbar = false
+                        }
+                    },
+
+                    handleAway() {
+                        if (!this.isAboveBreakpoint) {
+                            this.open.navbar = false
+                        }
+                    },
+
+                    initForceListeners() {
+                        window.addEventListener('force-sidebar-collapse', () => {
+                            this.isCollapsed = true
+                        })
+                        window.addEventListener('force-sidebar-expand', () => {
+                            this.isCollapsed = false
+                        })
+                    },
+
+                    init() {
+                        this.initForceListeners()
+                    },
+                }
+            }
         </script>
         <tallstackui:script />
         @filamentStyles

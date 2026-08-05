@@ -51,8 +51,8 @@
             <x-ts:textarea wire:model.defer='form.alamat' placeholder="Alamat selama Cuti" />
 
             <div wire:key="{{ $karyawan?->id }}">
-                <x-ts:select.styled wire:key="atasan-select" multiple :limit="2" searchable wire:model.defer="form.atasan" placeholder="Persetujuan Atasan" :request="$karyawan?->jabatan?->first()?->parent_id ? route('api.karyawan.listnjabatan', [$karyawan->jabatan->first()->parent_id]) : route('api.karyawan.listnjabatan')"
-                    select="label:nama|value:id" lazy="10" />
+                <x-ts:select.styled wire:key="atasan-select" multiple :limit="2" searchable grouped wire:model.defer="form.atasan" placeholder="Persetujuan Atasan" :request="route('api.karyawan.atasan.approver', [$karyawan?->jabatan?->first()?->id, 'karyawan_id' => $karyawan?->id])"
+                    select="label:label|value:id" lazy="10" />
             </div>
 
         </div>

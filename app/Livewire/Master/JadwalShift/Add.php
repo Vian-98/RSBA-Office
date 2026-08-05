@@ -5,6 +5,7 @@ namespace App\Livewire\Master\JadwalShift;
 use Throwable;
 use Livewire\Component;
 use App\Models\Sdm\JadwalShift;
+use App\Models\Sdm\Bagian;
 use Livewire\Attributes\Lazy;
 use TallStackUi\Traits\Interactions;
 
@@ -21,6 +22,7 @@ class Add extends Component
     public $warna;
     public $lintas_hari = false;
     public $aktif = true;
+    public array $bagianIds = [];
 
     protected $rules = [
         'kode' => 'required|string|max:10|unique:sdm_jadwal_shift,kode',
@@ -30,7 +32,9 @@ class Add extends Component
         'toleransi_telat_menit' => 'required|integer|min:0',
         'warna' => 'nullable|string|max:10',
         'lintas_hari' => 'boolean',
-        'aktif' => 'boolean'
+        'aktif' => 'boolean',
+        'bagianIds' => 'array',
+        'bagianIds.*' => 'exists:bagian,id',
     ];
 
     public function submit()
@@ -49,7 +53,8 @@ class Add extends Component
         ];
 
         try {
-            JadwalShift::create($data);
+            $shift = JadwalShift::create($data);
+            $shift->bagians()->sync($this->bagianIds);
 
             $this->dispatch('new-jadwal-shift-created');
             $this->dispatch('close-modal', id: 'new-jadwal-shift');
@@ -58,7 +63,7 @@ class Add extends Component
                 ->success('Berhasil', 'Jadwal Shift baru berhasil dibuat.')
                 ->send();
             
-            $this->reset(['kode', 'nama', 'jam_masuk', 'jam_keluar', 'warna']);
+            $this->reset(['kode', 'nama', 'jam_masuk', 'jam_keluar', 'warna', 'bagianIds']);
             $this->toleransi_telat_menit = 15;
             $this->lintas_hari = false;
             $this->aktif = true;
@@ -71,6 +76,12 @@ class Add extends Component
 
     public function render()
     {
-        return view('livewire.master.jadwal-shift.add');
+        return view('livewire.master.jadwal-shift.add', [
+            'bagianOptions' => Bagian::select('id', 'nama')
+                ->orderBy('nama')
+                ->get()
+                ->map(fn ($item) => ['value' => $item->id, 'label' => $item->nama])
+                ->toArray(),
+        ]);
     }
 }

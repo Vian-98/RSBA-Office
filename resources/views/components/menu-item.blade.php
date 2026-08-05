@@ -62,8 +62,9 @@
 @else
     @php
         $menuUrl = '#';
-        if (!empty($menu['route']) && Route::has($menu['route'])) {
-            $menuParams = $menu['route_params'] ?? [];
+        $hasValidRoute = !empty($menu['route']) && Route::has($menu['route']);
+        if ($hasValidRoute) {
+            $menuParams = is_array($menu['route_params'] ?? null) ? $menu['route_params'] : [];
             $menuUrl = route($menu['route'], $menuParams);
         }
     @endphp
@@ -71,7 +72,7 @@
        {{ $attributes->merge([]) }} 
        :class="isCollapsed && isAboveBreakpoint ? 'justify-center mx-1 px-1' : 'justify-start gap-3 mx-2 px-3'"
        class="py-2.5 rounded-lg transition-all duration-200 cursor-pointer flex items-center relative group {{ $baseClass }}" 
-       wire:navigate>
+       @if($hasValidRoute) wire:navigate @else onclick="return false;" @endif>
 
         {{-- icons --}}
         @if ($menu['icon'])
@@ -96,14 +97,13 @@
 {{-- submenu dependence --}}
 @if (!empty($menu['submenus']))
     <div id="{{ $menu['id'] }}" 
-         x-show="!(isCollapsed && isAboveBreakpoint)"
+         :class="isCollapsed && isAboveBreakpoint ? '!hidden' : ''"
          {{ $attributes->merge(['class' => 'submenu ml-4 ' . ($submenuActive ? 'active' : 'hidden')]) }}>
         <div class="ml-2 space-y-1 border-l-2 border-indigo-500/25">
             @foreach ($menu['submenus'] as $submenu)
                 @php
-                    $subParams  = $submenu['route_params'] ?? [];
-                    $subActive  = !empty($submenu['route']) && Route::has($submenu['route'])
-                        ? request()->fullUrlIs(route($submenu['route'], $subParams))
+                    $subActive = !empty($submenu['route']) && Route::has($submenu['route'])
+                        ? request()->routeIs($submenu['route'])
                         : false;
                 @endphp
                 <x-menu-item :menu="$submenu" :active="$subActive" />

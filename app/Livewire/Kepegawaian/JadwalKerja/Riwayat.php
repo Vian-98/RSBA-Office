@@ -11,6 +11,13 @@ class Riwayat extends Component
     public $jadwalKerjaId;
     public $logs = [];
 
+    public function mount($jadwalKerjaId = null)
+    {
+        if ($jadwalKerjaId) {
+            $this->loadRiwayat($jadwalKerjaId);
+        }
+    }
+
     #[On('load-riwayat')]
     public function loadRiwayat($jadwalKerjaId)
     {

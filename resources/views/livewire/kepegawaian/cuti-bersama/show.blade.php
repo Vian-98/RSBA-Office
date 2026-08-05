@@ -47,7 +47,8 @@
     </div>
 
     {{-- Stat Cards --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
+    {{-- Stat Cards --}}
+    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-9 gap-3">
         <div class="rounded-lg bg-white p-3 shadow-sm border-l-4 border-indigo-500">
             <div class="text-xs text-gray-500 uppercase font-semibold">Total Pegawai</div>
             <div class="text-xl font-bold text-gray-800 mt-1">{{ $simulasiData['total_pegawai'] ?? 0 }}</div>
@@ -67,6 +68,10 @@
         <div class="rounded-lg bg-white p-3 shadow-sm border-l-4 border-blue-500">
             <div class="text-xs text-gray-500 uppercase font-semibold">Libur Roster</div>
             <div class="text-xl font-bold text-blue-600 mt-1">{{ $simulasiData['total_pegawai_libur_roster'] ?? 0 }}</div>
+        </div>
+        <div class="rounded-lg bg-white p-3 shadow-sm border-l-4 border-purple-500">
+            <div class="text-xs text-purple-600 uppercase font-semibold">Dikecualikan</div>
+            <div class="text-xl font-bold text-purple-600 mt-1">{{ $simulasiData['total_pegawai_dikecualikan'] ?? 0 }} pegawai</div>
         </div>
         <div class="rounded-lg bg-white p-3 shadow-sm border-l-4 border-gray-400">
             <div class="text-xs text-gray-500 uppercase font-semibold">Jadwal Belum Ada</div>
@@ -99,10 +104,16 @@
                 <h3 class="text-md font-semibold text-gray-800 cursor-pointer select-none" @click="open = !open">Preview Hasil Simulasi per Pegawai per Tanggal</h3>
             </div>
             
-            <div class="flex items-center gap-2" x-show="open">
-                <div class="w-64">
+            <div class="flex flex-wrap items-center gap-2" x-show="open">
+                <div class="w-56">
                     <x-ts:input wire:model.live.debounce.300ms="searchPegawai" placeholder="Cari nama pegawai..." icon="tabler.search" />
                 </div>
+
+                <x-ts:select.styled wire:model.live="filterPartisipasi" :options="[
+                    ['value' => 'semua', 'label' => 'Semua Partisipasi'],
+                    ['value' => 'ikut', 'label' => 'Peserta (Ikut)'],
+                    ['value' => 'dikecualikan', 'label' => 'Dikecualikan (Tidak Ikut)'],
+                ]" select="label:label|value:value" />
                 
                 <x-ts:select.styled wire:model.live="filterKategori" :options="[
                     ['value' => 'semua', 'label' => 'Semua Hasil'],
@@ -110,16 +121,35 @@
                     ['value' => 'piket', 'label' => 'Tetap Piket'],
                     ['value' => 'roster', 'label' => 'Libur Roster'],
                     ['value' => 'belum_ada', 'label' => 'Jadwal Belum Ada'],
+                    ['value' => 'dikecualikan', 'label' => 'Dikecualikan'],
                 ]" select="label:label|value:value" />
+            </div>
+        </div>
+
+        {{-- Bulk Action Bar --}}
+        <div x-show="open" class="flex flex-wrap items-center justify-between gap-3 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+            <div class="flex items-center gap-2 text-xs font-semibold text-indigo-900">
+                <x-ts:icon name="tabler.users-group" class="w-4 h-4 text-indigo-600" />
+                <span>Aksi Massal Peserta (Terfilter):</span>
+                <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-mono">{{ count($details) }} hasil</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <x-ts:button sm color="emerald" icon="tabler.check" wire:click="selectAllIkut" wire:loading.attr="disabled">
+                    Pilih Semua (Ikut Cuti)
+                </x-ts:button>
+                <x-ts:button sm color="red" icon="tabler.x" wire:click="selectAllTidakIkut" wire:loading.attr="disabled">
+                    Kecualikan Semua (Tidak Ikut)
+                </x-ts:button>
             </div>
         </div>
 
            <div x-show="open" x-collapse class="overflow-x-auto border rounded-lg"
                wire:loading.remove
-               wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori">
+               wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori,filterPartisipasi,togglePartisipasi,selectAllIkut,selectAllTidakIkut">
             <table class="w-full text-left text-sm text-gray-600">
                 <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                     <tr>
+                        <th class="px-4 py-3 text-center">Partisipasi</th>
                         <th class="px-4 py-3">Nama Pegawai</th>
                         <th class="px-4 py-3">Kategori Kerja</th>
                         <th class="px-4 py-3">Tanggal Event</th>
@@ -130,7 +160,24 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     @forelse($details as $row)
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50 {{ !($row['is_ikut'] ?? true) ? 'bg-purple-50/30' : '' }}">
+                            <td class="px-4 py-3 text-center">
+                                @if($row['is_ikut'] ?? true)
+                                    <button type="button"
+                                            wire:click="togglePartisipasi({{ $row['karyawan_id'] }})"
+                                            title="Klik untuk mengecualikan pegawai ini (Tidak Ikut Cuti Bersama)"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 hover:bg-red-100 hover:text-red-800 transition-colors">
+                                        ✓ IKUT
+                                    </button>
+                                @else
+                                    <button type="button"
+                                            wire:click="togglePartisipasi({{ $row['karyawan_id'] }})"
+                                            title="Klik untuk mengembalikan pegawai ini menjadi Peserta Cuti Bersama"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 hover:bg-emerald-100 hover:text-emerald-800 transition-colors">
+                                        ✕ DIKECUALIKAN
+                                    </button>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $row['karyawan_nama'] }}</td>
                             <td class="px-4 py-3 text-xs">{{ $row['kategori_kerja'] }}</td>
                             <td class="px-4 py-3 text-xs font-mono">{{ \Carbon\Carbon::parse($row['tanggal'])->format('d M Y') }}</td>
@@ -138,7 +185,9 @@
                                 <span class="px-2 py-0.5 rounded bg-gray-100 font-mono">{{ $row['shift_nama'] }}</span>
                             </td>
                             <td class="px-4 py-3 text-xs font-semibold">
-                                @if($row['status_aksi'] === 'DIPOTONG_CUTI')
+                                @if($row['status_aksi'] === 'DIKECUALIKAN')
+                                    <x-ts:badge color="purple" light>Dikecualikan (Tidak Ikut)</x-ts:badge>
+                                @elseif($row['status_aksi'] === 'DIPOTONG_CUTI')
                                     <x-ts:badge color="red">Dipotong Cuti (1 Hari)</x-ts:badge>
                                 @elseif($row['status_aksi'] === 'TETAP_HADIR')
                                     <x-ts:badge color="amber">Tetap Hadir / Piket</x-ts:badge>
@@ -156,7 +205,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                                 Tidak ada data hasil simulasi yang cocok dengan filter.
                             </td>
                         </tr>
@@ -204,7 +253,7 @@
 
               <div x-show="open" x-collapse class="overflow-x-auto border rounded-lg"
                   wire:loading.remove
-                  wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori">
+                  wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori,filterPartisipasi,togglePartisipasi,selectAllIkut,selectAllTidakIkut">
                 <table class="w-full text-left text-sm text-gray-600">
                     <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                         <tr>

@@ -20,6 +20,7 @@ Route::prefix('jadwal-kerja')
         Route::get('/kelola/{id}', App\Livewire\Kepegawaian\JadwalKerja\Kelola::class)->name('kelola');
     });
 
+
 // Absensi
 Route::prefix('absensi')
     ->name('absensi.')
@@ -37,6 +38,7 @@ Route::prefix('konfigurasi-jadwal')
     ->group(function () {
         Route::get('/', App\Livewire\Kepegawaian\KonfigurasiJadwal::class)->name('index');
     });
+
 
 // Master data
 Route::prefix('master')
@@ -133,6 +135,14 @@ Route::prefix('surat')
         Route::get('sp3', App\Livewire\Surat\Sp3\Index::class)->name('sp3');
         // Audit Bank Surat — laporan keaslian surat dari docstore (source of truth)
         Route::get('audit-bank-surat', App\Livewire\Surat\AuditBankSurat::class)->name('audit-bank-surat');
+    });
+
+// Cuti Bersama
+Route::prefix('cuti-bersama')
+    ->name('cuti-bersama.')
+    ->group(function () {
+        Route::redirect('/', '/kepegawaian/surat/cuti?tab=cuti-bersama')->name('index');
+        Route::get('/{id}', App\Livewire\Kepegawaian\CutiBersama\Show::class)->name('show');
     });
 
 // Cuti Bersama

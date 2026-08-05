@@ -270,7 +270,7 @@ class UserSeeder extends Seeder
                 'nip'                => '9999999991',
                 'nik'                => '9999999999999991',
                 'pin_absen'          => 'KABID01',
-                'nama'               => 'Kepala Bidang',
+                'nama'               => 'Kepala Bidang Medis',
                 'jk'                 => 'L',
                 'tempat_lahir'       => 'Semarang',
                 'tgl_lahir'          => '1985-06-20',
@@ -295,6 +295,40 @@ class UserSeeder extends Seeder
                 'nama_bank'          => 'BRI',
                 'no_rekening'        => '9876543001',
                 'ruangan_id'         => null,
+                'jabatan_nama'       => 'Kabid Pelayanan Medis',
+            ],
+            [
+                'email'              => 'kabid.farmasi@rsba.com',
+                'role'               => 'Kepala-Bidang',
+                'nip'                => '9999999998',
+                'nik'                => '9999999999999998',
+                'pin_absen'          => 'KABIDFAR01',
+                'nama'               => 'Siti Rahmawati',
+                'jk'                 => 'P',
+                'tempat_lahir'       => 'Bandar Lampung',
+                'tgl_lahir'          => '1988-03-15',
+                'status_pernikahan'  => 'menikah',
+                'gelar_depan'        => 'apt.',
+                'gelar_belakang'     => 'S.Farm.',
+                'hp'                 => '08199999998',
+                'prov'               => 'Lampung',
+                'kab'               => 'Bandar Lampung',
+                'kec'                => 'Kedaton',
+                'desa'               => 'Kedaton',
+                'alamat'             => 'Jl. Kedaton No. 45',
+                'agama'              => 'islam',
+                'suku'               => 'Lampung',
+                'status'             => 'tetap',
+                'tgl_masuk'          => '2015-05-10',
+                'kategori_kerja'     => 'reguler',
+                'pendidikan_setara'  => 'S1',
+                'npwp'               => '999.999.999.9-998.000',
+                'bpjs_kesehatan'     => '0009999999998',
+                'bpjs_tk'            => 'KPJ9999999998',
+                'nama_bank'          => 'Mandiri',
+                'no_rekening'        => '9876543008',
+                'ruangan_id'         => null,
+                'jabatan_nama'       => null,
             ],
             [
                 'email'              => 'wadir@rsba.com',
@@ -362,50 +396,66 @@ class UserSeeder extends Seeder
             ],
         ];
 
+        $optionalColumns = [
+            'pin_absen', 'kategori_kerja', 'pendidikan_setara', 'ruangan_id',
+            'bpjs_kesehatan', 'bpjs_tk', 'nama_bank', 'no_rekening', 'npwp',
+            'suku', 'gelar_depan', 'gelar_belakang', 'status_pernikahan',
+            'prov', 'kab', 'kec', 'desa', 'alamat', 'agama', 'tempat_lahir'
+        ];
+
         foreach ($usersToSeed as $u) {
+            $data = [
+                'nik'       => $u['nik'],
+                'nama'      => $u['nama'],
+                'jk'        => $u['jk'],
+                'hp'        => $u['hp'],
+                'status'    => $u['status'],
+                'tgl_masuk' => $u['tgl_masuk'],
+                'tgl_lahir' => $u['tgl_lahir'],
+            ];
+
+            foreach ($optionalColumns as $col) {
+                if (array_key_exists($col, $u) && Schema::hasColumn('sdm_karyawan', $col)) {
+                    $val = $u[$col];
+                    if (in_array($col, ['gelar_depan', 'gelar_belakang']) && is_string($val) && strlen($val) > 10) {
+                        $val = substr($val, 0, 10);
+                    }
+                    $data[$col] = $val;
+                }
+            }
+
             $karyawan = Karyawan::updateOrCreate(
                 ['nip' => $u['nip']],
-                [
-                    'nik'               => $u['nik'],
-                    'pin_absen'         => $u['pin_absen'],
-                    'nama'              => $u['nama'],
-                    'jk'                => $u['jk'],
-                    'tempat_lahir'      => $u['tempat_lahir'],
-                    'tgl_lahir'         => $u['tgl_lahir'],
-                    'status_pernikahan' => $u['status_pernikahan'],
-                    'gelar_depan'       => $u['gelar_depan'],
-                    'gelar_belakang'    => $u['gelar_belakang'],
-                    'hp'                => $u['hp'],
-                    'prov'              => $u['prov'],
-                    'kab'               => $u['kab'],
-                    'kec'               => $u['kec'],
-                    'desa'              => $u['desa'],
-                    'alamat'            => $u['alamat'],
-                    'agama'             => $u['agama'],
-                    'suku'              => $u['suku'],
-                    'status'            => $u['status'],
-                    'tgl_masuk'         => $u['tgl_masuk'],
-                    'kategori_kerja'    => $u['kategori_kerja'],
-                    'pendidikan_setara' => $u['pendidikan_setara'],
-                    'npwp'              => $u['npwp'],
-                    'bpjs_kesehatan'    => $u['bpjs_kesehatan'],
-                    'bpjs_tk'           => $u['bpjs_tk'],
-                    'nama_bank'         => $u['nama_bank'],
-                    'no_rekening'       => $u['no_rekening'],
-                    'ruangan_id'        => $u['ruangan_id'],
-                ]
+                $data
             );
 
             $user = User::updateOrCreate(
                 ['email' => $u['email']],
                 [
-                    'password'    => '1234',
+                    'password'    => \Illuminate\Support\Facades\Hash::make('1234'),
                     'karyawan_id' => $karyawan->id,
                 ]
             );
 
             Role::firstOrCreate(['name' => $u['role']]);
             $user->syncRoles([$u['role']]);
+
+            if (!empty($u['jabatan_nama'])) {
+                $jabatanTarget = \App\Models\Sdm\Jabatan::where('nama', $u['jabatan_nama'])->first();
+                if ($jabatanTarget) {
+                    \App\Models\Sdm\KaryawanJabatan::updateOrCreate(
+                        [
+                            'karyawan_id' => $karyawan->id,
+                            'jabatan_id'  => $jabatanTarget->id,
+                        ],
+                        [
+                            'bagian_id'   => $jabatanTarget->bagian_id,
+                            'tgl_mulai'   => '2020-01-01',
+                            'tgl_berakhir'=> null,
+                        ]
+                    );
+                }
+            }
         }
 
         Schema::enableForeignKeyConstraints();
