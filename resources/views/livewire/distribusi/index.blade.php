@@ -103,9 +103,11 @@
             <x-ts:tab selected="Permintaan" class="rounded-lg bg-white p-2">
 
                 <x-ts:tab.items tab="Permintaan">
-                    <x-slot:left>
-                        <span class="absolute block h-1 w-1 animate-pulse rounded-full bg-red-500 ring-2 ring-red-300"></span>
-                    </x-slot:left>
+                    @if ($this->getHasNewRequestProperty())
+                        <x-slot:left>
+                            <span class="absolute block h-1 w-1 animate-pulse rounded-full bg-red-500 ring-2 ring-red-300"></span>
+                        </x-slot:left>
+                    @endif
                 </x-ts:tab.items>
 
                 <x-ts:tab.items tab="Terdistribusi">

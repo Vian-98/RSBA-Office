@@ -92,7 +92,7 @@ class StrukturOrganisasiSeeder extends Seeder
             'view-kepegawaian-master-bagian', 'view-kepegawaian-master-jabatan', 'view-kepegawaian-master-ruangan', 'view-kepegawaian-master-spesialisasi',
             'view-kepegawaian-master-cuti', 'view-pengaturan-cuti', 'view-kepegawaian-master-cuti-index',
             'add-kepegawaian-master-cuti-index', 'edit-kepegawaian-master-cuti-index', 'delete-kepegawaian-master-cuti-index',
-            'view-kepegawaian-master-tunjangan-golongan', 'view-kepegawaian-master-aturan-pajak',
+            'view-kepegawaian-master-tunjangan-golongan', 'view-kepegawaian-master-tunjangan-jabatan', 'view-kepegawaian-master-tunjangan-lain', 'view-kepegawaian-master-aturan-pajak',
             'create-cuti-other-karyawan', 'view-sp3', 'view-kepegawaian-surat-sp3',
             'add-kepegawaian-surat-cuti', 'edit-kepegawaian-surat-cuti', 'delete-kepegawaian-surat-cuti',
             'view-kepegawaian-gaji', 'view-kepegawaian-gaji-index', 'add-kepegawaian-gaji-index', 'edit-kepegawaian-gaji-index', 'delete-kepegawaian-gaji-index', 'view-kepegawaian-gaji-rekap', 'view-kepegawaian-gaji-detail', 'approve-kepegawaian-gaji',
@@ -155,6 +155,7 @@ class StrukturOrganisasiSeeder extends Seeder
 
 
 
+        // 1. Create or Find Bagians (Max 25 chars)
         $b_direksi = Bagian::firstOrCreate(['nama' => 'Direksi & Dewas'], ['is_active' => true, 'group' => 'manajemen'])->id;
         $b_komite = Bagian::firstOrCreate(['nama' => 'Komite & Tim'], ['is_active' => true, 'group' => 'manajemen'])->id;
         $b_medis = Bagian::firstOrCreate(['nama' => 'Pelayanan Medis'], ['is_active' => true, 'group' => 'medis'])->id;
@@ -687,6 +688,7 @@ class StrukturOrganisasiSeeder extends Seeder
 
 
         Schema::enableForeignKeyConstraints();
+
         // Auto-sync tingkat_id untuk seluruh sdm_jabatan berdasarkan pola nama
         DB::table('sdm_jabatan')->where('nama', 'like', '%direktur utama%')->orWhere('nama', 'like', '%dewan pengawas%')->update(['tingkat_id' => 1]);
         DB::table('sdm_jabatan')->where('nama', 'like', '%wadir%')->orWhere('nama', 'like', '%wakil direktur%')->update(['tingkat_id' => 2]);

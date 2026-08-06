@@ -105,6 +105,7 @@ class JadwalKerja extends Model
     {
         if (!empty($this->tipe)) {
             return $this->tipe === 'dokter';
+<<<<<<< HEAD
         }
 
         $detailsQuery = $this->details();
@@ -128,6 +129,16 @@ class JadwalKerja extends Model
 
         if (!$targetTingkatId) {
             return $stepNumber === 1 ? 'Kepala Dept / Bidang' : 'Wakil Direktur';
+=======
+        }
+
+        $detailsQuery = $this->details();
+        if ($detailsQuery->exists()) {
+            $karyawanIds = $detailsQuery->pluck('karyawan_id')->unique()->filter();
+            if ($karyawanIds->isNotEmpty()) {
+                return Dokter::whereIn('karyawan_id', $karyawanIds)->exists();
+            }
+>>>>>>> origin/kepegawaian/penggajian
         }
 
         // Legacy fallback is kept until all existing schedules are backfilled.
@@ -206,11 +217,17 @@ class JadwalKerja extends Model
 
         $query = self::where('ruangan_id', $ruanganId)
             ->where('bulan', $bulan)
+<<<<<<< HEAD
             ->where('tahun', $tahun);
         if ($hasTipe) {
             $query->where('tipe', $tipe);
         }
         $jadwalKerja = $query->first();
+=======
+            ->where('tahun', $tahun)
+            ->where('tipe', $tipe)
+            ->first();
+>>>>>>> origin/kepegawaian/penggajian
 
         if (!$jadwalKerja) {
             try {
@@ -219,6 +236,7 @@ class JadwalKerja extends Model
                     'bagian_id'   => self::resolveBagianIdForKaryawanIds([$karyawanId], $ruanganId),
                     'bulan'       => $bulan,
                     'tahun'       => $tahun,
+                    'tipe'        => $tipe,
                     'status'      => $isReguler ? \App\Enums\StatusJadwalKerja::PUBLISHED : \App\Enums\StatusJadwalKerja::DRAFT,
                     'dibuat_oleh' => 1,
                 ];
@@ -229,11 +247,17 @@ class JadwalKerja extends Model
             } catch (\Throwable $e) {
                 $fallbackQuery = self::where('ruangan_id', $ruanganId)
                     ->where('bulan', $bulan)
+<<<<<<< HEAD
                     ->where('tahun', $tahun);
                 if ($hasTipe) {
                     $fallbackQuery->where('tipe', $tipe);
                 }
                 $jadwalKerja = $fallbackQuery->first();
+=======
+                    ->where('tahun', $tahun)
+                    ->where('tipe', $tipe)
+                    ->first();
+>>>>>>> origin/kepegawaian/penggajian
                 if (!$jadwalKerja) {
                     return;
                 }

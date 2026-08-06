@@ -102,7 +102,6 @@ class KoorRuangan extends Component
                 $user->syncRoleFromJabatan();
                 cache()->forget('user-permissions:view:' . $user->id);
             }
-
             $this->toast()
                 ->success('Berhasil', "Ruangan untuk <b>{$karyawan->full_nama}</b> berhasil diupdate.")
                 ->send();

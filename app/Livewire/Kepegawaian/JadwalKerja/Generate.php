@@ -83,6 +83,7 @@ class Generate extends Component
         }
 
         $karyawans = $karyawansQuery->get();
+<<<<<<< HEAD
 
         $resolvedBagianId = JadwalKerja::resolveBagianIdForKaryawanIds(
             $karyawans->pluck('id'),
@@ -108,6 +109,8 @@ class Generate extends Component
             $this->toast()->error('Gagal', 'Jadwal belum memiliki Bagian. Lengkapi penugasan pegawai atau mapping legacy ruangan terlebih dahulu.')->send();
             return;
         }
+=======
+>>>>>>> origin/kepegawaian/penggajian
 
         $hasReguler = $karyawans->contains(function ($k) {
             return $k->kategori_kerja === KategoriKerja::REGULER;

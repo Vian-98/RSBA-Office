@@ -396,10 +396,17 @@ class User extends Authenticatable
      */
     public function isKoordinatorDokter(): bool
     {
+<<<<<<< HEAD
         if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur', 'Kepala-Bidang'])) {
             return false;
         }
         return $this->hasRole('Koordinator-Dokter') || ($this->isKoordinator() && $this->isDokter());
+=======
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            return false;
+        }
+        return $this->isKoordinator() && $this->isDokter();
+>>>>>>> origin/kepegawaian/penggajian
     }
 
     /**
@@ -407,7 +414,11 @@ class User extends Authenticatable
      */
     public function isKoordinatorKaryawan(): bool
     {
+<<<<<<< HEAD
         if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur', 'Kepala-Bidang', 'Koordinator-Dokter'])) {
+=======
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
+>>>>>>> origin/kepegawaian/penggajian
             return false;
         }
         return $this->isKoordinator() && !$this->isDokter();

@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,7 +11,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
+        // Core / Master Seeders (Always executed)
+        $mainSeeders = [
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
@@ -23,19 +22,25 @@ class DatabaseSeeder extends Seeder
             WilayahSeeder::class,
             UmDataSeeder::class,
             UmumSeeder::class,
-            JadwalSeeder::class, // Master shift, aturan jadwal, bagian-shift
+            JadwalSeeder::class,
             PayrollSeeder::class,
             SdmPayrollGolonganMatrixSeeder::class,
-            PayrollPph21ReferenceSeeder::class, // PTKP, TER A/B/C, and Article 17 reference tables
-            KaryawanExcelSeeder::class, // Import 299 karyawan & buat tugas koordinator sdm
-            DummyPayrollSlipSeeder::class, // Generate mock salary slips (February - July 2026)
-            JadwalDummyJuniSeeder::class, // Generate draf jadwal kerja Juni 2026
-            SkenarioTriRahayuSeeder::class, // Skenario absensi tes Tri Rahayu
-            JadwalDuaTahunSeeder::class, // Generate jadwal dan absensi 2023 - 2024
-            CutiJenisSeeder::class, // Jenis-jenis cuti (Cuti Tahunan, Izin, Cuti Melahirkan)
-            CutiBersamaSeeder::class, // Event Cuti Bersama
-        ]);
+            PayrollPph21ReferenceSeeder::class,
+            KaryawanExcelSeeder::class,
+            DummyPayrollSlipSeeder::class,
+            JadwalDummyJuniSeeder::class,
+            SkenarioTriRahayuSeeder::class,
+            JadwalDuaTahunSeeder::class,
+            CutiJenisSeeder::class,
+            CutiBersamaSeeder::class,
+            StrukturOrganisasiSeeder::class,
+        ];
 
+        foreach ($mainSeeders as $seeder) {
+            if (class_exists($seeder)) {
+                $this->call($seeder);
+            }
+        }
     }
 }
 

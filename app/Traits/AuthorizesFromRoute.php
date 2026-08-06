@@ -73,6 +73,10 @@ trait AuthorizesFromRoute
 
     protected function authorizeFromRoute(): void
     {
+        if (empty($this->currentRouteName)) {
+            return;
+        }
+
         $permission = $this->buildPermission();
 
         // Bypassing permission check untuk Koordinator Ruangan / Atasan pada menu utama kepegawaian

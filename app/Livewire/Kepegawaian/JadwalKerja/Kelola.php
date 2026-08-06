@@ -59,6 +59,7 @@ class Kelola extends Component
         $canManage = false;
 
         if ($user) {
+<<<<<<< HEAD
             $isRestrictedGuest = $user->hasRole('Guest') && !$user->isKoordinator();
 
             if ($isRestrictedGuest) {
@@ -79,6 +80,14 @@ class Kelola extends Component
             ]) || $user->can('approve-jadwal-wadir');
 
             if (!$isRestrictedGuest && $isGlobalApprover) {
+=======
+            $isApprover = $user->hasRole([
+                'Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang',
+                'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'
+            ]) || $user->can('approve-jadwal-kabid') || $user->can('approve-jadwal-wadir') || $user->can('view-kepegawaian-jadwal-kerja');
+
+            if ($isApprover) {
+>>>>>>> origin/kepegawaian/penggajian
                 $canView = true;
                 if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
                     $canManage = true;
@@ -129,6 +138,25 @@ class Kelola extends Component
             if ($user->isKoordinatorKaryawan() && $this->jadwalKerja->tipe === 'dokter') {
                 abort(403, 'Jadwal Dokter tidak dapat dikelola oleh Koordinator Karyawan.');
             }
+
+            $ownRuanganId = $user->karyawan?->ruangan_id;
+            $ruanganIds = $user->isKoordinator() ? ($user->getRuanganKoordinatorIds() ?? []) : [];
+
+            if ($this->jadwalKerja->ruangan_id === $ownRuanganId || in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
+                $canView = true;
+            }
+
+            if (in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
+                $canManage = true;
+            }
+
+            // Validasi tipe jadwal: Koor Dokter hanya boleh buka tipe=dokter, Koor Karyawan hanya tipe=karyawan
+            if ($user->isKoordinatorDokter() && $this->jadwalKerja->tipe !== 'dokter') {
+                abort(403, 'Anda adalah Koordinator Dokter, jadwal ini adalah Jadwal Karyawan.');
+            }
+            if ($user->isKoordinatorKaryawan() && $this->jadwalKerja->tipe === 'dokter') {
+                abort(403, 'Jadwal Dokter tidak dapat dikelola oleh Koordinator Karyawan.');
+            }
         }
 
         abort_unless($canView, 403, 'Anda tidak memiliki akses ke jadwal ruangan ini.');
@@ -168,11 +196,15 @@ class Kelola extends Component
         $isKoorDokter = $user?->isKoordinatorDokter() ?? false;
         $isKoorKaryawan = $user?->isKoordinatorKaryawan() ?? false;
 
+<<<<<<< HEAD
         // Sinkronisasi detail adalah operasi tulis. User Guest/read-only tidak
         // boleh mengubah atau menghapus detail hanya karena membuka halaman.
         if ($canManage) {
             $this->syncDetails($daysInMonth, $isKoorDokter, $isKoorKaryawan);
         }
+=======
+        $this->syncDetails($daysInMonth, $isKoorDokter, $isKoorKaryawan);
+>>>>>>> origin/kepegawaian/penggajian
 
         // Group details by Karyawan
         $grouped = $this->jadwalKerja->details->groupBy('karyawan_id');
@@ -214,6 +246,18 @@ class Kelola extends Component
     {
         $karyawansQuery = \App\Models\Sdm\Karyawan::where('ruangan_id', $this->jadwalKerja->ruangan_id)
             ->whereNull('resign_at');
+<<<<<<< HEAD
+=======
+
+        // Filter berdasarkan TIPE JADWAL (bukan role user) untuk memastikan pemisahan permanen
+        if ($this->jadwalKerja->tipe === 'dokter') {
+            $karyawansQuery->whereHas('dokterRecord');
+        } else {
+            $karyawansQuery->whereDoesntHave('dokterRecord');
+        }
+
+        $karyawansInRoom = $karyawansQuery->get();
+>>>>>>> origin/kepegawaian/penggajian
 
         // Filter berdasarkan TIPE JADWAL (bukan role user) untuk memastikan pemisahan permanen
         if ($this->jadwalKerja->tipe === 'dokter') {

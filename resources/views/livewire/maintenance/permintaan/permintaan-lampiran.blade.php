@@ -1,5 +1,13 @@
 @php
-    $imageUrls = array_map(fn($path) => Storage::url($path), $lampirans ?? []);
+    $rawLampirans = is_array($lampirans) ? $lampirans : (is_string($lampirans) ? (json_decode($lampirans, true) ?? []) : []);
+    $imageUrls = array_map(function($path) {
+        if (empty($path)) return '';
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/storage/')) {
+            return $path;
+        }
+        return Storage::url($path);
+    }, $rawLampirans);
+    $imageUrls = array_filter($imageUrls);
 @endphp
 <div x-data="{
         currentSlide: 0,
