@@ -24,6 +24,15 @@ class Form extends Component
     public $keterangan = '';
     public $account_password = '';
 
+    // Mekari Sign Customization
+    public $stamp_position = 'bottom_right'; // 'bottom_right', 'bottom_left', 'bottom_center', 'top_right', 'top_left', 'custom'
+    public $stamp_x = 70; // percentage from left (0 to 100)
+    public $stamp_y = 75; // percentage from top (0 to 100)
+    public $signature_type = 'qr_seal'; // 'qr_seal', 'digital_stamp'
+    public $previewPdfBase64 = null;
+    public $fileSizeFormatted = null;
+    public $fileHashSHA256 = null;
+
     // Popup Password Modal State
     public $showPasswordModal = false;
 
@@ -45,6 +54,44 @@ class Form extends Component
     public function mount()
     {
         $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
+    }
+
+    public function setPresetPosition($preset)
+    {
+        $this->stamp_position = $preset;
+        if ($preset === 'bottom_right') {
+            $this->stamp_x = 70;
+            $this->stamp_y = 75;
+        } elseif ($preset === 'bottom_left') {
+            $this->stamp_x = 5;
+            $this->stamp_y = 75;
+        } elseif ($preset === 'bottom_center') {
+            $this->stamp_x = 38;
+            $this->stamp_y = 75;
+        } elseif ($preset === 'top_right') {
+            $this->stamp_x = 70;
+            $this->stamp_y = 5;
+        } elseif ($preset === 'top_left') {
+            $this->stamp_x = 5;
+            $this->stamp_y = 5;
+        }
+    }
+
+    public function updatedPdfFile()
+    {
+        $this->validateOnly('pdf_file');
+
+        if ($this->pdf_file) {
+            $realPath = $this->pdf_file->getRealPath();
+            $this->fileHashSHA256 = hash_file('sha256', $realPath);
+            $this->fileSizeFormatted = number_format(filesize($realPath)) . ' bytes';
+            $this->previewPdfBase64 = 'data:application/pdf;base64,' . base64_encode(file_get_contents($realPath));
+
+            if (empty($this->title)) {
+                $filename = pathinfo($this->pdf_file->getClientOriginalName(), PATHINFO_FILENAME);
+                $this->title = ucwords(str_replace(['_', '-'], ' ', $filename));
+            }
+        }
     }
 
     public function openPasswordModal()
@@ -70,8 +117,8 @@ class Form extends Component
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p class="text-sm font-bold text-slate-700 mt-4">Memuat Formulir Upload Surat (Lazyload)...</p>
-            <p class="text-xs text-slate-400 mt-1">Menyiapkan engine RSA & ByteCounter</p>
+            <p class="text-sm font-bold text-slate-700 mt-4">Memuat Studio Mekari Sign (Lazyload)...</p>
+            <p class="text-xs text-slate-400 mt-1">Menyiapkan engine RSA, Canvas Drag-and-Drop & ByteCounter</p>
         </div>
         HTML;
     }
@@ -100,7 +147,7 @@ class Form extends Component
             $fileSize = filesize($realPath);
 
             // 1. Calculate ByteCounter (SHA-256 binary hash of the PDF)
-            $byteCounterHash = hash_file('sha256', $realPath);
+            $byteCounterHash = $this->fileHashSHA256 ?? hash_file('sha256', $realPath);
 
             // 2. Prepare Digital Signature
             $signatureData = [];
@@ -122,6 +169,10 @@ class Form extends Component
                         'data_hash'     => $signResult['data_hash'],
                         'original_data' => $byteCounterHash,
                         'public_key'    => optional($user->certificate()->where('is_active', 1)->first())->public_key ?? 'MOCK_PUBLIC_KEY',
+                        'stamp_position'=> $this->stamp_position,
+                        'stamp_x'       => $this->stamp_x,
+                        'stamp_y'       => $this->stamp_y,
+                        'signature_type'=> $this->signature_type,
                     ];
                     $signatureHash = hash('sha256', $signResult['signature']);
                 } else {
@@ -137,6 +188,10 @@ class Form extends Component
                     'data_hash'     => $byteCounterHash,
                     'original_data' => $byteCounterHash,
                     'public_key'    => 'MOCK_PUBLIC_KEY',
+                    'stamp_position'=> $this->stamp_position,
+                    'stamp_x'       => $this->stamp_x,
+                    'stamp_y'       => $this->stamp_y,
+                    'signature_type'=> $this->signature_type,
                 ];
             }
 
@@ -166,7 +221,7 @@ class Form extends Component
 
             // Close modal & reset form
             $this->showPasswordModal = false;
-            $this->reset(['pdf_file', 'title', 'keterangan', 'account_password']);
+            $this->reset(['pdf_file', 'title', 'keterangan', 'account_password', 'previewPdfBase64', 'fileSizeFormatted', 'fileHashSHA256']);
             $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
 
             // Dispatch event to parent component to switch to list tab and notify
