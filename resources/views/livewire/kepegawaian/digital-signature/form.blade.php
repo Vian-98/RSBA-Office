@@ -9,7 +9,7 @@
             </div>
             <div>
                 <h2 class="text-lg font-bold text-slate-800">Studio Tanda Tangan Digital (Mekari Sign Workflow)</h2>
-                <p class="text-xs text-slate-500">Isi identitas di sisi kiri, geser stempel penandatanganan pada pratinjau PDF di sisi kanan</p>
+                <p class="text-xs text-slate-500">Isi identitas di sisi kiri, geser & atur ukuran stempel pada pratinjau PDF di sisi kanan</p>
             </div>
         </div>
 
@@ -20,7 +20,7 @@
             </span>
             <span class="text-slate-300">➔</span>
             <span class="px-3.5 py-2 rounded-xl font-bold {{ $pdf_file ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-400' }}">
-                2. Identitas & Stempel
+                2. Identitas, Stempel & Ukuran
             </span>
             <span class="text-slate-300">➔</span>
             <span class="px-3.5 py-2 rounded-xl font-bold bg-slate-100 text-slate-400">
@@ -83,6 +83,7 @@
                 x-data="{
                     posX: @entangle('stamp_x'),
                     posY: @entangle('stamp_y'),
+                    scale: @entangle('stamp_scale'),
                     isDragging: false,
                     grabOffsetX: 0,
                     grabOffsetY: 0,
@@ -134,6 +135,22 @@
                         </div>
                     </div>
 
+                    {{-- Stamp Resizer Quick Controller in Sidebar --}}
+                    <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100 space-y-2.5">
+                        <div class="flex items-center justify-between text-xs font-bold text-indigo-900 uppercase tracking-wider">
+                            <span>Ukuran Stempel (Scale)</span>
+                            <span class="font-mono text-indigo-700 font-bold" x-text="scale + '%'"></span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="range" min="50" max="180" step="5" x-model="scale" class="w-full accent-indigo-600 h-2 bg-indigo-200/80 rounded-lg cursor-pointer" />
+                        </div>
+                        <div class="flex justify-between gap-1 text-[11px]">
+                            <button type="button" @click="scale = 65" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Kecil (65%)</button>
+                            <button type="button" @click="scale = 100" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Normal (100%)</button>
+                            <button type="button" @click="scale = 135" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Besar (135%)</button>
+                        </div>
+                    </div>
+
                     {{-- Judul Surat --}}
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Judul / Nama Surat</label>
@@ -180,7 +197,7 @@
                             Pratinjau PDF (Side Kanan)
                         </span>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                            🖐️ Hold Click untuk Geser Stempel
+                            🖐️ Hold Click & Resize Active
                         </span>
                     </div>
 
@@ -198,32 +215,44 @@
                             <iframe src="{{ $previewPdfBase64 }}#view=FitH&toolbar=0&navpanes=0" style="width: 100%; height: 100%; min-height: 820px; border-radius: 16px; border: none; background: white;"></iframe>
                         </object>
 
-                        {{-- Manual Draggable Mekari Vault Seal Stamp Overlay --}}
+                        {{-- Manual Draggable & Resizable Mekari Vault Seal Stamp Overlay --}}
                         <div 
                             x-ref="stampBadge"
                             @mousedown.prevent="startDrag($event)"
-                            :style="`left: ${posX}%; top: ${posY}%;`"
-                            class="absolute z-30 cursor-grab active:cursor-grabbing select-none"
+                            :style="`left: ${posX}%; top: ${posY}%; transform: scale(${scale / 100}); transform-origin: top left;`"
+                            class="absolute z-30 cursor-grab active:cursor-grabbing select-none transition-transform duration-75"
                         >
-                            <div class="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border-2 border-emerald-500 shadow-2xl text-left max-w-xs ring-4 ring-emerald-500/20 group-hover:scale-105 transition-all select-none pointer-events-none">
+                            <div class="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border-2 border-emerald-500 shadow-2xl text-left max-w-xs ring-4 ring-emerald-500/20 hover:ring-emerald-500/40 transition-all select-none">
+                                {{-- Stamp Header with Interactive Resize Buttons --}}
                                 <div class="flex items-center justify-between border-b border-emerald-100 pb-1.5 mb-1.5">
-                                    <div class="flex items-center space-x-1.5">
-                                        <div class="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-white shrink-0">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="flex items-center space-x-1.5 pointer-events-none">
+                                        <div class="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center text-white shrink-0">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                                             </svg>
                                         </div>
-                                        <span class="text-[10px] font-black uppercase text-emerald-800 tracking-wider">SIGNED BY MEKARI VAULT</span>
+                                        <span class="text-[9px] font-black uppercase text-emerald-800 tracking-wider">MEKARI VAULT</span>
                                     </div>
-                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">DRAG ME</span>
+                                    
+                                    {{-- Interactive Resize Controls Directly on Stamp --}}
+                                    <div class="flex items-center space-x-1 bg-emerald-50 rounded-lg p-0.5 border border-emerald-200">
+                                        <button type="button" @click.stop="scale = Math.max(50, parseInt(scale) - 10)" class="w-4 h-4 rounded bg-white hover:bg-emerald-200 active:bg-emerald-300 text-[10px] font-black text-emerald-800 flex items-center justify-center shadow-xs transition-colors">
+                                            -
+                                        </button>
+                                        <span class="text-[8px] font-mono font-bold text-emerald-900 px-1 select-none" x-text="scale + '%'"></span>
+                                        <button type="button" @click.stop="scale = Math.min(180, parseInt(scale) + 10)" class="w-4 h-4 rounded bg-white hover:bg-emerald-200 active:bg-emerald-300 text-[10px] font-black text-emerald-800 flex items-center justify-center shadow-xs transition-colors">
+                                            +
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="text-xs font-bold text-slate-800 leading-tight">{{ Auth::user()->name }}</div>
-                                <div class="text-[9px] text-slate-500 font-mono mt-0.5">{{ date('d M Y H:i') }} WIB</div>
-                                <div class="text-[8px] font-mono text-indigo-700 truncate mt-1 bg-indigo-50 px-1.5 py-0.5 rounded">
+
+                                <div class="text-xs font-bold text-slate-800 leading-tight pointer-events-none">{{ Auth::user()->name }}</div>
+                                <div class="text-[9px] text-slate-500 font-mono mt-0.5 pointer-events-none">{{ date('d M Y H:i') }} WIB</div>
+                                <div class="text-[8px] font-mono text-indigo-700 truncate mt-1 bg-indigo-50 px-1.5 py-0.5 rounded pointer-events-none">
                                     SHA: {{ substr($fileHashSHA256, 0, 18) }}...
                                 </div>
-                                <div class="text-[9px] text-slate-400 text-center border-t border-slate-100 pt-1 mt-1 font-sans">
-                                    🖐️ Klik & geser stempel di sini
+                                <div class="text-[8px] text-slate-400 text-center border-t border-slate-100 pt-1 mt-1 font-sans pointer-events-none">
+                                    🖐️ Klik & geser | gunakan [-] [+] untuk ukuran
                                 </div>
                             </div>
                         </div>
@@ -265,6 +294,11 @@
                     <div class="flex items-center justify-between">
                         <span class="text-slate-500">Penandatangan:</span>
                         <span class="font-bold text-slate-800">{{ Auth::user()->name }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-500">Skala Stempel:</span>
+                        <span class="font-mono font-semibold text-indigo-600">{{ $stamp_scale }}%</span>
+
                     </div>
                     <div class="border-t border-slate-200 pt-2 mt-1">
                         <span class="text-slate-500 block">SHA-256 Checksum:</span>

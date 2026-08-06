@@ -25,9 +25,10 @@ class Form extends Component
     public $account_password = '';
 
     // Mekari Sign Customization
-    public $stamp_position = 'bottom_right'; // 'bottom_right', 'bottom_left', 'bottom_center', 'top_right', 'top_left', 'custom'
+    public $stamp_position = 'bottom_right';
     public $stamp_x = 70; // percentage from left (0 to 100)
     public $stamp_y = 75; // percentage from top (0 to 100)
+    public $stamp_scale = 100; // percentage scale (50% to 180%)
     public $signature_type = 'qr_seal'; // 'qr_seal', 'digital_stamp'
     public $previewPdfBase64 = null;
     public $fileSizeFormatted = null;
@@ -172,6 +173,7 @@ class Form extends Component
                         'stamp_position'=> $this->stamp_position,
                         'stamp_x'       => $this->stamp_x,
                         'stamp_y'       => $this->stamp_y,
+                        'stamp_scale'   => $this->stamp_scale,
                         'signature_type'=> $this->signature_type,
                     ];
                     $signatureHash = hash('sha256', $signResult['signature']);
@@ -191,6 +193,7 @@ class Form extends Component
                     'stamp_position'=> $this->stamp_position,
                     'stamp_x'       => $this->stamp_x,
                     'stamp_y'       => $this->stamp_y,
+                    'stamp_scale'   => $this->stamp_scale,
                     'signature_type'=> $this->signature_type,
                 ];
             }
