@@ -20,7 +20,6 @@ Route::prefix('jadwal-kerja')
         Route::get('/kelola/{id}', App\Livewire\Kepegawaian\JadwalKerja\Kelola::class)->name('kelola');
     });
 
-
 // Absensi
 Route::prefix('absensi')
     ->name('absensi.')
@@ -38,7 +37,6 @@ Route::prefix('konfigurasi-jadwal')
     ->group(function () {
         Route::get('/', App\Livewire\Kepegawaian\KonfigurasiJadwal::class)->name('index');
     });
-
 
 // Master data
 Route::prefix('master')

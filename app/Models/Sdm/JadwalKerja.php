@@ -44,6 +44,7 @@ class JadwalKerja extends Model
         return $this->belongsTo(\App\Models\Ruangan::class, 'ruangan_id');
     }
 
+<<<<<<< HEAD
     public function bagian()
     {
         return $this->belongsTo(Bagian::class, 'bagian_id');
@@ -101,11 +102,16 @@ class JadwalKerja extends Model
         ]);
     }
 
+=======
+>>>>>>> origin/kepegawaian/absensi
     public function isDokterSchedule(): bool
     {
         if (!empty($this->tipe)) {
             return $this->tipe === 'dokter';
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> origin/kepegawaian/absensi
         }
 
         $detailsQuery = $this->details();
@@ -119,6 +125,7 @@ class JadwalKerja extends Model
         return false;
     }
 
+<<<<<<< HEAD
     /**
      * Resolves the target approver Karyawan model or name dynamically based on Workflow & Department
      */
@@ -191,6 +198,8 @@ class JadwalKerja extends Model
         return $kabidUser?->karyawan?->full_nama ?? $kabidUser?->name ?? 'Kepala Dept';
     }
 
+=======
+>>>>>>> origin/kepegawaian/absensi
     public static function ensureEmployeeDetailsExist($karyawanId, $bulan, $tahun)
     {
         $karyawan = \App\Models\Sdm\Karyawan::find($karyawanId);
@@ -213,6 +222,7 @@ class JadwalKerja extends Model
 
         $isReguler = $karyawan->kategori_kerja === \App\Enums\KategoriKerja::REGULER;
 
+<<<<<<< HEAD
         $hasTipe = \Illuminate\Support\Facades\Schema::hasColumn('sdm_jadwal_kerja', 'tipe');
 
         $query = self::where('ruangan_id', $ruanganId)
@@ -234,11 +244,24 @@ class JadwalKerja extends Model
                 $payload = [
                     'ruangan_id'  => $ruanganId,
                     'bagian_id'   => self::resolveBagianIdForKaryawanIds([$karyawanId], $ruanganId),
+=======
+        $jadwalKerja = self::where('ruangan_id', $ruanganId)
+            ->where('bulan', $bulan)
+            ->where('tahun', $tahun)
+            ->where('tipe', $tipe)
+            ->first();
+
+        if (!$jadwalKerja) {
+            try {
+                $jadwalKerja = self::create([
+                    'ruangan_id'  => $ruanganId,
+>>>>>>> origin/kepegawaian/absensi
                     'bulan'       => $bulan,
                     'tahun'       => $tahun,
                     'tipe'        => $tipe,
                     'status'      => $isReguler ? \App\Enums\StatusJadwalKerja::PUBLISHED : \App\Enums\StatusJadwalKerja::DRAFT,
                     'dibuat_oleh' => 1,
+<<<<<<< HEAD
                 ];
                 if ($hasTipe) {
                     $payload['tipe'] = $tipe;
@@ -258,10 +281,20 @@ class JadwalKerja extends Model
                     ->where('tipe', $tipe)
                     ->first();
 >>>>>>> origin/kepegawaian/penggajian
+=======
+                ]);
+            } catch (\Throwable $e) {
+                $jadwalKerja = self::where('ruangan_id', $ruanganId)
+                    ->where('bulan', $bulan)
+                    ->where('tahun', $tahun)
+                    ->where('tipe', $tipe)
+                    ->first();
+>>>>>>> origin/kepegawaian/absensi
                 if (!$jadwalKerja) {
                     return;
                 }
             }
+<<<<<<< HEAD
         } else {
             $updates = [];
             if (!$jadwalKerja->bagian_id) {
@@ -276,6 +309,10 @@ class JadwalKerja extends Model
             if ($updates) {
                 $jadwalKerja->update($updates);
             }
+=======
+        } elseif ($isReguler && $jadwalKerja->status === \App\Enums\StatusJadwalKerja::DRAFT) {
+            $jadwalKerja->update(['status' => \App\Enums\StatusJadwalKerja::PUBLISHED]);
+>>>>>>> origin/kepegawaian/absensi
         }
 
         $hasDetails = \App\Models\Sdm\JadwalKerjaDetail::where('jadwal_kerja_id', $jadwalKerja->id)
@@ -283,10 +320,14 @@ class JadwalKerja extends Model
             ->exists();
 
         if ($hasDetails) {
+<<<<<<< HEAD
             $shiftReguler = app(\App\Services\AturanJadwalService::class)
                 ->shiftValidUntukRuangan($ruanganId, $jadwalKerja->bagian_id)
                 ->first(fn ($ruanganShift) => $ruanganShift->shift?->kode === 'REGULER')
                 ?->shift;
+=======
+            $shiftReguler = \App\Models\Sdm\JadwalShift::where('kode', 'REGULER')->where('aktif', true)->first();
+>>>>>>> origin/kepegawaian/absensi
             if ($isReguler && $shiftReguler) {
                 $details = \App\Models\Sdm\JadwalKerjaDetail::where('jadwal_kerja_id', $jadwalKerja->id)
                     ->where('karyawan_id', $karyawanId)
@@ -304,10 +345,14 @@ class JadwalKerja extends Model
             return;
         }
 
+<<<<<<< HEAD
         $shiftReguler = app(\App\Services\AturanJadwalService::class)
             ->shiftValidUntukRuangan($ruanganId, $jadwalKerja->bagian_id)
             ->first(fn ($ruanganShift) => $ruanganShift->shift?->kode === 'REGULER')
             ?->shift;
+=======
+        $shiftReguler = \App\Models\Sdm\JadwalShift::where('kode', 'REGULER')->where('aktif', true)->first();
+>>>>>>> origin/kepegawaian/absensi
         $daysInMonth = \Carbon\Carbon::create($tahun, $bulan, 1)->daysInMonth;
         
         $startDate = \Carbon\Carbon::create($tahun, $bulan, 1)->format('Y-m-d');

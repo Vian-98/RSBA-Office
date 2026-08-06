@@ -24,8 +24,12 @@ class DigitalSignatureService
      */
     private function opensslBin(): string
     {
+<<<<<<< HEAD
         $bin = env('OPENSSL_BIN', 'openssl');
         return str_contains($bin, ' ') ? "\"{$bin}\"" : $bin;
+=======
+        return env('OPENSSL_BIN', 'openssl');
+>>>>>>> origin/kepegawaian/absensi
     }
 
     /**
@@ -446,6 +450,39 @@ class DigitalSignatureService
          * shell_exec("openssl pkcs12 -export -out {$paths['p12']} -inkey {$paths['privateKey']} -in {$paths['cert']} -password pass:{$password}");
          */
         $this->execPKCS12($paths, $password);
+    }
+
+    private function opensslBin(): string
+    {
+        $bin = env('OPENSSL_BIN', 'openssl');
+        return str_contains($bin, ' ') ? "\"{$bin}\"" : $bin;
+    }
+
+    /**
+     * Get the openssl config path from env or common fallbacks.
+     */
+    private function opensslConf(): ?string
+    {
+        $conf = env('OPENSSL_CONF');
+        if ($conf && file_exists($conf)) {
+            return $conf;
+        }
+        
+        $fallbacks = [
+            'C:\\Program Files\\Git\\usr\\ssl\\openssl.cnf',
+            'C:\\Program Files (x86)\\Git\\usr\\ssl\\openssl.cnf',
+            'C:\\xampp\\apache\\bin\\openssl.cnf',
+            '/etc/ssl/openssl.cnf',
+            '/usr/lib/ssl/openssl.cnf',
+        ];
+
+        foreach ($fallbacks as $f) {
+            if (file_exists($f)) {
+                return $f;
+            }
+        }
+
+        return null;
     }
 
     /**

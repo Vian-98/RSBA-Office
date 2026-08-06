@@ -89,7 +89,6 @@ trait AuthorizesFromRoute
         ])) {
             return;
         }
-
         abort_unless(
             auth()->user()?->can($permission),
             403,

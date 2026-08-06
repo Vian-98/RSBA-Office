@@ -13,6 +13,7 @@ class Ruangan extends Model
     {
         return $this->hasMany(\App\Models\Sdm\RuanganShift::class, 'ruangan_id');
     }
+<<<<<<< HEAD
 
     public function karyawans()
     {
@@ -81,4 +82,6 @@ class Ruangan extends Model
             'is_assigned' => false,
         ];
     }
+=======
+>>>>>>> origin/kepegawaian/absensi
 }

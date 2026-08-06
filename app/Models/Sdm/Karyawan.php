@@ -80,7 +80,11 @@ class Karyawan extends Model
     function historyJabatan()
     {
         return $this->belongsToMany(Jabatan::class, KaryawanJabatan::class)
+<<<<<<< HEAD
             ->withPivot('id', 'bagian_id', 'created_at', 'tgl_mulai', 'tgl_berakhir')
+=======
+            ->withPivot('id', 'created_at', 'tgl_mulai', 'tgl_berakhir')
+>>>>>>> origin/kepegawaian/absensi
             ->orderByPivot('created_at', 'desc');
     }
 
@@ -89,6 +93,7 @@ class Karyawan extends Model
     function jabatan()
     {
         return $this->belongsToMany(Jabatan::class, 'sdm_kary_jabatan', 'karyawan_id', 'jabatan_id')
+<<<<<<< HEAD
             ->withPivot('id', 'bagian_id', 'created_at', 'tgl_mulai', 'tgl_berakhir')
             ->wherePivotNull('tgl_berakhir')
             ->orderByPivot('tgl_mulai', 'desc');
@@ -128,6 +133,11 @@ class Karyawan extends Model
     public function ruanganUtama()
     {
         return $this->belongsTo(\App\Models\Ruangan::class, 'ruangan_id');
+=======
+            ->withPivot('id', 'created_at', 'tgl_mulai', 'tgl_berakhir')
+            ->orderByPivot('created_at', 'desc')
+            ->limit(1);
+>>>>>>> origin/kepegawaian/absensi
     }
 
     public function getFullNamaAttribute(): string
