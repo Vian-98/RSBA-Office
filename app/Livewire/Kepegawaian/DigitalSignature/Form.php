@@ -201,6 +201,15 @@ class Form extends Component
             // 3. Read PDF file contents as Base64 for docstore vault
             $pdfBase64 = base64_encode(file_get_contents($realPath));
 
+            // Prepare stamp metadata payload
+            $stampMetaPayload = [
+                'stamp_position' => $this->stamp_position,
+                'stamp_x'        => $this->stamp_x,
+                'stamp_y'        => $this->stamp_y,
+                'stamp_scale'    => $this->stamp_scale,
+                'user_note'      => $this->keterangan,
+            ];
+
             // 4. Save metadata record to local DB office
             $doc = DigitalSignatureDocument::create([
                 'user_id'           => $user->id,
@@ -211,7 +220,7 @@ class Form extends Component
                 'byte_counter_hash' => $byteCounterHash,
                 'signature_hash'    => $signatureHash,
                 'status'            => 'signed',
-                'keterangan'        => $this->keterangan,
+                'keterangan'        => json_encode($stampMetaPayload),
             ]);
 
             // 5. Send to docstore (Bank Surat & Cryptographic Vault)

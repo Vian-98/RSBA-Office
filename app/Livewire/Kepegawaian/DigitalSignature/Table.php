@@ -6,7 +6,6 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Lazy;
 use App\Models\DigitalSignatureDocument;
-use App\Services\DocstoreSyncService;
 
 #[Lazy]
 class Table extends Component
@@ -15,10 +14,9 @@ class Table extends Component
 
     public $search = '';
 
-    // Print Modal State
+    // Metadata Popup Modal State
     public $showPrintModal = false;
     public $selectedDocument = null;
-    public $docstoreData = null;
 
     protected $paginationTheme = 'tailwind';
 
@@ -27,17 +25,9 @@ class Table extends Component
         $this->resetPage();
     }
 
-    public function openPrintModal($id, DocstoreSyncService $docstoreSyncService)
+    public function openPrintModal($id)
     {
-        $doc = DigitalSignatureDocument::with('user')->findOrFail($id);
-        $this->selectedDocument = $doc;
-
-        if ($doc->docstore_key) {
-            $this->docstoreData = $docstoreSyncService->fetchFromDocstore($doc->docstore_key);
-        } else {
-            $this->docstoreData = null;
-        }
-
+        $this->selectedDocument = DigitalSignatureDocument::with('user')->findOrFail($id);
         $this->showPrintModal = true;
     }
 
@@ -45,7 +35,6 @@ class Table extends Component
     {
         $this->showPrintModal = false;
         $this->selectedDocument = null;
-        $this->docstoreData = null;
     }
 
     public function placeholder()

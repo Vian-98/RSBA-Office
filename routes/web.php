@@ -38,31 +38,10 @@ Route::middleware('auth')
     ->group(function () {
 
         Route::get('/dashboard', App\Livewire\Dashboard\Home::class)->name('dashboard');
+        Route::get('/kepegawaian/digital-signature/print/{id}', [App\Http\Controllers\DigitalSignaturePrintController::class, 'print'])->name('digital-signature.print');
     });
 
 Route::get('surat/verification', App\Livewire\Surat\Verifikasi\Index::class)->name('surat.verification');
 
 // Public Document Verification Portal
 Route::get('/verifikasi-surat/{hash?}', App\Livewire\Public\VerifyDocument::class)->name('surat.verifikasi.publik');
-
-// // Administrator
-// Route::middleware('auth')
-//     ->prefix('admin')
-//     ->name('admin.')
-//     ->group(function () {
-
-//         Route::prefix('user')
-//             ->name('user.')
-//             ->group(function () {
-//                 Route::get('/', App\Livewire\User\Index::class)->name('index');
-//             });
-
-//         Route::prefix('settings')
-//             ->name('settings.')
-//             ->group(function () {
-//                 Route::get('/menu', App\Livewire\Settings\Menu\Index::class)->name('menu');
-//                 Route::get('/perusahaan', App\Livewire\Settings\Perusahaan\Index::class)->name('perusahaan');
-//                 Route::get('/role', App\Livewire\Settings\Role\Index::class)->name('role');
-//                 Route::get('/permission', App\Livewire\Settings\Permission\Index::class)->name('permission');
-//             });
-//     });
