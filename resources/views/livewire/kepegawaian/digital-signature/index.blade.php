@@ -21,14 +21,6 @@
                 <span>Upload & Sign Surat PDF</span>
             </button>
         </div>
-        <div class="hidden sm:flex items-center space-x-2 px-3">
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Strict PDF (.pdf)
-            </span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                ByteCounter Protection
-            </span>
-        </div>
     </div>
 
     {{-- Render Subcomponents with Lazy Load --}}
