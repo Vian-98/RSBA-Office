@@ -143,7 +143,7 @@ class ApprovalManual extends Component
             if (class_exists(\App\Services\DocstoreSyncService::class)) {
                 try {
                     app(\App\Services\DocstoreSyncService::class)->syncCuti($this->suratCuti);
-                } catch (\Throwable $th) {
+                } catch (Throwable $th) {
                     // ignore
                 }
             }

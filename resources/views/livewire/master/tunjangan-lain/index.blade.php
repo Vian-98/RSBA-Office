@@ -1,13 +1,21 @@
 <div class="space-y-6">
     <!-- Header Page -->
-    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
+    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-2xs">
         <div>
-            <h1 class="text-lg font-bold text-slate-800">Master Tunjangan Lain-Lain</h1>
-            <p class="text-xs text-slate-500">Kelola daftar jenis tunjangan tidak tetap/tambahan yang dapat ditambahkan secara dinamis pada penggajian bulanan.</p>
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                <span class="inline-flex items-center">
+                    <x-tabler-moneybag class="mr-1.5 h-3.5 w-3.5 text-slate-400" />
+                    Penggajian
+                </span>
+                <x-tabler-chevron-right class="h-3.5 w-3.5 text-slate-300" />
+                <span class="text-indigo-600 font-bold">Tunjangan Lain-Lain</span>
+            </div>
+            <h1 class="text-base sm:text-lg font-bold text-slate-800 tracking-tight mt-0.5">Master Tunjangan Lain-Lain</h1>
+            <p class="text-xs text-slate-500 mt-0.5 leading-normal">Kelola daftar jenis tunjangan tidak tetap/tambahan yang dapat ditambahkan secara dinamis pada penggajian bulanan.</p>
         </div>
-        <div>
-            <x-ts:button size="sm" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" wire:click="openModal()">
-                <x-tabler-plus class="h-4 w-4 mr-1.5" />
+        <div class="shrink-0">
+            <x-ts:button size="sm" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-2xs whitespace-nowrap px-4 py-2.5 rounded-xl" wire:click="openModal()">
+                <x-tabler-plus class="h-4 w-4 mr-1.5 shrink-0" />
                 Tambah Jenis Tunjangan
             </x-ts:button>
         </div>

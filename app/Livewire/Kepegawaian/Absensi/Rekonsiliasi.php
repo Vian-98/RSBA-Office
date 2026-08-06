@@ -19,7 +19,9 @@ class Rekonsiliasi extends Component
     public $batchId;
     public $log;
     public $search = '';
-    public $filterStatus = 'problematic'; // Default: Tampilkan data yang memerlukan perhatian/revisi
+    public $filterStatus = 'single_punch'; // Default: Tampilkan Single Punch (Belum Ada Pasangan)
+    public $sortBy = 'tanggal';
+    public $sortDirection = 'asc';
 
     // Modal Edit/Revisi
     public $editingStagingId = null;
@@ -32,6 +34,11 @@ class Rekonsiliasi extends Component
 
     public function mount($batchId)
     {
+        abort_unless(
+            auth()->user()?->hasRole('Super-Admin') || auth()->user()?->can('view-kepegawaian-absensi'),
+            403,
+            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Rekonsiliasi Absensi.'
+        );
         $this->batchId = $batchId;
         $this->log = AbsensiImportLog::findOrFail($batchId);
     }
@@ -43,6 +50,22 @@ class Rekonsiliasi extends Component
 
     public function updatingFilterStatus()
     {
+        $this->resetPage();
+    }
+
+    public function updatingSortDirection()
+    {
+        $this->resetPage();
+    }
+
+    public function toggleSort($column = 'tanggal')
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
+        }
         $this->resetPage();
     }
 
@@ -73,14 +96,6 @@ class Rekonsiliasi extends Component
             $clockIn  = !empty($this->editClockIn) ? trim($this->editClockIn) : null;
             $clockOut = !empty($this->editClockOut) ? trim($this->editClockOut) : null;
 
-            // Format HH:mm jika dimasukkan angka/jam
-            if ($clockIn && strlen($clockIn) === 5) {
-                $clockIn = $clockIn;
-            }
-            if ($clockOut && strlen($clockOut) === 5) {
-                $clockOut = $clockOut;
-            }
-
             $catatanBaru = "Direvisi manual SDM";
             if ($this->editCatatan && $this->editCatatan !== 'Direvisi manual SDM') {
                 $catatanBaru .= " ({$this->editCatatan})";
@@ -110,7 +125,7 @@ class Rekonsiliasi extends Component
                 'karyawan_id' => $karyawanId,
                 'status_matching' => 'matched'
             ]);
-            
+
             $this->updateLogCounters();
             $this->toast()->success('Berhasil', 'Karyawan berhasil ditautkan.')->send();
         }
@@ -124,7 +139,7 @@ class Rekonsiliasi extends Component
                 'karyawan_id' => null,
                 'status_matching' => 'diabaikan'
             ]);
-            
+
             $this->updateLogCounters();
             $this->toast()->info('Diabaikan', 'Baris ditandai untuk diabaikan.')->send();
         }
@@ -134,7 +149,7 @@ class Rekonsiliasi extends Component
     {
         $matched = AbsensiStaging::where('import_batch_id', $this->batchId)->where('status_matching', 'matched')->count();
         $unmatched = AbsensiStaging::where('import_batch_id', $this->batchId)->whereIn('status_matching', ['unmatched', 'ambiguous'])->count();
-        
+
         $this->log->update([
             'baris_matched' => $matched,
             'baris_unmatched' => $unmatched
@@ -174,8 +189,8 @@ class Rekonsiliasi extends Component
             ->with('jadwalKerja')
             ->get()
             ->groupBy(function($item) {
-                $tanggalStr = $item->tanggal instanceof \Carbon\Carbon 
-                    ? $item->tanggal->format('Y-m-d') 
+                $tanggalStr = $item->tanggal instanceof \Carbon\Carbon
+                    ? $item->tanggal->format('Y-m-d')
                     : substr($item->tanggal, 0, 10);
                 return $item->karyawan_id . '_' . $tanggalStr;
             });
@@ -191,7 +206,7 @@ class Rekonsiliasi extends Component
 
                 if ($detail) {
                     $ruanganId = $detail->jadwalKerja ? $detail->jadwalKerja->ruangan_id : null;
-                    
+
                     $hasil = $service->hitungStatus(
                         $staging->karyawan_id,
                         $staging->tanggal->format('Y-m-d'),
@@ -205,7 +220,7 @@ class Rekonsiliasi extends Component
                     if ($staging->clock_in_aktual && preg_match('/^\d{1,2}:\d{2}/', trim($staging->clock_in_aktual))) {
                          $masukAt = $staging->tanggal->format('Y-m-d') . ' ' . trim($staging->clock_in_aktual);
                     }
-                        
+
                     $keluarAt = null;
                     if ($staging->clock_out_aktual && preg_match('/^\d{1,2}:\d{2}/', trim($staging->clock_out_aktual))) {
                         $outDate = $staging->tanggal->format('Y-m-d');
@@ -256,10 +271,22 @@ class Rekonsiliasi extends Component
     {
         $query = AbsensiStaging::where('import_batch_id', $this->batchId);
 
-        if ($this->filterStatus === 'problematic') {
+        // Hitung statistik terpisah untuk banner top cards
+        $countSinglePunch = AbsensiStaging::where('import_batch_id', $this->batchId)->where('catatan_mesin', 'like', '%SINGLE_PUNCH%')->count();
+        $countExtraPunch  = AbsensiStaging::where('import_batch_id', $this->batchId)->where('catatan_mesin', 'like', '%EXTRA_PUNCH%')->count();
+        $countKonflikJadwal = AbsensiStaging::where('import_batch_id', $this->batchId)->where('catatan_mesin', 'like', '%KONFLIK_JADWAL_VS_TAP%')->count();
+
+        if ($this->filterStatus === 'single_punch') {
+            $query->where('catatan_mesin', 'like', '%SINGLE_PUNCH%');
+        } elseif ($this->filterStatus === 'extra_punch') {
+            $query->where('catatan_mesin', 'like', '%EXTRA_PUNCH%');
+        } elseif ($this->filterStatus === 'konflik_jadwal') {
+            $query->where('catatan_mesin', 'like', '%KONFLIK_JADWAL_VS_TAP%');
+        } elseif ($this->filterStatus === 'problematic') {
             $query->where(function ($q) {
                 $q->whereIn('status_matching', ['unmatched', 'ambiguous'])
-                  ->orWhereNotNull('catatan_mesin');
+                  ->orWhere('catatan_mesin', 'like', '%SINGLE_PUNCH%')
+                  ->orWhere('catatan_mesin', 'like', '%EXTRA_PUNCH%');
             });
         } elseif ($this->filterStatus === 'anomali') {
             $query->whereNotNull('catatan_mesin');
@@ -274,9 +301,16 @@ class Rekonsiliasi extends Component
             });
         }
 
+        $query->orderBy($this->sortBy, $this->sortDirection)
+              ->orderBy('nama_mentah', 'asc')
+              ->orderBy('id', 'asc');
+
         return view('livewire.kepegawaian.absensi.rekonsiliasi', [
-            'stagings'  => $query->paginate(20),
-            'karyawans' => Karyawan::select('id', 'nama', 'nip')->orderBy('nama')->get()
+            'stagings'           => $query->paginate(20),
+            'karyawans'          => Karyawan::select('id', 'nama', 'nip')->orderBy('nama')->get(),
+            'countSinglePunch'   => $countSinglePunch,
+            'countExtraPunch'    => $countExtraPunch,
+            'countKonflikJadwal' => $countKonflikJadwal,
         ]);
     }
 }

@@ -105,15 +105,43 @@ class TukarJadwalDokterService
     }
 
     /**
-     * Menukar shift_id antara Dokter A & Dokter B pada JadwalKerjaDetail.
+     * Menukar shift_id antara Dokter A & Dokter B pada JadwalKerjaDetail dan mencatat ke sdm_jadwal_kerja_log.
      */
     protected function executeSwap(TukarJadwalDokter $tukar): void
     {
         $detailA = JadwalKerjaDetail::findOrFail($tukar->jadwal_detail_pengaju_id);
         $detailB = JadwalKerjaDetail::findOrFail($tukar->jadwal_detail_pengganti_id);
 
-        $tempShiftId = $detailA->shift_id;
-        $detailA->update(['shift_id' => $detailB->shift_id]);
-        $detailB->update(['shift_id' => $tempShiftId]);
+        $shiftLamaA = $detailA->shift_id;
+        $shiftLamaB = $detailB->shift_id;
+
+        // Eksekusi tukar shift
+        $detailA->update(['shift_id' => $shiftLamaB]);
+        $detailB->update(['shift_id' => $shiftLamaA]);
+
+        // Karyawan pengubah (diubah_oleh)
+        $diubahOleh = \Illuminate\Support\Facades\Auth::user()?->karyawan_id 
+            ?? $tukar->disetujuiOleh?->karyawan_id 
+            ?? $tukar->dokter_pengaju_id;
+
+        // Catat Log Riwayat untuk Dokter A
+        \App\Models\Sdm\JadwalKerjaLog::create([
+            'jadwal_kerja_id' => $detailA->jadwal_kerja_id,
+            'detail_id'       => $detailA->id,
+            'karyawan_id'     => $detailA->karyawan_id,
+            'shift_lama_id'   => $shiftLamaA,
+            'shift_baru_id'   => $shiftLamaB,
+            'diubah_oleh'     => $diubahOleh,
+        ]);
+
+        // Catat Log Riwayat untuk Dokter B
+        \App\Models\Sdm\JadwalKerjaLog::create([
+            'jadwal_kerja_id' => $detailB->jadwal_kerja_id,
+            'detail_id'       => $detailB->id,
+            'karyawan_id'     => $detailB->karyawan_id,
+            'shift_lama_id'   => $shiftLamaB,
+            'shift_baru_id'   => $shiftLamaA,
+            'diubah_oleh'     => $diubahOleh,
+        ]);
     }
 }

@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,26 +11,53 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
+        // Core / Master Seeders (Always executed)
+        $mainSeeders = [
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
-            DokterSeeder::class,           // Spesialisasi, 3 Koor Dokter (IGD/Rawat Inap/HD), user login
-            SuperAdminSignatureSeeder::class,
             MenuSeeder::class,
             PerusahaanSeeder::class,
             WilayahSeeder::class,
-            DummyDataSeeder::class,
-            JadwalSeeder::class, // Master shift, aturan jadwal, bagian-shift
+            UmDataSeeder::class,
+            'Database\Seeders\UmumSeeder',
             PayrollSeeder::class,
             SdmPayrollGolonganMatrixSeeder::class,
-            PayrollPph21ReferenceSeeder::class, // PTKP, TER A/B/C, and Article 17 reference tables
-            KaryawanExcelSeeder::class, // Import 299 karyawan & buat tugas koordinator sdm
-            DummyPayrollSlipSeeder::class, // Generate mock salary slips (February - July 2026)
-            JadwalDummyJuniSeeder::class, // Generate draf jadwal kerja Juni 2026
-            SkenarioTriRahayuSeeder::class, // Skenario absensi tes Tri Rahayu
-            JadwalDuaTahunSeeder::class, // Generate jadwal dan absensi 2023 - 2024
-            CutiBersamaSeeder::class, // Event Cuti Bersama
-        ]);
+            PayrollPph21ReferenceSeeder::class,
+            CutiBersamaSeeder::class,
+            StrukturOrganisasiSeeder::class,
+        ];
+
+        foreach ($mainSeeders as $seeder) {
+            if (class_exists($seeder)) {
+                $this->call($seeder);
+            }
+        }
+
+        // Optional / Dummy Seeders (Only executed if present locally)
+        $optionalDummySeeders = [
+            'Database\Seeders\DokterSeeder',
+            'Database\Seeders\SuperAdminSignatureSeeder',
+            'Database\Seeders\DummyDataSeeder',
+            'Database\Seeders\JadwalSeeder',
+            'Database\Seeders\KaryawanExcelSeeder',
+            'Database\Seeders\DummyPayrollSlipSeeder',
+            'Database\Seeders\JadwalDummyJuniSeeder',
+            'Database\Seeders\SkenarioTriRahayuSeeder',
+            'Database\Seeders\JadwalDuaTahunSeeder',
+            'Database\Seeders\DummySdmSeeder',
+            'Database\Seeders\RuanganDummySeeder',
+            'Database\Seeders\JadwalAbsensiJuli2026Seeder',
+            'Database\Seeders\InpatientSeeder',
+            'Database\Seeders\DokterPoliSeeder',
+            'Database\Seeders\DokterAllPoliSeeder',
+        ];
+
+        foreach ($optionalDummySeeders as $seeder) {
+            if (class_exists($seeder)) {
+                $this->call($seeder);
+            }
+        }
     }
 }
+

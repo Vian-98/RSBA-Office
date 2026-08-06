@@ -8,6 +8,7 @@ use App\Models\Sdm\AbsensiImportLog;
 use App\Models\Sdm\AbsensiStaging;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use TallStackUi\Traits\Interactions;
@@ -21,6 +22,15 @@ class Import extends Component
     public $formatFile = 'punch_csv'; // 'punch_csv' or 'excel'
     public $previewData = null;
     public $isProcessing = false;
+
+    public function mount()
+    {
+        abort_unless(
+            auth()->user()?->hasRole('Super-Admin') || auth()->user()?->can('view-kepegawaian-absensi'),
+            403,
+            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk melakukan Import Absensi.'
+        );
+    }
 
     public function updatedFile()
     {

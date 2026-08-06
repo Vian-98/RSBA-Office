@@ -13,6 +13,33 @@ class DuplicateTapReportTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \Spatie\Permission\Models\Permission::findOrCreate('view-kepegawaian-absensi');
+        $karyawan = \App\Models\Sdm\Karyawan::create([
+            'nama' => 'Test Karyawan',
+            'nip' => '12345' . rand(10,99),
+            'nik' => '1234567890123456',
+            'tempat_lahir' => 'Bandar Lampung',
+            'tgl_lahir' => '1995-01-01',
+            'tgl_masuk' => '2020-01-01',
+            'status' => 'tetap',
+            'jk' => 'L',
+            'agama' => 'Islam',
+            'hp' => '08123456789',
+            'prov' => '1', 'kab' => '1', 'kec' => '1', 'desa' => '1', 'alamat' => 'Test Address',
+        ]);
+        $user = \App\Models\User::create([
+            'name'        => 'Test Admin',
+            'email'       => 'testadmin' . rand(100,999) . '@rsba.com',
+            'password'    => bcrypt('password'),
+            'karyawan_id' => $karyawan->id,
+        ]);
+        $user->givePermissionTo('view-kepegawaian-absensi');
+        $this->actingAs($user);
+    }
+
     /** @test */
     public function it_renders_duplicate_tap_report_page_and_lists_discarded_taps()
     {

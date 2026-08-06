@@ -169,14 +169,28 @@ class Index extends Component implements HasForms, HasTable, HasActions
     public function table(Table $table): Table
     {
         $query = JadwalKerja::query()
-            ->with(['ruangan', 'pembuat', 'diketahuiOleh', 'disetujuiOleh']);
+            ->with(['ruangan', 'pembuat', 'diketahuiOleh', 'disetujuiOleh'])
+            ->orderBy('tahun', 'desc')
+            ->orderBy('bulan', 'desc')
+            ->orderBy('id', 'desc');
 
         $user = Auth::user();
         if ($user) {
-            if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
-                // Super-Admin & Staff-SDM dapat melihat semua ruangan
-            } elseif ($user->isKoordinator()) {
-                // Koordinator: ruangan koordinasi + ruangan sendiri
+            $isApprover = $user->hasRole([
+                'Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang',
+                'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'
+            ]) || $user->can('approve-jadwal-kabid') || $user->can('approve-jadwal-wadir');
+
+            if ($isApprover) {
+                // Super-Admin, SDM, Wadir, dan Kabid dapat melihat seluruh daftar jadwal ruangan
+            } elseif ($user->isKoordinatorDokter()) {
+                $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
+                if (empty($ruanganIds)) {
+                    $query->whereRaw('0 = 1');
+                } else {
+                    $query->whereIn('ruangan_id', $ruanganIds)->where('tipe', 'dokter');
+                }
+            } elseif ($user->isKoordinatorKaryawan()) {
                 $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
                 $ownRuanganId = $user->karyawan?->ruangan_id;
                 if ($ownRuanganId && !in_array($ownRuanganId, $ruanganIds)) {
@@ -186,13 +200,15 @@ class Index extends Component implements HasForms, HasTable, HasActions
                 if (empty($ruanganIds)) {
                     $query->whereRaw('0 = 1');
                 } else {
-                    $query->whereIn('ruangan_id', $ruanganIds);
+                    $query->whereIn('ruangan_id', $ruanganIds)->where('tipe', 'karyawan');
                 }
             } else {
                 // User biasa: hanya melihat ruangan tempat dia ditugaskan (teman seruangan)
                 $ownRuanganId = $user->karyawan?->ruangan_id;
+                $isDokter = $user->isDokter();
                 if ($ownRuanganId) {
-                    $query->where('ruangan_id', $ownRuanganId);
+                    $query->where('ruangan_id', $ownRuanganId)
+                        ->where('tipe', $isDokter ? 'dokter' : 'karyawan');
                 } else {
                     $query->whereRaw('0 = 1');
                 }
@@ -203,6 +219,11 @@ class Index extends Component implements HasForms, HasTable, HasActions
             ->query($query)
             ->columns([
                 TextColumn::make('ruangan.nama')->label('Ruangan (Tim)')->searchable()->sortable(),
+                TextColumn::make('tipe')
+                    ->label('Tipe')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => ucfirst($state))
+                    ->color(fn ($state) => $state === 'dokter' ? 'info' : 'success'),
                 TextColumn::make('bulan')->label('Bulan')->formatStateUsing(fn ($state) => date('F', mktime(0, 0, 0, $state, 1)))->sortable(),
                 TextColumn::make('tahun')->label('Tahun')->sortable(),
                 TextColumn::make('status')
@@ -217,14 +238,14 @@ class Index extends Component implements HasForms, HasTable, HasActions
             ->recordActions([
                 Action::make('kelola')
                     ->label(fn (JadwalKerja $record): string => 
-                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
+                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur']) || 
                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
                             ? 'Kelola' 
                             : 'Lihat'
                     )
                     ->iconButton()
                     ->icon(fn (JadwalKerja $record): string => 
-                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
+                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur']) || 
                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
                             ? 'tabler-list-details' 
                             : 'tabler-eye'

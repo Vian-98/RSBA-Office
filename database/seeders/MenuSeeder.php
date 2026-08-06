@@ -419,6 +419,24 @@ class MenuSeeder extends Seeder
                 'group' => 'sdm',
             ],
             [
+                'id' => 481,
+                'nama' => 'Tunjangan Jabatan',
+                'route' => 'kepegawaian.master.tunjangan-jabatan.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-tunjangan-jabatan'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+            [
+                'id' => 482,
+                'nama' => 'Tunjangan Lain-Lain',
+                'route' => 'kepegawaian.master.tunjangan-lain.index',
+                'icon' => null,
+                'permission' => ['view-kepegawaian-master-tunjangan-lain'],
+                'parent_id' => 53,
+                'group' => 'sdm',
+            ],
+            [
                 'id' => 49,
                 'nama' => 'Master',
                 'route' => null,
@@ -490,11 +508,18 @@ class MenuSeeder extends Seeder
                 'parent_id' => 1,
                 'group' => 'sdm',
             ],
-
-
+            [
+                'id' => 68,
+                'nama' => 'Poli Admin',
+                'route' => 'dashboard.poli.admin',
+                'icon' => 'stethoscope',
+                'permission' => ['view-dashboard-poli'],
+                'parent_id' => 1,
+                'group' => null,
+            ],
             [
                 'id' => 69,
-                'nama' => 'Aturan Pajak PPh 21',
+                'nama' => 'Pajak PPh 21',
                 'route' => 'kepegawaian.master.aturan-pajak.index',
                 'icon' => null,
                 'permission' => ['view-kepegawaian-master-aturan-pajak'],

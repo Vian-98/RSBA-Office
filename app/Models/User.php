@@ -127,5 +127,38 @@ class User extends Authenticatable
 
         return false;
     }
+
+    /**
+     * Cek apakah karyawan dari user ini adalah Dokter
+     */
+    public function isDokter(): bool
+    {
+        if (!$this->karyawan_id) {
+            return false;
+        }
+        return \App\Models\Sdm\Dokter::where('karyawan_id', $this->karyawan_id)->exists();
+    }
+
+    /**
+     * Cek apakah user ini adalah Koordinator yang berprofesi Dokter
+     */
+    public function isKoordinatorDokter(): bool
+    {
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            return false;
+        }
+        return $this->isKoordinator() && $this->isDokter();
+    }
+
+    /**
+     * Cek apakah user ini adalah Koordinator Ruangan Karyawan (Non-Dokter)
+     */
+    public function isKoordinatorKaryawan(): bool
+    {
+        if ($this->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            return false;
+        }
+        return $this->isKoordinator() && !$this->isDokter();
+    }
 }
 
