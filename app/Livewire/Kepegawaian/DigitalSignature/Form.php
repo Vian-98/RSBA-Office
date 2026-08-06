@@ -9,6 +9,7 @@ use App\Models\DigitalSignatureDocument;
 use App\Services\DigitalSignatureService;
 use App\Services\DocstoreSyncService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 #[Lazy]
@@ -21,25 +22,44 @@ class Form extends Component
     public $title = '';
     public $document_number = '';
     public $keterangan = '';
-    public $passphrase = '';
+    public $account_password = '';
+
+    // Popup Password Modal State
+    public $showPasswordModal = false;
 
     protected $rules = [
         'pdf_file'        => 'required|file|mimes:pdf|max:10240', // Max 10MB PDF
         'title'           => 'required|string|max:255',
         'document_number' => 'required|string|max:100',
         'keterangan'      => 'nullable|string|max:500',
-        'passphrase'      => 'nullable|string|max:255',
     ];
 
     protected $messages = [
-        'pdf_file.required' => 'Berkas PDF wajib diunggah.',
-        'pdf_file.mimes'    => 'Format berkas harus berupa PDF (.pdf).',
-        'pdf_file.max'      => 'Ukuran berkas PDF maksimal 10 MB.',
+        'pdf_file.required'        => 'Berkas PDF wajib diunggah.',
+        'pdf_file.mimes'           => 'Format berkas harus berupa PDF (.pdf).',
+        'pdf_file.max'             => 'Ukuran berkas PDF maksimal 10 MB.',
+        'title.required'           => 'Judul / nama surat wajib diisi.',
+        'document_number.required' => 'Nomor surat wajib diisi.',
     ];
 
     public function mount()
     {
         $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
+    }
+
+    public function openPasswordModal()
+    {
+        $this->validate();
+        $this->account_password = '';
+        $this->resetErrorBag();
+        $this->showPasswordModal = true;
+    }
+
+    public function closePasswordModal()
+    {
+        $this->showPasswordModal = false;
+        $this->account_password = '';
+        $this->resetErrorBag('account_password');
     }
 
     public function placeholder()
@@ -56,14 +76,25 @@ class Form extends Component
         HTML;
     }
 
-    public function saveAndSign(
+    public function confirmAndSign(
         DigitalSignatureService $signatureService,
         DocstoreSyncService $docstoreSyncService
     ) {
-        $this->validate();
+        $this->validate([
+            'account_password' => 'required|string',
+        ], [
+            'account_password.required' => 'Password akun wajib diisi untuk mengonfirmasi pengiriman.',
+        ]);
+
+        $user = Auth::user();
+
+        // Verifikasi Password Akun Pengirim
+        if (!Hash::check($this->account_password, $user->password)) {
+            $this->addError('account_password', 'Password akun yang Anda masukkan salah. Silakan coba lagi.');
+            return;
+        }
 
         try {
-            $user = Auth::user();
             $realPath = $this->pdf_file->getRealPath();
             $fileName = $this->pdf_file->getClientOriginalName();
             $fileSize = filesize($realPath);
@@ -82,7 +113,7 @@ class Form extends Component
                     data: $byteCounterHash,
                     type: 'digital_signature',
                     id: time(),
-                    password: $this->passphrase
+                    password: null
                 );
 
                 if ($signResult['status']) {
@@ -95,6 +126,7 @@ class Form extends Component
                     $signatureHash = hash('sha256', $signResult['signature']);
                 } else {
                     session()->flash('error', 'Gagal tanda tangan digital: ' . $signResult['message']);
+                    $this->closePasswordModal();
                     return;
                 }
             } else {
@@ -132,8 +164,9 @@ class Form extends Component
                 @unlink($realPath);
             }
 
-            // Reset form
-            $this->reset(['pdf_file', 'title', 'keterangan', 'passphrase']);
+            // Close modal & reset form
+            $this->showPasswordModal = false;
+            $this->reset(['pdf_file', 'title', 'keterangan', 'account_password']);
             $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
 
             // Dispatch event to parent component to switch to list tab and notify
@@ -150,6 +183,7 @@ class Form extends Component
                 'trace' => $e->getTraceAsString()
             ]);
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            $this->closePasswordModal();
         }
     }
 

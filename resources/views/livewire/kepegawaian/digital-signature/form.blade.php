@@ -7,11 +7,11 @@
         </div>
         <div>
             <h2 class="text-lg font-bold text-slate-800">Form Unggah & Sign Surat PDF</h2>
-            <p class="text-xs text-slate-500">Berkas PDF yang berhasil di-sign akan ter-sync ke docstore dan otomatis dibersihkan dari server lokal</p>
+            <p class="text-xs text-slate-500">Unggah dokumen PDF. Konfirmasi password akun akan diminta melalui popup saat pengiriman ke Docstore</p>
         </div>
     </div>
 
-    <form wire:submit.prevent="saveAndSign" class="space-y-6 w-full">
+    <form wire:submit.prevent="openPasswordModal" class="space-y-6 w-full">
         {{-- Full Width Drag and Drop PDF File Input --}}
         <div class="w-full">
             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Unggah Berkas Surat (PDF strictly)</label>
@@ -53,19 +53,10 @@
             </div>
         </div>
 
-        {{-- 2 Columns Grid for Keterangan & Passphrase filling 100% width --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-            {{-- Keterangan --}}
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Keterangan / Perihal (Opsional)</label>
-                <textarea wire:model="keterangan" rows="3" placeholder="Catatan perihal surat..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-slate-800 bg-white"></textarea>
-            </div>
-
-            {{-- Passphrase Sertifikat --}}
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Passphrase Sertifikat Digital (Opsional)</label>
-                <input type="password" wire:model="passphrase" placeholder="Masukkan passphrase sertifikat jika ada..." class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-slate-800 bg-white" />
-            </div>
+        {{-- Keterangan --}}
+        <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Keterangan / Perihal (Opsional)</label>
+            <textarea wire:model="keterangan" rows="3" placeholder="Catatan perihal surat..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-slate-800 bg-white"></textarea>
         </div>
 
         {{-- Full Width Submit Button --}}
@@ -77,9 +68,75 @@
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span>Memproses Signature & ByteCounter...</span>
+                    <span>Memvalidasi Form...</span>
                 </span>
             </button>
         </div>
     </form>
+
+    {{-- POPUP MODAL VERIFIKASI PASSWORD AKUN --}}
+    @if ($showPasswordModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-150">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800">Konfirmasi Password Akun</h3>
+                            <p class="text-xs text-slate-500">Verifikasi Pengirim Dokumen</p>
+                        </div>
+                    </div>
+                    <button wire:click="closePasswordModal" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-500">Pengirim:</span>
+                        <span class="font-bold text-slate-800">{{ Auth::user()->name }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-500">Email / Account:</span>
+                        <span class="font-mono text-indigo-600 font-semibold">{{ Auth::user()->email }}</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Masukkan Password Akun Anda</label>
+                    <input 
+                        type="password" 
+                        wire:model="account_password" 
+                        wire:keydown.enter="confirmAndSign"
+                        placeholder="Password akun..." 
+                        autofocus
+                        class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-slate-800 bg-white" 
+                    />
+                    @error('account_password') 
+                        <span class="text-xs text-rose-500 mt-1.5 block font-semibold bg-rose-50 p-2 rounded-lg border border-rose-200">
+                            {{ $message }}
+                        </span> 
+                    @enderror
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-2">
+                    <button wire:click="closePasswordModal" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-colors">
+                        Batal
+                    </button>
+                    <button wire:click="confirmAndSign" wire:loading.attr="disabled" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/25 flex items-center space-x-2 transition-all">
+                        <span wire:loading.remove>Konfirmasi Sign & Kirim</span>
+                        <span wire:loading class="flex items-center space-x-2">
+                            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Memproses...</span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
