@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('check_out_jadwal', 50)->nullable();
             $table->string('clock_in_aktual', 50)->nullable();
             $table->string('clock_out_aktual', 50)->nullable();
-            $table->string('catatan_mesin', 100)->nullable();
+            $table->text('catatan_mesin')->nullable();
             $table->unsignedBigInteger('karyawan_id')->nullable();
             $table->enum('status_matching', ['matched', 'unmatched', 'ambiguous', 'diabaikan'])->default('unmatched');
             $table->unsignedBigInteger('detail_terkirim_id')->nullable();

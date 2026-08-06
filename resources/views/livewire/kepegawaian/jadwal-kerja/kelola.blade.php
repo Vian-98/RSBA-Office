@@ -127,7 +127,18 @@
     {{-- ── Header Bar ── --}}
     <div class="flex items-center justify-between rounded-xl bg-white p-5 shadow-sm border border-slate-100">
         <div>
-            <h2 class="text-lg font-bold text-slate-800">Jadwal Kerja: {{ $jadwalKerja->ruangan->nama ?? '-' }}</h2>
+            <div class="flex items-center gap-2">
+                <h2 class="text-lg font-bold text-slate-800">Jadwal Kerja: {{ $jadwalKerja->ruangan->nama ?? '-' }}</h2>
+                @if($jadwalKerja->isDokterSchedule())
+                    <span class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-200 shadow-xs">
+                        👨‍⚕️ Jadwal Dokter
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 shadow-xs">
+                        👥 Jadwal Karyawan
+                    </span>
+                @endif
+            </div>
             <div class="text-sm text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>Periode: <strong class="text-slate-700">{{ date('F', mktime(0, 0, 0, $jadwalKerja->bulan, 1)) }} {{ $jadwalKerja->tahun }}</strong></span>
                 <span class="text-slate-300">•</span>
