@@ -21,7 +21,7 @@ class CutiJenisSeeder extends Seeder
             ],
             [
                 'id' => 2,
-                'nama' => 'Izin',
+                'nama' => 'Izin Sakit',
                 'lama' => 0,
                 'periode' => 'Y',
             ],

@@ -16,7 +16,7 @@
                     hari sisa cuti
                     <x-slot:left>
                         <p class="mr-2 text-xl" wire:loading.class="animate-bounce opacity-50" wire:target='form.jenis_cuti'>
-                            {{ $form->sisa_cuti }}</p>
+                            {{ $form->sisa_cuti >= 999 ? '-' : $form->sisa_cuti }}</p>
                     </x-slot:left>
                 </x-ts:badge>
 
