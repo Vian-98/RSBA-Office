@@ -35,6 +35,12 @@ class Index extends Component
         );
     }
 
+    #[\Livewire\Attributes\Computed]
+    public function getHasNewRequestProperty(): bool
+    {
+        return \App\Models\Gudang\PembelianRequest::where('status', 'pending')->exists();
+    }
+
     public function render()
     {
         if (!$this->blockIfOpnameActive()) {

@@ -57,13 +57,15 @@
             @endif
         </button>
 
-        <button wire:click="$set('activeTab', 'wadir')" class="px-5 py-2.5 rounded-xl font-medium text-sm transition flex items-center gap-2 relative {{ $activeTab === 'wadir' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100' }}">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Approval Wadir
-            @if(count($listAntreanWadir) > 0)
-                <span class="ml-1.5 px-2 py-0.5 text-xs font-bold bg-blue-500 text-white rounded-full">{{ count($listAntreanWadir) }}</span>
-            @endif
-        </button>
+        @if($isWadir)
+            <button wire:click="$set('activeTab', 'wadir')" class="px-5 py-2.5 rounded-xl font-medium text-sm transition flex items-center gap-2 relative {{ $activeTab === 'wadir' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100' }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Approval Wadir
+                @if(count($listAntreanWadir) > 0)
+                    <span class="ml-1.5 px-2 py-0.5 text-xs font-bold bg-blue-500 text-white rounded-full">{{ count($listAntreanWadir) }}</span>
+                @endif
+            </button>
+        @endif
 
         <button wire:click="$set('activeTab', 'riwayat')" class="px-5 py-2.5 rounded-xl font-medium text-sm transition flex items-center gap-2 {{ $activeTab === 'riwayat' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100' }}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -88,27 +90,105 @@
                             Dokter A (Pengaju)
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Dokter A</label>
-                            <select wire:model.live="dokterPengajuId" class="w-full text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">-- Pilih Dokter A --</option>
-                                @foreach ($dokters as $d)
-                                    <option value="{{ $d->id }}">{{ $d->full_nama }} (NIP: {{ $d->nip }})</option>
-                                @endforeach
-                            </select>
+                        <!-- Dropdown Custom Dokter A (Selalu Buka Ke Bawah) -->
+                        <div x-data="{
+                            open: false,
+                            search: '',
+                            canSelect: @json($canSelectDokterA),
+                            selectedId: @entangle('dokterPengajuId'),
+                            get dokters() { return $wire.doktersList || []; },
+                            get filteredDokters() {
+                                if (!this.search) return this.dokters;
+                                const q = this.search.toLowerCase();
+                                return this.dokters.filter(d => 
+                                    d.nama.toLowerCase().includes(q) || 
+                                    d.nip.toLowerCase().includes(q) || 
+                                    d.ruangan.toLowerCase().includes(q)
+                                );
+                            },
+                            get selectedDokter() {
+                                return this.dokters.find(d => d.id == this.selectedId);
+                            }
+                        }" class="relative">
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Dokter A (Pengaju)</label>
+                            
+                            <button type="button" @click="if (canSelect) open = !open" :disabled="!canSelect" class="w-full text-left bg-white text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs transition disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                <div class="truncate flex items-center gap-2">
+                                    <span x-text="selectedDokter ? selectedDokter.nama + ' (' + selectedDokter.ruangan + ')' : '-- Pilih Dokter A --'" :class="selectedDokter ? 'text-slate-800 font-semibold' : 'text-slate-400'"></span>
+                                    <template x-if="!canSelect">
+                                        <span class="px-2 py-0.5 text-[10px] font-bold bg-indigo-100 text-indigo-700 rounded-full">Akun Anda</span>
+                                    </template>
+                                </div>
+                                <template x-if="canSelect">
+                                    <svg class="w-4 h-4 text-slate-400 shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </template>
+                            </button>
+
+                            <div x-show="open" @click.outside="open = false" x-transition.origin.top.duration.150ms class="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-slate-100 bg-slate-50">
+                                    <input type="text" x-model="search" placeholder="🔍 Cari nama dokter / poli / NIP..." class="w-full text-xs rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1.5" @click.stop>
+                                </div>
+
+                                <div class="overflow-y-auto max-h-60 divide-y divide-slate-50">
+                                    <template x-for="d in filteredDokters" :key="d.id">
+                                        <div @click="selectedId = d.id; open = false; $wire.set('dokterPengajuId', d.id)" class="px-3 py-2.5 text-xs hover:bg-indigo-50 cursor-pointer flex flex-col transition" :class="selectedId == d.id ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700'">
+                                            <div class="font-medium text-slate-800" x-text="d.nama"></div>
+                                            <div class="text-[11px] text-slate-400 flex items-center justify-between mt-0.5">
+                                                <span class="text-indigo-600 font-medium" x-text="d.ruangan"></span>
+                                                <span x-text="'NIP: ' + d.nip"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div x-show="filteredDokters.length === 0" class="p-4 text-center text-xs text-slate-400">
+                                        Dokter tidak ditemukan
+                                    </div>
+                                </div>
+                            </div>
                             @error('dokterPengajuId') <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
-                        <div>
+                        <!-- Dropdown Custom Shift Dokter A (Selalu Buka Ke Bawah) -->
+                        <div x-data="{
+                            open: false,
+                            search: '',
+                            selectedId: @entangle('jadwalDetailPengajuId'),
+                            get items() { return $wire.jadwalPengajuList || []; },
+                            get filteredItems() {
+                                if (!this.search) return this.items;
+                                const q = this.search.toLowerCase();
+                                return this.items.filter(i => i.label.toLowerCase().includes(q));
+                            },
+                            get selectedItem() {
+                                return this.items.find(i => i.id == this.selectedId);
+                            }
+                        }" class="relative">
                             <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Jadwal/Shift Dokter A Yang Ingin Ditukar</label>
-                            <select wire:model.live="jadwalDetailPengajuId" class="w-full text-sm rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" {{ !$dokterPengajuId ? 'disabled' : '' }}>
-                                <option value="">-- Pilih Shift/Tanggal --</option>
-                                @foreach ($jadwalPengaju as $j)
-                                    <option value="{{ $j->id }}">
-                                        {{ \Carbon\Carbon::parse($j->tanggal)->translatedFormat('l, d M Y') }} - {{ $j->shift?->nama ?? 'Libur' }} ({{ $j->shift?->jam_masuk ?? '-' }} - {{ $j->shift?->jam_keluar ?? '-' }})
-                                    </option>
-                                @endforeach
-                            </select>
+
+                            <button type="button" @click="if (items.length > 0) open = !open" :disabled="!@entangle('dokterPengajuId') || items.length === 0" class="w-full text-left bg-white text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs hover:border-slate-400 transition disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                <span x-text="selectedItem ? selectedItem.label : (items.length === 0 ? (!@entangle('dokterPengajuId') ? '-- Pilih Dokter A Terlebih Dahulu --' : '-- Tidak Ada Jadwal Tersedia --') : '-- Pilih Shift/Tanggal --')" class="truncate" :class="selectedItem ? 'text-slate-800 font-semibold' : 'text-slate-400'"></span>
+                                <svg class="w-4 h-4 text-slate-400 shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+
+                            <div x-show="open" @click.outside="open = false" x-transition.origin.top.duration.150ms class="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-slate-100 bg-slate-50">
+                                    <input type="text" x-model="search" placeholder="🔍 Cari tanggal / shift..." class="w-full text-xs rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1.5" @click.stop>
+                                </div>
+
+                                <div class="overflow-y-auto max-h-60 divide-y divide-slate-50">
+                                    <template x-for="item in filteredItems" :key="item.id">
+                                        <div @click="selectedId = item.id; open = false; $wire.set('jadwalDetailPengajuId', item.id)" class="px-3 py-2.5 text-xs hover:bg-indigo-50 cursor-pointer flex items-center justify-between transition" :class="selectedId == item.id ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700'">
+                                            <div>
+                                                <div class="font-medium text-slate-800" x-text="item.tanggal"></div>
+                                                <div class="text-[11px] text-slate-400" x-text="item.jam"></div>
+                                            </div>
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 text-indigo-700" x-text="item.shift"></span>
+                                        </div>
+                                    </template>
+                                    <div x-show="filteredItems.length === 0" class="p-4 text-center text-xs text-slate-400">
+                                        Jadwal tidak ditemukan
+                                    </div>
+                                </div>
+                            </div>
                             @error('jadwalDetailPengajuId') <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                     </div>
@@ -120,29 +200,99 @@
                             Dokter B (Pasangan Tukar)
                         </div>
 
-                        <div>
+                        <!-- Dropdown Custom Dokter B (Selalu Buka Ke Bawah) -->
+                        <div x-data="{
+                            open: false,
+                            search: '',
+                            selectedId: @entangle('dokterPenggantiId'),
+                            pengajuId: @entangle('dokterPengajuId'),
+                            get dokters() { return $wire.doktersList || []; },
+                            get filteredDokters() {
+                                let list = this.dokters.filter(d => d.id != this.pengajuId);
+                                if (!this.search) return list;
+                                const q = this.search.toLowerCase();
+                                return list.filter(d => 
+                                    d.nama.toLowerCase().includes(q) || 
+                                    d.nip.toLowerCase().includes(q) || 
+                                    d.ruangan.toLowerCase().includes(q)
+                                );
+                            },
+                            get selectedDokter() {
+                                return this.dokters.find(d => d.id == this.selectedId);
+                            }
+                        }" class="relative">
                             <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Dokter B</label>
-                            <select wire:model.live="dokterPenggantiId" class="w-full text-sm rounded-xl border-slate-300 focus:border-amber-500 focus:ring-amber-500">
-                                <option value="">-- Pilih Dokter B --</option>
-                                @foreach ($dokters as $d)
-                                    @if($d->id != $dokterPengajuId)
-                                        <option value="{{ $d->id }}">{{ $d->full_nama }} (NIP: {{ $d->nip }})</option>
-                                    @endif
-                                @endforeach
-                            </select>
+                            
+                            <button type="button" @click="open = !open" class="w-full text-left bg-white text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs hover:border-slate-400 transition">
+                                <span x-text="selectedDokter ? selectedDokter.nama + ' (' + selectedDokter.ruangan + ')' : '-- Pilih Dokter B --'" class="truncate" :class="selectedDokter ? 'text-slate-800 font-semibold' : 'text-slate-400'"></span>
+                                <svg class="w-4 h-4 text-slate-400 shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+
+                            <div x-show="open" @click.outside="open = false" x-transition.origin.top.duration.150ms class="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-slate-100 bg-amber-50/50">
+                                    <input type="text" x-model="search" placeholder="🔍 Cari nama dokter / poli / NIP..." class="w-full text-xs rounded-lg border-slate-200 focus:border-amber-500 focus:ring-amber-500 px-3 py-1.5" @click.stop>
+                                </div>
+
+                                <div class="overflow-y-auto max-h-60 divide-y divide-slate-50">
+                                    <template x-for="d in filteredDokters" :key="d.id">
+                                        <div @click="selectedId = d.id; open = false; $wire.set('dokterPenggantiId', d.id)" class="px-3 py-2.5 text-xs hover:bg-amber-50 cursor-pointer flex flex-col transition" :class="selectedId == d.id ? 'bg-amber-50 text-amber-800 font-semibold' : 'text-slate-700'">
+                                            <div class="font-medium text-slate-800" x-text="d.nama"></div>
+                                            <div class="text-[11px] text-slate-400 flex items-center justify-between mt-0.5">
+                                                <span class="text-amber-700 font-medium" x-text="d.ruangan"></span>
+                                                <span x-text="'NIP: ' + d.nip"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div x-show="filteredDokters.length === 0" class="p-4 text-center text-xs text-slate-400">
+                                        Dokter tidak ditemukan
+                                    </div>
+                                </div>
+                            </div>
                             @error('dokterPenggantiId') <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
-                        <div>
+                        <!-- Dropdown Custom Shift Dokter B (Selalu Buka Ke Bawah) -->
+                        <div x-data="{
+                            open: false,
+                            search: '',
+                            selectedId: @entangle('jadwalDetailPenggantiId'),
+                            get items() { return $wire.jadwalPenggantiList || []; },
+                            get filteredItems() {
+                                if (!this.search) return this.items;
+                                const q = this.search.toLowerCase();
+                                return this.items.filter(i => i.label.toLowerCase().includes(q));
+                            },
+                            get selectedItem() {
+                                return this.items.find(i => i.id == this.selectedId);
+                            }
+                        }" class="relative">
                             <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Jadwal/Shift Dokter B Untuk Diambil</label>
-                            <select wire:model.live="jadwalDetailPenggantiId" class="w-full text-sm rounded-xl border-slate-300 focus:border-amber-500 focus:ring-amber-500" {{ !$dokterPenggantiId ? 'disabled' : '' }}>
-                                <option value="">-- Pilih Shift/Tanggal --</option>
-                                @foreach ($jadwalPengganti as $j)
-                                    <option value="{{ $j->id }}">
-                                        {{ \Carbon\Carbon::parse($j->tanggal)->translatedFormat('l, d M Y') }} - {{ $j->shift?->nama ?? 'Libur' }} ({{ $j->shift?->jam_masuk ?? '-' }} - {{ $j->shift?->jam_keluar ?? '-' }})
-                                    </option>
-                                @endforeach
-                            </select>
+
+                            <button type="button" @click="if (items.length > 0) open = !open" :disabled="!@entangle('dokterPenggantiId') || items.length === 0" class="w-full text-left bg-white text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs hover:border-slate-400 transition disabled:bg-slate-100 disabled:cursor-not-allowed">
+                                <span x-text="selectedItem ? selectedItem.label : (items.length === 0 ? (!@entangle('dokterPenggantiId') ? '-- Pilih Dokter B Terlebih Dahulu --' : '-- Tidak Ada Jadwal Tersedia --') : '-- Pilih Shift/Tanggal --')" class="truncate" :class="selectedItem ? 'text-slate-800 font-semibold' : 'text-slate-400'"></span>
+                                <svg class="w-4 h-4 text-slate-400 shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+
+                            <div x-show="open" @click.outside="open = false" x-transition.origin.top.duration.150ms class="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-slate-100 bg-amber-50/50">
+                                    <input type="text" x-model="search" placeholder="🔍 Cari tanggal / shift..." class="w-full text-xs rounded-lg border-slate-200 focus:border-amber-500 focus:ring-amber-500 px-3 py-1.5" @click.stop>
+                                </div>
+
+                                <div class="overflow-y-auto max-h-60 divide-y divide-slate-50">
+                                    <template x-for="item in filteredItems" :key="item.id">
+                                        <div @click="selectedId = item.id; open = false; $wire.set('jadwalDetailPenggantiId', item.id)" class="px-3 py-2.5 text-xs hover:bg-amber-50 cursor-pointer flex items-center justify-between transition" :class="selectedId == item.id ? 'bg-amber-50 text-amber-800 font-semibold' : 'text-slate-700'">
+                                            <div>
+                                                <div class="font-medium text-slate-800" x-text="item.tanggal"></div>
+                                                <div class="text-[11px] text-slate-400" x-text="item.jam"></div>
+                                            </div>
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800" x-text="item.shift"></span>
+                                        </div>
+                                    </template>
+                                    <div x-show="filteredItems.length === 0" class="p-4 text-center text-xs text-slate-400">
+                                        Jadwal tidak ditemukan
+                                    </div>
+                                </div>
+                            </div>
                             @error('jadwalDetailPenggantiId') <span class="text-rose-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                     </div>
@@ -221,7 +371,7 @@
     @endif
 
     <!-- Tab 3: Approval Wadir -->
-    @if ($activeTab === 'wadir')
+    @if ($activeTab === 'wadir' && $isWadir)
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
@@ -315,7 +465,7 @@
                                 </td>
                                 <td class="p-3 text-xs text-slate-600">
                                     @if($row->disetujuiOleh)
-                                        <div>Approved by: <strong>{{ $row->disetujuiOleh->name }}</strong></div>
+                                        <div>Approved by: <strong>{{ $row->disetujuiOleh->karyawan?->full_nama ?? $row->disetujuiOleh->email }}</strong></div>
                                     @endif
                                     @if($row->catatan_wadir)
                                         <div class="italic text-slate-400">"{{ $row->catatan_wadir }}"</div>

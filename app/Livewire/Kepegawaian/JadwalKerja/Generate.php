@@ -48,19 +48,33 @@ class Generate extends Component
 
         $karyawanId = Auth::user()->karyawan_id;
 
+        $user = Auth::user();
+        $isKoorDokter = $user?->isKoordinatorDokter() ?? false;
+        $isKoorKaryawan = $user?->isKoordinatorKaryawan() ?? false;
+        $tipeJadwal = $isKoorDokter ? 'dokter' : 'karyawan';
+
         // Cek apakah jadwal sudah ada
         $exists = JadwalKerja::where('ruangan_id', $this->ruangan_id)
             ->where('bulan', $this->bulan)
             ->where('tahun', $this->tahun)
+            ->where('tipe', $tipeJadwal)
             ->exists();
 
         if ($exists) {
-            $this->toast()->error('Gagal', 'Jadwal kerja untuk ruangan dan periode tersebut sudah pernah dibuat.')->send();
+            $this->toast()->error('Gagal', 'Jadwal kerja untuk ruangan, periode, dan kelompok ini sudah pernah dibuat.')->send();
             return;
         }
 
-        $karyawans = Karyawan::where('ruangan_id', $this->ruangan_id)
-            ->whereNull('resign_at')->get();
+        $karyawansQuery = Karyawan::where('ruangan_id', $this->ruangan_id)
+            ->whereNull('resign_at');
+
+        if ($isKoorDokter) {
+            $karyawansQuery->whereHas('dokterRecord');
+        } elseif ($isKoorKaryawan) {
+            $karyawansQuery->whereDoesntHave('dokterRecord');
+        }
+
+        $karyawans = $karyawansQuery->get();
 
         $hasReguler = $karyawans->contains(function ($k) {
             return $k->kategori_kerja === KategoriKerja::REGULER;
@@ -83,6 +97,7 @@ class Generate extends Component
                 'ruangan_id' => $this->ruangan_id,
                 'bulan' => $this->bulan,
                 'tahun' => $this->tahun,
+                'tipe' => $tipeJadwal,
                 'status' => 'draft',
                 'dibuat_oleh' => $karyawanId,
             ]);
@@ -189,8 +204,11 @@ class Generate extends Component
         $ruanganQuery = \App\Models\Ruangan::where('is_active', true);
         
         if ($user && !$user->hasRole(['Super-Admin', 'Staff-SDM'])) {
-            $ruanganId = $user->karyawan->ruangan_id ?? 0;
-            $ruanganQuery->where('id', $ruanganId);
+            $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
+            if ($user->karyawan?->ruangan_id) {
+                $ruanganIds[] = $user->karyawan->ruangan_id;
+            }
+            $ruanganQuery->whereIn('id', array_unique($ruanganIds));
         }
 
         $ruanganOptions = $ruanganQuery->select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray();

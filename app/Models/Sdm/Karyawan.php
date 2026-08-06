@@ -29,6 +29,11 @@ class Karyawan extends Model
         return $this->hasOne(User::class, 'karyawan_id');
     }
 
+    public function dokterRecord(): HasOne
+    {
+        return $this->hasOne(Dokter::class, 'karyawan_id');
+    }
+
     public function masakerja(): Attribute
     {
 

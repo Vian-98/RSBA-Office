@@ -70,6 +70,18 @@ class TableDokter extends Component implements HasTable, HasForms, HasActions
                     ->tooltip('Jadwal')
                     ->color('warning'),
 
+                Action::make('koor-ruangan')
+                    ->iconButton()
+                    ->icon('tabler-building-hospital')
+                    ->tooltip('Atur Ruangan Koordinasi')
+                    ->color('info')
+                    ->visible(
+                        fn() => auth()->user()->hasAnyRole(['Super-Admin', 'Staff-SDM', 'Kepala-Bidang', 'Wakil-Direktur'])
+                    )
+                    ->action(fn(Dokter $dokter, $livewire) => $livewire->openKoorRuangan(
+                        id: $dokter->getKey()
+                    )),
+
                 Action::make('delete')
                     ->iconButton()
                     ->icon('tabler-trash')
@@ -78,6 +90,13 @@ class TableDokter extends Component implements HasTable, HasForms, HasActions
                         id: $dokter->getKey()
                     )),
             ]);
+    }
+
+    function openKoorRuangan($id)
+    {
+        $dokter = Dokter::find($id);
+        $this->dispatch('load-koor-ruangan', karyawanId: $dokter?->karyawan_id, dokterId: $id);
+        $this->dispatch('open-modal', id: 'modal-koor-ruangan');
     }
 
     function delete($id)

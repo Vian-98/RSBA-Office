@@ -37,11 +37,9 @@ class JadwalTugasSaya extends Component
 
             $allowedStatuses = [
                 StatusJadwalKerja::PUBLISHED->value ?? 'published',
-                StatusJadwalKerja::LOCKED->value ?? 'locked'
+                StatusJadwalKerja::LOCKED->value ?? 'locked',
+                StatusJadwalKerja::DRAFT->value ?? 'draft',
             ];
-            if ($isReguler) {
-                $allowedStatuses[] = StatusJadwalKerja::DRAFT->value ?? 'draft';
-            }
 
             $details = JadwalKerjaDetail::with(['shift', 'jadwalKerja.ruangan'])
                 ->where('karyawan_id', $karyawanId)

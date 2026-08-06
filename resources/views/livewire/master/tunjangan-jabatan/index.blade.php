@@ -1,30 +1,22 @@
 <div class="space-y-6">
     <!-- Breadcrumb & Header -->
-    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
+    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-center bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-2xs">
         <div>
-            <nav class="flex text-xs text-slate-400 font-semibold mb-1" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-2">
-                    <li class="inline-flex items-center">
-                        <span class="inline-flex items-center">
-                            <x-tabler-moneybag class="mr-1.5 h-3.5 w-3.5" />
-                            Penggajian
-                        </span>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <x-tabler-chevron-right class="h-3 w-3 text-slate-400 mx-1" />
-                            <span class="text-slate-650">Tunjangan Jabatan</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-            <h1 class="text-lg font-bold text-slate-800">
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                <span class="inline-flex items-center">
+                    <x-tabler-moneybag class="mr-1.5 h-3.5 w-3.5 text-slate-400" />
+                    Penggajian
+                </span>
+                <x-tabler-chevron-right class="h-3.5 w-3.5 text-slate-300" />
+                <span class="text-indigo-600 font-bold">Tunjangan Jabatan</span>
+            </div>
+            <h1 class="text-base sm:text-lg font-bold text-slate-800 tracking-tight mt-0.5">
                 Konfigurasi Tunjangan Jabatan
             </h1>
         </div>
-        <div>
-            <x-ts:button size="sm" type="button" @click="$dispatch('open-modal', {id: 'new-jabatan'})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                <x-tabler-plus class="h-4 w-4 mr-1.5" />
+        <div class="shrink-0">
+            <x-ts:button size="sm" type="button" @click="$dispatch('open-modal', {id: 'new-jabatan'})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-2xs whitespace-nowrap px-4 py-2.5 rounded-xl">
+                <x-tabler-plus class="h-4 w-4 mr-1.5 shrink-0" />
                 Tambah Jabatan Baru
             </x-ts:button>
         </div>

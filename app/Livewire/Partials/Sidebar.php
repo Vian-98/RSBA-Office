@@ -233,8 +233,35 @@ class Sidebar extends Component
                 ]);
             }
 
+            // Every Karyawan / Dokter automatically has access to "Jadwal Tugas Saya"
+            if ($user && ($user->karyawan_id || $user->isDokter())) {
+                if (!in_array('view-profile-jadwal-tugas-saya', $permissions)) {
+                    $permissions[] = 'view-profile-jadwal-tugas-saya';
+                }
+            }
+
+            // Tim Pajak otomatis mendapatkan akses menu Pajak PPh 21, Karyawan, & Dokter
+            if ($user && ($user->hasRole('Pajak') || $user->hasRole('Super-Admin'))) {
+                if (!in_array('view-kepegawaian-master-aturan-pajak', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-master-aturan-pajak';
+                }
+                if (!in_array('view-kepegawaian-karyawan', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-karyawan';
+                }
+                if (!in_array('view-dokter', $permissions)) {
+                    $permissions[] = 'view-dokter';
+                }
+            }
+
+            // Dokter otomatis memiliki akses melihat "Jadwal Kerja"
+            if ($user && $user->isDokter()) {
+                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
+                }
+            }
+
             // Filter ketersediaan menu Jadwal Kerja sesuai wewenang user
-            if ($user && $user->can('view-kepegawaian-jadwal-kerja')) {
+            if ($user && ($user->can('view-kepegawaian-jadwal-kerja') || $user->isDokter() || $user->isKoordinator())) {
                 if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
                     $permissions[] = 'view-kepegawaian-jadwal-kerja';
                 }

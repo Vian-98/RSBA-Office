@@ -176,6 +176,7 @@ class Add extends Component
             DB::commit();
 
             $this->dispatch('new-pesanan-created');
+            $this->dispatch('close-modal', id: 'modal-pengajuan-to-pesanan');
 
             $this->toast()
                 ->success('Berhasil', 'Pesanan berhasil disimpan.')
