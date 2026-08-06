@@ -61,6 +61,17 @@ class EditIdentitas extends Component
         ['value' => 'K3',  'label' => 'K/3 (Kawin, 3 Tanggungan)'],
     ];
 
+    public $ptkp_options = [
+        ['value' => 'TK0', 'label' => 'TK/0 (Tidak Kawin, 0 Tanggungan)'],
+        ['value' => 'TK1', 'label' => 'TK/1 (Tidak Kawin, 1 Tanggungan)'],
+        ['value' => 'TK2', 'label' => 'TK/2 (Tidak Kawin, 2 Tanggungan)'],
+        ['value' => 'TK3', 'label' => 'TK/3 (Tidak Kawin, 3 Tanggungan)'],
+        ['value' => 'K0',  'label' => 'K/0 (Kawin, 0 Tanggungan)'],
+        ['value' => 'K1',  'label' => 'K/1 (Kawin, 1 Tanggungan)'],
+        ['value' => 'K2',  'label' => 'K/2 (Kawin, 2 Tanggungan)'],
+        ['value' => 'K3',  'label' => 'K/3 (Kawin, 3 Tanggungan)'],
+    ];
+
     public $isDomisiliKTP = false;
 
     public function mount($id)
