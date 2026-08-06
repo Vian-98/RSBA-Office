@@ -207,7 +207,6 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
         $user = Auth::user();
         if ($user) {
-<<<<<<< HEAD
             $isGlobalApprover = $user->hasRole([
                 'Super-Admin', 'Staff-SDM', 'Wakil-Direktur',
                 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'
@@ -249,15 +248,6 @@ class Index extends Component implements HasForms, HasTable, HasActions
                         }
                     });
                 }
-=======
-            $isApprover = $user->hasRole([
-                'Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang',
-                'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'
-            ]) || $user->can('approve-jadwal-kabid') || $user->can('approve-jadwal-wadir');
-
-            if ($isApprover) {
-                // Super-Admin, SDM, Wadir, dan Kabid dapat melihat seluruh daftar jadwal ruangan
->>>>>>> origin/kepegawaian/penggajian
             } elseif ($user->isKoordinatorDokter()) {
                 $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
                 if (empty($ruanganIds)) {

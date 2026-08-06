@@ -59,7 +59,6 @@ class Kelola extends Component
         $canManage = false;
 
         if ($user) {
-<<<<<<< HEAD
             $isRestrictedGuest = $user->hasRole('Guest') && !$user->isKoordinator();
 
             if ($isRestrictedGuest) {
@@ -80,14 +79,6 @@ class Kelola extends Component
             ]) || $user->can('approve-jadwal-wadir');
 
             if (!$isRestrictedGuest && $isGlobalApprover) {
-=======
-            $isApprover = $user->hasRole([
-                'Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang',
-                'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'
-            ]) || $user->can('approve-jadwal-kabid') || $user->can('approve-jadwal-wadir') || $user->can('view-kepegawaian-jadwal-kerja');
-
-            if ($isApprover) {
->>>>>>> origin/kepegawaian/penggajian
                 $canView = true;
                 if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
                     $canManage = true;
@@ -196,15 +187,11 @@ class Kelola extends Component
         $isKoorDokter = $user?->isKoordinatorDokter() ?? false;
         $isKoorKaryawan = $user?->isKoordinatorKaryawan() ?? false;
 
-<<<<<<< HEAD
         // Sinkronisasi detail adalah operasi tulis. User Guest/read-only tidak
         // boleh mengubah atau menghapus detail hanya karena membuka halaman.
         if ($canManage) {
             $this->syncDetails($daysInMonth, $isKoorDokter, $isKoorKaryawan);
         }
-=======
-        $this->syncDetails($daysInMonth, $isKoorDokter, $isKoorKaryawan);
->>>>>>> origin/kepegawaian/penggajian
 
         // Group details by Karyawan
         $grouped = $this->jadwalKerja->details->groupBy('karyawan_id');
@@ -246,8 +233,6 @@ class Kelola extends Component
     {
         $karyawansQuery = \App\Models\Sdm\Karyawan::where('ruangan_id', $this->jadwalKerja->ruangan_id)
             ->whereNull('resign_at');
-<<<<<<< HEAD
-=======
 
         // Filter berdasarkan TIPE JADWAL (bukan role user) untuk memastikan pemisahan permanen
         if ($this->jadwalKerja->tipe === 'dokter') {
@@ -257,7 +242,6 @@ class Kelola extends Component
         }
 
         $karyawansInRoom = $karyawansQuery->get();
->>>>>>> origin/kepegawaian/penggajian
 
         // Filter berdasarkan TIPE JADWAL (bukan role user) untuk memastikan pemisahan permanen
         if ($this->jadwalKerja->tipe === 'dokter') {

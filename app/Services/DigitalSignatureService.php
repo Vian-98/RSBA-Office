@@ -24,12 +24,8 @@ class DigitalSignatureService
      */
     private function opensslBin(): string
     {
-<<<<<<< HEAD
         $bin = env('OPENSSL_BIN', 'openssl');
         return str_contains($bin, ' ') ? "\"{$bin}\"" : $bin;
-=======
-        return env('OPENSSL_BIN', 'openssl');
->>>>>>> origin/kepegawaian/absensi
     }
 
     /**

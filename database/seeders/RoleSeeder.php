@@ -58,7 +58,6 @@ class RoleSeeder extends Seeder
             'view-settings'
         ];
         $executivePermissions = array_values(array_filter($allPermissions, fn($p) => !in_array($p, $systemSettingsOnly)));
-<<<<<<< HEAD
 
         $wadirMedis = Role::firstOrCreate(['name' => 'Wadir-Medis-Keperawatan']);
         $wadirSdm   = Role::firstOrCreate(['name' => 'Wadir-SDM-Umum']);
@@ -73,8 +72,6 @@ class RoleSeeder extends Seeder
         $safeSync($direktur, $executivePermissions);
 
 
-=======
->>>>>>> origin/kepegawaian/penggajian
 
         $safeSync($kabid, array_unique(array_merge($executivePermissions, ['approve-jadwal-kabid'])));
         $safeSync($wadir, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir'])));

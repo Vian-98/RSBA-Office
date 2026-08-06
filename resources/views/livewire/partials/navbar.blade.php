@@ -51,7 +51,6 @@
                         </div>
                     </x-slot:action>
 
-<<<<<<< HEAD
                     <a href="{{ route('profile.index') }}" wire:navigate>
                         <x-ts:dropdown.items icon="tabler.user" text="Profile" />
                     </a>
@@ -70,12 +69,6 @@
                             Logout
                         </span>
                     </x-ts:dropdown.items>
-=======
-                    <x-ts:dropdown.items text="Profile" icon="user" :href="route('profile.index')" />
-                    <x-ts:dropdown.items text="Notifikasi" icon="bell" :href="route('profile.notif')" />
-                    <x-ts:dropdown.items text="Settings" icon="cog" :href="route('profile.setting')" />
-                    <x-ts:dropdown.items text="Logout" icon="arrow-left-on-rectangle" wire:click="logout" separator />
->>>>>>> origin/kepegawaian/absensi
                 </x-ts:dropdown>
             </div>
         </div>

@@ -261,11 +261,7 @@
                                                         {{ $rec->absen_keluar_at ? \Carbon\Carbon::parse($rec->absen_keluar_at)->format('H:i') : '--:--' }}
                                                     </span>
                                                 @else
-<<<<<<< HEAD
                                                     <span class="text-gray-400 italic">Tidak ada rekaman mesin</span>
-=======
-                                                    <span class="text-gray-400 italic">Tidak ada rekaman finger</span>
->>>>>>> origin/kepegawaian/absensi
                                                 @endif
                                                 @if($rec->catatan)
                                                     <span class="ml-2 text-gray-500 truncate max-w-[120px] inline-block align-middle" title="{{ $rec->catatan }}">· {{ $rec->catatan }}</span>
@@ -349,11 +345,7 @@
                         <x-ts:input type="datetime-local" label="Jam Keluar Aktual" wire:model="editAbsenKeluar" />
                     </div>
                     
-<<<<<<< HEAD
                     <x-ts:input label="Catatan / Alasan Koreksi" wire:model="editCatatan" placeholder="Contoh: Lupa scan mesin absensi, Hadir tugas luar" />
-=======
-                    <x-ts:input label="Catatan / Alasan Koreksi" wire:model="editCatatan" placeholder="Contoh: Lupa scan finger, Hadir tugas luar" />
->>>>>>> origin/kepegawaian/absensi
                 </div>
                 
                 <x-slot:footer>

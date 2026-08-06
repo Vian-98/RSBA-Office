@@ -82,7 +82,6 @@ class User extends Authenticatable
      */
     public function isKoordinator(): bool
     {
-<<<<<<< HEAD
         // Super-Admin, Staff-SDM, Manajemen Wadir, dan Koordinator (termasuk Koordinator-Dokter) selalu lolos
         if ($this->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum', 'Koordinator', 'Koordinator-Dokter'])) {
             return true;
@@ -317,7 +316,6 @@ class User extends Authenticatable
             ->unique()
             ->values()
             ->all();
-=======
     }
 
     /**
