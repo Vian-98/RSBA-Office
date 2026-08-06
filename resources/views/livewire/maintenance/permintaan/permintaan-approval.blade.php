@@ -90,7 +90,7 @@
             <span class="text-lg font-semibold">Lampiran Permintaan</span>
         </x-slot>
 
-        <livewire:Maintenance.Permintaan.PermintaanLampiran :lampiranRequest="$maintenanceRequest->lampiran" />
+        <x-image-gallery :images="$maintenanceRequest->lampiran" />
     </x-filament::modal>
 
 </div>
