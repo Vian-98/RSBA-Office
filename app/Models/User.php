@@ -36,9 +36,13 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-    ];
+    ];    public function getNameAttribute()
+    {
+        return $this->karyawan?->nama ?? $this->email;
+    }
 
     /**
+
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

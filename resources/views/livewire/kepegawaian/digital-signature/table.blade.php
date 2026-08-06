@@ -30,7 +30,8 @@
                         <td class="px-6 py-4">
                             <div class="font-bold text-slate-800 text-sm">{{ $doc->title }}</div>
                             <div class="text-xs text-slate-500 font-mono mt-0.5">{{ $doc->document_number }}</div>
-                            <div class="text-[11px] text-indigo-600 mt-1 font-medium">Oleh: {{ optional($doc->user)->name }}</div>
+                            <div class="text-[11px] text-indigo-600 mt-1 font-medium">Oleh: {{ optional($doc->user)->name ?? optional(optional($doc->user)->karyawan)->nama ?? optional($doc->user)->email ?? 'Pengguna' }}</div>
+
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-xs font-mono bg-slate-100 px-2.5 py-1 rounded-md inline-block text-slate-700 font-semibold mb-1">
