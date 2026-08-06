@@ -84,21 +84,36 @@
                     posX: @entangle('stamp_x'),
                     posY: @entangle('stamp_y'),
                     isDragging: false,
+                    grabOffsetX: 0,
+                    grabOffsetY: 0,
+
                     startDrag(e) {
                         this.isDragging = true;
+                        const stampRect = $refs.stampBadge.getBoundingClientRect();
+                        this.grabOffsetX = e.clientX - stampRect.left;
+                        this.grabOffsetY = e.clientY - stampRect.top;
                     },
+
                     onDrag(e) {
                         if (!this.isDragging) return;
-                        const rect = $refs.canvasBox.getBoundingClientRect();
-                        let x = ((e.clientX - rect.left) / rect.width) * 100;
-                        let y = ((e.clientY - rect.top) / rect.height) * 100;
-                        this.posX = Math.max(1, Math.min(75, Math.round(x)));
-                        this.posY = Math.max(1, Math.min(85, Math.round(y)));
+                        const canvasRect = $refs.canvasBox.getBoundingClientRect();
+                        
+                        let leftPx = e.clientX - canvasRect.left - this.grabOffsetX;
+                        let topPx = e.clientY - canvasRect.top - this.grabOffsetY;
+                        
+                        let pctX = (leftPx / canvasRect.width) * 100;
+                        let pctY = (topPx / canvasRect.height) * 100;
+
+                        this.posX = Math.max(0, Math.min(75, Math.round(pctX)));
+                        this.posY = Math.max(0, Math.min(85, Math.round(pctY)));
                     },
+
                     stopDrag() {
                         this.isDragging = false;
                     }
                 }"
+                @mousemove.window="onDrag($event)"
+                @mouseup.window="stopDrag()"
                 style="display: flex; flex-wrap: nowrap; gap: 24px; width: 100%; align-items: flex-start; border-top: 1px solid #f1f5f9; padding-top: 24px;"
             >
                 {{-- SIDE KIRI: Form Pengisian Identitas & Metadata (Width: 38%) --}}
@@ -165,16 +180,13 @@
                             Pratinjau PDF (Side Kanan)
                         </span>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                            🖐️ Drag Stempel Aktif
+                            🖐️ Hold Click untuk Geser Stempel
                         </span>
                     </div>
 
                     {{-- High-Resolution Workstation Canvas with Explicit Height (850px) --}}
                     <div 
                         x-ref="canvasBox"
-                        @mousemove="onDrag($event)"
-                        @mouseup="stopDrag()"
-                        @mouseleave="stopDrag()"
                         style="position: relative; width: 100%; height: 850px; min-height: 850px; background-color: #e2e8f0; padding: 12px; border-radius: 24px; border: 2px solid #cbd5e1; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden; user-select: none;"
                     >
                         {{-- Full-height PDF Object / Iframe Viewer --}}
@@ -188,11 +200,12 @@
 
                         {{-- Manual Draggable Mekari Vault Seal Stamp Overlay --}}
                         <div 
-                            @mousedown="startDrag($event)"
+                            x-ref="stampBadge"
+                            @mousedown.prevent="startDrag($event)"
                             :style="`left: ${posX}%; top: ${posY}%;`"
-                            class="absolute z-30 cursor-grab active:cursor-grabbing transition-shadow"
+                            class="absolute z-30 cursor-grab active:cursor-grabbing select-none"
                         >
-                            <div class="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border-2 border-emerald-500 shadow-2xl text-left max-w-xs ring-4 ring-emerald-500/20 group-hover:scale-105 transition-all">
+                            <div class="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border-2 border-emerald-500 shadow-2xl text-left max-w-xs ring-4 ring-emerald-500/20 group-hover:scale-105 transition-all select-none pointer-events-none">
                                 <div class="flex items-center justify-between border-b border-emerald-100 pb-1.5 mb-1.5">
                                     <div class="flex items-center space-x-1.5">
                                         <div class="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-white shrink-0">
@@ -210,7 +223,7 @@
                                     SHA: {{ substr($fileHashSHA256, 0, 18) }}...
                                 </div>
                                 <div class="text-[9px] text-slate-400 text-center border-t border-slate-100 pt-1 mt-1 font-sans">
-                                    🖐️ Klik & geser stempel
+                                    🖐️ Klik & geser stempel di sini
                                 </div>
                             </div>
                         </div>
