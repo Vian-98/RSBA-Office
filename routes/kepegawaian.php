@@ -135,6 +135,10 @@ Route::prefix('surat')
         Route::get('audit-bank-surat', App\Livewire\Surat\AuditBankSurat::class)->name('audit-bank-surat');
     });
 
+// Menu ID 57: Tanda Tangan Digital (Privy / Mekari style)
+Route::get('digital-signature', App\Livewire\Kepegawaian\DigitalSignature\Index::class)->name('digital-signature.index');
+
+
 // Cuti Bersama
 Route::prefix('cuti-bersama')
     ->name('cuti-bersama.')

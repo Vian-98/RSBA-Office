@@ -170,6 +170,63 @@ class DocstoreSyncService
     }
 
     /**
+     * Sync dokumen Tanda Tangan Digital (PDF) ke docstore (bank surat).
+     */
+    public function syncDigitalSignatureDoc(
+        \App\Models\DigitalSignatureDocument $doc,
+        string $pdfBase64,
+        array $signatureData = []
+    ): bool {
+        $content = [
+            'title'             => $doc->title,
+            'document_number'   => $doc->document_number,
+            'file_name'         => $doc->file_name,
+            'file_size_bytes'   => $doc->file_size,
+            'byte_counter_hash' => $doc->byte_counter_hash,
+            'keterangan'        => $doc->keterangan,
+            'uploader_name'     => optional($doc->user)->name ?? 'User',
+            'pdf_base64'        => $pdfBase64,
+        ];
+
+        $signatures = [
+            [
+                'signature_hash' => $doc->signature_hash,
+                'original_data'  => $signatureData['original_data'] ?? $doc->byte_counter_hash,
+                'signature'      => $signatureData['signature'] ?? 'MOCK_SIGNATURE',
+                'data_hash'      => $doc->byte_counter_hash,
+                'algorithm'      => 'sha256',
+                'public_key'     => $signatureData['public_key'] ?? 'MOCK_PUBLIC_KEY',
+                'signer_name'    => optional($doc->user)->name ?? 'Signer',
+                'signer_role'    => 'Penandatangan Digital',
+                'status'         => 'APPROVED',
+                'signed_at'      => now()->toIso8601String(),
+            ]
+        ];
+
+        $payload = [
+            'document_type'   => 'digital_signature',
+            'document_id'     => $doc->id,
+            'document_number' => $doc->document_number,
+            'status'          => 'APPROVED',
+            'content'         => $content,
+            'signatures'      => $signatures,
+        ];
+
+        $result = $this->sendToDocstore($payload);
+
+        if ($result['success'] && !empty($result['docstore_key'])) {
+            $doc->update([
+                'docstore_key' => $result['docstore_key'],
+                'status'       => 'synced',
+            ]);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /**
      * Ambil data surat dari docstore berdasarkan docstore_key.
      */
     public function fetchFromDocstore(string $docstoreKey): ?array
