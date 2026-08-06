@@ -1,32 +1,4 @@
 <div class="w-full space-y-6">
-    {{-- Header Banner --}}
-    <div class="w-full rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white shadow-xl">
-        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div class="flex items-center space-x-4">
-                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/20 border border-indigo-400/30 shrink-0">
-                    <svg class="h-6 w-6 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-tight text-white">Tanda Tangan Digital & Verifikasi Surat</h1>
-                    <p class="text-xs text-indigo-200/80 mt-0.5">Privy / Mekari e-Sign Vault System — Menu ID 57</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Strict PDF (.pdf)
-                </span>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                    ByteCounter Protection
-                </span>
-            </div>
-        </div>
-    </div>
-
     {{-- Flash Notifications --}}
     @if (session()->has('success'))
         <div class="w-full p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 flex items-center justify-between shadow-sm">

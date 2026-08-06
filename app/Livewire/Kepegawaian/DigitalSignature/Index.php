@@ -168,6 +168,7 @@ class Index extends Component
 
         return view('livewire.kepegawaian.digital-signature.index', [
             'documents' => $documents,
-        ])->layout('layouts.app', ['title' => 'Menu ID 57 - Tanda Tangan Digital PDF']);
+        ])->layout('layouts.app', ['title' => 'Tanda Tangan Digital']);
     }
 }
+
