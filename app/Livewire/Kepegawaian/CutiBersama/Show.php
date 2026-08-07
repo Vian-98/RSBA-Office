@@ -24,6 +24,7 @@ class Show extends Component
     public $filterKategori = 'semua'; // semua, potong, piket, roster, belum_ada
 
     public $filterPartisipasi = 'semua'; // semua, ikut, dikecualikan
+    public $viewMode = 'pegawai'; // pegawai (grouped per karyawan), tanggal (flat per tanggal)
 
     public function mount($id)
     {
@@ -166,9 +167,30 @@ class Show extends Component
                 return true;
             });
 
+        $groupedDetails = $filteredDetails->groupBy('karyawan_id')->map(function ($items) {
+            $first = $items->first();
+            $totalHariDipotong = $items->where('status_aksi', 'DIPOTONG_CUTI')->count();
+            $totalHariPiket = $items->where('status_aksi', 'TETAP_HADIR')->count();
+            $totalHariRoster = $items->where('status_aksi', 'LIBUR_ROSTER')->count();
+            $totalHariDikecualikan = $items->where('status_aksi', 'DIKECUALIKAN')->count();
+
+            return [
+                'karyawan_id' => $first['karyawan_id'],
+                'karyawan_nama' => $first['karyawan_nama'],
+                'kategori_kerja' => $first['kategori_kerja'],
+                'is_ikut' => $first['is_ikut'] ?? true,
+                'total_hari_dipotong' => $totalHariDipotong,
+                'total_hari_piket' => $totalHariPiket,
+                'total_hari_roster' => $totalHariRoster,
+                'total_hari_dikecualikan' => $totalHariDikecualikan,
+                'dates' => $items->values()->toArray(),
+            ];
+        })->values();
+
         return view('livewire.kepegawaian.cuti-bersama.show', [
             'cutiBersama' => $cutiBersama,
             'details' => $filteredDetails,
+            'groupedDetails' => $groupedDetails,
         ]);
     }
 }
