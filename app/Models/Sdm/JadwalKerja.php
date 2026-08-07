@@ -101,6 +101,10 @@ class JadwalKerja extends Model
         ]);
     }
 
+    public function isDokterSchedule(): bool
+    {
+        if (!empty($this->tipe)) {
+            return $this->tipe === 'dokter';
         }
 
         $detailsQuery = $this->details();
@@ -259,11 +263,12 @@ class JadwalKerja extends Model
             $shiftReguler = app(\App\Services\AturanJadwalService::class)
                 ->shiftValidUntukRuangan($ruanganId, $jadwalKerja->bagian_id)
                 ->first(fn ($ruanganShift) => $ruanganShift->shift?->kode === 'REGULER')
-                ?->shift;
+                ?->shift
+                ?? \App\Models\Sdm\JadwalShift::where('kode', 'REGULER')->first();
+
             if ($isReguler && $shiftReguler) {
                 $details = \App\Models\Sdm\JadwalKerjaDetail::where('jadwal_kerja_id', $jadwalKerja->id)
                     ->where('karyawan_id', $karyawanId)
-                    ->whereNull('shift_id')
                     ->where('status_kehadiran', 'belum_dicek')
                     ->get();
 
@@ -271,6 +276,8 @@ class JadwalKerja extends Model
                     $date = \Carbon\Carbon::parse($detail->tanggal);
                     if ($date->dayOfWeekIso >= 1 && $date->dayOfWeekIso <= 5) {
                         $detail->update(['shift_id' => $shiftReguler->id]);
+                    } else {
+                        $detail->update(['shift_id' => null]);
                     }
                 }
             }
@@ -349,6 +356,69 @@ class JadwalKerja extends Model
             \App\Models\Sdm\JadwalKerjaDetail::insert($newDetails);
         } catch (\Throwable $e) {
             // Safe to ignore duplicate records on concurrent request
+        }
+    }
+
+    public static function syncKaryawanRegulerSchedule(int $karyawanId, ?int $bulan = null, ?int $tahun = null): void
+    {
+        $karyawan = Karyawan::find($karyawanId);
+        if (!$karyawan) {
+            return;
+        }
+
+        $kategori = $karyawan->kategori_kerja instanceof \App\Enums\KategoriKerja
+            ? $karyawan->kategori_kerja
+            : \App\Enums\KategoriKerja::tryFrom($karyawan->kategori_kerja);
+
+        if ($kategori !== \App\Enums\KategoriKerja::REGULER) {
+            return;
+        }
+
+        $bulan = $bulan ?? (int) now()->format('n');
+        $tahun = $tahun ?? (int) now()->format('Y');
+
+        // Ensure schedule & details exist for current month
+        self::ensureEmployeeDetailsExist($karyawanId, $bulan, $tahun);
+
+        // Find REGULER shift
+        $ruanganId = $karyawan->ruangan_id;
+        $shiftReguler = null;
+        if ($ruanganId) {
+            $shiftReguler = app(\App\Services\AturanJadwalService::class)
+                ->shiftValidUntukRuangan($ruanganId, null)
+                ->first(fn ($ruanganShift) => $ruanganShift->shift?->kode === 'REGULER')
+                ?->shift;
+        }
+        if (!$shiftReguler) {
+            $shiftReguler = JadwalShift::where('kode', 'REGULER')->where('aktif', true)->first();
+        }
+        if (!$shiftReguler) {
+            $shiftReguler = JadwalShift::where('kode', 'REGULER')->first();
+        }
+
+        if (!$shiftReguler) {
+            return;
+        }
+
+        // Get details for current month onwards that are not yet checked
+        $details = JadwalKerjaDetail::where('karyawan_id', $karyawanId)
+            ->where(function($q) use ($tahun, $bulan) {
+                $q->whereYear('tanggal', '>', $tahun)
+                  ->orWhere(function($sub) use ($tahun, $bulan) {
+                      $sub->whereYear('tanggal', '=', $tahun)
+                          ->whereMonth('tanggal', '>=', $bulan);
+                  });
+            })
+            ->where('status_kehadiran', 'belum_dicek')
+            ->get();
+
+        foreach ($details as $detail) {
+            $date = \Carbon\Carbon::parse($detail->tanggal);
+            if ($date->dayOfWeekIso >= 1 && $date->dayOfWeekIso <= 5) {
+                $detail->update(['shift_id' => $shiftReguler->id]);
+            } else {
+                $detail->update(['shift_id' => null]);
+            }
         }
     }
 }

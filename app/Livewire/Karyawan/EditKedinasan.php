@@ -170,7 +170,10 @@ class EditKedinasan extends Component
         $data['pendidikan_setara'] = empty($this->form->pendidikan_setara) ? null : $this->form->pendidikan_setara;
         
         if (count($data) > 0) {
-            Karyawan::where('id', $this->form->karyawan->id)->update($data);
+            $this->form->karyawan->update($data);
+            if ($this->form->kategori_kerja === 'reguler' || $this->form->kategori_kerja === \App\Enums\KategoriKerja::REGULER) {
+                \App\Models\Sdm\JadwalKerja::syncKaryawanRegulerSchedule($this->form->karyawan->id);
+            }
             $this->dispatch('updated-karywan');
         }
 
