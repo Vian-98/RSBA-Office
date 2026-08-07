@@ -73,7 +73,7 @@ class JadwalKerjaPolicy
             return false;
         }
 
-        return $user->hasRole('Super-Admin') || $user->can('approve-jadwal-kabid') || $user->hasRole('Kepala-Bidang');
+        return $user->can('approve-jadwal-kabid') || $user->hasRole('Kepala-Bidang');
     }
 
     public function setujuiWadir(User $user, JadwalKerja $jadwalKerja): bool
@@ -82,7 +82,7 @@ class JadwalKerjaPolicy
             return false;
         }
 
-        return $user->hasRole('Super-Admin') || $user->can('approve-jadwal-wadir') || $user->hasRole('Wakil-Direktur');
+        return $user->can('approve-jadwal-wadir') || $user->hasRole('Wakil-Direktur');
     }
 
     public function kembalikanDraft(User $user, JadwalKerja $jadwalKerja): bool

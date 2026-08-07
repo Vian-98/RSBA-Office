@@ -207,10 +207,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
         $user = Auth::user();
         if ($user) {
-            $isGlobalApprover = $user->hasRole([
-                'Super-Admin', 'Staff-SDM', 'Wakil-Direktur',
-                'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'
-            ]) || $user->can('approve-jadwal-wadir');
+            $isGlobalApprover = $user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir') || $user->can('view-kepegawaian-laporan');
 
             if ($this->isRestrictedGuest($user)) {
                 $ownRuanganIds = $user->getOwnRuanganIds();
@@ -224,7 +221,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
                 }
             } elseif ($isGlobalApprover) {
                 // Super-Admin, SDM, Wadir, dan Direktur dapat melihat seluruh daftar jadwal ruangan
-            } elseif ($user->hasRole('Kepala-Bidang') || $user->can('approve-jadwal-kabid')) {
+            } elseif ($user->can('approve-jadwal-kabid') || $user->isKepalaDept()) {
                 $bagianIds = $user->getActiveBagianIds();
                 $legacyBagianRuanganIds = $user->getBagianScopedRuanganIds() ?? [];
                 $koorIds = $user->getRuanganKoordinatorIds() ?? [];
@@ -311,14 +308,18 @@ class Index extends Component implements HasForms, HasTable, HasActions
             ->recordActions([
                 Action::make('kelola')
                     ->label(fn (JadwalKerja $record): string => 
-                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur']) || 
+                        Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
+                        Auth::user()?->can('approve-jadwal-wadir') || 
+                        Auth::user()?->can('approve-jadwal-kabid') || 
                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
                             ? 'Kelola' 
                             : 'Lihat'
                     )
                     ->iconButton()
                     ->icon(fn (JadwalKerja $record): string => 
-                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur']) || 
+                        Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
+                        Auth::user()?->can('approve-jadwal-wadir') || 
+                        Auth::user()?->can('approve-jadwal-kabid') || 
                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
                             ? 'tabler-list-details' 
                             : 'tabler-eye'
@@ -335,7 +336,8 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     ->successNotificationTitle('Jadwal berhasil dihapus')
                     ->visible(fn (JadwalKerja $record): bool => 
                         in_array($record->status, [\App\Enums\StatusJadwalKerja::DRAFT, \App\Enums\StatusJadwalKerja::DITOLAK]) && 
-                        (Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
+                        (Auth::user()?->can('delete-kepegawaian-jadwal-kerja') || 
+                         Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
                          (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? [])))
                     ),
             ]);

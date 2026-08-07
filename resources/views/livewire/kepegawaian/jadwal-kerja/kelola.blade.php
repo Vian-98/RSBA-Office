@@ -62,8 +62,8 @@
         $jsonTipMap   = json_encode($tipMap);
 
         $user = auth()->user();
-        $isKabidReviewer = $user?->hasRole('Super-Admin') || $user?->can('approve-jadwal-kabid') || $user?->hasRole('Kepala-Bidang');
-        $isWadirReviewer = $user?->hasRole('Super-Admin') || $user?->can('approve-jadwal-wadir') || $user?->hasRole('Wakil-Direktur');
+        $isKabidReviewer = $user?->can('approve-jadwal-kabid') || $user?->isKepalaDept();
+        $isWadirReviewer = $user?->can('approve-jadwal-wadir') || $user?->isWadir();
     @endphp
 
     <style>
