@@ -80,7 +80,7 @@ class PayrollCalculator
                 };
             }
 
-            $golonganGrade = \App\Models\Sdm\PayrollGolonganMatrix::lookup($rowKey, $yearsOfService);
+            $golonganGrade = \App\Models\Gaji\PayrollGolonganMatrix::lookup($rowKey, $yearsOfService);
             $gajiPokok = 0.75 * $umk * (1.0 + (15.0 - $golonganGrade) * 0.05);
 
             $tunjanganGolonganVal = (double) DB::table('sdm_payroll_golongans')
