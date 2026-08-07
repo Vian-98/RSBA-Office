@@ -35,12 +35,23 @@
                      :class="isCollapsed && isAboveBreakpoint ? 'justify-center p-2.5 mx-1' : 'px-3 py-2'">
                     <x-ts:icon name="tabler.search" class="h-5 w-5 text-gray-400 shrink-0 cursor-pointer"
                                @click="if(isCollapsed && isAboveBreakpoint) toggleCollapse()" />
-                    <input x-show="!(isCollapsed && isAboveBreakpoint)" 
+                    <input type="search"
+                           name="searchMenuSidebar"
+                           id="searchMenuSidebar"
+                           autocomplete="off"
+                           autocorrect="off"
+                           autocapitalize="off"
+                           spellcheck="false"
+                           data-1p-ignore="true"
+                           data-lpignore="true"
+                           data-form-type="other"
+                           x-show="!(isCollapsed && isAboveBreakpoint)" 
                            wire:model.live.debounce.300ms="searchMenu" 
                            placeholder="Cari menu..."
                            class="ml-2 w-full bg-transparent text-xs text-gray-700 outline-none border-none p-0 focus:ring-0 focus:outline-none" />
                 </div>
             </div>
+
 
             {{-- menu list --}}
             <div class="px-3">

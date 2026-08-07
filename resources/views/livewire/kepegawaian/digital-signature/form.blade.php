@@ -307,9 +307,15 @@
                 </div>
 
                 <div>
+                    {{-- Hidden username field to prevent browser autofill from hijacking the sidebar search input --}}
+                    <input type="text" name="username" value="{{ Auth::user()->email ?? 'user' }}" autocomplete="username" class="sr-only hidden" style="display: none !important;" readonly tabIndex="-1" />
+
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Masukkan Password Akun Anda</label>
                     <input 
                         type="password" 
+                        name="account_password"
+                        id="account_password_input"
+                        autocomplete="current-password"
                         wire:model="account_password" 
                         wire:keydown.enter="confirmAndSign"
                         placeholder="Password akun..." 
@@ -322,6 +328,7 @@
                         </span> 
                     @enderror
                 </div>
+
 
                 <div class="flex items-center justify-end space-x-3 pt-2">
                     <button wire:click="closePasswordModal" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-colors">
