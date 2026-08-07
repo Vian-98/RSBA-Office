@@ -3,6 +3,7 @@
 namespace App\Models\Sdm;
 
 use App\Traits\Blameable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class JadwalShift extends Model
