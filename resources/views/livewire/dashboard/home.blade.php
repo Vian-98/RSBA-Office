@@ -208,7 +208,22 @@
     @endif
 
     <!-- Stats Grid Section -->
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    @php
+        $statsCount = 0;
+        if (isset($stats['karyawan_count'])) $statsCount++;
+        if (isset($stats['barang_count'])) $statsCount++;
+        if (isset($stats['total_hutang'])) $statsCount++;
+        if (isset($stats['pending_cuti'])) $statsCount++;
+        if (isset($stats['supplier_count']) && !isset($stats['barang_count'])) $statsCount++;
+        if (isset($stats['total_pembayaran'])) $statsCount++;
+        
+        $gridColsClass = 'lg:grid-cols-4';
+        if ($statsCount === 1) $gridColsClass = 'lg:grid-cols-1';
+        elseif ($statsCount === 2) $gridColsClass = 'lg:grid-cols-2';
+        elseif ($statsCount === 3) $gridColsClass = 'lg:grid-cols-3';
+    @endphp
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 {{ $gridColsClass }}">
         @if(isset($stats['karyawan_count']))
             <div class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                 <div class="flex items-center justify-between">
