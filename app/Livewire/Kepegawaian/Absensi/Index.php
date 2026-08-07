@@ -18,7 +18,7 @@ class Index extends Component
     public function mount()
     {
         abort_unless(
-            auth()->user()?->hasRole('Super-Admin') || auth()->user()?->can('view-kepegawaian-absensi'),
+            auth()->user()?->can('view-kepegawaian-absensi'),
             403,
             'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Kontrol Absensi.'
         );
