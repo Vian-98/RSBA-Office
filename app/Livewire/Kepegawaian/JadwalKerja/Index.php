@@ -43,7 +43,11 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
     private function isRestrictedGuest($user): bool
     {
-        return $user?->hasRole('Guest') && !$user->isKoordinator();
+        if (!$user) return false;
+        if ($user->can('view-kepegawaian-jadwal-kerja') || $user->isKoordinator() || $user->isKepalaDept() || $user->isWadir()) {
+            return false;
+        }
+        return $user->hasRole('Guest');
     }
 
     public function autoGenerateRegulerSchedules()
