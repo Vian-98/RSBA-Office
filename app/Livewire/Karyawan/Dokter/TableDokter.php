@@ -62,13 +62,29 @@ class TableDokter extends Component implements HasTable, HasForms, HasActions
             ->recordActions([
                 Action::make('edit')
                     ->iconButton()
-                    ->icon('tabler-edit'),
+                    ->icon('tabler-edit')
+                    ->color('danger')
+                    ->tooltip('Edit Data Dokter')
+                    ->url(fn(Dokter $record): string => route('kepegawaian.karyawan.edit', $record->karyawan_id)),
 
                 Action::make('jadwal')
                     ->iconButton()
                     ->icon('tabler-calendar')
                     ->tooltip('Jadwal')
-                    ->color('warning'),
+                    ->color('warning')
+                    ->url(fn(Dokter $record): string => route('kepegawaian.jadwal-kerja.index')),
+
+                Action::make('koor-ruangan')
+                    ->iconButton()
+                    ->icon('tabler-building-hospital')
+                    ->tooltip('Atur Ruangan Koordinasi')
+                    ->color('info')
+                    ->visible(
+                        fn() => auth()->user()->can('edit-kepegawaian-karyawan') || auth()->user()->can('view-kepegawaian-master-bagian-koordinator') || auth()->user()->isKoordinator()
+                    )
+                    ->action(fn(Dokter $dokter, $livewire) => $livewire->openKoorRuangan(
+                        id: $dokter->getKey()
+                    )),
 
                 Action::make('koor-ruangan')
                     ->iconButton()

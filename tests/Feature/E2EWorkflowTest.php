@@ -42,7 +42,6 @@ class E2EWorkflowTest extends TestCase
 
         \App\Models\Surat\CutiJenis::firstOrCreate(['id' => 1], ['nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y']);
         $ruangan = \App\Models\Ruangan::firstOrCreate(['nama' => 'IGD (Instalasi Gawat Darurat)']);
-
         // 1. Create Event (Draft)
         $event = CutiBersama::create([
             'nama' => 'Test E2E System Workflow Event',

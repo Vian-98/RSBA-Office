@@ -16,44 +16,27 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
+            SuperAdminSignatureSeeder::class,
             MenuSeeder::class,
             PerusahaanSeeder::class,
             WilayahSeeder::class,
             UmDataSeeder::class,
-            'Database\Seeders\UmumSeeder',
+            UmumSeeder::class,
+            JadwalSeeder::class,
             PayrollSeeder::class,
             SdmPayrollGolonganMatrixSeeder::class,
             PayrollPph21ReferenceSeeder::class,
+            KaryawanExcelSeeder::class,
+            DummyPayrollSlipSeeder::class,
+            JadwalDummyJuniSeeder::class,
+            SkenarioTriRahayuSeeder::class,
+            JadwalDuaTahunSeeder::class,
+            CutiJenisSeeder::class,
             CutiBersamaSeeder::class,
             StrukturOrganisasiSeeder::class,
         ];
 
         foreach ($mainSeeders as $seeder) {
-            if (class_exists($seeder)) {
-                $this->call($seeder);
-            }
-        }
-
-        // Optional / Dummy Seeders (Only executed if present locally)
-        $optionalDummySeeders = [
-            'Database\Seeders\DokterSeeder',
-            'Database\Seeders\SuperAdminSignatureSeeder',
-            'Database\Seeders\DummyDataSeeder',
-            'Database\Seeders\JadwalSeeder',
-            'Database\Seeders\KaryawanExcelSeeder',
-            'Database\Seeders\DummyPayrollSlipSeeder',
-            'Database\Seeders\JadwalDummyJuniSeeder',
-            'Database\Seeders\SkenarioTriRahayuSeeder',
-            'Database\Seeders\JadwalDuaTahunSeeder',
-            'Database\Seeders\DummySdmSeeder',
-            'Database\Seeders\RuanganDummySeeder',
-            'Database\Seeders\JadwalAbsensiJuli2026Seeder',
-            'Database\Seeders\InpatientSeeder',
-            'Database\Seeders\DokterPoliSeeder',
-            'Database\Seeders\DokterAllPoliSeeder',
-        ];
-
-        foreach ($optionalDummySeeders as $seeder) {
             if (class_exists($seeder)) {
                 $this->call($seeder);
             }

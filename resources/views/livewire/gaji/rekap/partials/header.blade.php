@@ -32,15 +32,17 @@
 
     <!-- Toolbar Sub-actions (Second Row) -->
     <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100/80">
-        <x-ts:button wire:click="openAutoSendModal" flat color="purple" class="text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
-            <x-tabler-clock class="h-3.5 w-3.5 mr-1.5 shrink-0" />
-            Jadwal Otomatis
-        </x-ts:button>
+        @if(!empty($isLocked) && $isLocked)
+            <x-ts:button wire:click="openAutoSendModal" flat color="purple" class="text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
+                <x-tabler-clock class="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                Jadwal Email Otomatis
+            </x-ts:button>
 
-        <x-ts:button wire:click="openBatchSendModal" flat color="sky" class="text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
-            <x-tabler-mail-fast class="h-3.5 w-3.5 mr-1.5 shrink-0" />
-            Kirim Massal Email
-        </x-ts:button>
+            <x-ts:button wire:click="openBatchSendModal" flat color="sky" class="text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
+                <x-tabler-mail-fast class="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                Kirim Massal Email
+            </x-ts:button>
+        @endif
 
         @if(!$isOnlyPajak)
         <x-ts:button type="button" outline color="indigo" class="text-xs font-bold bg-white border border-indigo-200/80 text-indigo-600 hover:bg-indigo-50 whitespace-nowrap px-3 py-1.5 rounded-lg" x-on:click="$tsui.open.modal('modal-payroll-parameters')">

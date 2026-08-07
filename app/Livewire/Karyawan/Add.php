@@ -5,6 +5,7 @@ namespace App\Livewire\Karyawan;
 use App\Enums\Agama;
 use App\Enums\Kelamin;
 use App\Enums\StatusKaryawan;
+use App\Enums\KategoriKerja;
 use App\Livewire\Forms\KaryawanForm;
 use Livewire\Component;
 use TallStackUi\Traits\Interactions;
@@ -16,18 +17,20 @@ class Add extends Component
     public KaryawanForm $form;
 
     public $status_options;
+    public $kategori_options;
     public $agama_options;
     public $isDomisiliKTP = false;
     public $jk_options;
     public $pernikahan_options = [
-        ['value' => 'belum', 'label' => 'Belum Menikah'],
+        ['value' => 'belum_menikah', 'label' => 'Belum Menikah'],
         ['value' => 'menikah', 'label' => 'Menikah'],
-        ['value' => 'single', 'label' => 'Janda/Duda']
+        ['value' => 'janda_duda', 'label' => 'Janda/Duda']
     ];
 
     public function mount()
     {
         $this->status_options = StatusKaryawan::options();
+        $this->kategori_options = KategoriKerja::options();
         $this->agama_options = Agama::options();
         $this->jk_options = Kelamin::options();
     }

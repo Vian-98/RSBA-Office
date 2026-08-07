@@ -3,7 +3,7 @@
 namespace App\Livewire\Gaji\Concerns;
 
 use App\Models\Sdm\Karyawan;
-use App\Services\PayrollRekapService;
+use App\Livewire\Gaji\Services\PayrollRekapService;
 use App\Imports\PayrollImport;
 use App\Exports\PayrollTemplateExport;
 use Maatwebsite\Excel\Facades\Excel;

@@ -46,3 +46,7 @@ database/seeders/Inpatient*
 database/seeders/KaryawanExcel*
 database/seeders/SuperAdminSignature*
 database/seeders/files/
+
+# Published vendor views to ignore
+/resources/views/vendor/ts-ui
+

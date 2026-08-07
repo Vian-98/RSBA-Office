@@ -6,6 +6,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Title;
 use TallStackUi\Traits\Interactions;
+use App\Models\Gaji\PayrollGolonganMatrix;
 
 #[Title('Master Tunjangan Golongan & Config Gaji')]
 class Index extends Component
@@ -158,7 +159,7 @@ class Index extends Component
             DB::commit();
 
             // Clear cache
-            \App\Models\Sdm\PayrollGolonganMatrix::flushCache();
+            PayrollGolonganMatrix::flushCache();
 
             // Clear notifications cache for admins
             try {
@@ -234,7 +235,7 @@ class Index extends Component
             }
             DB::commit();
 
-            \App\Models\Sdm\PayrollGolonganMatrix::flushCache();
+            PayrollGolonganMatrix::flushCache();
 
             // Clear notifications cache for admins
             try {
@@ -277,7 +278,7 @@ class Index extends Component
                 ->delete();
             DB::commit();
 
-            \App\Models\Sdm\PayrollGolonganMatrix::flushCache();
+            PayrollGolonganMatrix::flushCache();
 
             // Clear notifications cache for admins
             try {
@@ -357,7 +358,7 @@ class Index extends Component
             }
             DB::commit();
 
-            \App\Models\Sdm\PayrollGolonganMatrix::flushCache();
+            PayrollGolonganMatrix::flushCache();
 
             // Clear notifications cache for admins
             try {
@@ -399,7 +400,7 @@ class Index extends Component
                 ->delete();
             DB::commit();
 
-            \App\Models\Sdm\PayrollGolonganMatrix::flushCache();
+            PayrollGolonganMatrix::flushCache();
 
             // Clear notifications cache for admins
             try {

@@ -24,6 +24,7 @@ class Home extends Component
 {
     public array $stats = [];
     public array $rekapAbsen = [];
+    public ?array $jadwalHariIni = null;
     public array $recentCuti = [];
     public array $recentPurchases = [];
     public array $recentMaintenance = [];
@@ -46,6 +47,7 @@ class Home extends Component
             // Load personal attendance if user is linked to a Karyawan
             if ($user->karyawan_id) {
                 $this->loadEmployeeRekap($user->karyawan_id);
+                $this->loadJadwalHariIni($user->karyawan_id);
             }
 
             try {
@@ -271,6 +273,38 @@ class Home extends Component
             'belum_dicek' => $totalBelumDicek,
             'persen_kehadiran' => $persenKehadiran,
         ];
+    }
+
+    private function loadJadwalHariIni(int $karyawanId): void
+    {
+        $today = Carbon::today();
+        $detail = \App\Models\Sdm\JadwalKerjaDetail::where('karyawan_id', $karyawanId)
+            ->whereDate('tanggal', $today)
+            ->with(['shift', 'jadwalKerja.ruangan'])
+            ->first();
+
+        if ($detail) {
+            $this->jadwalHariIni = [
+                'tanggal'      => $today->translatedFormat('l, d F Y'),
+                'is_libur'     => is_null($detail->shift_id),
+                'shift_kode'   => $detail->shift?->kode,
+                'shift_nama'   => $detail->shift?->nama,
+                'shift_warna'  => $detail->shift?->warna ?? '#e2e8f0',
+                'jam_masuk'    => $detail->shift ? Carbon::parse($detail->shift->jam_masuk)->format('H:i') : null,
+                'jam_keluar'   => $detail->shift ? Carbon::parse($detail->shift->jam_keluar)->format('H:i') : null,
+                'lintas_hari'  => $detail->shift?->lintas_hari ?? false,
+                'status'       => $detail->status_kehadiran,
+                'ruangan'      => $detail->jadwalKerja?->ruangan?->nama ?? '-',
+                'absen_masuk'  => $detail->absen_masuk_at ? Carbon::parse($detail->absen_masuk_at)->format('H:i') : null,
+                'absen_keluar' => $detail->absen_keluar_at ? Carbon::parse($detail->absen_keluar_at)->format('H:i') : null,
+                'catatan'      => $detail->catatan,
+            ];
+        } else {
+            $this->jadwalHariIni = [
+                'tanggal'     => $today->translatedFormat('l, d F Y'),
+                'no_schedule' => true,
+            ];
+        }
     }
 
     private function loadGuestData()
