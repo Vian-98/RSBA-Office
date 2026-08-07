@@ -2,10 +2,10 @@
 
 namespace App\Models\Sdm;
 
-use App\Models\Sdm\Payroll\PayrollSendLog as BasePayrollSendLog;
+use App\Models\Gaji\PayrollSendLog as BasePayrollSendLog;
 
 /**
- * Backward compatibility alias for App\Models\Sdm\Payroll\PayrollSendLog
+ * Backward compatibility alias for App\Models\Gaji\PayrollSendLog
  */
 class PayrollSendLog extends BasePayrollSendLog
 {
