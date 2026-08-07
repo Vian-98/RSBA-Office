@@ -2,15 +2,15 @@
 
 namespace App\Models\Sdm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Traits\Blameable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class JadwalShift extends Model
 {
     use Blameable;
 
     protected $table = 'sdm_jadwal_shift';
+
     protected $guarded = [];
     protected $casts = [
         'aktif' => 'boolean',
@@ -31,3 +31,4 @@ class JadwalShift extends Model
         )->withTimestamps();
     }
 }
+

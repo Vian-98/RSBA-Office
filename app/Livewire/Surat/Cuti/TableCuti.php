@@ -142,7 +142,7 @@ class TableCuti extends Component implements HasTable, HasForms, HasActions
                     ->visible(
                         function (SuratCuti $record) {
                             $isMelahirkan = (int)$record->urgensi_id === 3 || str_contains(strtolower($record->jenis?->nama ?? ''), 'melahirkan') || str_contains(strtolower($record->jenis?->nama ?? ''), 'bersalin');
-                            $hasPermission = auth()->user()->hasRole('Super-Admin') || auth()->user()->can('view-kepegawaian-cuti') || auth()->user()->can('edit-kepegawaian-cuti');
+                            $hasPermission = auth()->user()->can('view-kepegawaian-cuti') || auth()->user()->can('edit-kepegawaian-cuti');
                             return $isMelahirkan && $hasPermission;
                         }
                     )

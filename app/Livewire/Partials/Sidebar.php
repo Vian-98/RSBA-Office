@@ -235,9 +235,8 @@ class Sidebar extends Component
                 ]);
             }
 
-            // Modul Kepegawaian (HRD): Hanya untuk Staff-SDM, Kabag SDM, Wadir SDM-Umum, Direktur, & Super-Admin
             $isAuthorizedSDM = $user && (
-                $user->hasRole(['Super-Admin', 'Staff-SDM', 'Wadir-SDM-Umum', 'Direktur']) 
+                $user->can('view-kepegawaian-karyawan')
                 || $user->isKabagSDM()
             );
 

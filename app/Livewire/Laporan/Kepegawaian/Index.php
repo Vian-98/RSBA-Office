@@ -343,4 +343,18 @@ class Index extends Component
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
+
+    public function render()
+    {
+        $filteredQuery = $this->getFilteredKaryawanQuery();
+        $paginated = $filteredQuery->paginate($this->perPage);
+
+        return view('livewire.laporan.kepegawaian.index', [
+            'stats' => $this->stats,
+            'karyawanList' => $paginated,
+            'karyawans' => $paginated,
+            'bagianList' => Bagian::where('is_active', true)->get(),
+            'bagianBreakdown' => $this->bagianBreakdown,
+        ]);
+    }
 }

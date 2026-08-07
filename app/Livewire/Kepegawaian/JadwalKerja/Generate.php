@@ -241,7 +241,7 @@ class Generate extends Component
         $user = Auth::user();
         $ruanganQuery = \App\Models\Ruangan::where('is_active', true);
         
-        if ($user && !$user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+        if ($user && !$user->can('add-kepegawaian-jadwal-kerja') && !$user->can('edit-kepegawaian-jadwal-kerja')) {
             $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
             if ($user->karyawan?->ruangan_id) {
                 $ruanganIds[] = $user->karyawan->ruangan_id;

@@ -24,6 +24,21 @@ class Karyawan extends Model
         'kategori_kerja' => KategoriKerja::class,
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Karyawan $karyawan) {
+            if ($karyawan->wasChanged('kategori_kerja')) {
+                $kategori = $karyawan->kategori_kerja instanceof KategoriKerja
+                    ? $karyawan->kategori_kerja
+                    : KategoriKerja::tryFrom($karyawan->kategori_kerja);
+
+                if ($kategori === KategoriKerja::REGULER) {
+                    \App\Models\Sdm\JadwalKerja::syncKaryawanRegulerSchedule($karyawan->id);
+                }
+            }
+        });
+    }
+
     public function user(): HasOne
     {
         return $this->hasOne(User::class, 'karyawan_id');

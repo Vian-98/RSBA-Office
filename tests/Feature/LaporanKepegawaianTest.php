@@ -55,7 +55,7 @@ class LaporanKepegawaianTest extends TestCase
         $user = $this->createUser();
 
         $this->actingAs($user)
-            ->get(route('kepegawaian.laporan.index'))
+            ->get('/kepegawaian/laporan')
             ->assertStatus(200);
 
         Livewire::actingAs($user)

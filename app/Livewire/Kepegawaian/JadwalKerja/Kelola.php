@@ -59,7 +59,11 @@ class Kelola extends Component
         $canManage = false;
 
         if ($user) {
-            $isRestrictedGuest = $user->hasRole('Guest') && !$user->isKoordinator();
+            $isRestrictedGuest = $user->hasRole('Guest')
+                && !$user->isKoordinator()
+                && !$user->isKepalaDept()
+                && !$user->isWadir()
+                && !$user->can('view-kepegawaian-jadwal-kerja');
 
             if ($isRestrictedGuest) {
                 $canView = in_array(
@@ -73,17 +77,14 @@ class Kelola extends Component
                 && $this->jadwalKerja->tipe === ($user->isDokter() ? 'dokter' : 'karyawan');
             }
 
-            $isGlobalApprover = $user->hasRole([
-                'Super-Admin', 'Staff-SDM', 'Wakil-Direktur',
-                'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'
-            ]) || $user->can('approve-jadwal-wadir');
+            $isGlobalApprover = $user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir') || $user->can('view-kepegawaian-laporan');
 
             if (!$isRestrictedGuest && $isGlobalApprover) {
                 $canView = true;
-                if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+                if ($user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir')) {
                     $canManage = true;
                 }
-            } elseif (!$isRestrictedGuest && ($user->hasRole('Kepala-Bidang') || $user->can('approve-jadwal-kabid'))) {
+            } elseif (!$isRestrictedGuest && ($user->can('approve-jadwal-kabid') || $user->isKepalaDept())) {
                 $bagianIds = $user->getActiveBagianIds();
                 $legacyBagianRuanganIds = $user->getBagianScopedRuanganIds() ?? [];
                 $koorIds = $user->getRuanganKoordinatorIds() ?? [];
@@ -105,8 +106,8 @@ class Kelola extends Component
             $koorIds = $user->isKoordinator() ? $user->getRuanganKoordinatorIds() : [];
 
             if ($koorIds === null) {
-                // Access all rooms for Super-Admin / SDM / Wadir
-                if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+                // Access all rooms for SDM / Wadir / Super-Admin
+                if ($user->can('edit-kepegawaian-jadwal-kerja')) {
                     $canView = true;
                     $canManage = true;
                 }
@@ -117,7 +118,7 @@ class Kelola extends Component
 
             if (!$isRestrictedGuest && $ownRuanganId && $this->jadwalKerja->ruangan_id === $ownRuanganId) {
                 $canView = true;
-                if ($user->isKoordinator() || $user->hasRole('Kepala-Bidang')) {
+                if ($user->isKoordinator() || $user->can('approve-jadwal-kabid') || $user->isKepalaDept()) {
                     $canManage = true;
                 }
             }
@@ -175,7 +176,7 @@ class Kelola extends Component
             StatusJadwalKerja::DITOLAK,
             StatusJadwalKerja::PUBLISHED,
         ]);
-        $this->isReadOnly = (!$isEditableStatus && !($user && $user->hasRole('Super-Admin'))) || !$canManage;
+        $this->isReadOnly = (!$isEditableStatus && !($user && ($user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir')))) || !$canManage;
 
         // Populate dates for header
         $daysInMonth = Carbon::create($this->jadwalKerja->tahun, $this->jadwalKerja->bulan, 1)->daysInMonth;

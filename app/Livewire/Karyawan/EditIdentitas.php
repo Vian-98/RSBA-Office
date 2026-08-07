@@ -99,7 +99,8 @@ class EditIdentitas extends Component
 
     public function render()
     {
-        $canEditTglMasuk = auth()->user()->hasRole('Staff-SDM') || auth()->user()->hasRole('Super-Admin');
+        $user = auth()->user();
+        $canEditTglMasuk = $user && ($user->can('edit-tgl-masuk-karyawan') || $user->can('edit-kepegawaian-karyawan'));
         return view('livewire.karyawan.edit-identitas', compact('canEditTglMasuk'));
     }
 }
