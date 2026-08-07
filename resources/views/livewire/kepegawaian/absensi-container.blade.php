@@ -30,11 +30,11 @@
 
         <div class="mt-4">
             @if($tab === 'kontrol')
-                @livewire('kepegawaian.absensi.index')
+                <livewire:kepegawaian.absensi.index lazy />
             @endif
             @can('view-kepegawaian-absensi')
                 @if($tab === 'rekap')
-                    @livewire('kepegawaian.absensi.rekap')
+                    <livewire:kepegawaian.absensi.rekap lazy />
                 @endif
             @endcan
         </div>

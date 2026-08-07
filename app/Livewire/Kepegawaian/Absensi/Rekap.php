@@ -12,11 +12,34 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use TallStackUi\Traits\Interactions;
 
+use Livewire\Attributes\Lazy;
+
+#[Lazy]
 #[Title('Rekap Absensi')]
 class Rekap extends Component
 {
     use Interactions;
     use WithPagination;
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="animate-pulse space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="h-24 bg-slate-100 rounded-xl border border-slate-200"></div>
+                <div class="h-24 bg-slate-100 rounded-xl border border-slate-200"></div>
+                <div class="h-24 bg-slate-100 rounded-xl border border-slate-200"></div>
+            </div>
+            <div class="h-80 bg-slate-100 rounded-xl border border-slate-200"></div>
+        </div>
+        HTML;
+    }
 
     public $bulan;
     public $tahun;

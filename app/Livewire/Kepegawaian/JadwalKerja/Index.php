@@ -31,6 +31,25 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
     protected $listeners = ['jadwal-kerja-generated' => '$refresh'];
 
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="animate-pulse space-y-6">
+            <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
+                <div class="h-8 bg-slate-200 rounded w-1/3"></div>
+                <div class="h-10 bg-slate-200 rounded w-1/6"></div>
+            </div>
+            <div class="h-96 bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+                <div class="h-10 bg-slate-100 rounded"></div>
+                <div class="h-12 bg-slate-50 rounded"></div>
+                <div class="h-12 bg-slate-50 rounded"></div>
+                <div class="h-12 bg-slate-50 rounded"></div>
+                <div class="h-12 bg-slate-50 rounded"></div>
+            </div>
+        </div>
+        HTML;
+    }
+
     public function mount()
     {
         // Membuka halaman jadwal tidak boleh membuat data baru untuk user
