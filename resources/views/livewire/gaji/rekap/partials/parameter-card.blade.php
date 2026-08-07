@@ -1,5 +1,5 @@
 <!-- Parameter Aktif Card -->
-<div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-2xs space-y-4 flex-1">
+<div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-2xs space-y-4 h-full flex flex-col justify-between">
     <div class="flex items-center justify-between border-b border-slate-50 pb-3">
         <div>
             <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Parameter Aktif</h2>

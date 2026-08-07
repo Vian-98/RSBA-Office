@@ -9,6 +9,7 @@ use App\Models\Sdm\JadwalShift;
 use App\Models\Sdm\Karyawan;
 use App\Enums\KategoriKerja;
 use App\Enums\StatusKaryawan;
+use App\Services\AturanJadwalService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ class Generate extends Component
     use Interactions;
 
     public $ruangan_id;
+    public $bagian_id;
     public $bulan;
     public $tahun;
 
@@ -28,6 +30,7 @@ class Generate extends Component
     {
         return [
             'ruangan_id' => 'required|exists:ruangan,id',
+            'bagian_id' => 'nullable|exists:bagian,id',
             'bulan' => 'required|integer|min:1|max:12',
             'tahun' => 'required|integer|min:2024|max:2099',
         ];
@@ -40,7 +43,12 @@ class Generate extends Component
         $this->tahun = date('Y');
     }
 
-    public function submit()
+    public function updatedRuanganId(): void
+    {
+        $this->bagian_id = null;
+    }
+
+    public function submit(AturanJadwalService $aturanJadwalService)
     {
         $this->validate();
 
@@ -76,16 +84,45 @@ class Generate extends Component
 
         $karyawans = $karyawansQuery->get();
 
+        $resolvedBagianId = JadwalKerja::resolveBagianIdForKaryawanIds(
+            $karyawans->pluck('id'),
+            (int) $this->ruangan_id
+        );
+
+        if ($this->bagian_id) {
+            $candidateBagianIds = $karyawans->map(fn ($karyawan) => $karyawan->active_bagian_id)->filter()->unique();
+            if ($candidateBagianIds->isNotEmpty() && !$candidateBagianIds->contains((int) $this->bagian_id)) {
+                $this->toast()->error('Gagal', 'Bagian yang dipilih tidak sesuai dengan penugasan aktif pegawai di ruangan ini.')->send();
+                return;
+            }
+            $resolvedBagianId = (int) $this->bagian_id;
+        }
+
+        $candidateBagianIds = $karyawans->map(fn ($karyawan) => $karyawan->active_bagian_id)->filter()->unique();
+        if ($candidateBagianIds->count() > 1 && !$this->bagian_id) {
+            $this->toast()->error('Gagal', 'Pegawai di ruangan ini berasal dari beberapa bagian. Pilih Bagian Jadwal terlebih dahulu.')->send();
+            return;
+        }
+
+        if (!$resolvedBagianId) {
+            $this->toast()->error('Gagal', 'Jadwal belum memiliki Bagian. Lengkapi penugasan pegawai atau mapping legacy ruangan terlebih dahulu.')->send();
+            return;
+        }
+
         $hasReguler = $karyawans->contains(function ($k) {
             return $k->kategori_kerja === KategoriKerja::REGULER;
         });
 
         $shiftReguler = null;
         if ($hasReguler) {
-            // Cek apakah ada shift REGULER
-            $shiftReguler = JadwalShift::where('kode', 'REGULER')->where('aktif', true)->first();
+            // REGULER harus termasuk shift yang berlaku untuk Bagian jadwal.
+            $shiftReguler = $aturanJadwalService
+                ->shiftValidUntukRuangan((int) $this->ruangan_id, $resolvedBagianId)
+                ->first(fn ($ruanganShift) => $ruanganShift->shift?->kode === 'REGULER')
+                ?->shift;
+
             if (!$shiftReguler) {
-                $this->toast()->error('Gagal', 'Ruangan ini memiliki pegawai reguler, namun Master Shift dengan kode REGULER belum dibuat atau tidak aktif.')->send();
+                $this->toast()->error('Gagal', 'Shift REGULER belum diizinkan untuk Bagian pada jadwal ini. Atur Bagian pada Master Shift REGULER terlebih dahulu.')->send();
                 return;
             }
         }
@@ -95,6 +132,7 @@ class Generate extends Component
 
             $jadwalKerja = JadwalKerja::create([
                 'ruangan_id' => $this->ruangan_id,
+                'bagian_id' => $resolvedBagianId,
                 'bulan' => $this->bulan,
                 'tahun' => $this->tahun,
                 'tipe' => $tipeJadwal,
@@ -203,7 +241,7 @@ class Generate extends Component
         $user = Auth::user();
         $ruanganQuery = \App\Models\Ruangan::where('is_active', true);
         
-        if ($user && !$user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+        if ($user && !$user->can('add-kepegawaian-jadwal-kerja') && !$user->can('edit-kepegawaian-jadwal-kerja')) {
             $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
             if ($user->karyawan?->ruangan_id) {
                 $ruanganIds[] = $user->karyawan->ruangan_id;
@@ -213,8 +251,31 @@ class Generate extends Component
 
         $ruanganOptions = $ruanganQuery->select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray();
 
+        $bagianOptions = Bagian::query()
+            ->where('is_active', true)
+            ->orderBy('nama')
+            ->get()
+            ->map(fn ($item) => ['value' => $item->id, 'label' => $item->nama])
+            ->toArray();
+
+        $requiresBagianSelection = false;
+        if ($this->ruangan_id) {
+            $previewKaryawans = Karyawan::with('jabatan')
+                ->where('ruangan_id', $this->ruangan_id)
+                ->whereNull('resign_at')
+                ->get();
+
+            $requiresBagianSelection = $previewKaryawans
+                ->map(fn ($karyawan) => $karyawan->active_bagian_id)
+                ->filter()
+                ->unique()
+                ->count() > 1;
+        }
+
         return view('livewire.kepegawaian.jadwal-kerja.generate', [
             'ruanganOptions' => $ruanganOptions,
+            'bagianOptions' => $bagianOptions,
+            'requiresBagianSelection' => $requiresBagianSelection,
             'bulanOptions' => $bulanOptions,
             'tahunOptions' => $tahunOptions,
         ]);

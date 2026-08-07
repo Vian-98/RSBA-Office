@@ -59,6 +59,20 @@ class RoleSeeder extends Seeder
         ];
         $executivePermissions = array_values(array_filter($allPermissions, fn($p) => !in_array($p, $systemSettingsOnly)));
 
+        $wadirMedis = Role::firstOrCreate(['name' => 'Wadir-Medis-Keperawatan']);
+        $wadirSdm   = Role::firstOrCreate(['name' => 'Wadir-SDM-Umum']);
+        $wadirKeu   = Role::firstOrCreate(['name' => 'Wadir-Keuangan']);
+        $direktur   = Role::firstOrCreate(['name' => 'Direktur']);
+
+        $safeSync($kabid, $executivePermissions);
+        $safeSync($wadir, $executivePermissions);
+        $safeSync($wadirMedis, $executivePermissions);
+        $safeSync($wadirSdm, $executivePermissions);
+        $safeSync($wadirKeu, $executivePermissions);
+        $safeSync($direktur, $executivePermissions);
+
+
+
         $safeSync($kabid, array_unique(array_merge($executivePermissions, ['approve-jadwal-kabid'])));
         $safeSync($wadir, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir'])));
 
@@ -100,6 +114,18 @@ class RoleSeeder extends Seeder
         });
         $keuangan->syncPermissions(array_unique(array_merge($keuanganPermissions, $commonPermissions)));
 
+        $wadirMedis = Role::firstOrCreate(['name' => 'Wadir-Medis-Keperawatan']);
+        $wadirSdm   = Role::firstOrCreate(['name' => 'Wadir-SDM-Umum']);
+        $wadirKeu   = Role::firstOrCreate(['name' => 'Wadir-Keuangan']);
+        $direktur   = Role::firstOrCreate(['name' => 'Direktur']);
+
+        $safeSync($kabid, $executivePermissions);
+        $safeSync($wadir, $executivePermissions);
+        $safeSync($wadirMedis, $executivePermissions);
+        $safeSync($wadirSdm, $executivePermissions);
+        $safeSync($wadirKeu, $executivePermissions);
+        $safeSync($direktur, $executivePermissions);
+
         // 4. Administrasi permissions
         $admKeywords = ['administrasi', 'pasien', 'registrasi'];
         $admPermissions = array_filter($allPermissions, function ($permission) use ($admKeywords) {
@@ -119,7 +145,10 @@ class RoleSeeder extends Seeder
         $staffIt->syncPermissions($allPermissions);
 
         // Common Guest / Staff Basic permissions
-        $guest->syncPermissions($commonPermissions);
+        $guest->syncPermissions(array_unique(array_merge(
+            $commonPermissions,
+            ['view-kepegawaian-jadwal-kerja']
+        )));
         
         // 7. Bedah & UGD basic permissions
         $staffBedah->syncPermissions($commonPermissions);

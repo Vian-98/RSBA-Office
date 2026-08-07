@@ -64,6 +64,16 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     ])
             ])
             ->recordActions([
+                Action::make('aturanJadwal')
+                    ->label('Aturan Jadwal')
+                    ->tooltip('Atur Aturan Jadwal Departemen')
+                    ->iconButton()
+                    ->icon('tabler-adjustments')
+                    ->color('indigo')
+                    ->action(function (Bagian $record, $livewire) {
+                        $livewire->dispatch('open-modal-aturan-bagian', bagianId: $record->id);
+                        $livewire->dispatch('open-modal', id: 'modal-aturan-bagian');
+                    }),
                 Action::make('delete')
                     ->iconButton()
                     ->icon('tabler-trash')

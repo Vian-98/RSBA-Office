@@ -24,7 +24,8 @@ class DigitalSignatureService
      */
     private function opensslBin(): string
     {
-        return env('OPENSSL_BIN', 'openssl');
+        $bin = env('OPENSSL_BIN', 'openssl');
+        return str_contains($bin, ' ') ? "\"{$bin}\"" : $bin;
     }
 
     /**
@@ -39,8 +40,13 @@ class DigitalSignatureService
         
         $fallbacks = [
             'C:/xampp/apache/conf/openssl.cnf',
+            'C:\\xampp\\apache\\bin\\openssl.cnf',
+            'C:\\Program Files\\Git\\usr\\ssl\\openssl.cnf',
+            'C:\\Program Files (x86)\\Git\\usr\\ssl\\openssl.cnf',
             'C:/Program Files/Common Files/SSL/openssl.cnf',
             'C:/Program Files (x86)/Common Files/SSL/openssl.cnf',
+            '/etc/ssl/openssl.cnf',
+            '/usr/lib/ssl/openssl.cnf',
         ];
         
         foreach ($fallbacks as $fb) {
@@ -362,6 +368,64 @@ class DigitalSignatureService
         int $expiryDays,
         array $sanDomains
     ): void {
+        // Try native PHP OpenSSL generation first (robust cross-platform, no CLI dependency)
+        try {
+            $tempCnf = sys_get_temp_dir() . '/clean_openssl_' . uniqid() . '.cnf';
+            file_put_contents($tempCnf, "[ req ]\ndefault_bits = 2048\ndistinguished_name = req_dn\nprompt = no\n\n[ req_dn ]\nC = ID\nST = Lampung\nL = Bandar Lampung\nO = RSBA\nOU = IT\nCN = Sistem RSBA\n");
+            $configArgs = ['config' => $tempCnf];
+
+            $privKey = openssl_pkey_new(array_merge([
+                "private_key_bits" => self::DEFAULT_KEY_SIZE,
+                "private_key_type" => OPENSSL_KEYTYPE_RSA,
+            ], $configArgs));
+
+            if ($privKey) {
+                openssl_pkey_export($privKey, $pkeyStr, null, $configArgs);
+                file_put_contents($paths['privateKey'], $pkeyStr);
+
+                $dn = [];
+                $parts = array_filter(explode('/', $subject));
+                foreach ($parts as $part) {
+                    $kv = explode('=', $part, 2);
+                    if (count($kv) === 2) {
+                        $keyMap = [
+                            'C' => 'countryName',
+                            'ST' => 'stateOrProvinceName',
+                            'L' => 'localityName',
+                            'O' => 'organizationName',
+                            'OU' => 'organizationalUnitName',
+                            'CN' => 'commonName',
+                            'emailAddress' => 'emailAddress',
+                        ];
+                        $mapKey = $keyMap[$kv[0]] ?? $kv[0];
+                        $dn[$mapKey] = $kv[1];
+                    }
+                }
+
+                $csr = openssl_csr_new($dn, $privKey, $configArgs);
+                if ($csr) {
+                    openssl_csr_export($csr, $csrStr);
+                    file_put_contents($paths['csr'], $csrStr);
+
+                    $sscert = openssl_csr_sign($csr, null, $privKey, $expiryDays, $configArgs);
+                    if ($sscert) {
+                        openssl_x509_export($sscert, $certStr);
+                        file_put_contents($paths['cert'], $certStr);
+
+                        $p12out = '';
+                        if (openssl_pkcs12_export($sscert, $p12out, $privKey, $password)) {
+                            file_put_contents($paths['p12'], $p12out);
+                            @unlink($tempCnf);
+                            return;
+                        }
+                    }
+                }
+            }
+            @unlink($tempCnf);
+        } catch (\Throwable $e) {
+            // Fall back to CLI execution
+        }
+
         /** ::Generate Private Key::
          * shell_exec("openssl genrsa -out {$paths['privateKey']} " . self::DEFAULT_KEY_SIZE);
          */
@@ -389,13 +453,14 @@ class DigitalSignatureService
         $this->execPKCS12($paths, $password);
     }
 
+
     /**
      * Shell: create private key file.
      */
     private function execSSLPrivateKey(array $paths): void
     {
         $bin = $this->opensslBin();
-        shell_exec("\"{$bin}\" genrsa -out {$paths['privateKey']} " . self::DEFAULT_KEY_SIZE);
+        shell_exec("{$bin} genrsa -out \"{$paths['privateKey']}\" " . self::DEFAULT_KEY_SIZE);
 
         if (!file_exists($paths['privateKey']) || filesize($paths['privateKey']) === 0) {
             throw new Exception("Tidak berhasil membuat private key file.");
@@ -414,9 +479,9 @@ class DigitalSignatureService
         $escapedSubject = str_replace('"', '\"', $subject);
         
         if (PHP_OS_FAMILY === 'Windows') {
-            $cmd = "\"{$bin}\" req -new -key {$paths['privateKey']} -out {$paths['csr']} -subj \"{$escapedSubject}\"{$configFlag}";
+            $cmd = "{$bin} req -new -key \"{$paths['privateKey']}\" -out \"{$paths['csr']}\" -subj \"{$escapedSubject}\"{$configFlag}";
         } else {
-            $cmd = "\"{$bin}\" req -new -key {$paths['privateKey']} -out {$paths['csr']} -subj '{$subject}'{$configFlag}";
+            $cmd = "{$bin} req -new -key \"{$paths['privateKey']}\" -out \"{$paths['csr']}\" -subj '{$subject}'{$configFlag}";
         }
         
         shell_exec($cmd);
@@ -436,7 +501,7 @@ class DigitalSignatureService
         $this->createSSLv3ConfigFile($configFile, $sanDomains);
 
         $bin = $this->opensslBin();
-        shell_exec("\"{$bin}\" x509 -req -days {$expiryDays} -in {$paths['csr']} -signkey {$paths['privateKey']} -out {$paths['cert']} -extfile {$configFile} -extensions v3_req");
+        shell_exec("{$bin} x509 -req -days {$expiryDays} -in \"{$paths['csr']}\" -signkey \"{$paths['privateKey']}\" -out \"{$paths['cert']}\" -extfile \"{$configFile}\" -extensions v3_req");
 
         if (!file_exists($paths['cert']) || filesize($paths['cert']) === 0) {
             throw new Exception("Tidak berhasil membuat X.509 sertifikat.");
@@ -455,7 +520,7 @@ class DigitalSignatureService
         if (!openssl_pkcs12_export($cert, $p12Content, $privateKey, $password)) {
             // Fallback to CLI if native function fails
             $bin = $this->opensslBin();
-            shell_exec("\"{$bin}\" pkcs12 -export -out {$paths['p12']} -inkey {$paths['privateKey']} -in {$paths['cert']} -password pass:{$password}");
+            shell_exec("{$bin} pkcs12 -export -out \"{$paths['p12']}\" -inkey \"{$paths['privateKey']}\" -in \"{$paths['cert']}\" -password pass:{$password}");
         } else {
             file_put_contents($paths['p12'], $p12Content);
         }

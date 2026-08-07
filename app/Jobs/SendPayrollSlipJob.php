@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Mail\SlipGajiMail;
 use App\Models\Sdm\Karyawan;
 use App\Models\Sdm\PayrollSendLog;
-use App\Services\PayrollCalculator;
+use App\Livewire\Gaji\Services\PayrollCalculator;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

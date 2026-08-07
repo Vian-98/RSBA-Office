@@ -23,9 +23,9 @@ class EditIdentitas extends Component
     public $agama_options;
     public $jk_options;
     public $pernikahan_options = [
-        ['value' => 'belum', 'label' => 'Belum Menikah'],
+        ['value' => 'belum_menikah', 'label' => 'Belum Menikah'],
         ['value' => 'menikah', 'label' => 'Menikah'],
-        ['value' => 'single', 'label' => 'Janda/Duda']
+        ['value' => 'janda_duda', 'label' => 'Janda/Duda']
     ];
 
     public $ptkp_options = [
@@ -99,7 +99,8 @@ class EditIdentitas extends Component
 
     public function render()
     {
-        $canEditTglMasuk = auth()->user()->hasRole('Staff-SDM') || auth()->user()->hasRole('Super-Admin');
+        $user = auth()->user();
+        $canEditTglMasuk = $user && ($user->can('edit-tgl-masuk-karyawan') || $user->can('edit-kepegawaian-karyawan'));
         return view('livewire.karyawan.edit-identitas', compact('canEditTglMasuk'));
     }
 }

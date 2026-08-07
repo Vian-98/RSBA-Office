@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Sdm\Karyawan;
+use App\Models\Sdm\JadwalShift;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Str;
 
@@ -70,7 +71,7 @@ class KaryawanExcelSeeder extends Seeder
                 // Batasi nama shift maksimal 30 karakter sesuai migration
                 $namaShift = substr($sd['nama'], 0, 30);
                 
-                $shift = \App\Models\Sdm\JadwalShift::firstOrCreate(
+                $shift = JadwalShift::firstOrCreate(
                     ['kode' => $sd['kode']],
                     array_merge($sd, ['nama' => $namaShift, 'aktif' => true])
                 );
