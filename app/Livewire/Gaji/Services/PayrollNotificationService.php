@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Livewire\Gaji\Services;
 
 use App\Models\Sdm\Karyawan;
 use App\Models\Sdm\PayrollSendLog;
@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\DB;
 
 class PayrollNotificationService
 {
-    /**
-     * Trigger background queue worker cross-platform.
-     */
     public function triggerQueueWorker(): void
     {
         if (str_contains(PHP_OS_FAMILY, 'Windows')) {
@@ -20,9 +17,6 @@ class PayrollNotificationService
         }
     }
 
-    /**
-     * Send email slip gaji to a single employee.
-     */
     public function sendSingleEmail(int $karyawanId, string $periode): array
     {
         $karyawan = Karyawan::with(['user'])->find($karyawanId);
@@ -36,20 +30,20 @@ class PayrollNotificationService
             return ['status' => 'warning', 'message' => 'Karyawan ini tidak memiliki alamat email terdaftar.'];
         }
 
-        PayrollSendLog::updateOrCreate(
-            ['periode' => $periode, 'karyawan_id' => $karyawanId],
-            ['email' => $email, 'status' => 'pending', 'tipe_pengiriman' => 'manual', 'error_message' => null]
-        );
+        try {
+            \App\Jobs\SendPayrollSlipJob::dispatchSync($karyawanId, $periode, 'manual');
 
-        \App\Jobs\SendPayrollSlipJob::dispatch($karyawanId, $periode, 'manual');
-        $this->triggerQueueWorker();
+            $log = PayrollSendLog::where('periode', $periode)->where('karyawan_id', $karyawanId)->first();
+            if ($log && $log->status === 'failed') {
+                return ['status' => 'error', 'message' => 'Gagal mengirim email ke ' . $email . ': ' . ($log->error_message ?: 'Terjadi kesalahan pengiriman SMTP.')];
+            }
 
-        return ['status' => 'success', 'message' => 'Pengiriman email slip gaji ke ' . $email . ' sedang berjalan di background.'];
+            return ['status' => 'success', 'message' => 'Email slip gaji berhasil dikirimkan ke ' . $email];
+        } catch (\Throwable $e) {
+            return ['status' => 'error', 'message' => 'Gagal mengirim email ke ' . $email . ': ' . $e->getMessage()];
+        }
     }
 
-    /**
-     * Dispatch bulk payroll slips queue for all active employees in a period.
-     */
     public function dispatchBulkQueue(string $periode): int
     {
         $employees = Karyawan::whereNull('resign_at')->get();
@@ -97,9 +91,6 @@ class PayrollNotificationService
         return $dispatchedCount;
     }
 
-    /**
-     * Get Auto-Send Email configurations.
-     */
     public function getAutoSendSettings(): array
     {
         $lastRunRaw = DB::table('sdm_payroll_settings')->where('key', 'auto_send_email_last_run')->value('value');
@@ -114,9 +105,6 @@ class PayrollNotificationService
         ];
     }
 
-    /**
-     * Save Auto-Send Email configurations.
-     */
     public function saveAutoSendSettings(array $settings): void
     {
         DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_enabled'], ['value' => !empty($settings['enabled']) ? '1' : '0', 'updated_at' => now()]);
@@ -126,9 +114,6 @@ class PayrollNotificationService
         DB::table('sdm_payroll_settings')->updateOrInsert(['key' => 'auto_send_email_delay_seconds'], ['value' => (string) ($settings['delaySeconds'] ?? 3), 'updated_at' => now()]);
     }
 
-    /**
-     * Refresh progress for instant batch email sending.
-     */
     public function refreshBatchProgress(string $periode, int $batchTotalCount): array
     {
         $successCount = PayrollSendLog::where('periode', $periode)->where('status', 'sent')->count();

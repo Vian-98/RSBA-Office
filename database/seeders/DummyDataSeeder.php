@@ -75,12 +75,15 @@ class DummyDataSeeder extends Seeder
         }
 
         if (Schema::hasTable('surat_cuti_jenis')) {
-            DB::table('surat_cuti_jenis')->insert([
-                ['id' => 1, 'nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
-                ['id' => 2, 'nama' => 'Cuti Sakit', 'lama' => 0, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
-                ['id' => 3, 'nama' => 'Cuti Melahirkan', 'lama' => 90, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
-                ['id' => 4, 'nama' => 'Cuti Alasan Penting', 'lama' => 5, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
-            ]);
+            $items = [
+                ['id' => 1, 'nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y'],
+                ['id' => 2, 'nama' => 'Izin Sakit', 'lama' => 0, 'periode' => 'Y'],
+                ['id' => 3, 'nama' => 'Cuti Melahirkan', 'lama' => 90, 'periode' => 'Y'],
+            ];
+            foreach ($items as $item) {
+                DB::table('surat_cuti_jenis')->updateOrInsert(['id' => $item['id']], array_merge($item, ['updated_at' => now(), 'created_at' => now()]));
+            }
+            DB::table('surat_cuti_jenis')->where('id', '>', 3)->delete();
         }
 
         // 3. Re-enable Foreign Key Checks
@@ -319,7 +322,7 @@ class DummyDataSeeder extends Seeder
             $userPerawat = User::updateOrCreate(
                 ['email' => 'perawat@rsba.com'],
                 [
-                    'password' => '1234',
+                    'password' => Hash::make('1234'),
                     'karyawan_id' => $karyawanPerawat->id,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -363,14 +366,7 @@ class DummyDataSeeder extends Seeder
         }
         DB::table('sdm_kary_pendidikan')->insert($pendidikans);
 
-        // 9. Seed CutiJenis
-        $cutiJenis = [
-            ['nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Cuti Sakit', 'lama' => 3, 'periode' => 'M', 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Cuti Melahirkan', 'lama' => 90, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
-            ['nama' => 'Cuti Alasan Penting', 'lama' => 5, 'periode' => 'Y', 'created_at' => now(), 'updated_at' => now()],
-        ];
-        DB::table('surat_cuti_jenis')->insert($cutiJenis);
+        // 9. Fetch CutiJenis IDs
         $cutiJenisIds = DB::table('surat_cuti_jenis')->pluck('id')->toArray();
 
         // 10. Seed SuratCuti

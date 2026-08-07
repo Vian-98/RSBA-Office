@@ -8,6 +8,7 @@ use App\Models\Sdm\Karyawan;
 use App\Models\Sdm\KaryawanJabatan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
@@ -161,6 +162,14 @@ class StrukturOrganisasiSeeder extends Seeder
         $b_keperawatan = Bagian::firstOrCreate(['nama' => 'Keperawatan'], ['is_active' => true, 'group' => 'medis'])->id;
         $b_sdm = Bagian::firstOrCreate(['nama' => 'SDM & Umum'], ['is_active' => true, 'group' => 'manajemen'])->id;
         $b_keuangan = Bagian::firstOrCreate(['nama' => 'Keuangan'], ['is_active' => true, 'group' => 'manajemen'])->id;
+        $b_farmasi = Bagian::firstOrCreate(['nama' => 'Farmasi'], ['is_active' => true, 'group' => 'penunjang'])->id;
+
+        // Ensure parent_id is nullable
+        try {
+            if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite') {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE sdm_jabatan MODIFY COLUMN parent_id BIGINT UNSIGNED NULL");
+            }
+        } catch (\Throwable $e) {}
 
         // 2. Build Tree Structure Nodes (Parent-Child Hierarchy)
         
@@ -650,6 +659,7 @@ class StrukturOrganisasiSeeder extends Seeder
                 'karyawan_id' => $karyawan->id,
                 'jabatan_id' => $jabatan->id,
             ], [
+                'bagian_id' => $jabatan->bagian_id,
                 'tgl_mulai' => '2020-01-01',
             ]);
 
@@ -678,5 +688,47 @@ class StrukturOrganisasiSeeder extends Seeder
 
 
         Schema::enableForeignKeyConstraints();
+
+        // Auto-sync tingkat_id untuk seluruh sdm_jabatan berdasarkan pola nama
+        DB::table('sdm_jabatan')->where('nama', 'like', '%direktur utama%')->orWhere('nama', 'like', '%dewan pengawas%')->update(['tingkat_id' => 1]);
+        DB::table('sdm_jabatan')->where('nama', 'like', '%wadir%')->orWhere('nama', 'like', '%wakil direktur%')->update(['tingkat_id' => 2]);
+        DB::table('sdm_jabatan')->where('nama', 'like', '%kabid%')->orWhere('nama', 'like', '%kepala bidang%')->orWhere('nama', 'like', '%kabag%')->orWhere('nama', 'like', '%kepala bagian%')->orWhere('nama', 'like', '%manajer%')->update(['tingkat_id' => 3]);
+        DB::table('sdm_jabatan')->where('nama', 'like', '%koordinator%')->orWhere('nama', 'like', '%karu%')->orWhere('nama', 'like', '%kepala ruangan%')->update(['tingkat_id' => 4]);
+
+        // Bagian hanya ditetapkan pada penugasan karyawan/jadwal.
+        // Master Ruangan dikelola manual dan tidak lagi dipetakan ke Bagian di sini.
+        if ($b_farmasi) {
+            // Buat/update jabatan Kepala Bidang Farmasi
+            $kabidFarmasi = Jabatan::updateOrCreate(
+                ['nama' => 'Kepala Bidang Farmasi'],
+                [
+                    'kode_surat' => 'KABID-FAR',
+                    'bagian_id' => $b_farmasi,
+                    'tingkat_id' => 3,
+                    'tunjangan_jabatan' => 2500000,
+                ]
+            );
+
+            // Assign Andi Surya sebagai Kabid Farmasi
+            $andiSurya = Karyawan::where('nama', 'like', '%Andi Surya%')->first();
+            if ($andiSurya && $kabidFarmasi) {
+                KaryawanJabatan::updateOrCreate(
+                    [
+                        'karyawan_id' => $andiSurya->id,
+                        'jabatan_id'  => $kabidFarmasi->id,
+                    ],
+                    [
+                        'bagian_id'   => $kabidFarmasi->bagian_id,
+                        'tgl_mulai'   => '2024-01-01',
+                        'tgl_berakhir'=> null,
+                    ]
+                );
+
+                if ($andiSurya->user) {
+                    Role::firstOrCreate(['name' => 'Kepala-Bidang']);
+                    $andiSurya->user->assignRole('Kepala-Bidang');
+                }
+            }
+        }
     }
 }

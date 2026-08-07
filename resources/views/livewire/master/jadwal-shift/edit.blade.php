@@ -18,6 +18,17 @@
             <x-ts:input type="number" wire:model.defer="toleransi_telat_menit" label="Toleransi Telat (Menit)" />
             <x-ts:input type="color" wire:model.defer="warna" label="Warna (Tampilan Kalender)" />
 
+            <x-ts:select.styled
+                wire:model.defer="bagianIds"
+                label="Berlaku untuk Bagian"
+                placeholder="Kosongkan untuk berlaku umum"
+                :options="$bagianOptions"
+                select="label:label|value:value"
+                searchable
+                multiple
+            />
+            <p class="text-xs text-slate-500">Jika tidak memilih Bagian, shift ini berlaku untuk semua Bagian.</p>
+
             <div class="flex flex-col gap-3 mt-2">
                 <x-ts:toggle wire:model.defer="lintas_hari" label="Lintas Hari (Jam Keluar < Jam Masuk)" />
                 <x-ts:toggle wire:model.defer="aktif" label="Aktif" />

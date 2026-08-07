@@ -26,6 +26,7 @@ Route::prefix('karyawan')
         Route::get('/register', [KaryawanController::class, 'register'])->name('register');
         Route::get('/ref', [KaryawanController::class, 'list'])->name('ref');
         Route::get('/listnjabatan/{atasan?}', [KaryawanController::class, 'listWithJabatan'])->name('listnjabatan');
+        Route::get('/atasan-approver/{jabatanId?}', [KaryawanController::class, 'atasanApprover'])->name('atasan.approver');
         Route::get('reg/dokter', [KaryawanController::class, 'registerDokter'])->name('reg.dokter');
     });
 

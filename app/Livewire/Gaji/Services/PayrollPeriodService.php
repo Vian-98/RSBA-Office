@@ -1,15 +1,12 @@
 <?php
 
-namespace App\Services;
+namespace App\Livewire\Gaji\Services;
 
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class PayrollPeriodService
 {
-    /**
-     * Get lock status & permissions for a payroll period.
-     */
     public function getLockStatus(string $periode): array
     {
         $lock = DB::table('sdm_payroll_period_locks')
@@ -38,9 +35,6 @@ class PayrollPeriodService
         ];
     }
 
-    /**
-     * SDM submits draft payroll to Pajak team for review.
-     */
     public function submitToReviewPajak(string $periode): void
     {
         $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
@@ -61,9 +55,6 @@ class PayrollPeriodService
         );
     }
 
-    /**
-     * Pajak team approves & sends back to SDM for final approval.
-     */
     public function approveByPajak(string $periode): void
     {
         $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
@@ -79,9 +70,6 @@ class PayrollPeriodService
         ]);
     }
 
-    /**
-     * Pajak team rejects and sends back to SDM draft.
-     */
     public function rejectByPajak(string $periode): void
     {
         $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
@@ -97,9 +85,6 @@ class PayrollPeriodService
         ]);
     }
 
-    /**
-     * Submit finalisation: Lock period & generate automatic SP3 document.
-     */
     public function submitFinalisasi(
         string $periode,
         string $formSp3Tgl,
@@ -116,7 +101,6 @@ class PayrollPeriodService
 
         DB::beginTransaction();
         try {
-            // 1. Lock period & set approved status
             DB::table('sdm_payroll_period_locks')->where('periode', $periode)->update([
                 'is_approved' => true,
                 'status' => 'approved',
@@ -125,7 +109,6 @@ class PayrollPeriodService
                 'updated_at' => now(),
             ]);
 
-            // 2. Generate automatic SP3 number
             $last = DB::table('surat_sp3')
                 ->select('no')
                 ->where('jabatan_id', $formSp3JabatanId)
@@ -143,7 +126,6 @@ class PayrollPeriodService
             $kodeSurat = $jab->kode_surat ?? 'DIR';
             $noSurat = "{$no}/S4/SP.3/PBA-{$kodeSurat}/{$tanggal}";
 
-            // 3. Create SP3
             $sp3Id = DB::table('surat_sp3')->insertGetId([
                 'no' => $noSurat,
                 'tahun' => date('Y', strtotime($formSp3Tgl)),
@@ -159,7 +141,6 @@ class PayrollPeriodService
                 'updated_at' => now(),
             ]);
 
-            // 4. Create SP3 details
             DB::table('surat_sp3_details')->insert([
                 'sp3_id' => $sp3Id,
                 'keterangan' => 'Total Gaji Bersih Periode ' . Carbon::parse($periode . '-01')->translatedFormat('F Y') . ' (' . $karyawanCount . ' Karyawan)',
@@ -175,14 +156,16 @@ class PayrollPeriodService
         }
     }
 
-    /**
-     * Unlock a locked payroll period.
-     */
     public function unlockPeriode(string $periode, bool $isSuperAdmin = false): void
     {
+        $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
         $sp3 = DB::table('surat_sp3')->where('payroll_periode', $periode)->first();
-        if ($sp3 && $sp3->status === 'approved' && !$isSuperAdmin) {
-            throw new \Exception('Surat SP3 untuk periode ini telah disetujui Direksi. Hanya Super Admin yang dapat membuka kunci.');
+
+        $isFinalized = ($lock && ($lock->status === 'approved' || $lock->is_approved)) || $sp3 !== null;
+        $isSp3Rejected = ($sp3 && $sp3->status === 'rejected');
+
+        if ($isFinalized && !$isSp3Rejected && !$isSuperAdmin) {
+            throw new \Exception('Payroll periode ' . $periode . ' telah dikunci & dikirim ke SP3. Hanya Super Admin yang berhak membuka kunci periode ini.');
         }
 
         DB::beginTransaction();

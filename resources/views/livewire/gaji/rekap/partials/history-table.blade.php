@@ -1,5 +1,5 @@
 <!-- Trend Table -->
-<div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xs flex-1 flex flex-col">
+<div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xs h-full flex flex-col justify-between">
     <div class="px-6 py-4 border-b border-slate-50">
         <h2 class="text-md font-bold text-slate-800">Tabel Riwayat Penggajian</h2>
     </div>
@@ -91,20 +91,22 @@
                                             <x-tabler-lock class="h-4 w-4" />
                                         </button>
                                     @elseif($item['status'] === 'approved')
-                                        @if($item['sp3_status'] === 'approved')
+                                        @if($item['sp3_status'] === 'rejected')
+                                            {{-- SP3 Ditolak Direksi -> SDM boleh buka kunci untuk revisi --}}
+                                            <button type="button" wire:click="unlockPeriode('{{ $item['periode'] }}')" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 transition-all whitespace-nowrap" title="SP3 ditolak Direksi. Buka kunci untuk merevisi.">
+                                                <x-tabler-lock-open class="h-4 w-4" />
+                                            </button>
+                                        @else
+                                            {{-- SP3 Pending / Approved -> Hanya Super Admin yang boleh buka kunci --}}
                                             @role('Super-Admin')
-                                                <button type="button" wire:click="unlockPeriode('{{ $item['periode'] }}')" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-orange-600 bg-orange-50 hover:bg-orange-100 hover:text-orange-800 transition-all whitespace-nowrap" title="Force Unlock (SP3 disetujui Direksi)">
+                                                <button type="button" wire:click="unlockPeriode('{{ $item['periode'] }}')" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-orange-600 bg-orange-50 hover:bg-orange-100 hover:text-orange-800 transition-all whitespace-nowrap" title="Force Unlock (Super Admin)">
                                                     <x-tabler-shield-lock class="h-4 w-4" />
                                                 </button>
                                             @else
-                                                <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 bg-slate-50 border border-slate-200 cursor-not-allowed whitespace-nowrap" title="SP3 sudah disetujui Direksi">
+                                                <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 bg-slate-50 border border-slate-200 cursor-not-allowed whitespace-nowrap" title="Payroll dikunci & dikirim ke SP3. Hanya Super Admin yang dapat membuka kunci.">
                                                     <x-tabler-lock class="h-4 w-4" />
                                                 </span>
                                             @endrole
-                                        @else
-                                            <button type="button" wire:click="unlockPeriode('{{ $item['periode'] }}')" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 transition-all whitespace-nowrap" title="{{ $item['sp3_status'] === 'rejected' ? 'SP3 ditolak Direksi. Buka kunci untuk merevisi.' : 'Buka kunci periode ini.' }}">
-                                                <x-tabler-lock-open class="h-4 w-4" />
-                                            </button>
                                         @endif
                                     @endif
                                 @endif

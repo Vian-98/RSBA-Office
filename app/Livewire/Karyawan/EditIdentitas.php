@@ -23,9 +23,9 @@ class EditIdentitas extends Component
     public $agama_options;
     public $jk_options;
     public $pernikahan_options = [
-        ['value' => 'belum', 'label' => 'Belum Menikah'],
+        ['value' => 'belum_menikah', 'label' => 'Belum Menikah'],
         ['value' => 'menikah', 'label' => 'Menikah'],
-        ['value' => 'single', 'label' => 'Janda/Duda']
+        ['value' => 'janda_duda', 'label' => 'Janda/Duda']
     ];
 
     public $ptkp_options = [

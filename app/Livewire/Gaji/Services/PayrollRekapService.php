@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Livewire\Gaji\Services;
 
 use App\Models\Sdm\Karyawan;
 use Illuminate\Support\Facades\DB;
@@ -8,9 +8,6 @@ use Carbon\Carbon;
 
 class PayrollRekapService
 {
-    /**
-     * Get summary metrics for a given payroll period.
-     */
     public function getSummary(string $periode): array
     {
         $slips = DB::table('sdm_payroll_slips')
@@ -72,9 +69,6 @@ class PayrollRekapService
         ];
     }
 
-    /**
-     * Calculate department breakdown from slips collection.
-     */
     public function getDepartmentBreakdown($slips): array
     {
         $karyawanIds = $slips->pluck('karyawan_id')->unique()->toArray();
@@ -105,9 +99,6 @@ class PayrollRekapService
         return $bagianBreakdown;
     }
 
-    /**
-     * Get 6-month trend statistics ending at specified period.
-     */
     public function getSixMonthTrend(string $periode): array
     {
         $currentDate = Carbon::parse($periode . '-01');
@@ -135,9 +126,6 @@ class PayrollRekapService
         return $trendMonths;
     }
 
-    /**
-     * Generate dynamic insight text based on current and last month metrics.
-     */
     public function generateInsight(string $periode, int $jumlahKaryawan, float $lastMonthNet, float $percentChange): string
     {
         if ($jumlahKaryawan === 0) {
@@ -158,9 +146,6 @@ class PayrollRekapService
         return "Bulan lalu (" . Carbon::parse($periode . '-01')->subMonth()->translatedFormat('F Y') . ") belum memiliki data penggajian. Ini adalah bulan awal rekapitulasi data penggajian yang tercatat di sistem.";
     }
 
-    /**
-     * Export employee payroll list to formatted HTML/Excel stream response.
-     */
     public function exportExcelResponse($karyawans, string $periode)
     {
         $isDecember = str_ends_with($periode, '-12');

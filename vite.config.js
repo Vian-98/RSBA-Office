@@ -26,6 +26,9 @@ export default defineConfig({
         hmr: {
             host: localIp,
         },
+        watch: {
+            ignored: ['**/storage/**', '**/.git/**', '**/vendor/**']
+        }
     },
     plugins: [
         laravel({

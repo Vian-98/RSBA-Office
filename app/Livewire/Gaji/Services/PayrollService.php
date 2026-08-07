@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Livewire\Gaji\Services;
 
 use App\Models\Sdm\Karyawan;
 use Illuminate\Support\Facades\DB;
@@ -8,9 +8,6 @@ use Carbon\Carbon;
 
 class PayrollService
 {
-    /**
-     * Calculate attendance statistics (late minutes, late count, overtime minutes) for an employee in a given period.
-     */
     public function calculateAttendanceStats(int $karyawanId, string $periode): array
     {
         if (empty($periode)) {
@@ -76,9 +73,6 @@ class PayrollService
         ];
     }
 
-    /**
-     * Get prior YTD earnings and tax contributions for December reconciliation.
-     */
     public function getDecemberPriorYtd(int $karyawanId, string $periode): array
     {
         $priorBruto = 0.0;
@@ -109,9 +103,6 @@ class PayrollService
         ];
     }
 
-    /**
-     * Recalculate real-time slip calculations (earnings, deductions, PPh21, December YTD).
-     */
     public function recalculateFormData(
         array $formData,
         array $umkAllocations,
@@ -275,9 +266,6 @@ class PayrollService
         ], $ytdFields);
     }
 
-    /**
-     * Save or update payroll slip for an employee.
-     */
     public function saveSlip(
         int $karyawanId,
         string $periode,
@@ -402,16 +390,7 @@ class PayrollService
                     }
                 }
 
-                if (!empty($changedFields)) {
-                    DB::table('sdm_payroll_slip_edit_logs')->insert([
-                        'payroll_slip_id' => $slip->id,
-                        'karyawan_id' => $karyawanId,
-                        'periode' => $periode,
-                        'user_id' => $userId ?: auth()->id(),
-                        'changed_fields' => json_encode($changedFields),
-                        'created_at' => now(),
-                    ]);
-                }
+                app(PayrollAuditLogService::class)->logEdit($slip->id, $karyawanId, $periode, $changedFields, $userId);
             }
 
             DB::commit();
@@ -421,9 +400,6 @@ class PayrollService
         }
     }
 
-    /**
-     * Get detailed slip view data for modal popup.
-     */
     public function getSlipViewData(int $karyawanId, string $periode): ?array
     {
         $karyawan = Karyawan::with(['jabatan.bagian'])->find($karyawanId);
@@ -452,18 +428,7 @@ class PayrollService
                 ->select('sdm_payroll_allowance_allocations.nama', 'sdm_payroll_allowance_allocations.is_absensi', 'sdm_payroll_slip_allocations.nominal')
                 ->get();
 
-            $editLogs = DB::table('sdm_payroll_slip_edit_logs')
-                ->join('users', 'sdm_payroll_slip_edit_logs.user_id', '=', 'users.id')
-                ->join('sdm_karyawan', 'users.karyawan_id', '=', 'sdm_karyawan.id')
-                ->where('sdm_payroll_slip_edit_logs.payroll_slip_id', $slip->id)
-                ->select('sdm_payroll_slip_edit_logs.*', 'sdm_karyawan.nama as editor_name')
-                ->orderBy('sdm_payroll_slip_edit_logs.created_at', 'desc')
-                ->get()
-                ->map(function ($log) {
-                    $log->changed_fields = json_decode($log->changed_fields, true);
-                    return $log;
-                })
-                ->toArray();
+            $editLogs = app(PayrollAuditLogService::class)->getSlipLogs($slip->id);
 
             return [
                 'id' => $karyawan->id,
@@ -488,9 +453,12 @@ class PayrollService
                 'potongan_absensi' => $slip->potongan_absensi,
                 'potongan_cash_bon' => $slip->potongan_cash_bon,
                 'potongan_obat' => $slip->potongan_obat,
+                'potongan_bpjs_kes' => $slip->potongan_bpjs_kes,
                 'bpjs_kes' => $slip->potongan_bpjs_kes,
+                'potongan_bpjs_tk' => $slip->potongan_bpjs_tk,
                 'bpjs_ket' => $slip->potongan_bpjs_tk,
                 'potongan_lain' => $slip->potongan_lain,
+                'potongan_pph21' => $slip->potongan_pph21,
                 'pajak' => $slip->potongan_pph21,
                 'potongan_bank' => $slip->potongan_bank,
                 'gaji_bersih' => $slip->gaji_bersih,
@@ -530,9 +498,12 @@ class PayrollService
             'potongan_absensi' => 0.0,
             'potongan_cash_bon' => 0.0,
             'potongan_obat' => 0.0,
+            'potongan_bpjs_kes' => $deductions['potongan_bpjs_kes'],
             'bpjs_kes' => $deductions['potongan_bpjs_kes'],
+            'potongan_bpjs_tk' => $deductions['potongan_bpjs_tk'],
             'bpjs_ket' => $deductions['potongan_bpjs_tk'],
             'potongan_lain' => 0.0,
+            'potongan_pph21' => $deductions['potongan_pph21'],
             'pajak' => $deductions['potongan_pph21'],
             'potongan_bank' => 0.0,
             'gaji_bersih' => $gajiBersih,
@@ -543,47 +514,144 @@ class PayrollService
         ];
     }
 
-    /**
-     * Get period edit logs across all employees.
-     */
     public function getPeriodEditLogs(string $periode, string $search = ''): array
     {
-        $query = DB::table('sdm_payroll_slip_edit_logs')
-            ->join('users', 'sdm_payroll_slip_edit_logs.user_id', '=', 'users.id')
-            ->join('sdm_karyawan as editor', 'users.karyawan_id', '=', 'editor.id')
-            ->join('sdm_karyawan as target', 'sdm_payroll_slip_edit_logs.karyawan_id', '=', 'target.id')
-            ->leftJoin('sdm_kary_jabatan as target_kj', function ($join) {
-                $join->on('target.id', '=', 'target_kj.karyawan_id')
-                    ->whereRaw('target_kj.id = (select id from sdm_kary_jabatan where karyawan_id = target.id order by created_at desc limit 1)');
-            })
-            ->leftJoin('sdm_jabatan as target_j', 'target_kj.jabatan_id', '=', 'target_j.id')
-            ->leftJoin('bagian as target_b', 'target_j.bagian_id', '=', 'target_b.id')
-            ->where('sdm_payroll_slip_edit_logs.periode', $periode);
+        return app(PayrollAuditLogService::class)->getPeriodEditLogs($periode, $search);
+    }
 
-        if (!empty($search)) {
-            $s = '%' . $search . '%';
-            $query->where(function ($q) use ($s) {
-                $q->where('editor.nama', 'like', $s)
-                  ->orWhere('target.nama', 'like', $s)
-                  ->orWhere('target.nip', 'like', $s)
-                  ->orWhere('target_b.nama', 'like', $s)
-                  ->orWhere('sdm_payroll_slip_edit_logs.changed_fields', 'like', $s);
-            });
+    public function generateBulkDraftSlips(string $periode, ?int $userId = null): int
+    {
+        $lockStatus = app(PayrollPeriodService::class)->getLockStatus($periode);
+        if ($lockStatus['is_locked']) {
+            throw new \Exception('Periode ini telah dikunci dan tidak dapat diubah.');
         }
 
-        return $query->select(
-                'sdm_payroll_slip_edit_logs.*',
-                'editor.nama as editor_name',
-                'target.nama as employee_name',
-                'target.nip as employee_nip',
-                'target_b.nama as employee_bagian'
-            )
-            ->orderBy('sdm_payroll_slip_edit_logs.created_at', 'desc')
-            ->get()
-            ->map(function ($log) {
-                $log->changed_fields = json_decode($log->changed_fields, true);
-                return (array) $log;
-            })
-            ->toArray();
+        $employees = Karyawan::whereNull('resign_at')->get();
+        $previousPeriode = Carbon::parse($periode . '-01')->subMonth()->format('Y-m');
+        $createdCount = 0;
+
+        DB::beginTransaction();
+        try {
+            foreach ($employees as $karyawan) {
+                $existing = DB::table('sdm_payroll_slips')
+                    ->where('karyawan_id', $karyawan->id)
+                    ->where('periode', $periode)
+                    ->first();
+
+                if ($existing) {
+                    continue;
+                }
+
+                $prevSlip = DB::table('sdm_payroll_slips')
+                    ->where('karyawan_id', $karyawan->id)
+                    ->where('periode', $previousPeriode)
+                    ->first();
+
+                if ($prevSlip) {
+                    $gajiPokok = (double) $prevSlip->gaji_pokok;
+                    $tunjanganTetap = (double) $prevSlip->tunjangan_tetap;
+                    $tunjanganAbsensi = (double) $prevSlip->tunjangan_absensi;
+                    $tunjanganJabatan = (double) $prevSlip->tunjangan_jabatan;
+                    $tunjanganShift = (double) $prevSlip->tunjangan_shift;
+                    $tunjanganRadiologi = (double) $prevSlip->tunjangan_radiologi;
+                    $tunjanganLain = (double) $prevSlip->tunjangan_lain;
+                    $uangLembur = 0.0;
+                    $thr = 0.0;
+                    $bpjsKeluargaTambahan = (int) $prevSlip->bpjs_keluarga_tambahan;
+                    $golongan = $prevSlip->golongan;
+                    $masaKerja = (double) $prevSlip->masa_kerja_tahun;
+                } else {
+                    $base = PayrollCalculator::calculate($karyawan);
+                    $gajiPokok = (double) $base['gaji_pokok'];
+                    $tunjanganTetap = (double) $base['tunjangan_tetap'];
+                    $tunjanganAbsensi = (double) $base['tunjangan_absensi'];
+                    $tunjanganJabatan = (double) $base['tunjangan_jabatan'];
+                    $tunjanganShift = 0.0;
+                    $tunjanganRadiologi = 0.0;
+                    $tunjanganLain = 0.0;
+                    $uangLembur = 0.0;
+                    $thr = 0.0;
+                    $bpjsKeluargaTambahan = 0;
+                    $golongan = $base['golongan'];
+                    $masaKerja = (double) $base['masa_kerja_tahun'];
+                }
+
+                $totalBruto = $gajiPokok + $tunjanganTetap + $tunjanganAbsensi + $tunjanganJabatan + $tunjanganShift + $tunjanganRadiologi + $tunjanganLain + $uangLembur + $thr;
+                $deductions = PayrollCalculator::calculateDeductions($gajiPokok, $tunjanganTetap, $totalBruto, $bpjsKeluargaTambahan, $karyawan, $periode);
+
+                $totalPotongan = $deductions['potongan_bpjs_kes'] + $deductions['potongan_bpjs_tk'];
+                $pph21 = (double) $deductions['potongan_pph21'];
+                $gajiBersih = $totalBruto - $totalPotongan - $pph21;
+
+                $slipId = DB::table('sdm_payroll_slips')->insertGetId([
+                    'karyawan_id' => $karyawan->id,
+                    'periode' => $periode,
+                    'golongan' => $golongan,
+                    'masa_kerja_tahun' => $masaKerja,
+                    'gaji_pokok' => $gajiPokok,
+                    'tunjangan_tetap' => $tunjanganTetap,
+                    'tunjangan_absensi' => $tunjanganAbsensi,
+                    'tunjangan_jabatan' => $tunjanganJabatan,
+                    'tunjangan_shift' => $tunjanganShift,
+                    'tunjangan_radiologi' => $tunjanganRadiologi,
+                    'tunjangan_lain' => $tunjanganLain,
+                    'uang_lembur' => $uangLembur,
+                    'tunjangan_hari_raya' => $thr,
+                    'potongan_absensi' => 0.0,
+                    'potongan_cash_bon' => 0.0,
+                    'potongan_obat' => 0.0,
+                    'potongan_lain' => 0.0,
+                    'potongan_bank' => 0.0,
+                    'potongan_bpjs_kes' => $deductions['potongan_bpjs_kes'],
+                    'potongan_bpjs_tk' => $deductions['potongan_bpjs_tk'],
+                    'bpjs_keluarga_tambahan' => $bpjsKeluargaTambahan,
+                    'potongan_pph21' => $pph21,
+                    'pph21_calculated' => $pph21,
+                    'pph21_is_overridden' => false,
+                    'total_gaji' => $totalBruto,
+                    'total_potongan' => $totalPotongan,
+                    'gaji_bersih' => $gajiBersih,
+                    'created_by' => $userId ?: auth()->id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                if ($prevSlip) {
+                    $prevAllocs = DB::table('sdm_payroll_slip_allocations')
+                        ->where('payroll_slip_id', $prevSlip->id)
+                        ->get();
+                    foreach ($prevAllocs as $pa) {
+                        DB::table('sdm_payroll_slip_allocations')->insert([
+                            'payroll_slip_id' => $slipId,
+                            'allowance_allocation_id' => $pa->allowance_allocation_id,
+                            'nominal' => $pa->nominal,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    $prevAllows = DB::table('sdm_payroll_slip_allowances')
+                        ->where('payroll_slip_id', $prevSlip->id)
+                        ->get();
+                    foreach ($prevAllows as $pal) {
+                        DB::table('sdm_payroll_slip_allowances')->insert([
+                            'payroll_slip_id' => $slipId,
+                            'allowance_type_id' => $pal->allowance_type_id,
+                            'nominal' => $pal->nominal,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+
+                $createdCount++;
+            }
+
+            DB::commit();
+            return $createdCount;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 }

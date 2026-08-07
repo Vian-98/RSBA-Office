@@ -3,7 +3,7 @@
 namespace App\Livewire\Gaji\Concerns;
 
 use App\Models\Sdm\Karyawan;
-use App\Services\PayrollNotificationService;
+use App\Livewire\Gaji\Services\PayrollNotificationService;
 
 trait HasPayrollBatchNotifications
 {
@@ -29,7 +29,7 @@ trait HasPayrollBatchNotifications
     {
         $res = $notifService->sendSingleEmail($karyawanId, $this->periode);
         if ($res['status'] === 'success') {
-            $this->toast()->success('Diproses !', $res['message'])->send();
+            $this->toast()->success('Berhasil !', $res['message'])->send();
         } elseif ($res['status'] === 'warning') {
             $this->toast()->warning('Peringatan !', $res['message'])->send();
         } else {
@@ -40,6 +40,23 @@ trait HasPayrollBatchNotifications
     public function sendSingleEmail(int $karyawanId, PayrollNotificationService $notifService): void
     {
         $this->sendEmail($karyawanId, $notifService);
+    }
+
+    public function getEmailSendStatus(int $karyawanId): ?array
+    {
+        $log = \App\Models\Sdm\PayrollSendLog::where('periode', $this->periode)
+            ->where('karyawan_id', $karyawanId)
+            ->first();
+
+        if (!$log) {
+            return null;
+        }
+
+        return [
+            'status'  => $log->status,
+            'sent_at' => $log->sent_at ? $log->sent_at->format('d/m/Y H:i') : null,
+            'error'   => $log->error_message,
+        ];
     }
 
     public function openAutoSendModal(PayrollNotificationService $notifService): void

@@ -66,7 +66,11 @@ class TukarJadwal extends Component
     public function submitPengajuan(TukarJadwalDokterService $service)
     {
         $user = Auth::user();
-        $canSelectDokterA = $user?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang']);
+        if (!$user || !$user->isDokterOrApprover()) {
+            abort(403, 'Akses ditolak. Halaman Tukar Shift Dokter hanya dapat diakses oleh Dokter atau Manajemen Medis/SDM.');
+        }
+
+        $canSelectDokterA = $user?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Koordinator-Dokter']);
 
         // Jika dokter biasa, kunci pengaju ke dirinya sendiri
         if (!$canSelectDokterA && $user?->karyawan_id) {
