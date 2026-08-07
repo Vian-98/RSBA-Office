@@ -40,6 +40,8 @@ class EditKedinasan extends Component
     public $ruangan_init;
     public $dinas;
     public $tgl_dinas;
+    public $pendidikan_options = [];
+    public $auto_pendidikan_label = '';
 
 
     public function rules(): array
@@ -205,7 +207,7 @@ class EditKedinasan extends Component
                 ->send();
         } catch (Throwable $th) {
             $this->toast()
-                ->error('Failed', 'Error : ', $th->getMessage())
+                ->error('Failed', 'Error : ' . $th->getMessage())
                 ->send();
         }
     }
@@ -237,7 +239,7 @@ class EditKedinasan extends Component
 
             // Cek jika jabatan baru adalah level struktural (tingkat_id <= 3 / Kabag / Wadir / Direktur)
             // dan karyawan memiliki penugasan koordinator aktif
-            $newJabatan = \App\Models\Sdm\Jabatan::find($this->form->jabatan);
+            $newJabatan = Jabatan::find($this->form->jabatan);
             if ($newJabatan && $newJabatan->tingkat_id <= 3) {
                 $hasActiveKoor = \App\Models\Sdm\RuanganKoordinator::where('karyawan_id', $this->form->karyawan->id)
                     ->where('aktif', true)
@@ -263,7 +265,7 @@ class EditKedinasan extends Component
         } catch (Throwable $th) {
             \Illuminate\Support\Facades\DB::rollBack();
             $this->toast()
-                ->error('Failed', 'Error : ', $th->getMessage())
+                ->error('Failed', 'Error : ' . $th->getMessage())
                 ->send();
         }
     }

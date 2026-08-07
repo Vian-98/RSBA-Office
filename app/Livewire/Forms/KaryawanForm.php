@@ -53,6 +53,7 @@ class KaryawanForm extends Form
     public $ruangan;
     public $tgl_ruangan;
     public $kategori_kerja = 'shift';
+    public $pendidikan_setara;
 
     function mount($karyawan)
     {
@@ -139,6 +140,7 @@ class KaryawanForm extends Form
         $this->ruangan = $karyawan->ruangan_id ?? '';
         $this->dinas = $karyawan->resign ?? '';
         $this->kategori_kerja = $karyawan->kategori_kerja?->value ?? 'shift';
+        $this->pendidikan_setara = $karyawan->pendidikan_setara ?? '';
     }
 
     // simpan data

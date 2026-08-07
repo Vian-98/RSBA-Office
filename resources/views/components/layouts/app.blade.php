@@ -52,7 +52,7 @@
 
                     isSidebarExpanded() {
                         if (this.isAboveBreakpoint) {
-                            return !this.isCollapsed
+                            return this.open.sidebar
                         }
                         return this.open.navbar
                     },
@@ -63,14 +63,17 @@
                         } else {
                             this.open.navbar = true
                         }
+                        this.scrollToActiveMenu()
                     },
 
                     toggle() {
                         if (this.isAboveBreakpoint) {
-                            this.isCollapsed = !this.isCollapsed
-                            localStorage.setItem('sidebar-collapsed', this.isCollapsed)
+                            this.open.sidebar = !this.open.sidebar
                         } else {
                             this.open.navbar = !this.open.navbar
+                        }
+                        if (this.isOpen()) {
+                            this.scrollToActiveMenu()
                         }
                     },
 
@@ -80,17 +83,25 @@
                     },
 
                     handleClose() {
-                        if (this.isAboveBreakpoint) {
-                            this.open.sidebar = false
-                        } else {
-                            this.open.navbar = false
-                        }
+                        this.open.sidebar = false
+                        this.open.navbar = false
                     },
 
                     handleAway() {
                         if (!this.isAboveBreakpoint) {
                             this.open.navbar = false
                         }
+                    },
+
+                    scrollToActiveMenu() {
+                        setTimeout(() => {
+                            const container = document.getElementById('sidebar-scroll-container')
+                            if (!container) return
+                            const activeItem = container.querySelector('.bg-primary-500, .active, [class*="bg-primary"]')
+                            if (activeItem) {
+                                activeItem.scrollIntoView({ block: 'center', behavior: 'smooth' })
+                            }
+                        }, 120)
                     },
 
                     initForceListeners() {
@@ -100,10 +111,15 @@
                         window.addEventListener('force-sidebar-expand', () => {
                             this.isCollapsed = false
                         })
+                        document.addEventListener('livewire:navigated', () => {
+                            this.handleClose()
+                            this.scrollToActiveMenu()
+                        })
                     },
 
                     init() {
                         this.initForceListeners()
+                        this.scrollToActiveMenu()
                     },
                 }
             }

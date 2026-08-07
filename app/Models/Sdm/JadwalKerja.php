@@ -97,12 +97,11 @@ class JadwalKerja extends Model
             'karyawan_id'      => $karyawan?->id,
             'status_sebelumnya' => $statusSebelum,
             'status_sesudah'   => $statusSesudah,
-            'catatan'          => $catatan,
         ]);
     }
 
-        }
-
+    public function isDokterSchedule(): bool
+    {
         $detailsQuery = $this->details();
         if ($detailsQuery->exists()) {
             $karyawanIds = $detailsQuery->pluck('karyawan_id')->unique()->filter();
@@ -216,7 +215,7 @@ class JadwalKerja extends Model
                     'bulan'       => $bulan,
                     'tahun'       => $tahun,
                     'tipe'        => $tipe,
-                    'status'      => $isReguler ? \App\Enums\StatusJadwalKerja::PUBLISHED : \App\Enums\StatusJadwalKerja::DRAFT,
+                    'status'      => $isReguler ? StatusJadwalKerja::PUBLISHED : StatusJadwalKerja::DRAFT,
                     'dibuat_oleh' => 1,
                 ];
                 if ($hasTipe) {
@@ -243,8 +242,8 @@ class JadwalKerja extends Model
                     $updates['bagian_id'] = $resolvedBagianId;
                 }
             }
-            if ($isReguler && $jadwalKerja->status === \App\Enums\StatusJadwalKerja::DRAFT) {
-                $updates['status'] = \App\Enums\StatusJadwalKerja::PUBLISHED;
+            if ($isReguler && $jadwalKerja->status === StatusJadwalKerja::DRAFT) {
+                $updates['status'] = StatusJadwalKerja::PUBLISHED;
             }
             if ($updates) {
                 $jadwalKerja->update($updates);

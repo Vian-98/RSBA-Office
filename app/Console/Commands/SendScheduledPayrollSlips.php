@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Mail\SlipGajiMail;
 use App\Models\Sdm\Karyawan;
 use App\Models\Sdm\PayrollSendLog;
-use App\Services\PayrollCalculator;
+use App\Livewire\Gaji\Services\PayrollCalculator;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;

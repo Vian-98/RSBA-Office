@@ -3,7 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Sdm\Karyawan;
-use App\Services\PayrollCalculator;
+use App\Livewire\Gaji\Services\PayrollCalculator;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;

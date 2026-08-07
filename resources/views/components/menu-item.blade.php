@@ -72,6 +72,7 @@
        {{ $attributes->merge([]) }} 
        :class="isCollapsed && isAboveBreakpoint ? 'justify-center mx-1 px-1' : 'justify-start gap-3 mx-2 px-3'"
        class="py-2.5 rounded-lg transition-all duration-200 cursor-pointer flex items-center relative group {{ $baseClass }}" 
+       @click="handleAway(); handleClose()"
        @if($hasValidRoute) wire:navigate @else onclick="return false;" @endif>
 
         {{-- icons --}}

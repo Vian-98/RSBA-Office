@@ -308,10 +308,16 @@ class Sidebar extends Component
                 }
             }
 
-            // Tim Pajak otomatis mendapatkan akses menu Pajak PPh 21, Karyawan, & Dokter
+            // Tim Pajak otomatis mendapatkan akses menu Pajak PPh 21, Rekap Gaji, Karyawan, & Dokter
             if ($user && ($user->hasRole('Pajak') || $user->hasRole('Super-Admin'))) {
                 if (!in_array('view-kepegawaian-master-aturan-pajak', $permissions)) {
                     $permissions[] = 'view-kepegawaian-master-aturan-pajak';
+                }
+                if (!in_array('view-kepegawaian-gaji', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-gaji';
+                }
+                if (!in_array('view-kepegawaian-gaji-index', $permissions)) {
+                    $permissions[] = 'view-kepegawaian-gaji-index';
                 }
                 if (!in_array('view-kepegawaian-karyawan', $permissions)) {
                     $permissions[] = 'view-kepegawaian-karyawan';

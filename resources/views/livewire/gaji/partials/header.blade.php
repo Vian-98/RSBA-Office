@@ -36,15 +36,17 @@
 
     <!-- Toolbar Sub-actions (Second Row) -->
     <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100/80">
-        <x-ts:button wire:click="openAutoSendModal" flat color="purple" class="text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
-            <x-tabler-clock class="h-3.5 w-3.5 mr-1.5 shrink-0" />
-            Jadwal Otomatis
-        </x-ts:button>
+        @if($isLocked)
+            <x-ts:button wire:click="openAutoSendModal" flat color="purple" class="text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
+                <x-tabler-clock class="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                Jadwal Email Otomatis
+            </x-ts:button>
 
-        <x-ts:button wire:click="openBatchSendModal" flat color="sky" class="text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
-            <x-tabler-mail-fast class="h-3.5 w-3.5 mr-1.5 shrink-0" />
-            Kirim Massal Email
-        </x-ts:button>
+            <x-ts:button wire:click="openBatchSendModal" flat color="sky" class="text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
+                <x-tabler-mail-fast class="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                Kirim Massal Email
+            </x-ts:button>
+        @endif
 
         <x-ts:button wire:click="downloadTemplate" flat color="emerald" class="text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
             <x-tabler-file-download class="h-3.5 w-3.5 mr-1.5 shrink-0" />
@@ -52,6 +54,16 @@
         </x-ts:button>
 
         @if(!$isLocked)
+            <x-ts:button wire:click="generateBulkDraftSlips" 
+                        wire:confirm="Sistem akan menyalin data gaji bulan lalu (atau kalkulasi otomatis) untuk seluruh karyawan periode ini. Lanjutkan?"
+                        wire:loading.attr="disabled"
+                        flat color="indigo" 
+                        class="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-700 whitespace-nowrap px-3 py-1.5 rounded-lg shadow-2xs">
+                <x-tabler-copy-check class="h-3.5 w-3.5 mr-1.5 shrink-0" wire:loading.remove wire:target="generateBulkDraftSlips" />
+                <x-tabler-loader-2 class="h-3.5 w-3.5 mr-1.5 shrink-0 animate-spin" wire:loading wire:target="generateBulkDraftSlips" />
+                Salin / Selesaikan Input
+            </x-ts:button>
+
             <x-ts:button wire:click="openImportModal" flat color="sky" class="text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 whitespace-nowrap px-3 py-1.5 rounded-lg">
                 <x-tabler-file-upload class="h-3.5 w-3.5 mr-1.5 shrink-0" />
                 Impor Excel

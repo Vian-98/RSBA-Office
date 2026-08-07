@@ -64,23 +64,26 @@
                         </td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center gap-1.5">
-                                @php
-                                    $emailLog = $this->getEmailSendStatus($karyawan->id);
-                                @endphp
-                                @if($emailLog && $emailLog['status'] === 'sent')
-                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full" title="Terkirim: {{ $emailLog['sent_at'] }}">
-                                        <x-tabler-mail-check class="h-3.5 w-3.5 text-emerald-600" />
-                                        Email OK
-                                    </span>
-                                @elseif($emailLog && $emailLog['status'] === 'failed')
-                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full" title="Error: {{ $emailLog['error'] }}">
-                                        <x-tabler-mail-x class="h-3.5 w-3.5 text-rose-600" />
-                                        Gagal
-                                    </span>
-                                @else
-                                    <x-ts:button flat color="sky" class="text-xs font-bold" wire:click="sendEmail({{ $karyawan->id }})" title="Kirim Slip Email Manual">
-                                        <x-tabler-mail class="h-4 w-4" />
-                                    </x-ts:button>
+                                @if($isLocked)
+                                    @php
+                                        $emailLog = $this->getEmailSendStatus($karyawan->id);
+                                    @endphp
+                                    @if($emailLog && $emailLog['status'] === 'sent')
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full" title="Terkirim: {{ $emailLog['sent_at'] }}">
+                                            <x-tabler-mail-check class="h-3.5 w-3.5 text-emerald-600" />
+                                            Email OK
+                                        </span>
+                                    @elseif($emailLog && $emailLog['status'] === 'failed')
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full" title="Error: {{ $emailLog['error'] }}">
+                                            <x-tabler-mail-x class="h-3.5 w-3.5 text-rose-600" />
+                                            Gagal
+                                        </span>
+                                    @else
+                                        <x-ts:button flat color="sky" class="text-xs font-bold" wire:click="sendEmail({{ $karyawan->id }})" wire:loading.attr="disabled" title="Kirim Slip Email Manual">
+                                            <x-tabler-mail class="h-4 w-4" wire:loading.remove wire:target="sendEmail({{ $karyawan->id }})" />
+                                            <x-tabler-loader-2 class="h-4 w-4 animate-spin text-sky-600" wire:loading wire:target="sendEmail({{ $karyawan->id }})" />
+                                        </x-ts:button>
+                                    @endif
                                 @endif
 
                                 @if($isLocked)
