@@ -5,6 +5,7 @@ namespace App\Livewire\Kepegawaian\DigitalSignature;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Lazy;
+use Livewire\Attributes\On;
 use App\Models\DigitalSignatureDocument;
 
 #[Lazy]
@@ -20,10 +21,17 @@ class Table extends Component
 
     protected $paginationTheme = 'tailwind';
 
+    #[On('document-signed')]
+    public function refreshTable()
+    {
+        $this->resetPage();
+    }
+
     public function updatingSearch()
     {
         $this->resetPage();
     }
+
 
     public function openPrintModal($id)
     {

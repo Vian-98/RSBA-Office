@@ -524,4 +524,81 @@ class DocstoreSyncService
         }
         return $signatures;
     }
+
+    /**
+     * Helper sentral untuk memanggil endpoint Vault API di docstore
+     */
+    public function callVaultApi(string $method, string $endpointPath, array $payload = []): array
+    {
+        $token = $this->getM2mToken();
+        if (!$token) {
+            return ['status' => false, 'message' => 'Gagal mendapatkan OAuth2 M2M Token dari Docstore'];
+        }
+
+        try {
+            $jsonPayload = json_encode($payload);
+            $timestamp = time();
+
+            $headers = [
+                'Content-Type' => 'application/json',
+                'X-Timestamp'  => (string)$timestamp,
+            ];
+
+            if (!empty($this->hmacSecret)) {
+                $payloadToSign = $timestamp . '.' . $jsonPayload;
+                $headers['X-Payload-Signature'] = hash_hmac('sha256', $payloadToSign, $this->hmacSecret);
+            }
+
+            $url = rtrim($this->apiUrl, '/') . '/' . ltrim($endpointPath, '/');
+            $request = Http::withOptions(['verify' => $this->verifySsl])
+                ->withToken($token)
+                ->withHeaders($headers)
+                ->timeout(10);
+
+            if (strtoupper($method) === 'GET') {
+                $response = $request->get($url, $payload);
+            } else {
+                $response = $request->withBody($jsonPayload, 'application/json')->post($url);
+            }
+
+            if ($response->status() === 401) {
+                Cache::forget('docstore_m2m_token_' . md5($this->clientId));
+                $newToken = $this->getM2mToken();
+
+                if ($newToken) {
+                    $request = Http::withOptions(['verify' => $this->verifySsl])
+                        ->withToken($newToken)
+                        ->withHeaders($headers)
+                        ->timeout(10);
+                    if (strtoupper($method) === 'GET') {
+                        $response = $request->get($url, $payload);
+                    } else {
+                        $response = $request->withBody($jsonPayload, 'application/json')->post($url);
+                    }
+                }
+            }
+
+            return $response->json() ?? ['status' => false, 'message' => 'Response kosong dari Docstore'];
+        } catch (\Throwable $e) {
+            Log::error("Error callVaultApi ({$endpointPath}): " . $e->getMessage());
+            return ['status' => false, 'message' => 'Koneksi ke Vault Docstore gagal: ' . $e->getMessage()];
+        }
+    }
+
+    public function generateVaultCertificate(array $payload): array
+    {
+        return $this->callVaultApi('POST', 'vault/certificates/generate', $payload);
+    }
+
+    public function getActiveVaultCertificate(int $userId): ?array
+    {
+        $res = $this->callVaultApi('GET', "vault/certificates/{$userId}/active");
+        return ($res['status'] ?? false) ? ($res['certificate'] ?? null) : null;
+    }
+
+    public function signVaultData(array $payload): array
+    {
+        return $this->callVaultApi('POST', 'vault/signatures/sign', $payload);
+    }
 }
+

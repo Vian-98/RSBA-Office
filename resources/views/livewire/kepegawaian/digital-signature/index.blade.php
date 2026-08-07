@@ -1,6 +1,25 @@
 <div class="w-full space-y-6">
+    {{-- Flash Notifications --}}
+    @if (session()->has('success'))
+        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-xs">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold">✓</div>
+                <span class="text-sm font-bold">{{ session('success') }}</span>
+            </div>
+        </div>
+    @endif
+    @if (session()->has('warning'))
+        <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-between shadow-xs">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold">!</div>
+                <span class="text-sm font-bold">{{ session('warning') }}</span>
+            </div>
+        </div>
+    @endif
+
     {{-- Header & Tab Bar Navigation --}}
     <div class="w-full bg-white rounded-2xl shadow-sm border border-slate-200/80 p-2.5 flex items-center justify-between">
+
         <div class="flex items-center space-x-2">
             <button 
                 wire:click="setTab('list')" 

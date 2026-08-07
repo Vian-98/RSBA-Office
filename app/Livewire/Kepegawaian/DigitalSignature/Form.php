@@ -125,9 +125,12 @@ class Form extends Component
     }
 
     public function confirmAndSign(
-        DigitalSignatureService $signatureService,
-        DocstoreSyncService $docstoreSyncService
+        ?DigitalSignatureService $signatureService = null,
+        ?DocstoreSyncService $docstoreSyncService = null
     ) {
+        $signatureService = $signatureService ?? app(DigitalSignatureService::class);
+        $docstoreSyncService = $docstoreSyncService ?? app(DocstoreSyncService::class);
+
         $this->validate([
             'account_password' => 'required|string',
         ], [
@@ -154,7 +157,8 @@ class Form extends Component
             $signatureData = [];
             $signatureHash = null;
 
-            $hasActiveCert = $user->certificate()->where('is_active', 1)->exists();
+            $activeCert = $signatureService->getActiveCertificate($user->id);
+            $hasActiveCert = $activeCert !== null;
             if ($hasActiveCert) {
                 $signResult = $signatureService->signData(
                     user: $user,
@@ -169,7 +173,7 @@ class Form extends Component
                         'signature'     => $signResult['signature'],
                         'data_hash'     => $signResult['data_hash'],
                         'original_data' => $byteCounterHash,
-                        'public_key'    => optional($user->certificate()->where('is_active', 1)->first())->public_key ?? 'MOCK_PUBLIC_KEY',
+                        'public_key'    => $activeCert->public_key ?? 'MOCK_PUBLIC_KEY',
                         'stamp_position'=> $this->stamp_position,
                         'stamp_x'       => $this->stamp_x,
                         'stamp_y'       => $this->stamp_y,
@@ -183,6 +187,7 @@ class Form extends Component
                     return;
                 }
             } else {
+
                 // Generasi hash tanda tangan standar jika belum ada p12 sertifikat
                 $signatureHash = hash('sha256', 'DS_SIG_' . $byteCounterHash . '_' . time());
                 $signatureData = [
