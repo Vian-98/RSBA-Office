@@ -105,21 +105,8 @@
             </div>
             
             <div class="flex flex-wrap items-center gap-2" x-show="open">
-                <div class="w-48">
+                <div class="w-56">
                     <x-ts:input wire:model.live.debounce.300ms="searchPegawai" placeholder="Cari nama pegawai..." icon="tabler.search" />
-                </div>
-
-                <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 text-xs">
-                    <button type="button"
-                            wire:click="$set('viewMode', 'pegawai')"
-                            class="px-3 py-1.5 font-medium rounded-md transition-colors {{ $viewMode === 'pegawai' ? 'bg-white text-indigo-600 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900' }}">
-                        👥 Grouped per Pegawai
-                    </button>
-                    <button type="button"
-                            wire:click="$set('viewMode', 'tanggal')"
-                            class="px-3 py-1.5 font-medium rounded-md transition-colors {{ $viewMode === 'tanggal' ? 'bg-white text-indigo-600 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900' }}">
-                        📅 Detail per Tanggal
-                    </button>
                 </div>
 
                 <x-ts:select.styled wire:model.live="filterPartisipasi" :options="[
@@ -144,7 +131,7 @@
             <div class="flex items-center gap-2 text-xs font-semibold text-indigo-900">
                 <x-ts:icon name="tabler.users-group" class="w-4 h-4 text-indigo-600" />
                 <span>Aksi Massal Peserta (Terfilter):</span>
-                <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-mono">{{ count($groupedDetails) }} Pegawai ({{ count($details) }} Row)</span>
+                <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-mono">{{ count($groupedDetails) }} Pegawai ({{ count($details) }} Record)</span>
             </div>
             <div class="flex items-center gap-2">
                 <x-ts:button sm color="emerald" icon="tabler.check" wire:click="selectAllIkut" wire:loading.attr="disabled">
@@ -158,137 +145,53 @@
 
         <div x-show="open" x-collapse class="overflow-x-auto border rounded-lg"
             wire:loading.remove
-            wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori,filterPartisipasi,viewMode,togglePartisipasi,selectAllIkut,selectAllTidakIkut">
-            
-            @if($viewMode === 'pegawai')
-                {{-- MODE GROUPED PER PEGAWAI --}}
-                <table class="w-full text-left text-sm text-gray-600">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-700">
-                        <tr>
-                            <th class="px-4 py-3 text-center w-28">Partisipasi</th>
-                            <th class="px-4 py-3 w-48">Nama Pegawai</th>
-                            <th class="px-4 py-3 w-36">Kategori Kerja</th>
-                            <th class="px-4 py-3">Rincian Tanggal & Shift Event</th>
-                            <th class="px-4 py-3 text-center w-44">Hasil Keputusan</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @forelse($groupedDetails as $row)
-                            <tr class="hover:bg-gray-50 {{ !($row['is_ikut'] ?? true) ? 'bg-purple-50/30' : '' }}">
-                                <td class="px-4 py-3 text-center align-top">
-                                    @if($row['is_ikut'] ?? true)
-                                        <button type="button"
-                                                wire:click="togglePartisipasi({{ $row['karyawan_id'] }})"
-                                                title="Klik untuk mengecualikan pegawai ini (Tidak Ikut Cuti Bersama)"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 hover:bg-red-100 hover:text-red-800 transition-colors">
-                                            ✓ IKUT
-                                        </button>
-                                    @else
-                                        <button type="button"
-                                                wire:click="togglePartisipasi({{ $row['karyawan_id'] }})"
-                                                title="Klik untuk mengembalikan pegawai ini menjadi Peserta Cuti Bersama"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 hover:bg-emerald-100 hover:text-emerald-800 transition-colors">
-                                            ✕ DIKECUALIKAN
-                                        </button>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3 font-semibold text-gray-900 align-top">
-                                    {{ $row['karyawan_nama'] }}
-                                </td>
-                                <td class="px-4 py-3 text-xs align-top">
-                                    <span class="px-2 py-0.5 rounded bg-slate-100 font-medium text-slate-700">{{ $row['kategori_kerja'] }}</span>
-                                </td>
-                                <td class="px-4 py-3 text-xs align-top">
-                                    <div class="flex flex-col gap-1.5">
-                                        @foreach($row['dates'] as $d)
-                                            <div class="flex flex-wrap items-center gap-2 bg-slate-50 p-1.5 rounded border border-slate-100">
-                                                <span class="font-mono font-semibold text-slate-800 w-24">
-                                                    {{ \Carbon\Carbon::parse($d['tanggal'])->format('d M Y') }}
-                                                </span>
-                                                <span class="px-2 py-0.5 rounded bg-gray-200/70 font-mono text-[11px] text-gray-700">
-                                                    {{ $d['shift_nama'] }}
-                                                </span>
-                                                <div class="ml-auto">
-                                                    @if($d['status_aksi'] === 'DIKECUALIKAN')
-                                                        <x-ts:badge color="purple" light sm>Dikecualikan</x-ts:badge>
-                                                    @elseif($d['status_aksi'] === 'DIPOTONG_CUTI')
-                                                        <x-ts:badge color="red" sm>Dipotong Cuti (1 Hari)</x-ts:badge>
-                                                    @elseif($d['status_aksi'] === 'TETAP_HADIR')
-                                                        <x-ts:badge color="amber" sm>Tetap Hadir / Piket</x-ts:badge>
-                                                    @elseif($d['status_aksi'] === 'LIBUR_ROSTER')
-                                                        <x-ts:badge color="blue" sm>Libur Roster</x-ts:badge>
-                                                    @elseif($d['status_aksi'] === 'LIBUR_WEEKEND')
-                                                        <x-ts:badge color="gray" sm>Libur Weekend</x-ts:badge>
-                                                    @elseif($d['status_aksi'] === 'CUTI_BERSAMA_BEBAS')
-                                                        <x-ts:badge color="emerald" sm>Libur Bebas</x-ts:badge>
-                                                    @elseif($d['status_aksi'] === 'JADWAL_BELUM_ADA')
-                                                        <x-ts:badge color="rose" light sm>Jadwal Belum Ada</x-ts:badge>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 text-center align-top font-semibold text-xs">
-                                    @if(!$row['is_ikut'])
-                                        <x-ts:badge color="purple" light>Dikecualikan (Tidak Ikut)</x-ts:badge>
-                                    @elseif($row['total_hari_dipotong'] > 0)
-                                        <x-ts:badge color="red">Dipotong Cuti ({{ $row['total_hari_dipotong'] }} Hari)</x-ts:badge>
-                                    @elseif($row['total_hari_piket'] > 0)
-                                        <x-ts:badge color="amber">Tetap Hadir / Piket</x-ts:badge>
-                                    @elseif($row['total_hari_roster'] > 0)
-                                        <x-ts:badge color="blue">Libur Roster (0 Hari)</x-ts:badge>
-                                    @else
-                                        <x-ts:badge color="emerald">Tidak Memotong Cuti</x-ts:badge>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-4 py-8 text-center text-gray-500">
-                                    Tidak ada data pegawai yang cocok dengan filter.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            @else
-                {{-- MODE DETAIL PER TANGGAL (FLAT) --}}
-                <table class="w-full text-left text-sm text-gray-600">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-700">
-                        <tr>
-                            <th class="px-4 py-3 text-center">Partisipasi</th>
-                            <th class="px-4 py-3">Nama Pegawai</th>
-                            <th class="px-4 py-3">Kategori Kerja</th>
-                            <th class="px-4 py-3">Tanggal Event</th>
-                            <th class="px-4 py-3">Shift Terjadwal</th>
-                            <th class="px-4 py-3">Hasil Keputusan</th>
-                            <th class="px-4 py-3">Keterangan Aturan</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @forelse($details as $row)
-                            <tr class="hover:bg-gray-50 {{ !($row['is_ikut'] ?? true) ? 'bg-purple-50/30' : '' }}">
-                                <td class="px-4 py-3 text-center">
-                                    @if($row['is_ikut'] ?? true)
-                                        <button type="button"
-                                                wire:click="togglePartisipasi({{ $row['karyawan_id'] }})"
-                                                title="Klik untuk mengecualikan pegawai ini (Tidak Ikut Cuti Bersama)"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 hover:bg-red-100 hover:text-red-800 transition-colors">
-                                            ✓ IKUT
-                                        </button>
-                                    @else
-                                        <button type="button"
-                                                wire:click="togglePartisipasi({{ $row['karyawan_id'] }})"
-                                                title="Klik untuk mengembalikan pegawai ini menjadi Peserta Cuti Bersama"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 hover:bg-emerald-100 hover:text-emerald-800 transition-colors">
-                                            ✕ DIKECUALIKAN
-                                        </button>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3 font-medium text-gray-900">{{ $row['karyawan_nama'] }}</td>
-                                <td class="px-4 py-3 text-xs">{{ $row['kategori_kerja'] }}</td>
-                                <td class="px-4 py-3 text-xs font-mono">{{ \Carbon\Carbon::parse($row['tanggal'])->format('d M Y') }}</td>
+            wire:target="loadSimulasi,terapkan,batalkan,searchPegawai,filterKategori,filterPartisipasi,togglePartisipasi,selectAllIkut,selectAllTidakIkut">
+            <table class="w-full text-left text-sm text-gray-600">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+                    <tr>
+                        <th class="px-4 py-3 text-center">Partisipasi</th>
+                        <th class="px-4 py-3">Nama Pegawai</th>
+                        <th class="px-4 py-3">Kategori Kerja</th>
+                        <th class="px-4 py-3">Tanggal Event</th>
+                        <th class="px-4 py-3">Shift Terjadwal</th>
+                        <th class="px-4 py-3">Hasil Keputusan</th>
+                        <th class="px-4 py-3">Keterangan Aturan</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @forelse($groupedDetails as $group)
+                        @php
+                            $rowSpanCount = count($group['dates']);
+                        @endphp
+                        @foreach($group['dates'] as $index => $row)
+                            <tr class="hover:bg-gray-50 {{ !($row['is_ikut'] ?? true) ? 'bg-purple-50/30' : '' }} {{ $index === $rowSpanCount - 1 ? 'border-b-2 border-gray-300' : '' }}">
+                                @if($index === 0)
+                                    <td rowspan="{{ $rowSpanCount }}" class="px-4 py-3 text-center align-middle border-r border-gray-200 bg-white">
+                                        @if($row['is_ikut'] ?? true)
+                                            <button type="button"
+                                                    wire:click="togglePartisipasi({{ $row['karyawan_id'] }})"
+                                                    title="Klik untuk mengecualikan pegawai ini (Tidak Ikut Cuti Bersama)"
+                                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 hover:bg-red-100 hover:text-red-800 transition-colors">
+                                                ✓ IKUT
+                                            </button>
+                                        @else
+                                            <button type="button"
+                                                    wire:click="togglePartisipasi({{ $row['karyawan_id'] }})"
+                                                    title="Klik untuk mengembalikan pegawai ini menjadi Peserta Cuti Bersama"
+                                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 hover:bg-emerald-100 hover:text-emerald-800 transition-colors">
+                                                ✕ DIKECUALIKAN
+                                            </button>
+                                        @endif
+                                    </td>
+                                    <td rowspan="{{ $rowSpanCount }}" class="px-4 py-3 font-semibold text-gray-900 align-middle border-r border-gray-200 bg-white">
+                                        {{ $row['karyawan_nama'] }}
+                                    </td>
+                                    <td rowspan="{{ $rowSpanCount }}" class="px-4 py-3 text-xs align-middle border-r border-gray-200 bg-white">
+                                        {{ $row['kategori_kerja'] }}
+                                    </td>
+                                @endif
+
+                                <td class="px-4 py-3 text-xs font-mono font-medium text-slate-800">{{ \Carbon\Carbon::parse($row['tanggal'])->format('d M Y') }}</td>
                                 <td class="px-4 py-3 text-xs">
                                     <span class="px-2 py-0.5 rounded bg-gray-100 font-mono">{{ $row['shift_nama'] }}</span>
                                 </td>
@@ -311,16 +214,16 @@
                                 </td>
                                 <td class="px-4 py-3 text-xs text-gray-500">{{ $row['keterangan'] }}</td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                                    Tidak ada data hasil simulasi yang cocok dengan filter.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            @endif
+                        @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                Tidak ada data hasil simulasi yang cocok dengan filter.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
 
         <div x-show="open"

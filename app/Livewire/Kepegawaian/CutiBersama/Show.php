@@ -24,7 +24,6 @@ class Show extends Component
     public $filterKategori = 'semua'; // semua, potong, piket, roster, belum_ada
 
     public $filterPartisipasi = 'semua'; // semua, ikut, dikecualikan
-    public $viewMode = 'pegawai'; // pegawai (grouped per karyawan), tanggal (flat per tanggal)
 
     public function mount($id)
     {
