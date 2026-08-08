@@ -5,7 +5,8 @@ namespace App\Enums;
 enum MenuGroup: string
 {
     case NULL = '';
-    case ADM = 'admin';
+    case ADMIN = 'admin';
+    case ADM = 'adm';
     case SDM = 'sdm';
     case UMU = 'umu';
     case KEU = 'keu';
@@ -18,7 +19,8 @@ enum MenuGroup: string
     public function nama(): string
     {
         return match ($this) {
-            self::ADM => 'Administrator',
+            self::ADMIN => 'Administrator',
+            self::ADM => 'Administrasi',
             self::SDM => 'Kepegawaian',
             self::UMU => 'Umum',
             self::KEU => 'Keuangan',
