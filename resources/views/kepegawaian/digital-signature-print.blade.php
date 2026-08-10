@@ -203,15 +203,26 @@
             </div>
         </div>
 
-        <div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="{{ route('digital-signature.download', $document->id) }}" class="btn-print" style="background: linear-gradient(135deg, #059669, #047857); text-decoration: none;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span>Unduh PDF Resmi (.pdf)</span>
+            </a>
             <button type="button" class="btn-print" onclick="window.print()">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                 </svg>
-                <span>Cetak Dokumen Sekarang (Print)</span>
+                <span>Cetak Dokumen (Print)</span>
             </button>
         </div>
     </header>
+
+    {{-- Printable metadata text for Chrome PDF Printer stream parsing --}}
+    <div style="position: absolute; bottom: 1px; left: 1px; font-size: 1px; color: rgba(0,0,0,0.01); pointer-events: none; z-index: -1;">
+        OFFICIAL_SEALED_DOCUMENT {{ $document->document_number }} {{ $document->docstore_key }}
+    </div>
 
     <main class="canvas-wrapper" id="canvasWrapper">
         <div id="loadingState" style="color: #94a3b8; padding: 40px; font-size: 14px; text-align: center;">

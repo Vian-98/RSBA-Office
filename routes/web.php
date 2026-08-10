@@ -39,6 +39,7 @@ Route::middleware('auth')
 
         Route::get('/dashboard', App\Livewire\Dashboard\Home::class)->name('dashboard');
         Route::get('/kepegawaian/digital-signature/print/{id}', [App\Http\Controllers\DigitalSignaturePrintController::class, 'print'])->name('digital-signature.print');
+        Route::get('/kepegawaian/digital-signature/download/{id}', [App\Http\Controllers\DigitalSignaturePrintController::class, 'download'])->name('digital-signature.download');
     });
 
 Route::get('surat/verification', App\Livewire\Surat\Verifikasi\Index::class)->name('surat.verification');

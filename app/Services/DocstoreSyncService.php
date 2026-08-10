@@ -181,18 +181,19 @@ class DocstoreSyncService
         $stampMeta = json_decode($doc->keterangan ?? '', true) ?: [];
 
         $content = [
-            'title'             => $doc->title,
-            'document_number'   => $doc->document_number,
-            'file_name'         => $doc->file_name,
-            'file_size_bytes'   => $doc->file_size,
-            'byte_counter_hash' => $doc->byte_counter_hash,
-            'keterangan'        => $doc->keterangan,
-            'uploader_name'     => optional($doc->user)->name ?? 'User',
-            'stamp_x'           => $signatureData['stamp_x'] ?? ($stampMeta['stamp_x'] ?? 70),
-            'stamp_y'           => $signatureData['stamp_y'] ?? ($stampMeta['stamp_y'] ?? 75),
-            'stamp_scale'       => $signatureData['stamp_scale'] ?? ($stampMeta['stamp_scale'] ?? 100),
-            'stamp_position'    => $signatureData['stamp_position'] ?? ($stampMeta['stamp_position'] ?? 'c_right'),
-            'pdf_base64'        => $pdfBase64,
+            'title'                        => $doc->title,
+            'document_number'              => $doc->document_number,
+            'file_name'                    => $doc->file_name,
+            'file_size_bytes'              => $doc->file_size,
+            'byte_counter_hash'            => $doc->byte_counter_hash,
+            'original_byte_counter_hash'   => $signatureData['original_byte_counter_hash'] ?? $signatureData['original_data'] ?? null,
+            'keterangan'                   => $doc->keterangan,
+            'uploader_name'                => optional($doc->user)->name ?? 'User',
+            'stamp_x'                      => $signatureData['stamp_x'] ?? ($stampMeta['stamp_x'] ?? 70),
+            'stamp_y'                      => $signatureData['stamp_y'] ?? ($stampMeta['stamp_y'] ?? 75),
+            'stamp_scale'                  => $signatureData['stamp_scale'] ?? ($stampMeta['stamp_scale'] ?? 100),
+            'stamp_position'               => $signatureData['stamp_position'] ?? ($stampMeta['stamp_position'] ?? 'c_right'),
+            'pdf_base64'                   => $pdfBase64,
         ];
 
         $signatures = [
@@ -200,7 +201,7 @@ class DocstoreSyncService
                 'signature_hash' => $doc->signature_hash,
                 'original_data'  => $signatureData['original_data'] ?? $doc->byte_counter_hash,
                 'signature'      => $signatureData['signature'] ?? 'MOCK_SIGNATURE',
-                'data_hash'      => $doc->byte_counter_hash,
+                'data_hash'      => $signatureData['data_hash'] ?? $doc->byte_counter_hash,
                 'algorithm'      => 'sha256',
                 'public_key'     => $signatureData['public_key'] ?? 'MOCK_PUBLIC_KEY',
                 'signer_name'    => optional($doc->user)->name ?? 'Signer',

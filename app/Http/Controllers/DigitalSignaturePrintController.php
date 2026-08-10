@@ -40,4 +40,30 @@ class DigitalSignaturePrintController extends Controller
             'stampScale' => $stampScale,
         ]);
     }
+
+    public function download(int $id, DocstoreSyncService $docstoreSyncService)
+    {
+        $doc = DigitalSignatureDocument::findOrFail($id);
+
+        $pdfBase64 = null;
+        if ($doc->docstore_key) {
+            $docstoreData = $docstoreSyncService->fetchFromDocstore($doc->docstore_key);
+            $content = $docstoreData['document']['content'] 
+                ?? $docstoreData['data']['document']['content'] 
+                ?? [];
+            $pdfBase64 = is_array($content) ? ($content['pdf_base64'] ?? null) : null;
+        }
+
+        if (!$pdfBase64) {
+            abort(404, 'Berkas PDF resmi tidak ditemukan di Docstore Vault.');
+        }
+
+        $pdfBytes = base64_decode($pdfBase64);
+        $cleanFileName = preg_replace('/[^\w\-\.]/', '_', pathinfo($doc->file_name ?? 'Dokumen_Digital', PATHINFO_FILENAME));
+        $filename = $cleanFileName . '_Signed.pdf';
+
+        return response($pdfBytes)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
 }

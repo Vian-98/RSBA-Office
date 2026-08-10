@@ -214,8 +214,28 @@ class Form extends Component
                 ];
             }
 
-            // 3. Read PDF file contents as Base64 for docstore vault
-            $pdfBase64 = base64_encode(file_get_contents($realPath));
+            // 3. Hard-stamp Mekari Vault Seal directly into PDF Binary stream
+            $pdfStamperService = app(\App\Services\PdfStamperService::class);
+            $stampedPdfBytes = $pdfStamperService->stampPdf(
+                pdfPathOrBytes: $realPath,
+                pctX: (float) $this->stamp_x,
+                pctY: (float) $this->stamp_y,
+                scalePercent: (float) $this->stamp_scale,
+                signerName: $user->name,
+                signedAtDate: date('d M Y H:i') . ' WIB',
+                shaHash: $byteCounterHash,
+                documentNumber: $this->document_number,
+                title: $this->title
+            );
+
+            $stampedByteHash = hash('sha256', $stampedPdfBytes);
+            $fileSize = strlen($stampedPdfBytes);
+            $pdfBase64 = base64_encode($stampedPdfBytes);
+
+            $signatureData['data_hash'] = $stampedByteHash;
+            $signatureData['original_data'] = $byteCounterHash;
+            $signatureData['original_byte_counter_hash'] = $byteCounterHash;
+            $signatureData['stamped_data_hash'] = $stampedByteHash;
 
             // Prepare stamp metadata payload
             $stampMetaPayload = [
@@ -233,7 +253,7 @@ class Form extends Component
                 'document_number'   => $this->document_number,
                 'file_name'         => $fileName,
                 'file_size'         => $fileSize,
-                'byte_counter_hash' => $byteCounterHash,
+                'byte_counter_hash' => $stampedByteHash,
                 'signature_hash'    => $signatureHash,
                 'status'            => 'signed',
                 'keterangan'        => json_encode($stampMetaPayload),

@@ -45,11 +45,21 @@
             {{-- Modal Action Buttons --}}
             <div 
                 x-data="{ isPrinting: false }" 
-                class="flex items-center justify-end space-x-2.5 pt-2 border-t border-slate-100"
+                class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100"
             >
                 <button wire:click="closePrintModal" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors">
                     Tutup
                 </button>
+
+                <a 
+                    href="{{ route('digital-signature.download', $selectedDocument->id) }}"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-sm inline-flex items-center gap-2 transition-all cursor-pointer"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    <span>Unduh PDF</span>
+                </a>
 
                 <button 
                     type="button"
@@ -69,30 +79,17 @@
                             document.body.appendChild(printIframe);
                         }
                         printIframe.src = '{{ route('digital-signature.print', $selectedDocument->id) }}';
-                        
-                        let checkPrintDone = function() {
-                            setTimeout(function() {
-                                isPrinting = false;
-                                try {
-                                    printIframe.contentWindow.focus();
-                                    printIframe.contentWindow.print();
-                                } catch(e) {
-                                    console.error('Print iframe error:', e);
-                                }
-                            }, 1000);
-                        };
-
-                        printIframe.onload = checkPrintDone;
+                        setTimeout(function() { isPrinting = false; }, 2000);
                     "
                     :disabled="isPrinting"
-                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-bold rounded-xl shadow-sm inline-flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-bold rounded-xl shadow-sm inline-flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
                 >
                     <template x-if="!isPrinting">
-                        <span class="inline-flex items-center space-x-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span class="inline-flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 00-2-2Zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                             </svg>
-                            <span>Cetak Surat (Print)</span>
+                            <span>Cetak Salinan</span>
                         </span>
                     </template>
 
