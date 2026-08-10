@@ -95,16 +95,15 @@
             height: auto;
         }
 
-        /* === Seal Stamp Badge === */
         .seal-stamp {
             position: absolute;
             background: rgba(255, 255, 255, 0.96);
-            padding: 12px 14px;
-            border-radius: 14px;
+            padding: 10px 12px;
+            border-radius: 12px;
             border: 2px solid #10b981;
             box-shadow: 0 10px 30px rgba(0,0,0,0.25), 0 0 0 3px rgba(16, 185, 129, 0.2);
             text-align: left;
-            max-width: 240px;
+            width: 190px;
             z-index: 40;
             pointer-events: none;
         }

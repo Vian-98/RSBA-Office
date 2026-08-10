@@ -177,6 +177,9 @@ class DocstoreSyncService
         string $pdfBase64,
         array $signatureData = []
     ): bool {
+        // Extract stamp metadata if JSON encoded
+        $stampMeta = json_decode($doc->keterangan ?? '', true) ?: [];
+
         $content = [
             'title'             => $doc->title,
             'document_number'   => $doc->document_number,
@@ -185,6 +188,10 @@ class DocstoreSyncService
             'byte_counter_hash' => $doc->byte_counter_hash,
             'keterangan'        => $doc->keterangan,
             'uploader_name'     => optional($doc->user)->name ?? 'User',
+            'stamp_x'           => $signatureData['stamp_x'] ?? ($stampMeta['stamp_x'] ?? 70),
+            'stamp_y'           => $signatureData['stamp_y'] ?? ($stampMeta['stamp_y'] ?? 75),
+            'stamp_scale'       => $signatureData['stamp_scale'] ?? ($stampMeta['stamp_scale'] ?? 100),
+            'stamp_position'    => $signatureData['stamp_position'] ?? ($stampMeta['stamp_position'] ?? 'c_right'),
             'pdf_base64'        => $pdfBase64,
         ];
 

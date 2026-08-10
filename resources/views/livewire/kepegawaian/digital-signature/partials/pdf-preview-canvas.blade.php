@@ -13,58 +13,39 @@
         </span>
     </div>
 
-    {{-- High-Resolution Workstation Canvas with Explicit Height (850px) --}}
+    {{-- High-Resolution Workstation Canvas with PDF.js Edge-to-Edge Rendering --}}
     <div 
         x-ref="canvasBox"
-        style="position: relative; width: 100%; height: 850px; min-height: 850px; background-color: #e2e8f0; padding: 12px; border-radius: 24px; border: 2px solid #cbd5e1; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden; user-select: none;"
+        style="position: relative; width: 100%; aspect-ratio: 1 / 1.414; background-color: #cbd5e1; padding: 0; border-radius: 20px; border: 2px solid #94a3b8; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden; user-select: none;"
     >
-        {{-- Full-height PDF Object / Iframe Viewer --}}
-        <object 
-            data="{{ $this->previewPdfUrl }}#view=FitH&toolbar=0&navpanes=0" 
-            type="application/pdf" 
-            style="width: 100%; height: 100%; min-height: 820px; border-radius: 16px; border: none; background: white;"
-        >
-            <iframe src="{{ $this->previewPdfUrl }}#view=FitH&toolbar=0&navpanes=0" style="width: 100%; height: 100%; min-height: 820px; border-radius: 16px; border: none; background: white;"></iframe>
-        </object>
+        {{-- PDF.js Canvas Rendering (100% Exact Edge-to-Edge PDF Page 1) --}}
+        <canvas 
+            x-ref="pdfCanvas" 
+            style="width: 100%; height: 100%; display: block; border-radius: 18px; background: white;"
+        ></canvas>
 
         {{-- Manual Draggable & Resizable Mekari Vault Seal Stamp Overlay --}}
         <div 
             x-ref="stampBadge"
             @mousedown.prevent="startDrag($event)"
-            :style="`left: ${posX}%; top: ${posY}%; transform: scale(${scale / 100}); transform-origin: top left;`"
+            :style="`left: ${posX}%; top: ${posY}%; transform: scale(${(scale / 100) * (editorWidth / 850)}); transform-origin: top left; width: 190px;`"
             class="absolute z-30 cursor-grab active:cursor-grabbing select-none transition-transform duration-75"
         >
-            <div class="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border-2 border-emerald-500 shadow-2xl text-left max-w-xs ring-4 ring-emerald-500/20 hover:ring-emerald-500/40 transition-all select-none">
-                {{-- Stamp Header with Interactive Resize Buttons --}}
-                <div class="flex items-center justify-between border-b border-emerald-100 pb-1.5 mb-1.5">
-                    <div class="flex items-center space-x-1.5 pointer-events-none">
-                        <div class="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center text-white shrink-0">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                            </svg>
+            <div style="background: rgba(255, 255, 255, 0.96); padding: 10px 12px; border-radius: 12px; border: 2px solid #10b981; box-shadow: 0 10px 25px rgba(0,0,0,0.15), 0 0 0 3px rgba(16, 185, 129, 0.15);" class="text-left w-full select-none">
+                {{-- Stamp Header --}}
+                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #d1fae5; padding-bottom: 4px; margin-bottom: 4px;">
+                    <div style="display: flex; align-items: center; gap: 4px;" class="pointer-events-none">
+                        <div style="width: 14px; height: 14px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: 900;" class="shrink-0">
+                            ✓
                         </div>
-                        <span class="text-[9px] font-black uppercase text-emerald-800 tracking-wider">MEKARI VAULT</span>
-                    </div>
-                    
-                    {{-- Interactive Resize Controls Directly on Stamp --}}
-                    <div class="flex items-center space-x-1 bg-emerald-50 rounded-lg p-0.5 border border-emerald-200">
-                        <button type="button" @click.stop="scale = Math.max(50, parseInt(scale) - 10)" class="w-4 h-4 rounded bg-white hover:bg-emerald-200 active:bg-emerald-300 text-[10px] font-black text-emerald-800 flex items-center justify-center shadow-xs transition-colors">
-                            -
-                        </button>
-                        <span class="text-[8px] font-mono font-bold text-emerald-900 px-1 select-none" x-text="scale + '%'"></span>
-                        <button type="button" @click.stop="scale = Math.min(180, parseInt(scale) + 10)" class="w-4 h-4 rounded bg-white hover:bg-emerald-200 active:bg-emerald-300 text-[10px] font-black text-emerald-800 flex items-center justify-center shadow-xs transition-colors">
-                            +
-                        </button>
+                        <span style="font-size: 8.5px; font-weight: 900; text-transform: uppercase; color: #065f46; letter-spacing: 0.05em;">SIGNED BY MEKARI VAULT</span>
                     </div>
                 </div>
 
-                <div class="text-xs font-bold text-slate-800 leading-tight pointer-events-none">{{ Auth::user()->name }}</div>
-                <div class="text-[9px] text-slate-500 font-mono mt-0.5 pointer-events-none">{{ date('d M Y H:i') }} WIB</div>
-                <div class="text-[8px] font-mono text-indigo-700 truncate mt-1 bg-indigo-50 px-1.5 py-0.5 rounded pointer-events-none">
-                    SHA: {{ substr($fileHashSHA256, 0, 18) }}...
-                </div>
-                <div class="text-[8px] text-slate-400 text-center border-t border-slate-100 pt-1 mt-1 font-sans pointer-events-none">
-                    Klik & geser | gunakan [-] [+] untuk ukuran
+                <div style="font-size: 11px; font-weight: 700; color: #1e293b;" class="pointer-events-none truncate">{{ Auth::user()->name }}</div>
+                <div style="font-size: 8.5px; color: #64748b; font-family: monospace; margin-top: 2px;" class="pointer-events-none">{{ date('d M Y H:i') }} WIB</div>
+                <div style="font-size: 8px; font-family: monospace; color: #4338ca; margin-top: 3px; background: #eef2ff; padding: 2px 5px; border-radius: 4px;" class="pointer-events-none truncate">
+                    SHA: {{ substr($fileHashSHA256, 0, 14) }}...
                 </div>
             </div>
         </div>
