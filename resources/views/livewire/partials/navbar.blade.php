@@ -69,7 +69,6 @@
                             Logout
                         </span>
                     </x-ts:dropdown.items>
-
                 </x-ts:dropdown>
             </div>
         </div>

@@ -2,11 +2,11 @@
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-semibold text-gray-800">Kontrol Utama Absensi</h2>
         <div class="flex space-x-2">
-            @if(auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM']))
+            @can('view-kepegawaian-absensi')
             <x-ts:button href="{{ route('kepegawaian.absensi.rekap') }}" color="secondary">
                 Lihat Rekapitulasi
             </x-ts:button>
-            @endif
+            @endcan
             <x-ts:button href="{{ route('kepegawaian.absensi.import') }}" color="primary">
                 Import Absensi Baru
             </x-ts:button>

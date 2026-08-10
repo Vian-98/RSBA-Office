@@ -54,19 +54,32 @@ class SuratCutiForm extends Form
     public static function generateNoSurat(): string
     {
         $tahun = date('Y');
-        $last = SuratCuti::select('id', 'no_surat')
-            ->whereYear('tgl_surat', $tahun)
-            ->orderBy('id', 'desc')
-            ->first();
 
-        $no = 1;
-        if ($last) {
-            $no = (int)substr($last->no_surat, 1, 4) + 1;
+        $records = SuratCuti::where('no_surat', 'like', "C%{$tahun}")
+            ->pluck('no_surat');
+
+        $maxNo = 0;
+        foreach ($records as $noSurat) {
+            if (preg_match('/^C(\d+)' . $tahun . '$/i', $noSurat, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $maxNo) {
+                    $maxNo = $num;
+                }
+            }
         }
-        // buat nomor jadi 3 digit
-        $no = str_pad($no, 4, '0', STR_PAD_LEFT);
 
-        return "C{$no}{$tahun}";
+        $nextNo = $maxNo + 1;
+
+        do {
+            $formattedNo = str_pad($nextNo, 4, '0', STR_PAD_LEFT);
+            $candidate = "C{$formattedNo}{$tahun}";
+            $exists = SuratCuti::where('no_surat', $candidate)->exists();
+            if ($exists) {
+                $nextNo++;
+            }
+        } while ($exists);
+
+        return $candidate;
     }
 
 

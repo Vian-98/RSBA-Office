@@ -18,9 +18,14 @@ class SimulasiCutiBersamaService
      */
     public function simulasikan(CutiBersama $cutiBersama): array
     {
-        $cutiBersama->loadMissing(['tanggal', 'jenisCuti']);
+        $cutiBersama->loadMissing(['tanggal', 'jenisCuti', 'partisipasiKaryawan']);
 
         $tanggals = $cutiBersama->tanggal->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
+
+        // Map partisipasi (is_ikut: true/false) dari database
+        $partisipasiMap = \App\Models\Sdm\CutiBersamaKaryawan::where('cuti_bersama_id', $cutiBersama->id)
+            ->pluck('is_ikut', 'karyawan_id')
+            ->all();
 
         $karyawans = Karyawan::with(['latestJabatan.jabatan'])->orderBy('nama')->get();
         $karyawanIds = $karyawans->pluck('id')->all();
@@ -52,6 +57,7 @@ class SimulasiCutiBersamaService
         $totalPegawaiPiket = 0;
         $totalPegawaiLiburRoster = 0;
         $totalJadwalBelumAda = 0;
+        $totalPegawaiDikecualikan = 0;
 
         $karyawanSummaryMap = [];
         $totalPegawaiDefisit = 0;
@@ -59,6 +65,7 @@ class SimulasiCutiBersamaService
 
         foreach ($karyawans as $karyawan) {
             $isReguler = ($karyawan->kategori_kerja === KategoriKerja::REGULER);
+            $isIkut    = isset($partisipasiMap[$karyawan->id]) ? (bool)$partisipasiMap[$karyawan->id] : true;
             $hariDipotongKaryawan = 0;
 
             foreach ($tanggals as $tglStr) {
@@ -72,11 +79,15 @@ class SimulasiCutiBersamaService
                     'shift_kode' => $jadwalDetail?->shift?->kode ?? null,
                     'shift_nama' => $jadwalDetail?->shift?->nama ?? 'Libur / Non-Shift',
                     'potong_cuti' => false,
+                    'is_ikut'     => $isIkut,
                     'status_aksi' => '',
                     'keterangan' => '',
                 ];
 
-                if (!$jadwalDetail) {
+                if (!$isIkut) {
+                    $hasil['status_aksi'] = 'DIKECUALIKAN';
+                    $hasil['keterangan'] = 'Dikecualikan dari Cuti Bersama (Tidak Ikut)';
+                } elseif (!$jadwalDetail) {
                     $totalJadwalBelumAda++;
                     $hasil['status_aksi'] = 'JADWAL_BELUM_ADA';
                     $hasil['keterangan'] = 'Jadwal kerja belum dibuat (akan diproses jika dibuat susulan)';
@@ -162,6 +173,8 @@ class SimulasiCutiBersamaService
             ];
         }
 
+        $totalPegawaiDikecualikan = count(array_filter($partisipasiMap, fn($v) => !(bool)$v));
+
         return [
             'cuti_bersama_id' => $cutiBersama->id,
             'nama_event' => $cutiBersama->nama,
@@ -173,6 +186,8 @@ class SimulasiCutiBersamaService
             'total_pegawai_piket' => $totalPegawaiPiket,
             'total_pegawai_libur_roster' => $totalPegawaiLiburRoster,
             'total_jadwal_belum_ada' => $totalJadwalBelumAda,
+            'total_pegawai_dikecualikan' => $totalPegawaiDikecualikan,
+            'total_pegawai_ikut' => count($karyawans) - $totalPegawaiDikecualikan,
             'total_pegawai_defisit' => $totalPegawaiDefisit,
             'total_hari_defisit' => $totalHariDefisit,
             'details' => $details,

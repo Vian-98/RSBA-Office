@@ -57,10 +57,13 @@
             $colorMap[$o['id']] = autoWarna($o['kode'], $o['warna']);
             $tipMap[$o['id']]   = $o['nama'] . ' (' . substr($o['jam_masuk'],0,5) . '–' . substr($o['jam_keluar'],0,5) . ')';
         }
+        $jsonColorMap = json_encode($colorMap);
+        $jsonLabelMap = json_encode($labelMap);
+        $jsonTipMap   = json_encode($tipMap);
 
         $user = auth()->user();
-        $isKabidReviewer = $user?->hasRole('Super-Admin') || $user?->can('approve-jadwal-kabid') || $user?->hasRole('Kepala-Bidang');
-        $isWadirReviewer = $user?->hasRole('Super-Admin') || $user?->can('approve-jadwal-wadir') || $user?->hasRole('Wakil-Direktur');
+        $isKabidReviewer = $user?->can('approve-jadwal-kabid') || $user?->isKepalaDept();
+        $isWadirReviewer = $user?->can('approve-jadwal-wadir') || $user?->isWadir();
     @endphp
 
     <style>
@@ -127,7 +130,18 @@
     {{-- ── Header Bar ── --}}
     <div class="flex items-center justify-between rounded-xl bg-white p-5 shadow-sm border border-slate-100">
         <div>
-            <h2 class="text-lg font-bold text-slate-800">Jadwal Kerja: {{ $jadwalKerja->ruangan->nama ?? '-' }}</h2>
+            <div class="flex items-center gap-2">
+                <h2 class="text-lg font-bold text-slate-800">Jadwal Kerja: {{ $jadwalKerja->ruangan->nama ?? '-' }}</h2>
+                @if($jadwalKerja->isDokterSchedule())
+                    <span class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-200 shadow-xs">
+                        👨‍⚕️ Jadwal Dokter
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 shadow-xs">
+                        👥 Jadwal Karyawan
+                    </span>
+                @endif
+            </div>
             <div class="text-sm text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>Periode: <strong class="text-slate-700">{{ date('F', mktime(0, 0, 0, $jadwalKerja->bulan, 1)) }} {{ $jadwalKerja->tahun }}</strong></span>
                 <span class="text-slate-300">•</span>
@@ -137,14 +151,20 @@
                 </span>
                 @if($jadwalKerja->diketahuiOleh)
                     <span class="text-slate-300">•</span>
-                    <span class="text-xs text-slate-500" title="{{ $jadwalKerja->diketahui_at?->format('d/m/Y H:i') }}">
+                    <span class="text-xs text-slate-500">
                         Diketahui Kabid: <strong class="text-slate-700">{{ $jadwalKerja->diketahuiOleh->nama }}</strong>
+                        @if($jadwalKerja->diketahui_at)
+                            <span class="font-medium text-slate-500">({{ $jadwalKerja->diketahui_at->format('d/m/Y H:i') }})</span>
+                        @endif
                     </span>
                 @endif
                 @if($jadwalKerja->disetujuiOleh)
                     <span class="text-slate-300">•</span>
-                    <span class="text-xs text-slate-500" title="{{ $jadwalKerja->disetujui_at?->format('d/m/Y H:i') }}">
+                    <span class="text-xs text-slate-500">
                         Disetujui Wadir: <strong class="text-slate-700">{{ $jadwalKerja->disetujuiOleh->nama }}</strong>
+                        @if($jadwalKerja->disetujui_at)
+                            <span class="font-medium text-slate-500">({{ $jadwalKerja->disetujui_at->format('d/m/Y H:i') }})</span>
+                        @endif
                     </span>
                 @endif
             </div>
@@ -152,10 +172,13 @@
 
         <div class="flex gap-2 flex-shrink-0">
             <x-ts:button outline href="{{ route('kepegawaian.jadwal-kerja.index') }}" icon="tabler.arrow-left">Kembali</x-ts:button>
-            <x-ts:button outline color="secondary" x-on:click="$dispatch('open-modal', {id:'modal-riwayat'}); $dispatch('load-riwayat', {jadwalKerjaId: {{ $jadwalKerja->id }}})" icon="tabler.history">Riwayat</x-ts:button>
+            <x-ts:button outline color="secondary" x-on:click="$tsui.open.modal('modal-riwayat'); Livewire.dispatch('load-riwayat', {jadwalKerjaId: {{ $jadwalKerja->id }}})" icon="tabler.history">Riwayat</x-ts:button>
+            <x-ts:button outline color="secondary" x-on:click="$tsui.open.modal('modal-log-approval'); Livewire.dispatch('load-log-approval', {jadwalKerjaId: {{ $jadwalKerja->id }}})" icon="tabler.certificate">Log Persetujuan</x-ts:button>
 
             @if(!$isReadOnly)
-                <x-ts:button outline color="primary" wire:click="save" loading="save" icon="tabler.device-floppy">Simpan Draf</x-ts:button>
+                <x-ts:button outline color="primary" wire:click="save" loading="save" icon="tabler.device-floppy">
+                    {{ $jadwalKerja->status === \App\Enums\StatusJadwalKerja::PUBLISHED ? 'Simpan Perubahan' : 'Simpan Draf' }}
+                </x-ts:button>
             @endif
 
             {{-- Action Buttons per Status --}}
@@ -180,6 +203,9 @@
         <div class="flex items-center justify-between">
             @php
                 $isDokter = $jadwalKerja->isDokterSchedule();
+                $targetKabidName = $jadwalKerja->diketahuiOleh?->full_nama ?? $jadwalKerja->getTargetApproverName(1);
+                $targetWadirName = $jadwalKerja->disetujuiOleh?->full_nama ?? $jadwalKerja->getTargetApproverName(2);
+
                 if ($isDokter) {
                     $currentStep = match ($jadwalKerja->status) {
                         \App\Enums\StatusJadwalKerja::DRAFT, \App\Enums\StatusJadwalKerja::DITOLAK => 1,
@@ -188,17 +214,17 @@
                         default => 1,
                     };
                     $steps = [
-                        1 => ['label' => 'Draf (3 Koor Dokter)', 'sub' => 'Penyusunan Jadwal Dokter'],
-                        2 => ['label' => 'Disetujui (Wadir)', 'sub' => 'Persetujuan Wakil Direktur'],
-                        3 => ['label' => 'Dipublikasikan', 'sub' => 'Berlaku bagi Dokter'],
+                        1 => ['label' => 'Draf (Koor Dokter)', 'sub' => 'Penyusunan Jadwal Dokter'],
+                        2 => ['label' => 'Disetujui Wadir', 'sub' => $jadwalKerja->disetujui_at ? $jadwalKerja->disetujui_at->format('d/m/Y H:i') : $targetWadirName],
+                        3 => ['label' => 'Dipublikasikan', 'sub' => $jadwalKerja->published_at ? $jadwalKerja->published_at->format('d/m/Y H:i') : 'Berlaku bagi Dokter'],
                     ];
                 } else {
                     $currentStep = $jadwalKerja->status->stepIndex();
                     $steps = [
                         1 => ['label' => 'Draf (Karu)', 'sub' => 'Penyusunan Jadwal'],
-                        2 => ['label' => 'Diketahui (Kabid)', 'sub' => 'Peninjauan Kepala Bidang'],
-                        3 => ['label' => 'Disetujui (Wadir)', 'sub' => 'Persetujuan Wakil Direktur'],
-                        4 => ['label' => 'Dipublikasikan', 'sub' => 'Berlaku bagi Karyawan'],
+                        2 => ['label' => 'Diketahui Kepala Dept', 'sub' => $jadwalKerja->diketahui_at ? $jadwalKerja->diketahui_at->format('d/m/Y H:i') : $targetKabidName],
+                        3 => ['label' => 'Disetujui Wadir', 'sub' => $jadwalKerja->disetujui_at ? $jadwalKerja->disetujui_at->format('d/m/Y H:i') : $targetWadirName],
+                        4 => ['label' => 'Dipublikasikan', 'sub' => $jadwalKerja->published_at ? $jadwalKerja->published_at->format('d/m/Y H:i') : 'Berlaku bagi Karyawan'],
                     ];
                 }
             @endphp
@@ -260,10 +286,14 @@
     </div>
 
     {{-- Modal Riwayat --}}
-    <x-filament::modal id="modal-riwayat" width="4xl" :autofocus="false">
-        <x-slot name="heading">Riwayat Perubahan Jadwal</x-slot>
-        <livewire:Kepegawaian.JadwalKerja.Riwayat />
-    </x-filament::modal>
+    <x-ts:modal id="modal-riwayat" title="Riwayat Perubahan Jadwal" size="4xl">
+        <livewire:kepegawaian.jadwal-kerja.riwayat :jadwal-kerja-id="$jadwalKerja->id" />
+    </x-ts:modal>
+
+    {{-- Modal Log Persetujuan --}}
+    <x-ts:modal id="modal-log-approval" title="Log & Histori Persetujuan Jadwal" size="3xl">
+        <livewire:kepegawaian.jadwal-kerja.log-approval :jadwal-kerja-id="$jadwalKerja->id" />
+    </x-ts:modal>
 
     {{-- Modal Catatan Revisi --}}
     @if($showRevisiModal)
@@ -354,9 +384,9 @@
                                         {{-- Editable: select invisible, label overlay visible --}}
                                         <div x-data="{
                                                 v: '{{ $detail->shift_id }}',
-                                                c: @js($colorMap),
-                                                l: @js($labelMap),
-                                                t: @js($tipMap),
+                                                c: {{ $jsonColorMap }},
+                                                l: {{ $jsonLabelMap }},
+                                                t: {{ $jsonTipMap }},
                                                 lum(hex) {
                                                     hex = hex.replace('#','');
                                                     let r = parseInt(hex.substr(0,2),16),
