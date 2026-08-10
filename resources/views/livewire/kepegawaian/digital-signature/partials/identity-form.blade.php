@@ -54,10 +54,15 @@
 
     {{-- Submit Button --}}
     <div class="pt-4 w-full">
-        <button type="submit" wire:loading.attr="disabled" class="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 active:bg-indigo-900 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center space-x-2 text-base">
-            <span wire:loading.remove>Sign & Kirim ke Docstore (Mekari e-Sign)</span>
-            <span wire:loading class="flex items-center space-x-2">
-                <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+        <button 
+            type="submit" 
+            wire:loading.attr="disabled"
+            wire:target="openPasswordModal"
+            class="w-full py-3.5 px-6 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center space-x-2 text-base cursor-pointer disabled:opacity-60"
+        >
+            <span wire:loading.remove wire:target="openPasswordModal">Tanda Tangan</span>
+            <span wire:loading.flex wire:target="openPasswordModal" class="inline-flex items-center justify-center gap-2 whitespace-nowrap">
+                <svg class="animate-spin h-5 w-5 text-white shrink-0" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>

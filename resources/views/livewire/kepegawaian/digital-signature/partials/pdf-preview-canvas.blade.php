@@ -9,7 +9,7 @@
             Pratinjau PDF (Side Kanan)
         </span>
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-            🖐️ Hold Click & Resize Active
+            Hold Click & Resize Active
         </span>
     </div>
 
@@ -64,7 +64,7 @@
                     SHA: {{ substr($fileHashSHA256, 0, 18) }}...
                 </div>
                 <div class="text-[8px] text-slate-400 text-center border-t border-slate-100 pt-1 mt-1 font-sans pointer-events-none">
-                    🖐️ Klik & geser | gunakan [-] [+] untuk ukuran
+                    Klik & geser | gunakan [-] [+] untuk ukuran
                 </div>
             </div>
         </div>
