@@ -18,25 +18,25 @@
                     class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
                     Kontrol (Log Harian)
                 </button>
-                @if(auth()->user()?->hasRole('Super-Admin') || auth()->user()?->can('view-kepegawaian-absensi'))
+                @can('view-kepegawaian-absensi')
                 <button wire:click="$set('tab', 'rekap')" @click="tab = 'rekap'"
                     :class="tab === 'rekap' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
                     class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
                     Rekapitulasi
                 </button>
-                @endif
+                @endcan
             </nav>
         </div>
 
         <div class="mt-4">
             @if($tab === 'kontrol')
-                @livewire('kepegawaian.absensi.index')
+                <livewire:kepegawaian.absensi.index lazy />
             @endif
-            @if(auth()->user()?->hasRole('Super-Admin') || auth()->user()?->can('view-kepegawaian-absensi'))
+            @can('view-kepegawaian-absensi')
                 @if($tab === 'rekap')
-                    @livewire('kepegawaian.absensi.rekap')
+                    <livewire:kepegawaian.absensi.rekap lazy />
                 @endif
-            @endif
+            @endcan
         </div>
     </div>
 </div>

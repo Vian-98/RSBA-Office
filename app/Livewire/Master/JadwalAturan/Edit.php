@@ -43,7 +43,7 @@ class Edit extends Component
     public function rules()
     {
         return [
-            'bagian_id' => 'required|exists:bagian,id',
+            'bagian_id' => 'nullable|exists:bagian,id',
             'kode' => 'required|string',
             'nilai' => 'required|string',
             'aktif' => 'boolean'
@@ -52,31 +52,41 @@ class Edit extends Component
 
     public function submit()
     {
+        abort_unless(
+            auth()->user()?->can('edit-kepegawaian-master-jadwal-aturan'),
+            403,
+            'Tidak memiliki akses untuk mengubah Aturan Jadwal.'
+        );
+
         $this->validate();
 
-        if ($this->record->bagian_id != $this->bagian_id || $this->record->kode != $this->kode) {
-            $exists = JadwalAturan::where('bagian_id', $this->bagian_id)
-                ->where('kode', $this->kode)
-                ->exists();
-
-            if ($exists) {
-                $this->toast()->error('Error', 'Aturan dengan kode tersebut sudah ada untuk bagian ini.')->send();
-                return;
-            }
-        }
+        $targetBagianId = $this->bagian_id ?: null;
 
         try {
-            $this->record->update([
-                'bagian_id' => $this->bagian_id,
-                'kode' => $this->kode,
-                'nilai' => $this->nilai,
-                'aktif' => $this->aktif,
-            ]);
+            $existing = JadwalAturan::where('bagian_id', $targetBagianId)
+                ->where('kode', $this->kode)
+                ->where('id', '!=', $this->record->id)
+                ->first();
+
+            if ($existing) {
+                $existing->update([
+                    'nilai' => $this->nilai,
+                    'aktif' => $this->aktif,
+                ]);
+                $this->record->delete();
+                $this->toast()->success('Berhasil', 'Aturan Jadwal berhasil diperbarui / di-override.')->send();
+            } else {
+                $this->record->update([
+                    'bagian_id' => $targetBagianId,
+                    'kode' => $this->kode,
+                    'nilai' => $this->nilai,
+                    'aktif' => $this->aktif,
+                ]);
+                $this->toast()->success('Berhasil', 'Aturan Jadwal berhasil diperbarui.')->send();
+            }
 
             $this->dispatch('jadwal-aturan-updated');
             $this->dispatch('close-modal', id: 'edit-jadwal-aturan');
-
-            $this->toast()->success('Berhasil', 'Aturan Jadwal berhasil diperbarui.')->send();
         } catch (Throwable $e) {
             $this->toast()->error('Error', 'Failed : ' . $e->getMessage())->send();
         }
@@ -90,7 +100,14 @@ class Edit extends Component
         ])->toArray();
 
         return view('livewire.master.jadwal-aturan.edit', [
-            'bagianOptions' => Bagian::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'bagianOptions' => array_merge(
+                [['value' => '', 'label' => 'Aturan Umum RSBA (Semua Departemen)']],
+                Bagian::select('id', 'nama')
+                    ->orderBy('nama')
+                    ->get()
+                    ->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])
+                    ->toArray()
+            ),
             'kodeOptions' => $kodeOptions,
         ]);
     }

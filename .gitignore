@@ -35,3 +35,18 @@ yarn-error.log
 /storage/debugbar/*
 !/storage/debugbar/.gitignore
 
+# Dummy Seeders & Data Files
+database/seeders/*Dummy*
+database/seeders/*dummy*
+database/seeders/Dummy*
+database/seeders/Jadwal*
+database/seeders/Skenario*
+database/seeders/Dokter*
+database/seeders/Inpatient*
+database/seeders/KaryawanExcel*
+database/seeders/SuperAdminSignature*
+database/seeders/files/
+
+# Published vendor views to ignore
+/resources/views/vendor/ts-ui
+

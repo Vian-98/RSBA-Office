@@ -31,9 +31,42 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
     protected $listeners = ['jadwal-kerja-generated' => '$refresh'];
 
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="animate-pulse space-y-6">
+            <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
+                <div class="h-8 bg-slate-200 rounded w-1/3"></div>
+                <div class="h-10 bg-slate-200 rounded w-1/6"></div>
+            </div>
+            <div class="h-96 bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+                <div class="h-10 bg-slate-100 rounded"></div>
+                <div class="h-12 bg-slate-50 rounded"></div>
+                <div class="h-12 bg-slate-50 rounded"></div>
+                <div class="h-12 bg-slate-50 rounded"></div>
+                <div class="h-12 bg-slate-50 rounded"></div>
+            </div>
+        </div>
+        HTML;
+    }
+
     public function mount()
     {
-        $this->autoGenerateRegulerSchedules();
+        // Membuka halaman jadwal tidak boleh membuat data baru untuk user
+        // read-only. Auto-generate hanya dijalankan oleh pihak yang memang
+        // memiliki kemampuan generate jadwal.
+        if (Auth::user()?->can('generate', JadwalKerja::class)) {
+            $this->autoGenerateRegulerSchedules();
+        }
+    }
+
+    private function isRestrictedGuest($user): bool
+    {
+        if (!$user) return false;
+        if ($user->can('view-kepegawaian-jadwal-kerja') || $user->isKoordinator() || $user->isKepalaDept() || $user->isWadir()) {
+            return false;
+        }
+        return $user->hasRole('Guest');
     }
 
     public function autoGenerateRegulerSchedules()
@@ -74,6 +107,27 @@ class Index extends Component implements HasForms, HasTable, HasActions
             $year = $target->year;
 
             foreach ($regulerOnlyRuanganIds as $ruanganId) {
+                $roomMembers = $grouped[$ruanganId];
+                $bagianId = JadwalKerja::resolveBagianIdForKaryawanIds(
+                    $roomMembers->pluck('id'),
+                    (int) $ruanganId
+                );
+
+                // Do not silently create a schedule with an ambiguous department.
+                // The user can resolve it through manual Generate Jadwal.
+                if (!$bagianId) {
+                    continue;
+                }
+
+                $shiftRegulerUntukBagian = app(\App\Services\AturanJadwalService::class)
+                    ->shiftValidUntukRuangan((int) $ruanganId, (int) $bagianId)
+                    ->first(fn ($ruanganShift) => $ruanganShift->shift?->kode === 'REGULER')
+                    ?->shift;
+
+                if (!$shiftRegulerUntukBagian) {
+                    continue;
+                }
+
                 $exists = \App\Models\Sdm\JadwalKerja::where('ruangan_id', $ruanganId)
                     ->where('bulan', $month)
                     ->where('tahun', $year)
@@ -87,6 +141,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
                 try {
                     $jadwalKerja = \App\Models\Sdm\JadwalKerja::create([
                         'ruangan_id' => $ruanganId,
+                        'bagian_id' => $bagianId,
                         'bulan' => $month,
                         'tahun' => $year,
                         'status' => \App\Enums\StatusJadwalKerja::PUBLISHED,
@@ -122,7 +177,6 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     }
 
                     $details = [];
-                    $roomMembers = $grouped[$ruanganId];
                     foreach ($roomMembers as $karyawan) {
                         for ($d = 1; $d <= $daysInMonth; $d++) {
                             $date = \Carbon\Carbon::create($year, $month, $d);
@@ -130,7 +184,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
                             $shiftId = null;
                             if ($date->dayOfWeekIso >= 1 && $date->dayOfWeekIso <= 5) {
-                                $shiftId = $shiftReguler->id;
+                                $shiftId = $shiftRegulerUntukBagian->id;
                             }
 
                             $statusKehadiran = 'belum_dicek';
@@ -176,13 +230,44 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
         $user = Auth::user();
         if ($user) {
-            $isApprover = $user->hasRole([
-                'Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang',
-                'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur'
-            ]) || $user->can('approve-jadwal-kabid') || $user->can('approve-jadwal-wadir');
+            $isGlobalApprover = $user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir') || $user->can('view-kepegawaian-laporan');
 
-            if ($isApprover) {
-                // Super-Admin, SDM, Wadir, dan Kabid dapat melihat seluruh daftar jadwal ruangan
+            if ($this->isRestrictedGuest($user)) {
+                $ownRuanganIds = $user->getOwnRuanganIds();
+
+                if (empty($ownRuanganIds)) {
+                    $query->whereRaw('0 = 1');
+                } else {
+                    $query->whereIn('ruangan_id', $ownRuanganIds)
+                        ->where('tipe', $user->isDokter() ? 'dokter' : 'karyawan')
+                        ->whereIn('status', ['published', 'locked']);
+                }
+            } elseif ($isGlobalApprover) {
+                // Super-Admin, SDM, Wadir, dan Direktur dapat melihat seluruh daftar jadwal ruangan
+            } elseif ($user->can('approve-jadwal-kabid') || $user->isKepalaDept()) {
+                $bagianIds = $user->getActiveBagianIds();
+                $legacyBagianRuanganIds = $user->getBagianScopedRuanganIds() ?? [];
+                $koorIds = $user->getRuanganKoordinatorIds() ?? [];
+                if (empty($bagianIds) && empty($legacyBagianRuanganIds) && empty($koorIds)) {
+                    $query->whereRaw('0 = 1');
+                } else {
+                    $query->where(function ($scope) use ($bagianIds, $legacyBagianRuanganIds, $koorIds) {
+                        if (!empty($bagianIds)) {
+                            $scope->whereIn('bagian_id', $bagianIds);
+                        }
+
+                        if (!empty($legacyBagianRuanganIds)) {
+                            $scope->orWhere(function ($legacy) use ($legacyBagianRuanganIds) {
+                                $legacy->whereNull('bagian_id')
+                                    ->whereIn('ruangan_id', $legacyBagianRuanganIds);
+                            });
+                        }
+
+                        if (!empty($koorIds)) {
+                            $scope->orWhereIn('ruangan_id', $koorIds);
+                        }
+                    });
+                }
             } elseif ($user->isKoordinatorDokter()) {
                 $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
                 if (empty($ruanganIds)) {
@@ -231,21 +316,33 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     ->badge()
                     ->color(fn ($state) => $state->color())
                     ->formatStateUsing(fn ($state) => $state->nama()),
-                TextColumn::make('diketahuiOleh.nama')->label('Diketahui (Kabid)')->placeholder('—')->toggleable(),
-                TextColumn::make('disetujuiOleh.nama')->label('Disetujui (Wadir)')->placeholder('—')->toggleable(),
+                TextColumn::make('diketahuiOleh.nama')
+                    ->label('Diketahui (Kabid)')
+                    ->placeholder(fn (JadwalKerja $record): string => $record->status === \App\Enums\StatusJadwalKerja::MENUNGGU_KABID ? 'Target: ' . $record->getTargetApproverName(1) : '—')
+                    ->description(fn (JadwalKerja $record): ?string => $record->diketahui_at?->format('d/m/Y H:i'))
+                    ->toggleable(),
+                TextColumn::make('disetujuiOleh.nama')
+                    ->label('Disetujui (Wadir)')
+                    ->placeholder(fn (JadwalKerja $record): string => $record->status === \App\Enums\StatusJadwalKerja::MENUNGGU_WADIR ? 'Target: ' . $record->getTargetApproverName(2) : '—')
+                    ->description(fn (JadwalKerja $record): ?string => $record->disetujui_at?->format('d/m/Y H:i'))
+                    ->toggleable(),
                 TextColumn::make('pembuat.nama')->label('Dibuat Oleh')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->recordActions([
                 Action::make('kelola')
                     ->label(fn (JadwalKerja $record): string => 
-                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur']) || 
+                        Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
+                        Auth::user()?->can('approve-jadwal-wadir') || 
+                        Auth::user()?->can('approve-jadwal-kabid') || 
                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
                             ? 'Kelola' 
                             : 'Lihat'
                     )
                     ->iconButton()
                     ->icon(fn (JadwalKerja $record): string => 
-                        Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum', 'Wadir-Keuangan', 'Direktur']) || 
+                        Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
+                        Auth::user()?->can('approve-jadwal-wadir') || 
+                        Auth::user()?->can('approve-jadwal-kabid') || 
                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
                             ? 'tabler-list-details' 
                             : 'tabler-eye'
@@ -262,7 +359,8 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     ->successNotificationTitle('Jadwal berhasil dihapus')
                     ->visible(fn (JadwalKerja $record): bool => 
                         in_array($record->status, [\App\Enums\StatusJadwalKerja::DRAFT, \App\Enums\StatusJadwalKerja::DITOLAK]) && 
-                        (Auth::user()?->hasRole(['Super-Admin', 'Staff-SDM']) || 
+                        (Auth::user()?->can('delete-kepegawaian-jadwal-kerja') || 
+                         Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
                          (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? [])))
                     ),
             ]);
@@ -270,7 +368,20 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
     public function render()
     {
-        $this->authorizeFromRoute();
+        $user = Auth::user();
+        $canAccessJadwal = $user && $this->isRestrictedGuest($user)
+            ? !empty($user->getOwnRuanganIds())
+            : ($user && (
+                $user->can('view-kepegawaian-jadwal-kerja')
+                || $user->isDokter()
+                || $user->isKoordinator()
+                || $user->isKepalaDept()
+                || $user->isWadir()
+                || !empty($user->karyawan?->ruangan_id)
+            ));
+
+        abort_unless($canAccessJadwal, 403, 'Anda tidak memiliki akses ke Jadwal Kerja.');
+
         return view('livewire.kepegawaian.jadwal-kerja.index');
     }
 }

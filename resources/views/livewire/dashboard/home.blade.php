@@ -29,6 +29,78 @@
         </div>
     </div>
 
+    @if(!empty($jadwalHariIni))
+        <!-- Today's Schedule Card -->
+        <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shrink-0">
+                        <x-tabler-calendar-event class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800">Jadwal Tugas Hari Ini</h2>
+                        <p class="text-xs text-slate-400">{{ $jadwalHariIni['tanggal'] }}</p>
+                    </div>
+                </div>
+                <a href="/profile/jadwal-tugas-saya" class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
+                    <span>Lihat Jadwal Saya</span>
+                    <x-tabler-arrow-right class="h-3.5 w-3.5" />
+                </a>
+            </div>
+
+            @if(isset($jadwalHariIni['no_schedule']) && $jadwalHariIni['no_schedule'])
+                <div class="flex items-center gap-3 rounded-xl bg-slate-50 p-4 border border-slate-100 text-slate-500">
+                    <x-tabler-calendar-x class="h-6 w-6 text-slate-400 shrink-0" />
+                    <span class="text-xs font-medium">Tidak ada jadwal kerja yang terdaftar untuk Anda pada hari ini.</span>
+                </div>
+            @elseif($jadwalHariIni['is_libur'])
+                <div class="flex items-center gap-3 rounded-xl bg-rose-50/60 p-4 border border-rose-100 text-rose-700">
+                    <span class="px-2.5 py-1 text-xs font-bold rounded-md bg-rose-200 text-rose-800 shrink-0">LIBUR</span>
+                    <div class="text-xs font-medium">
+                        <span class="font-bold">Hari Libur Terjadwal</span> — Anda tidak memiliki shift kerja pada hari ini.
+                    </div>
+                </div>
+            @else
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl bg-slate-50/60 p-4 border border-slate-100">
+                    <!-- Shift & Jam -->
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <span class="px-2.5 py-1 text-xs font-bold rounded-md shadow-2xs border border-black/5 shrink-0" style="background-color: {{ $jadwalHariIni['shift_warna'] }}; color: #1e293b;">
+                            {{ $jadwalHariIni['shift_kode'] }}
+                        </span>
+                        <span class="text-sm font-bold text-slate-800">
+                            {{ $jadwalHariIni['shift_nama'] }}
+                        </span>
+                        <span class="text-slate-300 hidden sm:inline">•</span>
+                        <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-white px-3 py-1 rounded-lg border border-slate-200/80 shadow-2xs">
+                            <x-tabler-clock class="h-4 w-4 text-indigo-500 shrink-0" />
+                            <span>{{ $jadwalHariIni['jam_masuk'] }}</span>
+                            <span class="text-slate-300">—</span>
+                            <span>{{ $jadwalHariIni['jam_keluar'] }}</span>
+                            @if($jadwalHariIni['lintas_hari'])
+                                <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-1 py-0.5 rounded">(H+1)</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Details: Ruangan & Status -->
+                    <div class="flex flex-wrap items-center gap-4 text-xs">
+                        <div class="flex items-center gap-1.5 text-slate-600">
+                            <x-tabler-building-hospital class="h-4 w-4 text-slate-400 shrink-0" />
+                            <span class="font-medium text-slate-500">Ruangan:</span>
+                            <span class="font-bold text-slate-800">{{ $jadwalHariIni['ruangan'] }}</span>
+                        </div>
+                        @if($jadwalHariIni['status'])
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-medium text-slate-500">Status:</span>
+                                <x-ts:badge :color="$jadwalHariIni['status']->color()" text="{{ $jadwalHariIni['status']->nama() }}" sm />
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
+
     @if(!empty($rekapAbsen))
         <!-- Personal Attendance Recap Card -->
         <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -136,7 +208,22 @@
     @endif
 
     <!-- Stats Grid Section -->
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    @php
+        $statsCount = 0;
+        if (isset($stats['karyawan_count'])) $statsCount++;
+        if (isset($stats['barang_count'])) $statsCount++;
+        if (isset($stats['total_hutang'])) $statsCount++;
+        if (isset($stats['pending_cuti'])) $statsCount++;
+        if (isset($stats['supplier_count']) && !isset($stats['barang_count'])) $statsCount++;
+        if (isset($stats['total_pembayaran'])) $statsCount++;
+        
+        $gridColsClass = 'lg:grid-cols-4';
+        if ($statsCount === 1) $gridColsClass = 'lg:grid-cols-1';
+        elseif ($statsCount === 2) $gridColsClass = 'lg:grid-cols-2';
+        elseif ($statsCount === 3) $gridColsClass = 'lg:grid-cols-3';
+    @endphp
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 {{ $gridColsClass }}">
         @if(isset($stats['karyawan_count']))
             <div class="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                 <div class="flex items-center justify-between">

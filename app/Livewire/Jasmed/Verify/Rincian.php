@@ -3,6 +3,7 @@
 namespace App\Livewire\Jasmed\Verify;
 
 use App\Models\JmPasien;
+use App\Models\JmProsentase;
 use App\Models\JmRincian;
 use App\Services\JasaMedisBpjsService;
 use Livewire\Attributes\Computed;
@@ -16,6 +17,8 @@ class Rincian extends Component
     use Interactions;
 
     public ?JmPasien $jmPasien;
+
+    public ?JmProsentase $jmProsentase;
 
     public $chosaring;
     public $prosedur_non_bedah;
@@ -73,6 +76,8 @@ class Rincian extends Component
         $this->obat_kronis = $rincian->obat_kronis;
         $this->obat_kemo = $rincian->obat_kemo;
         $this->real_billing_jasa = $rincian->real_billing_jasa;
+
+        $this->jmProsentase = $jmPasien->prosentase;
     }
 
     #[Computed]
@@ -97,6 +102,8 @@ class Rincian extends Component
 
             // 03 Hitung Ulan
             $this->jasaMedisBpjsService->processPasien($pasien);
+
+            $this->jmProsentase = $this->jmPasien->prosentase;
 
             $this->toast()
                 ->success('Berhasil', 'Data disimpan.')

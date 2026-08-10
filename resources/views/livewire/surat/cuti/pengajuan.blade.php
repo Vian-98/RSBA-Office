@@ -16,7 +16,7 @@
                     hari sisa cuti
                     <x-slot:left>
                         <p class="mr-2 text-xl" wire:loading.class="animate-bounce opacity-50" wire:target='form.jenis_cuti'>
-                            {{ $form->sisa_cuti }}</p>
+                            {{ $form->sisa_cuti >= 999 ? '-' : $form->sisa_cuti }}</p>
                     </x-slot:left>
                 </x-ts:badge>
 
@@ -51,8 +51,8 @@
             <x-ts:textarea wire:model.defer='form.alamat' placeholder="Alamat selama Cuti" />
 
             <div wire:key="{{ $karyawan?->id }}">
-                <x-ts:select.styled wire:key="atasan-select" multiple :limit="2" searchable wire:model.defer="form.atasan" placeholder="Persetujuan Atasan" :request="$karyawan?->jabatan?->first()?->parent_id ? route('api.karyawan.listnjabatan', [$karyawan->jabatan->first()->parent_id]) : route('api.karyawan.listnjabatan')"
-                    select="label:nama|value:id" lazy="10" />
+                <x-ts:select.styled wire:key="atasan-select" multiple :limit="2" searchable grouped wire:model.defer="form.atasan" placeholder="Persetujuan Atasan" :request="route('api.karyawan.atasan.approver', [$karyawan?->jabatan?->first()?->id, 'karyawan_id' => $karyawan?->id])"
+                    select="label:label|value:id" lazy="10" />
             </div>
 
         </div>

@@ -179,9 +179,6 @@ class ListJasmedVerify extends Component implements HasActions, HasSchemas, HasT
                         );
                     })
             ])
-            ->headerActions([
-                //
-            ])
             ->recordActions([
                 Action::make('recalculate')
                     ->iconButton()

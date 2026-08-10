@@ -12,11 +12,34 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use TallStackUi\Traits\Interactions;
 
+use Livewire\Attributes\Lazy;
+
+#[Lazy]
 #[Title('Rekap Absensi')]
 class Rekap extends Component
 {
     use Interactions;
     use WithPagination;
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="animate-pulse space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="h-24 bg-slate-100 rounded-xl border border-slate-200"></div>
+                <div class="h-24 bg-slate-100 rounded-xl border border-slate-200"></div>
+                <div class="h-24 bg-slate-100 rounded-xl border border-slate-200"></div>
+            </div>
+            <div class="h-80 bg-slate-100 rounded-xl border border-slate-200"></div>
+        </div>
+        HTML;
+    }
 
     public $bulan;
     public $tahun;
@@ -37,121 +60,6 @@ class Rekap extends Component
     public $showHistoryModal = false;
     public $historyLogs = [];
     public $historyRecordInfo = '';
-
-    // Properties for Manual Correction
-    public $editingRecordId = null;
-    public $editStatus = '';
-    public $editAbsenMasuk = '';
-    public $editAbsenKeluar = '';
-    public $editCatatan = '';
-    public $showEditModal = false;
-
-    // Properties for Global Audit Log History Modal
-    public $showGlobalHistoryModal = false;
-    public $historySearch = '';
-
-    // Reset pagination when filter updates
-    public function updatedRuanganId() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedKaryawanId() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedTanggalSpesifik() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedMode() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedBulan() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedTahun() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedStatusFilter() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedPerPage() { $this->resetPage('rekapKaryawanPage'); }
-    public function updatedHistorySearch() { $this->resetPage('historyLogPage'); }
-
-    public function openGlobalHistoryModal()
-    {
-        $this->historySearch = '';
-        $this->resetPage('historyLogPage');
-        $this->showGlobalHistoryModal = true;
-    }
-
-    public function openHistoryModal($detailId)
-    {
-        $detail = JadwalKerjaDetail::with('karyawan')->find($detailId);
-        if (!$detail) return;
-
-        $this->historyRecordInfo = ucwords(strtolower($detail->karyawan->full_nama ?? $detail->karyawan->nama ?? 'Karyawan')) . " - " . Carbon::parse($detail->tanggal)->translatedFormat('d M Y');
-
-        $this->historyLogs = \App\Models\Sdm\AbsensiKoreksiLog::with('user')
-            ->where('detail_id', $detailId)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $this->showHistoryModal = true;
-    }
-
-    public function openOtModal($karyawanId)
-    {
-        $karyawan = Karyawan::find($karyawanId);
-        if (!$karyawan) return;
-
-        $this->selectedOtKaryawan = ucwords(strtolower($karyawan->full_nama ?? $karyawan->nama ?? 'Karyawan'));
-        
-        $query = JadwalKerjaDetail::query()
-            ->where('karyawan_id', $karyawanId)
-            ->whereNotNull('status_kehadiran');
-
-        if ($this->mode === 'bulanan') {
-            $query->whereMonth('tanggal', $this->bulan)
-                  ->whereYear('tanggal', $this->tahun);
-        } else {
-            if ($this->tanggal_spesifik) {
-                $query->whereDate('tanggal', $this->tanggal_spesifik);
-            } else {
-                $query->whereDate('tanggal', date('Y-m-d'));
-            }
-        }
-
-        $records = $query->with('shift')
-            ->whereNotNull('absen_masuk_at')
-            ->whereNotNull('absen_keluar_at')
-            ->get();
-
-        $details = [];
-        $totalMinutes = 0;
-
-        foreach ($records as $r) {
-            $overtimeMenit = 0;
-            $overtimeKeterangan = '';
-            $tanggalObj = Carbon::parse($r->tanggal);
-
-            $masuk = Carbon::parse($r->absen_masuk_at);
-            $keluar = Carbon::parse($r->absen_keluar_at);
-
-            if ($r->shift && $r->shift->jam_keluar) {
-                $jamKeluar = Carbon::parse($r->shift->jam_keluar);
-                $targetCheckout = Carbon::parse($tanggalObj->format('Y-m-d') . ' ' . $jamKeluar->format('H:i:s'));
-                if ($r->shift->lintas_hari || $jamKeluar->lt(Carbon::parse($r->shift->jam_masuk))) {
-                    $targetCheckout->addDay();
-                }
-                if ($keluar->gt($targetCheckout)) {
-                    $overtimeMenit = abs($keluar->diffInMinutes($targetCheckout));
-                    $overtimeKeterangan = "Pulang terlambat";
-                }
-            } else {
-                $overtimeMenit = abs($keluar->diffInMinutes($masuk));
-                $overtimeKeterangan = "Tugas hari Libur/OFF";
-            }
-
-            if ($overtimeMenit > 0) {
-                $totalMinutes += $overtimeMenit;
-                $details[] = [
-                    'tanggal' => $tanggalObj->translatedFormat('d M Y'),
-                    'menit' => $overtimeMenit,
-                    'keterangan' => $overtimeKeterangan
-                ];
-            }
-        }
-
-        $h = floor($totalMinutes / 60);
-        $m = $totalMinutes % 60;
-        $this->selectedOtFormatted = $h > 0 ? "{$h}j {$m}m" : "{$m}m";
-        $this->selectedOtDetails = $details;
-        $this->showOtModal = true;
-    }
 
     public function editRecord($id)
     {
@@ -250,42 +158,10 @@ class Rekap extends Component
     public function mount()
     {
         abort_unless(
-            auth()->user()?->hasRole('Super-Admin') || auth()->user()?->can('view-kepegawaian-absensi'),
+            auth()->user()?->can('view-kepegawaian-absensi'),
             403,
             'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Rekap Absensi.'
         );
-        $this->bulan = (int) date('m');
-        $this->tahun = (int) date('Y');
-    }
-
-    public function render()
-    {
-        $user = auth()->user();
-        $allowedRuanganIds = $user?->getRuanganKoordinatorIds(); // null = semua, [] = tidak ada
-
-        // Filter ruangan dropdown berdasarkan akses koordinator
-        $ruangans = $allowedRuanganIds !== null
-            ? Ruangan::whereIn('id', $allowedRuanganIds)->orderBy('nama')->get()
-            : Ruangan::orderBy('nama')->get();
-
-        // Filter karyawan dropdown berdasarkan ruangan yang bisa diakses
-        $karyawans = $allowedRuanganIds !== null
-            ? Karyawan::whereIn('ruangan_id', $allowedRuanganIds)->orderBy('nama')->get()
-            : Karyawan::orderBy('nama')->get();
-
-        // 1. Build Base Query
-        $baseQuery = JadwalKerjaDetail::query()
-            ->whereNotNull('status_kehadiran');
-
-        // Enforce ruangan scope for koordinator
-        if ($allowedRuanganIds !== null) {
-            if (empty($allowedRuanganIds)) {
-                $baseQuery->whereRaw('0 = 1');
-            } else {
-                $baseQuery->whereHas('jadwalKerja', fn($q) => $q->whereIn('ruangan_id', $allowedRuanganIds));
-            }
-        }
-
         if ($this->mode === 'bulanan') {
             $baseQuery->whereMonth('tanggal', $this->bulan)
                       ->whereYear('tanggal', $this->tahun);
@@ -555,12 +431,9 @@ class Rekap extends Component
         }
 
         return view('livewire.kepegawaian.absensi.rekap', [
-            'ruangans' => $ruangans,
-            'karyawans' => $karyawans,
-            'records' => $records,
-            'summary' => $summary,
             'rekapKaryawan' => $rekapKaryawan,
-            'paginatedKaryawans' => $paginatedKaryawans,
+            'summaryStats' => $summaryStats,
+            'records' => $records,
             'globalHistoryLogs' => $globalHistoryLogs,
         ]);
     }

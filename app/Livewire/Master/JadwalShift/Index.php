@@ -37,10 +37,17 @@ class Index extends Component implements HasForms, HasTable, HasActions
     public function table(Table $table): Table
     {
         return $table
-            ->query(JadwalShift::query())
+            ->query(JadwalShift::query()->with('bagians'))
             ->columns([
                 TextColumn::make('kode')->searchable()->sortable(),
                 TextColumn::make('nama')->searchable()->sortable(),
+                TextColumn::make('bagian_scope')
+                    ->label('Berlaku untuk Bagian')
+                    ->getStateUsing(fn (JadwalShift $record) => $record->bagians->isEmpty()
+                        ? 'Semua Bagian (Umum)'
+                        : $record->bagians->pluck('nama')->implode(', ')
+                    )
+                    ->wrap(),
                 TextColumn::make('jam_masuk')->time('H:i')->sortable(),
                 TextColumn::make('jam_keluar')->time('H:i')->sortable(),
                 TextColumn::make('toleransi_telat_menit')->label('Toleransi Telat (m)'),

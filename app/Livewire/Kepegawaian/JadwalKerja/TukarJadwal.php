@@ -47,8 +47,8 @@ class TukarJadwal extends Component
             $this->dokterPengajuId = $user->karyawan_id;
         }
 
-        // Auto tab selection based on role / pending items
-        if ($user->hasRole('Wakil-Direktur') || $user->hasPermissionTo('approve-jadwal-wadir')) {
+        // Auto tab selection based on permission / pending items
+        if ($user->can('approve-jadwal-wadir')) {
             $this->activeTab = 'wadir';
         }
     }
@@ -66,7 +66,11 @@ class TukarJadwal extends Component
     public function submitPengajuan(TukarJadwalDokterService $service)
     {
         $user = Auth::user();
-        $canSelectDokterA = $user?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang']);
+        if (!$user || !$user->isDokterOrApprover()) {
+            abort(403, 'Akses ditolak. Halaman Tukar Shift Dokter hanya dapat diakses oleh Dokter atau Manajemen Medis/SDM.');
+        }
+
+        $canSelectDokterA = $user?->can('edit-kepegawaian-jadwal-kerja') || $user?->can('approve-jadwal-wadir') || $user?->can('approve-jadwal-kabid') || $user?->isKoordinatorDokter();
 
         // Jika dokter biasa, kunci pengaju ke dirinya sendiri
         if (!$canSelectDokterA && $user?->karyawan_id) {
@@ -139,7 +143,7 @@ class TukarJadwal extends Component
                     break;
 
                 case 'setuju_wadir':
-                    if (!$user?->hasRole(['Wakil-Direktur', 'Super-Admin']) && !$user?->can('approve-jadwal-wadir')) {
+                    if (!$user?->can('approve-jadwal-wadir')) {
                         abort(403, 'Akses ditolak. Anda tidak memiliki wewenang untuk melakukan approval Wadir.');
                     }
                     $service->approveWadir($tukar, true, $user, $this->catatanWadir);
@@ -147,7 +151,7 @@ class TukarJadwal extends Component
                     break;
 
                 case 'tolak_wadir':
-                    if (!$user?->hasRole(['Wakil-Direktur', 'Super-Admin']) && !$user?->can('approve-jadwal-wadir')) {
+                    if (!$user?->can('approve-jadwal-wadir')) {
                         abort(403, 'Akses ditolak. Anda tidak memiliki wewenang untuk melakukan approval Wadir.');
                     }
                     $service->approveWadir($tukar, false, $user, $this->catatanWadir);
@@ -259,8 +263,8 @@ class TukarJadwal extends Component
             ->latest()
             ->paginate(15);
 
-        $isWadir          = $user?->hasRole(['Wakil-Direktur', 'Super-Admin']) || $user?->can('approve-jadwal-wadir');
-        $canSelectDokterA = $user?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Kepala-Bidang']);
+        $isWadir          = $user?->can('approve-jadwal-wadir');
+        $canSelectDokterA = $user?->can('edit-kepegawaian-jadwal-kerja') || $user?->can('approve-jadwal-wadir') || $user?->can('approve-jadwal-kabid') || $user?->isKoordinatorDokter();
 
         return view('livewire.kepegawaian.jadwal-kerja.tukar-jadwal', [
             'dokters'              => $dokters,

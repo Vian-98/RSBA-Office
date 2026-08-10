@@ -213,6 +213,7 @@ class DokterAllPoliSeeder extends Seeder
                     'tipe'       => 'dokter',
                 ],
                 [
+                    'bagian_id'   => $ruangan->bagian_id,
                     'status'      => 'draft',
                     'dibuat_oleh' => 1,
                 ]

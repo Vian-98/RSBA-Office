@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Livewire\Gaji\Services;
 
 use App\Models\Sdm\Karyawan;
 use Illuminate\Support\Facades\DB;
@@ -47,12 +47,9 @@ class PayrollCalculator
 
         if ($isTetap) {
             // --- KARYAWAN TETAP ---
-            // 1. Determine education row
-            // Try manual override first (pendidikan_setara directly matches matrix group)
             if (!empty($karyawan->pendidikan_setara)) {
                 $rowKey = $karyawan->pendidikan_setara;
             } else {
-                // Fallback to real highest education
                 $allPendidikan = DB::table('sdm_kary_pendidikan')
                     ->where('karyawan_id', $karyawan->id)
                     ->get();
@@ -83,19 +80,13 @@ class PayrollCalculator
                 };
             }
 
-            // 2. Matrix lookup for Golongan (1 to 15) using database
-            $golonganGrade = \App\Models\Sdm\PayrollGolonganMatrix::lookup($rowKey, $yearsOfService);
-
-            // 4. Calculate Basic Salary (Gapok) based on Golongan Grade
-            // Formula: 75% * UMK * (1 + (15 - Golongan) * 0.05)
+            $golonganGrade = \App\Models\Gaji\PayrollGolonganMatrix::lookup($rowKey, $yearsOfService);
             $gajiPokok = 0.75 * $umk * (1.0 + (15.0 - $golonganGrade) * 0.05);
 
-            // 5. Load Tunjangan Golongan from DB
             $tunjanganGolonganVal = (double) DB::table('sdm_payroll_golongans')
                 ->where('golongan', $golonganGrade)
                 ->value('tunjangan_golongan') ?? ((15 - $golonganGrade) * 50000.0);
 
-            // 6. Calculate Dynamic UMK Allocations
             $tunjanganPokok = 0.25 * $umk;
             foreach ($dbAllocations as $alloc) {
                 $nominal = $tunjanganPokok * ((double) $alloc->persen / 100.0);
@@ -124,14 +115,13 @@ class PayrollCalculator
             } elseif ($yearsOfService <= 6.0) {
                 $gajiPokok = 0.910290 * $umk;
             } else {
-                $gajiPokok = 0.947 * $umk; // Tetap Non Golongan
+                $gajiPokok = 0.947 * $umk;
             }
             $tunjanganTetap = 0.0;
             $tunjanganAbsensi = 0.0;
             $allocationsBreakdown = [];
         }
 
-        // 7. Calculate Tunjangan Jabatan based on Jabatan (Only for Karyawan Tetap)
         $tunjanganJabatan = 0.0;
         if ($isTetap) {
             $latestJab = $karyawan->jabatan->first();
@@ -155,30 +145,16 @@ class PayrollCalculator
 
     /**
      * Calculate deductions (BPJS, PPh21) based on base salary variables.
-     *
-     * @param double $gajiPokok
-     * @param double $tunjanganTetap
-     * @param double $totalPendapatan
-     * @param int $bpjsKeluargaTambahan
-     * @param Karyawan|null $karyawan
-     * @param string|null $periode
-     * @return array
      */
     public static function calculateDeductions($gajiPokok, $tunjanganTetap, $totalPendapatan, int $bpjsKeluargaTambahan = 0, ?Karyawan $karyawan = null, ?string $periode = null): array
     {
-        // 1. BPJS calculation basis: Gapok + Tunjangan Tetap
         $basis = $gajiPokok + $tunjanganTetap;
 
-        // BPJS Kesehatan (BPJS Kes)
         $bpjsKesRate = 0.01 + ($bpjsKeluargaTambahan * 0.01);
         $potonganBpjsKes = $basis * $bpjsKesRate;
-
-        // BPJS Ketenagakerjaan (BPJS TK)
         $potonganBpjsTk = $basis * 0.03;
 
-        // 2. PPh 21 Calculation
         $pph21_calculated = 0.0;
-        
         $hasNpwp = true;
         $ptkpStatus = 'TK0';
         if ($karyawan) {
@@ -190,7 +166,6 @@ class PayrollCalculator
         $month = (int) substr($periode, 5, 2);
         $year = (int) substr($periode, 0, 4);
 
-        // Check if it is the reconciliation month (December or resignation month)
         $isReconciliationMonth = ($month === 12);
         if ($karyawan && !empty($karyawan->resign_at)) {
             $resignDate = Carbon::parse($karyawan->resign_at);
@@ -200,7 +175,6 @@ class PayrollCalculator
         }
 
         if ($karyawan && $isReconciliationMonth) {
-            // Skema Desember / Bulan Terakhir (Progresif Pasal 17)
             $priorSlips = DB::table('sdm_payroll_slips')
                 ->where('karyawan_id', $karyawan->id)
                 ->where('periode', 'like', "$year-%")
@@ -214,28 +188,21 @@ class PayrollCalculator
             $total_bruto_ytd = $priorBruto + $totalPendapatan;
             $total_bpjs_tk_ytd = $priorBpjsTk + $potonganBpjsTk;
 
-            // Biaya Jabatan (5% of gross, max 6,000,000 per year)
             $biaya_jabatan = min(0.05 * $total_bruto_ytd, 6000000.00);
-
-            // Neto setahun
             $neto_setahun = $total_bruto_ytd - $biaya_jabatan - $total_bpjs_tk_ytd;
 
-            // Get PTKP threshold
             $ptkpNominal = DB::table('sdm_payroll_ptkp')
                 ->where('status', $ptkpStatus)
                 ->where('berlaku_mulai_tahun', '<=', $year)
                 ->orderBy('berlaku_mulai_tahun', 'desc')
                 ->value('nominal_setahun') ?: 54000000.00;
 
-            // PKP
             $pkp = $neto_setahun - $ptkpNominal;
             if ($pkp < 0) {
                 $pkp = 0;
             }
-            // Round down PKP to nearest 1,000
             $pkp = floor($pkp / 1000) * 1000;
 
-            // Compute Progressive Pasal 17
             $pasal17Brackets = DB::table('sdm_payroll_pasal17')
                 ->where('berlaku_mulai_tahun', '<=', $year)
                 ->orderBy('pkp_bawah', 'asc')
@@ -266,11 +233,8 @@ class PayrollCalculator
                 }
             }
 
-            // Current month PPh 21
             $pph21_calculated = $pajakSetahun - $priorPph21;
         } else {
-            // Skema Bulanan Biasa (Jan - Nov) -> Tarif Efektif Rata-rata (TER)
-            // Kategori TER berdasarkan status PTKP
             $kategoriTer = match ($ptkpStatus) {
                 'TK0', 'TK1', 'K0' => 'A',
                 'TK2', 'TK3', 'K1', 'K2' => 'B',
@@ -278,7 +242,6 @@ class PayrollCalculator
                 default => 'A',
             };
 
-            // Lookup TER rate
             $tarif_persen = DB::table('sdm_payroll_ter')
                 ->where('kategori', $kategoriTer)
                 ->where('bruto_bawah', '<=', $totalPendapatan)
@@ -290,12 +253,10 @@ class PayrollCalculator
             $pph21_calculated = $totalPendapatan * ($tarif_persen / 100);
         }
 
-        // Apply 20% surcharge if NPWP is empty
         if (!$hasNpwp) {
             $pph21_calculated = $pph21_calculated * 1.2;
         }
 
-        // Return results
         return [
             'potongan_bpjs_kes' => round($potonganBpjsKes),
             'potongan_bpjs_tk' => round($potonganBpjsTk),

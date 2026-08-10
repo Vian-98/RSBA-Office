@@ -346,13 +346,15 @@ class Index extends Component
 
     public function render()
     {
-        $this->authorizeFromRoute();
+        $filteredQuery = $this->getFilteredKaryawanQuery();
+        $paginated = $filteredQuery->paginate($this->perPage);
 
         return view('livewire.laporan.kepegawaian.index', [
-            'karyawans' => $this->activeTab === 'detail' ? $this->karyawans : null,
-            'bagianList' => $this->bagianList,
-            'bagianBreakdown' => $this->activeTab === 'bagian' || $this->activeTab === 'overview' ? $this->bagianBreakdown : null,
-            'kehadiranList' => $this->activeTab === 'kehadiran' ? $this->kehadiranHariIniList : null,
+            'stats' => $this->stats,
+            'karyawanList' => $paginated,
+            'karyawans' => $paginated,
+            'bagianList' => Bagian::where('is_active', true)->get(),
+            'bagianBreakdown' => $this->bagianBreakdown,
         ]);
     }
 }

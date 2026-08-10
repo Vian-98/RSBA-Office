@@ -44,20 +44,16 @@ class DokterSeeder extends Seeder
 
         // ─── 1. MASTER SPESIALISASI ───────────────────────────────────────────
         $spesialisasiList = [
-            ['nama' => 'Dokter Umum',                        'singkatan' => 'dr.',         'kategori' => 'umum'],
-            ['nama' => 'Spesialis Penyakit Dalam',           'singkatan' => 'Sp.PD',       'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Jantung & Pembuluh Darah', 'singkatan' => 'Sp.JP',       'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Anak',                     'singkatan' => 'Sp.A',        'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Bedah Umum',               'singkatan' => 'Sp.B',        'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Kebidanan dan Kandungan',   'singkatan' => 'Sp.OG',       'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Paru',                     'singkatan' => 'Sp.P',        'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Kulit & Kelamin',          'singkatan' => 'Sp.KK',       'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Bedah Onkologi',           'singkatan' => 'Sp.B(K)Onk',  'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis THT-KL',                   'singkatan' => 'Sp.THT-KL',   'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Mata',                     'singkatan' => 'Sp.M',        'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Saraf',                    'singkatan' => 'Sp.S',        'kategori' => 'spesialis'],
-            ['nama' => 'Spesialis Bedah Mulut',               'singkatan' => 'Sp.BM',       'kategori' => 'spesialis'],
-            ['nama' => 'Dokter Gigi',                        'singkatan' => 'drg.',        'kategori' => 'spesialis'],
+            ['nama' => 'Dokter Umum',                    'singkatan' => 'dr.',       'kategori' => 'umum'],
+            ['nama' => 'Spesialis Penyakit Dalam',       'singkatan' => 'Sp.PD',     'kategori' => 'spesialis'],
+            ['nama' => 'Spesialis Anak',                 'singkatan' => 'Sp.A',      'kategori' => 'spesialis'],
+            ['nama' => 'Spesialis Bedah',                'singkatan' => 'Sp.B',      'kategori' => 'spesialis'],
+            ['nama' => 'Spesialis Kandungan & Kebidanan','singkatan' => 'Sp.OG',     'kategori' => 'spesialis'],
+            ['nama' => 'Spesialis Saraf',                'singkatan' => 'Sp.S',      'kategori' => 'spesialis'],
+            ['nama' => 'Spesialis Anestesi',             'singkatan' => 'Sp.An',     'kategori' => 'spesialis'],
+            ['nama' => 'Spesialis Radiologi',            'singkatan' => 'Sp.Rad',    'kategori' => 'spesialis'],
+            ['nama' => 'Spesialis Ginjal & Hipertensi',  'singkatan' => 'Sp.PD-KGH', 'kategori' => 'spesialis'],
+            ['nama' => 'Spesialis Jantung',              'singkatan' => 'Sp.JP',     'kategori' => 'spesialis'],
         ];
 
         foreach ($spesialisasiList as $sp) {
@@ -69,7 +65,7 @@ class DokterSeeder extends Seeder
 
         $spIdUmum    = DB::table('dokter_spesialisasi')->where('singkatan', 'dr.')->value('id');
         $spIdPD      = DB::table('dokter_spesialisasi')->where('singkatan', 'Sp.PD')->value('id');
-        $spIdGinjal  = DB::table('dokter_spesialisasi')->where('singkatan', 'Sp.PD-KGH')->value('id') ?? $spIdPD;
+        $spIdGinjal  = DB::table('dokter_spesialisasi')->where('singkatan', 'Sp.PD-KGH')->value('id');
 
         // ─── 2. RUANGAN KOORDINASI DOKTER ────────────────────────────────────
         // IGD dan Ruang Hemodialisa sudah ada di RuanganDummySeeder.

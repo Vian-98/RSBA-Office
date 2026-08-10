@@ -49,6 +49,7 @@ class DummyDataSeeder extends Seeder
             'asset_maintc_teknisi_assigment',
             'asset_maintc_work',
             'asset_maintc_work_parts',
+            'dokter_spesialisasi',
             'dokter',
             'jm_pasien',
             'jm_dokter',
@@ -78,12 +79,11 @@ class DummyDataSeeder extends Seeder
                 ['id' => 1, 'nama' => 'Cuti Tahunan', 'lama' => 12, 'periode' => 'Y'],
                 ['id' => 2, 'nama' => 'Izin Sakit', 'lama' => 0, 'periode' => 'Y'],
                 ['id' => 3, 'nama' => 'Cuti Melahirkan', 'lama' => 90, 'periode' => 'Y'],
-                ['id' => 4, 'nama' => 'Cuti Alasan Penting', 'lama' => 0, 'periode' => 'Y'],
             ];
             foreach ($items as $item) {
                 DB::table('surat_cuti_jenis')->updateOrInsert(['id' => $item['id']], array_merge($item, ['updated_at' => now(), 'created_at' => now()]));
             }
-            DB::table('surat_cuti_jenis')->where('id', '>', count($items))->delete();
+            DB::table('surat_cuti_jenis')->where('id', '>', 3)->delete();
         }
 
         // 3. Re-enable Foreign Key Checks
@@ -322,7 +322,7 @@ class DummyDataSeeder extends Seeder
             $userPerawat = User::updateOrCreate(
                 ['email' => 'perawat@rsba.com'],
                 [
-                    'password' => '1234',
+                    'password' => Hash::make('1234'),
                     'karyawan_id' => $karyawanPerawat->id,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -1128,6 +1128,11 @@ class DummyDataSeeder extends Seeder
         ]);
 
         // 18. Seed Dokter & Jasa Medis (Payroll / Doctor Fees)
+        $dokterSpesialisasi = [
+            ['nama' => 'Spesialis Anak', 'singkatan' => 'Sp.A', 'kategori' => 'spesialis', 'created_at' => now(), 'updated_at' => now()],
+            ['nama' => 'Spesialis Bedah', 'singkatan' => 'Sp.B', 'kategori' => 'spesialis', 'created_at' => now(), 'updated_at' => now()],
+        ];
+        DB::table('dokter_spesialisasi')->insert($dokterSpesialisasi);
         $spesialisIds = DB::table('dokter_spesialisasi')->pluck('id')->toArray();
 
         // Create Dokter Karyawan record

@@ -5,38 +5,156 @@ namespace App\Services;
 use App\Enums\KodeAturanJadwal;
 use App\Models\Sdm\Bagian;
 use App\Models\Sdm\JadwalAturan;
-use App\Models\Sdm\JadwalShift;
 use App\Models\Sdm\JadwalKerja;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\Sdm\JadwalShift;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Collection;
 
 class AturanJadwalService
 {
     public function get(int $bagianId, KodeAturanJadwal $kode): int|bool
     {
+        // 1. Cek aturan khusus bagian
         $nilai = JadwalAturan::where('bagian_id', $bagianId)
             ->where('kode', $kode->value)
             ->where('aktif', true)
-            ->value('nilai') ?? $kode->defaultNilai();
+            ->value('nilai');
+
+        // 2. Fallback ke Aturan Umum RSBA (bagian_id IS NULL)
+        if ($nilai === null) {
+            $nilai = JadwalAturan::whereNull('bagian_id')
+                ->where('kode', $kode->value)
+                ->where('aktif', true)
+                ->value('nilai');
+        }
+
+        // 3. Fallback ke default enum
+        if ($nilai === null) {
+            $nilai = $kode->defaultNilai();
+        }
 
         return $kode->tipe() === 'bool' ? (bool) $nilai : (int) $nilai;
     }
 
     /**
-     * Kembalikan daftar RuanganShift (pivot) aktif untuk ruangan ini.
-     * Fallback: jika ruangan belum dikonfigurasi, kembalikan semua shift aktif (tanpa override).
+     * Validasi kelayakan Jadwal Kerja terhadap aturan aktif (Umum RSBA & Override Departemen).
+     * Returns array pesan pelanggaran. Jika kosong, berarti jadwal VALID!
      */
-    public function shiftValidUntukRuangan(int $ruanganId): Collection
+    public function validasiJadwal(JadwalKerja $jadwal): array
     {
+        $violations = [];
+        // Use the schedule snapshot. The room mapping is only a legacy fallback
+        // while existing schedules are being backfilled.
+        $bagianId = $jadwal->bagian_id ?? $jadwal->ruangan?->bagian_id ?? 0;
+
+        // Ambil batas aturan
+        $maxMalam = (int) $this->get($bagianId, KodeAturanJadwal::MAX_SHIFT_MALAM_BERTURUT);
+        $maxKerja = (int) $this->get($bagianId, KodeAturanJadwal::MAX_HARI_KERJA_BERTURUT);
+        $minIstirahat = (int) $this->get($bagianId, KodeAturanJadwal::MIN_ISTIRAHAT_JAM);
+
+        // Group details per karyawan
+        $detailsByKaryawan = $jadwal->details->groupBy('karyawan_id');
+
+        foreach ($detailsByKaryawan as $karyawanId => $details) {
+            $karyawan = $details->first()->karyawan;
+            $nama = $karyawan?->full_nama ?? 'Karyawan ID ' . $karyawanId;
+            $sortedDetails = $details->sortBy('tanggal')->values();
+
+            $consecutiveNight = 0;
+            $consecutiveWork = 0;
+            $prevDetail = null;
+
+            foreach ($sortedDetails as $detail) {
+                $shift = $detail->shift;
+
+                // 1. Cek Hari Kerja & Shift Malam Berturut-turut
+                if (empty($detail->shift_id) || !$shift || str_contains(strtoupper($shift->kode), 'OFF') || str_contains(strtoupper($shift->kode), 'LIBUR')) {
+                    $consecutiveNight = 0;
+                    $consecutiveWork = 0;
+                } else {
+                    $consecutiveWork++;
+                    if ($maxKerja > 0 && $consecutiveWork > $maxKerja) {
+                        $violations[] = "Pegawai {$nama}: Melanggar Maksimal Hari Kerja Berturut-turut ({$consecutiveWork} hari kerja tanpa libur, maksimal diizinkan: {$maxKerja} hari).";
+                    }
+
+                    $shiftKode = strtoupper($shift->kode);
+                    $isMalam = str_contains($shiftKode, 'M') || str_contains($shiftKode, 'MALAM');
+                    if ($isMalam) {
+                        $consecutiveNight++;
+                        if ($maxMalam > 0 && $consecutiveNight > $maxMalam) {
+                            $violations[] = "Pegawai {$nama}: Melanggar Maksimal Shift Malam Berturut-turut ({$consecutiveNight} malam berturut-turut, maksimal diizinkan: {$maxMalam} malam).";
+                        }
+                    } else {
+                        $consecutiveNight = 0;
+                    }
+
+                    // 2. Cek Minimum Jeda Istirahat Antar Shift
+                    if ($prevDetail && $prevDetail->shift && !empty($prevDetail->shift_id)) {
+                        $prevDate = Carbon::parse($prevDetail->tanggal);
+                        $currDate = Carbon::parse($detail->tanggal);
+
+                        if ($prevDate->diffInDays($currDate) === 1) {
+                            $prevKeluarStr = $prevDetail->shift->jam_keluar ?? '14:00';
+                            $currMasukStr = $shift->jam_masuk ?? '07:00';
+
+                            $prevEnd = Carbon::parse($prevDetail->tanggal->format('Y-m-d') . ' ' . $prevKeluarStr);
+                            $prevStart = Carbon::parse($prevDetail->tanggal->format('Y-m-d') . ' ' . ($prevDetail->shift->jam_masuk ?? '07:00'));
+                            if ($prevEnd->lessThanOrEqualTo($prevStart)) {
+                                $prevEnd->addDay();
+                            }
+
+                            $currStart = Carbon::parse($detail->tanggal->format('Y-m-d') . ' ' . $currMasukStr);
+
+                            $restHours = $prevEnd->diffInHours($currStart, false);
+                            if ($restHours >= 0 && $restHours < $minIstirahat) {
+                                $violations[] = "Pegawai {$nama} pada tgl " . $detail->tanggal->format('d/m/Y') . ": Jeda istirahat antar shift hanya {$restHours} jam (minimum diizinkan: {$minIstirahat} jam).";
+                            }
+                        }
+                    }
+                }
+
+                $prevDetail = $detail;
+            }
+        }
+
+        return array_unique($violations);
+    }
+
+    /**
+     * Kembalikan daftar shift yang valid untuk ruangan dan Bagian jadwal.
+     *
+     * Shift tanpa mapping Bagian berlaku umum. Jika sebuah shift memiliki
+     * mapping Bagian, shift tersebut hanya valid untuk Bagian yang dipilih.
+     * Konfigurasi RuanganShift tetap digunakan untuk override jam/toleransi.
+     */
+    public function shiftValidUntukRuangan(int $ruanganId, ?int $bagianId = null): Collection
+    {
+        $eligibleShiftIds = JadwalShift::query()
+            ->where('aktif', true)
+            ->where(function ($query) use ($bagianId) {
+                $query->whereDoesntHave('bagians');
+
+                if ($bagianId) {
+                    $query->orWhereHas('bagians', fn ($bagianQuery) =>
+                        $bagianQuery->whereKey($bagianId)
+                    );
+                }
+            })
+            ->pluck('id');
+
+        if ($eligibleShiftIds->isEmpty()) {
+            return new Collection();
+        }
+
         $ruanganShifts = \App\Models\Sdm\RuanganShift::where('ruangan_id', $ruanganId)
+            ->whereIn('shift_id', $eligibleShiftIds)
             ->with('shift')
             ->get()
             ->filter(fn($rs) => $rs->shift && $rs->shift->aktif);
 
         if ($ruanganShifts->isEmpty()) {
-            // Fallback: bungkus shift global ke dalam objek sementara
-            return JadwalShift::where('aktif', true)->get()->map(function ($shift) use ($ruanganId) {
+            // Fallback: bungkus shift yang valid untuk Bagian ke dalam objek sementara
+            return JadwalShift::whereIn('id', $eligibleShiftIds)->get()->map(function ($shift) use ($ruanganId) {
                 $rs = new \App\Models\Sdm\RuanganShift();
                 $rs->ruangan_id = $ruanganId;
                 $rs->shift_id   = $shift->id;
@@ -47,131 +165,4 @@ class AturanJadwalService
 
         return $ruanganShifts->values();
     }
-
-    /**
-     * Cek apakah ada pelanggaran aturan jadwal pada JadwalKerja tertentu
-     */
-    public function checkViolations(JadwalKerja $jadwalKerja): array
-    {
-        $cacheKey = "violations_jk_{$jadwalKerja->id}_" . ($jadwalKerja->updated_at ? $jadwalKerja->updated_at->timestamp : 'none');
-
-        return Cache::remember($cacheKey, now()->addDays(7), function() use ($jadwalKerja) {
-            $violations = [];
-
-            // Load details dengan karyawan.jabatan dan shift
-            $details = $jadwalKerja->details()->with(['karyawan.jabatan', 'shift'])->get();
-
-            // Group details berdasarkan karyawan
-            $grouped = $details->groupBy('karyawan_id');
-
-            // Prefetch all active rules once to avoid loop queries
-            $allRules = JadwalAturan::where('aktif', true)->get()->groupBy('bagian_id');
-            $getRuleValue = function(int $bagianId, KodeAturanJadwal $kode) use ($allRules) {
-                $nilai = null;
-                if (isset($allRules[$bagianId])) {
-                    $nilai = $allRules[$bagianId]->where('kode', $kode->value)->first()?->nilai;
-                }
-                $nilai = $nilai ?? $kode->defaultNilai();
-                return $kode->tipe() === 'bool' ? (bool) $nilai : (int) $nilai;
-            };
-
-            foreach ($grouped as $karyawanId => $karyawanDetails) {
-                $firstDetail = $karyawanDetails->first();
-                $karyawan = $firstDetail->karyawan;
-                if (!$karyawan) {
-                    continue;
-                }
-
-                // Ambil bagian_id untuk karyawan ini
-                $bagianId = $karyawan->jabatan->first()?->id ? ($karyawan->jabatan->first()?->bagian_id ?? 1) : 1;
-
-                // Ambil aturan aktif using our local lookup function
-                $maxMalam = $getRuleValue($bagianId, KodeAturanJadwal::MAX_SHIFT_MALAM_BERTURUT);
-                $minIstirahat = $getRuleValue($bagianId, KodeAturanJadwal::MIN_ISTIRAHAT_JAM);
-                $maxKerja = $getRuleValue($bagianId, KodeAturanJadwal::MAX_HARI_KERJA_BERTURUT);
-
-                // Urutkan details berdasarkan tanggal
-                $sortedDetails = $karyawanDetails->sortBy('tanggal')->values();
-
-                // 1. Cek Maks. Hari Kerja Berturut-turut
-                $consecutiveWork = 0;
-                foreach ($sortedDetails as $detail) {
-                    if ($detail->shift_id !== null) {
-                        $consecutiveWork++;
-                        if ($consecutiveWork > $maxKerja) {
-                            $violations[] = [
-                                'karyawan' => $karyawan->nama,
-                                'tanggal' => Carbon::parse($detail->tanggal)->format('d M Y'),
-                                'rule' => 'Maks. Hari Kerja Berturut-turut',
-                                'message' => "Staf {$karyawan->nama} terjadwal bekerja {$consecutiveWork} hari berturut-turut melebihi batas {$maxKerja} hari."
-                            ];
-                        }
-                    } else {
-                        $consecutiveWork = 0;
-                    }
-                }
-
-                // 2. Cek Maks. Shift Malam Berturut-turut
-                $consecutiveMalam = 0;
-                foreach ($sortedDetails as $detail) {
-                    $isMalam = $detail->shift && ($detail->shift->lintas_hari || str_contains(strtolower($detail->shift->kode), 'malam'));
-                    if ($isMalam) {
-                        $consecutiveMalam++;
-                        if ($consecutiveMalam > $maxMalam) {
-                            $violations[] = [
-                                'karyawan' => $karyawan->nama,
-                                'tanggal' => Carbon::parse($detail->tanggal)->format('d M Y'),
-                                'rule' => 'Maks. Shift Malam Berturut-turut',
-                                'message' => "Staf {$karyawan->nama} terjadwal shift malam {$consecutiveMalam} hari berturut-turut melebihi batas {$maxMalam} hari."
-                            ];
-                        }
-                    } else {
-                        $consecutiveMalam = 0;
-                    }
-                }
-
-                // 3. Cek Jeda Istirahat Minimal Antar Shift
-                $count = $sortedDetails->count();
-                for ($i = 0; $i < $count - 1; $i++) {
-                    $detail1 = $sortedDetails[$i];
-                    $detail2 = $sortedDetails[$i+1];
-
-                    if ($detail1->shift && $detail2->shift) {
-                        $tgl1 = Carbon::parse($detail1->tanggal);
-                        $tgl2 = Carbon::parse($detail2->tanggal);
-
-                        $s1 = $detail1->shift;
-                        $s2 = $detail2->shift;
-
-                        $s1_out = $s1->jam_keluar;
-                        $s2_in = $s2->jam_masuk;
-
-                        try {
-                            $endDateTime = Carbon::parse($tgl1->format('Y-m-d') . ' ' . $s1_out);
-                            if ($s1->lintas_hari) {
-                                $endDateTime->addDay();
-                            }
-
-                            $startDateTime = Carbon::parse($tgl2->format('Y-m-d') . ' ' . $s2_in);
-
-                            $diffHours = $endDateTime->diffInHours($startDateTime, false);
-                            if ($diffHours >= 0 && $diffHours < $minIstirahat) {
-                                $violations[] = [
-                                    'karyawan' => $karyawan->nama,
-                                    'tanggal' => $tgl2->format('d M Y'),
-                                    'rule' => 'Minimum Jeda Istirahat Antar Shift',
-                                    'message' => "Staf {$karyawan->nama} memiliki jeda istirahat antar shift hanya {$diffHours} jam pada tanggal " . $tgl2->format('d M Y') . " (min. {$minIstirahat} jam)."
-                                ];
-                            }
-                        } catch (\Throwable $e) {
-                            // abaikan parsing error jika jam kosong/salah format
-                        }
-                    }
-                }
-            }
-
-            return $violations;
-        });
-    }
 }
-

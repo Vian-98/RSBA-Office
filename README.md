@@ -6,24 +6,30 @@
 
 ## Fitur Utama & Pembaruan
 - **Collapsible Sidebar**: Menu navigasi sidebar modern yang dapat dilipat (*collapsible*) melalui tombol hamburger di navbar desktop/mobile dengan scroll terpisah dan auto-scroll prevention.
-- **Dynamic Header & Title**: Sinkronisasi dinamis judul halaman pada navbar (misal: "Profile", "Notifikasi", "Settings") dan browser tab title template menggunakan nama instansi **RS Bintang Amin**.
-- **Notification System (Tandai Dibaca)**: Fitur notifikasi yang interaktif dengan opsi menandai dibaca per notif atau tandai semua dibaca, lengkap dengan *badge bell indicator* dinamis (realtime event updates).
+- **Dynamic Header & 2-Tier Card Layout**: Layout header dua tingkat yang responsif untuk judul halaman, breadcrumb, serta tombol aksi (*action buttons*) agar tampilan rapi tanpa overflow. Sinkronisasi dinamis judul tab browser dengan nama instansi **RS Bintang Amin**.
+- **Engine Kalkulasi Otomatis PPh 21 (TER & Pasal 17)**:
+  - Perhitungan otomatis PPh 21 menggunakan skema Tarif Efektif Rata-Rata (TER A, B, C) untuk bulanan dan Tarif Pasal 17 UU HPP untuk Rekonsiliasi Akhir Tahun (Desember YTD).
+  - Pengelolaan Master Aturan Pajak dan PTKP yang fleksibel serta pembentukan rincian potongan pajak otomatis pada Slip Gaji.
 - **Payroll & Slip Gaji Digital (Background Queue & Scheduler)**:
-  - Tampilan tabel slip gaji yang rapi dengan grid solid garis pemisah tegas (black/dark double-line separator).
+  - Tampilan tabel slip gaji interaktif dengan grid solid garis pemisah tegas (black/dark double-line separator).
   - Cetak langsung (*print layout*) dengan styling CSS mandiri (instan tanpa delay CDN).
-  - Pengiriman massal slip gaji via email secara *non-blocking* menggunakan **Background Queue** (`SendPayrollSlipJob`) dan indikator status pengiriman *real-time*.
+  - Pengiriman massal slip gaji via email secara *non-blocking* menggunakan **Background Queue** (`SendPayrollSlipJob`) dan indikator status pengiriman *real-time* (polling UI & progres bar).
   - Log pengiriman slip gaji terintegrasi (`PayrollSendLog`) untuk pemantauan audit email yang berhasil/gagal dikirim.
   - Perintah Artisan otomatis (`app:send-scheduled-payroll-slips`) dengan eksekusi dinamis melalui Laravel Scheduler.
   - Dilengkapi lampiran dokumen **PDF Slip Gaji** otomatis menggunakan library `barryvdh/laravel-dompdf`.
+- **Komponen Tunjangan & Potongan Penggajian**:
+  - Pengelolaan Master Tunjangan Jabatan, Tunjangan Lain-Lain, Denda Keterlambatan Flat, dan Rekening Bank Karyawan.
+  - Fitur Ekspor & Impor Excel untuk slip gaji bulanan serta rincian modal potongan/tunjangan.
+  - Matriks Golongan dinamis dan pencatatan Log Edit Payroll (*Audit Trail*) untuk transparansi perubahan nilai gaji.
 - **Audit Log Koreksi Absensi**: Pencatatan riwayat perubahan/koreksi absensi karyawan (`sdm_absensi_koreksi_log`) yang dilengkapi modal audit log interaktif dengan pencarian dan paginasi pada tampilan Rekap Absensi.
 - **Backfill & Optimasi Kinerja Absensi**: Perintah CLI `app:backfill-absensi-metrics` dan pembuatan indeks tabel database untuk mempercepat kalkulasi rekapitulasi absensi dan performa kueri.
 - **Master Spesialis Dokter & Struktur Organisasi**: Seeder data komprehensif untuk struktur organisasi rumah sakit (`StrukturOrganisasiSeeder`) dan akun/role Dokter (`DokterSeeder`), serta pembaharuan otorisasi hak akses (Spatie permission) untuk Wadir SDM dan Wadir Keuangan.
-- **Izin & Cuti Refactoring**: Pembaharuan nama istilah dari "Cuti" menjadi "Izin dan Cuti" pada seluruh modul, modal, dan seeder.
+- **Izin & Cuti Refactoring**: Pembaharuan nama istilah dari "Cuti" menjadi "Izin dan Cuti" pada seluruh modul, modal, dan seeder, serta dilengkapi command reset kuota cuti tahunan (`app:reset-cuti`).
 - **Profil Karyawan & BPJS**: Pencatatan nomor kepesertaan BPJS Kesehatan dan BPJS Ketenagakerjaan yang terintegrasi dengan migrasi database.
+- **Docstore & Digital Signature**: Integrasi Docstore untuk audit dokumen, resinkronisasi dokumen (`app:docstore-sync-all`, `app:docstore-resync`), penerbitan QR Header Sistem, serta enkripsi dan verifikasi tanda tangan digital dokumen persuratan.
 - **Konversi Satuan (UoM)**: Kemampuan untuk menyimpan satuan dasar dan satuan konversi tambahan pada Master Barang. Transaksi Pembelian Langsung akan secara otomatis mengkonversi jumlah barang dan nominal harganya (misal: 1 Box = 16 Pcs) agar mempermudah perhitungan stok.
-- **Docstore & Digital Signature**: Integrasi Docstore untuk audit dokumen, penerbitan QR Header Sistem, serta enkripsi dan verifikasi tanda tangan digital dokumen persuratan.
 - **Laporan Kepegawaian & Ekspor Data**: Modul laporan kepegawaian komprehensif berbasis tab interaktif dengan filter pencarian, ekspor format Excel/CSV, serta cetak dokumen (*print view*).
-- **Absensi & Rekonsiliasi**: Pencatatan dan alur *pairing* absensi fleksibel untuk berbagai *shift* (termasuk *cross-midnight*), deteksi *Single Punch*, dan pengelolaan konflik jadwal absensi.
+- **Notification System (Tandai Dibaca)**: Fitur notifikasi yang interaktif dengan opsi menandai dibaca per notif atau tandai semua dibaca, lengkap dengan *badge bell indicator* dinamis (realtime event updates).
 
 ## Prerequisite
 - **PHP**: `^8.2` (atau mengikuti Laravel)
@@ -96,6 +102,13 @@ php artisan app:send-scheduled-payroll-slips
 
 # Backfill metrik absensi
 php artisan app:backfill-absensi-metrics
+
+# Reset kuota cuti tahunan
+php artisan app:reset-cuti
+
+# Sinkronisasi & Resync Docstore
+php artisan app:docstore-sync-all
+php artisan app:docstore-resync
 ```
 
 ### 6. Clear Cache (Penting setelah edit `.env`)
