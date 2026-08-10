@@ -49,5 +49,4 @@ return [
         'hmac_secret'  => env('DOCSTORE_HMAC_SECRET', ''),
         'verify_ssl'   => env('DOCSTORE_VERIFY_SSL', false),
     ],
-
 ];

@@ -36,6 +36,12 @@ class Add extends Component
         if ($value) {
             $user = User::where('karyawan_id', $value)->first();
             $this->user_id = $user?->id;
+
+            $karyawan = Karyawan::find($value);
+            $jabatanAktif = $karyawan?->jabatan->first();
+            if ($jabatanAktif && $jabatanAktif->tingkat_id <= 3) {
+                $this->toast()->warning('Informasi Jabatan', 'Karyawan ini menjabat sebagai ' . $jabatanAktif->nama . ' (Struktural). Pastikan rangkap tugas ini sudah sesuai.')->send();
+            }
         }
     }
 
@@ -79,11 +85,33 @@ class Add extends Component
         }
     }
 
+    public string $kategoriFilter = 'all';
+
     public function render()
     {
+        $karyawanQuery = Karyawan::with('dokterRecord.spesialis')
+            ->where('resign', null);
+
+        if ($this->kategoriFilter === 'dokter') {
+            $karyawanQuery->whereHas('dokterRecord');
+        } elseif ($this->kategoriFilter === 'non_dokter') {
+            $karyawanQuery->whereDoesntHave('dokterRecord');
+        }
+
+        $karyawanOptions = $karyawanQuery->get()->map(function ($k) {
+            $isDokter = $k->dokterRecord ? true : false;
+            $spesialis = $k->dokterRecord?->spesialis?->nama;
+            $tag = $isDokter ? " [DOKTER" . ($spesialis ? " - $spesialis" : "") . "]" : " [KARYAWAN]";
+
+            return [
+                'value' => $k->id,
+                'label' => $k->full_nama . $tag,
+            ];
+        })->toArray();
+
         return view('livewire.master.bagian-koordinator.add', [
-            'ruanganOptions'  => Ruangan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
-            'karyawanOptions' => Karyawan::select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'ruanganOptions'  => Ruangan::select('id', 'nama')->where('is_active', true)->orderBy('nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray(),
+            'karyawanOptions' => $karyawanOptions,
             'userOptions'     => User::with('karyawan')->get()->map(fn($u) => ['value' => $u->id, 'label' => $u->email . ($u->karyawan ? ' — ' . $u->karyawan->nama : '')])->toArray(),
         ]);
     }

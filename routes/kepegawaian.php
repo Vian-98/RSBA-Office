@@ -148,6 +148,14 @@ Route::prefix('cuti-bersama')
         Route::get('/{id}', App\Livewire\Kepegawaian\CutiBersama\Show::class)->name('show');
     });
 
+// Cuti Bersama
+Route::prefix('cuti-bersama')
+    ->name('cuti-bersama.')
+    ->group(function () {
+        Route::redirect('/', '/kepegawaian/surat/cuti?tab=cuti-bersama')->name('index');
+        Route::get('/{id}', App\Livewire\Kepegawaian\CutiBersama\Show::class)->name('show');
+    });
+
 
 // Jasa Medis
 Route::prefix('jasmed')

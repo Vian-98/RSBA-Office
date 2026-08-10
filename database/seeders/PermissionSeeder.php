@@ -105,6 +105,9 @@ class PermissionSeeder extends Seeder
             'view-kepegawaian-akreditasi',
             'view-kepegawaian-master-cuti',
             'view-kepegawaian-master-aturan-pajak',
+            'view-kepegawaian-master-tunjangan-golongan',
+            'view-kepegawaian-master-tunjangan-jabatan',
+            'view-kepegawaian-master-tunjangan-lain',
             'view-keuangan-akuntansi-coa',
             'view-keuangan-akuntansi-jurnal-umum',
             'view-keuangan-master-rekanan',
@@ -154,6 +157,7 @@ class PermissionSeeder extends Seeder
             'edit-kepegawaian-master-bagian-koordinator',
             'delete-kepegawaian-master-bagian-koordinator',
             'view-dashboard-poli',
+            'edit-tgl-masuk-karyawan',
         ];
 
         foreach ($permissions as $permission) {

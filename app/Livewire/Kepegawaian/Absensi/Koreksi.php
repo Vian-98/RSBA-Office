@@ -40,6 +40,11 @@ class Koreksi extends Component
 
     public function mount()
     {
+        abort_unless(
+            auth()->user()?->can('view-kepegawaian-absensi'),
+            403,
+            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Koreksi Absensi.'
+        );
         $this->bulan = (int) date('m');
         $this->tahun = (int) date('Y');
         $this->filter_status = 'perlu_verifikasi'; // default: show records needing verification
@@ -88,22 +93,78 @@ class Koreksi extends Component
 
     public function saveCorrection()
     {
-        $record = JadwalKerjaDetail::findOrFail($this->editingRecordId);
+        $record = JadwalKerjaDetail::with('shift')->findOrFail($this->editingRecordId);
 
-        $absenMasuk  = $this->editAbsenMasuk  ? Carbon::parse($this->editAbsenMasuk)->format('Y-m-d H:i:s')  : null;
-        $absenKeluar = $this->editAbsenKeluar ? Carbon::parse($this->editAbsenKeluar)->format('Y-m-d H:i:s') : null;
+        $absenMasukLama = $record->absen_masuk_at;
+        $absenKeluarLama = $record->absen_keluar_at;
+        $statusLama = $record->status_kehadiran instanceof \App\Enums\StatusKehadiran 
+            ? $record->status_kehadiran->value 
+            : (string) $record->status_kehadiran;
+        $catatanLama = $record->catatan;
+
+        $absenMasukBaru  = $this->editAbsenMasuk  ? Carbon::parse($this->editAbsenMasuk)->format('Y-m-d H:i:s')  : null;
+        $absenKeluarBaru = $this->editAbsenKeluar ? Carbon::parse($this->editAbsenKeluar)->format('Y-m-d H:i:s') : null;
+        $statusBaru = $this->editStatus ?: 'belum_dicek';
+        $catatanBaru = $this->editCatatan ?: null;
+
+        $menitTerlambat = 0;
+        $menitPulangCepat = 0;
+        $menitOvertime = 0;
+
+        if ($statusBaru === 'terlambat' && $catatanBaru && preg_match('/Terlambat (-?\d+) menit/i', $catatanBaru, $m)) {
+            $menitTerlambat = abs((int) $m[1]);
+        }
+        if ($statusBaru === 'pulang_cepat' && $catatanBaru && preg_match('/Pulang cepat (-?\d+) menit/i', $catatanBaru, $m)) {
+            $menitPulangCepat = abs((int) $m[1]);
+        }
+
+        if ($absenMasukBaru && $absenKeluarBaru) {
+            $masuk = Carbon::parse($absenMasukBaru);
+            $keluar = Carbon::parse($absenKeluarBaru);
+            if ($record->shift && $record->shift->jam_keluar) {
+                $jamKeluar = Carbon::parse($record->shift->jam_keluar);
+                $targetCheckout = Carbon::parse(Carbon::parse($record->tanggal)->format('Y-m-d') . ' ' . $jamKeluar->format('H:i:s'));
+                if ($record->shift->lintas_hari || $jamKeluar->lt(Carbon::parse($record->shift->jam_masuk))) {
+                    $targetCheckout->addDay();
+                }
+                if ($keluar->gt($targetCheckout)) {
+                    $menitOvertime = abs($keluar->diffInMinutes($targetCheckout));
+                }
+            } else {
+                $menitOvertime = abs($keluar->diffInMinutes($masuk));
+            }
+        }
+
+        // Record Audit Log
+        \App\Models\Sdm\AbsensiKoreksiLog::create([
+            'detail_id' => $record->id,
+            'karyawan_id' => $record->karyawan_id,
+            'tanggal' => $record->tanggal,
+            'status_lama' => $statusLama,
+            'status_baru' => $statusBaru,
+            'absen_masuk_lama' => $absenMasukLama,
+            'absen_masuk_baru' => $absenMasukBaru,
+            'absen_keluar_lama' => $absenKeluarLama,
+            'absen_keluar_baru' => $absenKeluarBaru,
+            'catatan_lama' => $catatanLama,
+            'catatan_baru' => $catatanBaru,
+            'user_id' => auth()->id() ?? 1,
+        ]);
 
         $record->update([
-            'status_kehadiran' => $this->editStatus ?: 'belum_dicek',
-            'absen_masuk_at'   => $absenMasuk,
-            'absen_keluar_at'  => $absenKeluar,
-            'catatan'          => $this->editCatatan ?: null,
+            'status_kehadiran' => $statusBaru,
+            'absen_masuk_at'   => $absenMasukBaru,
+            'absen_keluar_at'  => $absenKeluarBaru,
+            'catatan'          => $catatanBaru,
+            'menit_terlambat'  => $menitTerlambat,
+            'menit_pulang_cepat' => $menitPulangCepat,
+            'menit_overtime'   => $menitOvertime,
             'updated_by'       => auth()->id() ?? 1,
         ]);
 
         $this->showEditModal = false;
         $this->expandedKaryawan[$record->karyawan_id] = true; // keep card open after save
-        $this->toast()->success('Berhasil', 'Koreksi absensi berhasil disimpan.')->send();
+        $this->toast()->success('Berhasil', 'Koreksi absensi berhasil disimpan dan di-log.')->send();
     }
 
     public function render()

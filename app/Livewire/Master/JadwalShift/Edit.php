@@ -5,6 +5,7 @@ namespace App\Livewire\Master\JadwalShift;
 use Throwable;
 use Livewire\Component;
 use App\Models\Sdm\JadwalShift;
+use App\Models\Sdm\Bagian;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\On;
 use TallStackUi\Traits\Interactions;
@@ -31,11 +32,12 @@ class Edit extends Component
     public $warna;
     public $lintas_hari;
     public $aktif;
+    public array $bagianIds = [];
 
     #[On('load-shift-data')]
     public function loadData($id)
     {
-        $this->shift = JadwalShift::findOrFail($id);
+        $this->shift = JadwalShift::with('bagians')->findOrFail($id);
         $this->kode = $this->shift->kode;
         $this->nama = $this->shift->nama;
         $this->jam_masuk = substr($this->shift->jam_masuk, 0, 5);
@@ -44,6 +46,7 @@ class Edit extends Component
         $this->warna = $this->shift->warna;
         $this->lintas_hari = $this->shift->lintas_hari;
         $this->aktif = $this->shift->aktif;
+        $this->bagianIds = $this->shift->bagians->pluck('id')->map(fn ($id) => (int) $id)->all();
     }
 
     public function rules()
@@ -56,7 +59,9 @@ class Edit extends Component
             'toleransi_telat_menit' => 'required|integer|min:0',
             'warna' => 'nullable|string|max:10',
             'lintas_hari' => 'boolean',
-            'aktif' => 'boolean'
+            'aktif' => 'boolean',
+            'bagianIds' => 'array',
+            'bagianIds.*' => 'exists:bagian,id',
         ];
     }
 
@@ -75,6 +80,7 @@ class Edit extends Component
                 'lintas_hari' => $this->lintas_hari,
                 'aktif' => $this->aktif,
             ]);
+            $this->shift->bagians()->sync($this->bagianIds);
 
             $this->dispatch('jadwal-shift-updated');
             $this->dispatch('close-modal', id: 'edit-jadwal-shift');
@@ -91,6 +97,12 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.master.jadwal-shift.edit');
+        return view('livewire.master.jadwal-shift.edit', [
+            'bagianOptions' => Bagian::select('id', 'nama')
+                ->orderBy('nama')
+                ->get()
+                ->map(fn ($item) => ['value' => $item->id, 'label' => $item->nama])
+                ->toArray(),
+        ]);
     }
 }

@@ -42,6 +42,12 @@ class Edit extends Component
         if ($value) {
             $user = User::where('karyawan_id', $value)->first();
             $this->user_id = $user?->id;
+
+            $karyawan = Karyawan::find($value);
+            $jabatanAktif = $karyawan?->jabatan->first();
+            if ($jabatanAktif && $jabatanAktif->tingkat_id <= 3) {
+                $this->toast()->warning('Informasi Jabatan', 'Karyawan ini menjabat sebagai ' . $jabatanAktif->nama . ' (Struktural). Pastikan rangkap tugas ini sudah sesuai.')->send();
+            }
         }
     }
 

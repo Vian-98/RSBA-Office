@@ -35,6 +35,7 @@ class TableJenisCuti extends Component implements HasTable, HasForms, HasActions
 
                 TextColumn::make('lama')
                     ->label('Lama Cuti')
+                    ->formatStateUsing(fn ($state) => (empty($state) || (int)$state === 0 || (int)$state >= 999) ? '-' : $state)
             ])
             ->recordActions([
                 Action::make('edit')

@@ -30,6 +30,11 @@ class CutiBersama extends Model
         return $this->hasMany(SuratCuti::class, 'cuti_bersama_id', 'id');
     }
 
+    public function partisipasiKaryawan()
+    {
+        return $this->hasMany(CutiBersamaKaryawan::class, 'cuti_bersama_id', 'id');
+    }
+
     public function jenisCuti()
     {
         return $this->belongsTo(CutiJenis::class, 'jenis_cuti_id', 'id');

@@ -20,6 +20,11 @@ class DuplicateTapReport extends Component
 
     public function mount($logId = null)
     {
+        abort_unless(
+            auth()->user()?->can('view-kepegawaian-absensi'),
+            403,
+            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Laporan Tap Ganda.'
+        );
         $this->logId = $logId;
         if ($this->logId) {
             $this->importLog = AbsensiImportLog::find($this->logId);

@@ -71,4 +71,10 @@
         </ol>
 
     </div>
+
+    <div class="mt-4 flex justify-end">
+        <x-ts:button sm outline color="gray" x-on:click="$dispatch('close-modal', { id: 'modal-maintenance-status' })">
+            Tutup
+        </x-ts:button>
+    </div>
 </div>

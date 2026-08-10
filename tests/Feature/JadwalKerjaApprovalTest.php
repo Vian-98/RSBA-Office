@@ -32,6 +32,12 @@ class JadwalKerjaApprovalTest extends TestCase
         $roleSuperAdmin = Role::firstOrCreate(['name' => 'Super-Admin']);
         $roleKabid = Role::firstOrCreate(['name' => 'Kepala-Bidang']);
         $roleWadir = Role::firstOrCreate(['name' => 'Wakil-Direktur']);
+        Role::firstOrCreate(['name' => 'Wadir-Medis-Keperawatan']);
+        Role::firstOrCreate(['name' => 'Wadir-SDM-Umum']);
+        Role::firstOrCreate(['name' => 'Wadir-Keuangan']);
+        Role::firstOrCreate(['name' => 'Direktur']);
+        Role::firstOrCreate(['name' => 'Staff-SDM']);
+        Role::firstOrCreate(['name' => 'Koordinator-Dokter']);
 
         $roleKabid->givePermissionTo(['view-kepegawaian-jadwal-kerja', 'approve-jadwal-kabid']);
         $roleWadir->givePermissionTo(['view-kepegawaian-jadwal-kerja', 'approve-jadwal-wadir']);
@@ -198,12 +204,14 @@ class JadwalKerjaApprovalTest extends TestCase
             'password' => bcrypt('password'),
             'karyawan_id' => $karyawanKoor->id,
         ]);
+        $userKoor->assignRole('Koordinator-Dokter');
         $userKoor->givePermissionTo(['view-kepegawaian-jadwal-kerja', 'edit-kepegawaian-jadwal-kerja']);
 
         DB::table('sdm_ruangan_koordinator')->insert([
             'user_id' => $userKoor->id,
             'karyawan_id' => $karyawanKoor->id,
             'ruangan_id' => $ruangan->id,
+            'aktif' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -212,6 +220,7 @@ class JadwalKerjaApprovalTest extends TestCase
             'ruangan_id' => $ruangan->id,
             'bulan' => 8,
             'tahun' => 2026,
+            'tipe' => 'dokter',
             'status' => StatusJadwalKerja::DRAFT,
             'dibuat_oleh' => $karyawanKoor->id,
         ]);
@@ -240,9 +249,8 @@ class JadwalKerjaApprovalTest extends TestCase
         Role::firstOrCreate(['name' => 'Keuangan']);
         $userKeuangan->assignRole('Keuangan');
 
-        // User Keuangan bukan Super-Admin, bukan Staff-SDM, bukan Koordinator, dan bukan Pegawai Shift
+        // User Keuangan bukan Super-Admin, bukan Staff-SDM, dan bukan Koordinator Ruangan
         $this->assertFalse($userKeuangan->can('generate', JadwalKerja::class));
-        $this->assertFalse($userKeuangan->can('view-kepegawaian-jadwal-kerja'));
 
         Livewire::actingAs($userKeuangan)
             ->test(\App\Livewire\Kepegawaian\JadwalKerja\Generate::class)

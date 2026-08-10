@@ -12,11 +12,34 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use TallStackUi\Traits\Interactions;
 
+use Livewire\Attributes\Lazy;
+
+#[Lazy]
 #[Title('Rekap Absensi')]
 class Rekap extends Component
 {
     use Interactions;
     use WithPagination;
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="animate-pulse space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+                <div class="h-10 bg-slate-200 rounded-lg"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="h-24 bg-slate-100 rounded-xl border border-slate-200"></div>
+                <div class="h-24 bg-slate-100 rounded-xl border border-slate-200"></div>
+                <div class="h-24 bg-slate-100 rounded-xl border border-slate-200"></div>
+            </div>
+            <div class="h-80 bg-slate-100 rounded-xl border border-slate-200"></div>
+        </div>
+        HTML;
+    }
 
     public $bulan;
     public $tahun;
@@ -25,23 +48,18 @@ class Rekap extends Component
     public $tanggal_spesifik = null;
     public $mode = 'bulanan'; // 'bulanan', 'harian'
     public $statusFilter = '';
+    public $perPage = 15;
 
-    // Properties for Manual Correction
-    public $editingRecordId = null;
-    public $editStatus = '';
-    public $editAbsenMasuk = '';
-    public $editAbsenKeluar = '';
-    public $editCatatan = '';
-    public $showEditModal = false;
+    // Properties for Overtime Detail Modal
+    public $showOtModal = false;
+    public $selectedOtKaryawan = '';
+    public $selectedOtDetails = [];
+    public $selectedOtFormatted = '';
 
-    // Reset pagination when filter updates
-    public function updatedRuanganId() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); }
-    public function updatedKaryawanId() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); }
-    public function updatedTanggalSpesifik() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); }
-    public function updatedMode() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); }
-    public function updatedBulan() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); }
-    public function updatedTahun() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); }
-    public function updatedStatusFilter() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); }
+    // Properties for Audit Log History Modal
+    public $showHistoryModal = false;
+    public $historyLogs = [];
+    public $historyRecordInfo = '';
 
     public function editRecord($id)
     {
@@ -64,62 +82,86 @@ class Rekap extends Component
 
     public function saveCorrection()
     {
-        $record = JadwalKerjaDetail::findOrFail($this->editingRecordId);
+        $record = JadwalKerjaDetail::with('shift')->findOrFail($this->editingRecordId);
         
-        $absenMasuk = $this->editAbsenMasuk ? Carbon::parse($this->editAbsenMasuk)->format('Y-m-d H:i:s') : null;
-        $absenKeluar = $this->editAbsenKeluar ? Carbon::parse($this->editAbsenKeluar)->format('Y-m-d H:i:s') : null;
+        $absenMasukLama = $record->absen_masuk_at;
+        $absenKeluarLama = $record->absen_keluar_at;
+        $statusLama = $record->status_kehadiran instanceof \App\Enums\StatusKehadiran 
+            ? $record->status_kehadiran->value 
+            : (string) $record->status_kehadiran;
+        $catatanLama = $record->catatan;
+
+        $absenMasukBaru = $this->editAbsenMasuk ? Carbon::parse($this->editAbsenMasuk)->format('Y-m-d H:i:s') : null;
+        $absenKeluarBaru = $this->editAbsenKeluar ? Carbon::parse($this->editAbsenKeluar)->format('Y-m-d H:i:s') : null;
+        $statusBaru = $this->editStatus ?: 'belum_dicek';
+        $catatanBaru = $this->editCatatan ?: null;
+
+        $menitTerlambat = 0;
+        $menitPulangCepat = 0;
+        $menitOvertime = 0;
+
+        if ($statusBaru === 'terlambat' && $catatanBaru && preg_match('/Terlambat (-?\d+) menit/i', $catatanBaru, $m)) {
+            $menitTerlambat = abs((int) $m[1]);
+        }
+        if ($statusBaru === 'pulang_cepat' && $catatanBaru && preg_match('/Pulang cepat (-?\d+) menit/i', $catatanBaru, $m)) {
+            $menitPulangCepat = abs((int) $m[1]);
+        }
+
+        if ($absenMasukBaru && $absenKeluarBaru) {
+            $masuk = Carbon::parse($absenMasukBaru);
+            $keluar = Carbon::parse($absenKeluarBaru);
+            if ($record->shift && $record->shift->jam_keluar) {
+                $jamKeluar = Carbon::parse($record->shift->jam_keluar);
+                $targetCheckout = Carbon::parse(Carbon::parse($record->tanggal)->format('Y-m-d') . ' ' . $jamKeluar->format('H:i:s'));
+                if ($record->shift->lintas_hari || $jamKeluar->lt(Carbon::parse($record->shift->jam_masuk))) {
+                    $targetCheckout->addDay();
+                }
+                if ($keluar->gt($targetCheckout)) {
+                    $menitOvertime = abs($keluar->diffInMinutes($targetCheckout));
+                }
+            } else {
+                $menitOvertime = abs($keluar->diffInMinutes($masuk));
+            }
+        }
+
+        // Record Audit Log
+        \App\Models\Sdm\AbsensiKoreksiLog::create([
+            'detail_id' => $record->id,
+            'karyawan_id' => $record->karyawan_id,
+            'tanggal' => $record->tanggal,
+            'status_lama' => $statusLama,
+            'status_baru' => $statusBaru,
+            'absen_masuk_lama' => $absenMasukLama,
+            'absen_masuk_baru' => $absenMasukBaru,
+            'absen_keluar_lama' => $absenKeluarLama,
+            'absen_keluar_baru' => $absenKeluarBaru,
+            'catatan_lama' => $catatanLama,
+            'catatan_baru' => $catatanBaru,
+            'user_id' => auth()->id() ?? 1,
+        ]);
 
         $record->update([
-            'status_kehadiran' => $this->editStatus ?: 'belum_dicek',
-            'absen_masuk_at' => $absenMasuk,
-            'absen_keluar_at' => $absenKeluar,
-            'catatan' => $this->editCatatan ?: null,
+            'status_kehadiran' => $statusBaru,
+            'absen_masuk_at' => $absenMasukBaru,
+            'absen_keluar_at' => $absenKeluarBaru,
+            'catatan' => $catatanBaru,
+            'menit_terlambat' => $menitTerlambat,
+            'menit_pulang_cepat' => $menitPulangCepat,
+            'menit_overtime' => $menitOvertime,
             'updated_by' => auth()->id() ?? 1,
         ]);
 
         $this->showEditModal = false;
-        $this->toast()->success('Berhasil', 'Koreksi absensi berhasil disimpan.')->send();
+        $this->toast()->success('Berhasil', 'Koreksi absensi berhasil disimpan dan di-log.')->send();
     }
 
     public function mount()
     {
         abort_unless(
-            auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM']),
+            auth()->user()?->can('view-kepegawaian-absensi'),
             403,
-            'Hanya Staff SDM yang dapat mengakses Halaman Rekap Absensi.'
+            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Rekap Absensi.'
         );
-        $this->bulan = (int) date('m');
-        $this->tahun = (int) date('Y');
-    }
-
-    public function render()
-    {
-        $user = auth()->user();
-        $allowedRuanganIds = $user?->getRuanganKoordinatorIds(); // null = semua, [] = tidak ada
-
-        // Filter ruangan dropdown berdasarkan akses koordinator
-        $ruangans = $allowedRuanganIds !== null
-            ? Ruangan::whereIn('id', $allowedRuanganIds)->orderBy('nama')->get()
-            : Ruangan::orderBy('nama')->get();
-
-        // Filter karyawan dropdown berdasarkan ruangan yang bisa diakses
-        $karyawans = $allowedRuanganIds !== null
-            ? Karyawan::whereIn('ruangan_id', $allowedRuanganIds)->orderBy('nama')->get()
-            : Karyawan::orderBy('nama')->get();
-
-        // 1. Build Base Query
-        $baseQuery = JadwalKerjaDetail::query()
-            ->whereNotNull('status_kehadiran');
-
-        // Enforce ruangan scope for koordinator
-        if ($allowedRuanganIds !== null) {
-            if (empty($allowedRuanganIds)) {
-                $baseQuery->whereRaw('0 = 1');
-            } else {
-                $baseQuery->whereHas('jadwalKerja', fn($q) => $q->whereIn('ruangan_id', $allowedRuanganIds));
-            }
-        }
-
         if ($this->mode === 'bulanan') {
             $baseQuery->whereMonth('tanggal', $this->bulan)
                       ->whereYear('tanggal', $this->tahun);
@@ -153,84 +195,62 @@ class Rekap extends Component
             $karyawanQuery->whereIn('ruangan_id', $allowedRuanganIds);
         }
 
+        $perPageCount = min(100, max(5, (int) $this->perPage));
+
         $paginatedKaryawans = $karyawanQuery->orderBy('nama')
-            ->paginate(15, ['*'], 'rekapKaryawanPage');
+            ->paginate($perPageCount, ['*'], 'rekapKaryawanPage');
 
         if ($paginatedKaryawans->currentPage() > 1 && $paginatedKaryawans->currentPage() > $paginatedKaryawans->lastPage()) {
             $this->setPage(max(1, $paginatedKaryawans->lastPage()), 'rekapKaryawanPage');
             $paginatedKaryawans = $karyawanQuery->orderBy('nama')
-                ->paginate(15, ['*'], 'rekapKaryawanPage');
+                ->paginate($perPageCount, ['*'], 'rekapKaryawanPage');
         }
 
         $currentPageKaryawanIds = $paginatedKaryawans->pluck('id')->toArray();
 
-        // 3. Overall Summary Calculations (for the top cards)
+        // 3. Overall Summary Calculations (for the top cards via high performance SQL aggregation)
+        $summaryQuery = (clone $baseQuery)
+            ->leftJoin('sdm_jadwal_shift', 'sdm_jadwal_kerja_detail.shift_id', '=', 'sdm_jadwal_shift.id');
+
+        $summaryAgg = (clone $summaryQuery)
+            ->selectRaw("
+                SUM(CASE WHEN sdm_jadwal_kerja_detail.status_kehadiran = 'hadir' THEN 1 ELSE 0 END) as hadir,
+                SUM(CASE WHEN sdm_jadwal_kerja_detail.status_kehadiran = 'terlambat' THEN 1 ELSE 0 END) as terlambat,
+                SUM(CASE WHEN sdm_jadwal_kerja_detail.status_kehadiran = 'pulang_cepat' THEN 1 ELSE 0 END) as pulang_cepat,
+                SUM(CASE WHEN sdm_jadwal_kerja_detail.status_kehadiran = 'tidak_hadir' THEN 1 ELSE 0 END) as tidak_hadir,
+                SUM(CASE WHEN sdm_jadwal_kerja_detail.status_kehadiran = 'cuti' THEN 1 ELSE 0 END) as cuti,
+                SUM(CASE WHEN sdm_jadwal_kerja_detail.status_kehadiran = 'izin' THEN 1 ELSE 0 END) as izin,
+                SUM(CASE WHEN sdm_jadwal_kerja_detail.status_kehadiran = 'perlu_verifikasi' THEN 1 ELSE 0 END) as perlu_verifikasi,
+                SUM(COALESCE(sdm_jadwal_kerja_detail.menit_terlambat, 0)) as menit_terlambat,
+                SUM(COALESCE(sdm_jadwal_kerja_detail.menit_pulang_cepat, 0)) as menit_pulang_cepat,
+                SUM(COALESCE(sdm_jadwal_kerja_detail.menit_overtime, 0)) as total_overtime_menit
+            ")
+            ->first();
+
         $summary = [
-            'hadir' => 0,
-            'terlambat' => 0,
-            'menit_terlambat' => 0,
-            'pulang_cepat' => 0,
-            'menit_pulang_cepat' => 0,
-            'tidak_hadir' => 0,
-            'cuti' => 0,
-            'izin' => 0,
-            'perlu_verifikasi' => 0,
-            'total_overtime_menit' => 0,
+            'hadir' => (int) ($summaryAgg->hadir ?? 0),
+            'terlambat' => (int) ($summaryAgg->terlambat ?? 0),
+            'menit_terlambat' => (int) ($summaryAgg->menit_terlambat ?? 0),
+            'pulang_cepat' => (int) ($summaryAgg->pulang_cepat ?? 0),
+            'menit_pulang_cepat' => (int) ($summaryAgg->menit_pulang_cepat ?? 0),
+            'tidak_hadir' => (int) ($summaryAgg->tidak_hadir ?? 0),
+            'cuti' => (int) ($summaryAgg->cuti ?? 0),
+            'izin' => (int) ($summaryAgg->izin ?? 0),
+            'perlu_verifikasi' => (int) ($summaryAgg->perlu_verifikasi ?? 0),
+            'total_overtime_menit' => (int) ($summaryAgg->total_overtime_menit ?? 0),
         ];
 
-        // Overall raw details select (for overall summary counts and overtime sum)
-        $overallRaw = (clone $baseQuery)
-            ->leftJoin('sdm_jadwal_shift', 'sdm_jadwal_kerja_detail.shift_id', '=', 'sdm_jadwal_shift.id')
-            ->select([
-                'sdm_jadwal_kerja_detail.status_kehadiran',
-                'sdm_jadwal_kerja_detail.catatan',
-                'sdm_jadwal_kerja_detail.absen_masuk_at',
-                'sdm_jadwal_kerja_detail.absen_keluar_at',
-                'sdm_jadwal_kerja_detail.shift_id',
-                'sdm_jadwal_kerja_detail.tanggal',
-                'sdm_jadwal_shift.jam_masuk as shift_jam_masuk',
-                'sdm_jadwal_shift.jam_keluar as shift_jam_keluar',
-                'sdm_jadwal_shift.lintas_hari as shift_lintas_hari'
-            ])
-            ->toBase()
-            ->get();
-
-        foreach ($overallRaw as $row) {
-            $statusVal = $row->status_kehadiran;
-            if (isset($summary[$statusVal])) {
-                $summary[$statusVal]++;
-            }
-
-            // Parse minutes from catatan
-            $menit = 0;
-            if ($statusVal === 'terlambat' && $row->catatan) {
-                if (preg_match('/Terlambat (-?\d+) menit/i', $row->catatan, $matches)) {
-                    $menit = abs((int) $matches[1]);
-                    $summary['menit_terlambat'] += $menit;
-                }
-            } elseif ($statusVal === 'pulang_cepat' && $row->catatan) {
-                if (preg_match('/Pulang cepat (-?\d+) menit/i', $row->catatan, $matches)) {
-                    $menit = abs((int) $matches[1]);
-                    $summary['menit_pulang_cepat'] += $menit;
-                }
-            }
-
-            // Overtime Calculation
-            if ($row->absen_masuk_at && $row->absen_keluar_at) {
-                $masuk = Carbon::parse($row->absen_masuk_at);
-                $keluar = Carbon::parse($row->absen_keluar_at);
-
-                if ($row->shift_id && $row->shift_jam_keluar) {
-                    $jamKeluar = Carbon::parse($row->shift_jam_keluar);
-                    $targetCheckout = Carbon::parse(Carbon::parse($row->tanggal)->format('Y-m-d') . ' ' . $jamKeluar->format('H:i:s'));
-                    if ($row->shift_lintas_hari || $jamKeluar->lt(Carbon::parse($row->shift_jam_masuk))) {
-                        $targetCheckout->addDay();
-                    }
-                    if ($keluar->gt($targetCheckout)) {
-                        $summary['total_overtime_menit'] += abs($keluar->diffInMinutes($targetCheckout));
-                    }
-                } else {
-                    $summary['total_overtime_menit'] += abs($keluar->diffInMinutes($masuk));
+        // Fallback for minute metrics if older records do not have column values prefilled
+        if (($summary['terlambat'] > 0 && $summary['menit_terlambat'] === 0) || ($summary['pulang_cepat'] > 0 && $summary['menit_pulang_cepat'] === 0)) {
+            $uncalculatedRows = (clone $summaryQuery)
+                ->whereIn('sdm_jadwal_kerja_detail.status_kehadiran', ['terlambat', 'pulang_cepat'])
+                ->select(['sdm_jadwal_kerja_detail.status_kehadiran', 'sdm_jadwal_kerja_detail.catatan'])
+                ->get();
+            foreach ($uncalculatedRows as $row) {
+                if ($row->status_kehadiran === 'terlambat' && $row->catatan && preg_match('/Terlambat (-?\d+) menit/i', $row->catatan, $m)) {
+                    $summary['menit_terlambat'] += abs((int)$m[1]);
+                } elseif ($row->status_kehadiran === 'pulang_cepat' && $row->catatan && preg_match('/Pulang cepat (-?\d+) menit/i', $row->catatan, $m)) {
+                    $summary['menit_pulang_cepat'] += abs((int)$m[1]);
                 }
             }
         }
@@ -357,13 +377,64 @@ class Rekap extends Component
                 ->paginate(15, ['*'], 'dailyPage');
         }
 
+        // 6. Paginated Global Audit Log History
+        $globalHistoryLogs = null;
+        if ($this->showGlobalHistoryModal) {
+            $historyQuery = \App\Models\Sdm\AbsensiKoreksiLog::with(['karyawan', 'user.karyawan', 'detail'])
+                ->orderBy('created_at', 'desc');
+
+            if ($this->mode === 'bulanan') {
+                $historyQuery->whereMonth('tanggal', $this->bulan)
+                             ->whereYear('tanggal', $this->tahun);
+            } else {
+                if ($this->tanggal_spesifik) {
+                    $historyQuery->whereDate('tanggal', $this->tanggal_spesifik);
+                }
+            }
+
+            if ($this->ruangan_id) {
+                $historyQuery->whereHas('karyawan', function ($q) {
+                    $q->where('ruangan_id', $this->ruangan_id);
+                });
+            }
+
+            if ($this->karyawan_id) {
+                $historyQuery->where('karyawan_id', $this->karyawan_id);
+            }
+
+            if ($this->historySearch) {
+                $s = trim($this->historySearch);
+                $historyQuery->where(function ($q) use ($s) {
+                    $q->whereHas('karyawan', function ($k) use ($s) {
+                        $k->where('nama', 'like', "%{$s}%")
+                          ->orWhere('gelar_depan', 'like', "%{$s}%")
+                          ->orWhere('gelar_belakang', 'like', "%{$s}%")
+                          ->orWhere('pin_absen', 'like', "%{$s}%");
+                    })
+                    ->orWhereHas('user.karyawan', function ($uk) use ($s) {
+                        $uk->where('nama', 'like', "%{$s}%")
+                           ->orWhere('gelar_depan', 'like', "%{$s}%")
+                           ->orWhere('gelar_belakang', 'like', "%{$s}%");
+                    })
+                    ->orWhere('status_lama', 'like', "%{$s}%")
+                    ->orWhere('status_baru', 'like', "%{$s}%")
+                    ->orWhere('catatan_baru', 'like', "%{$s}%");
+                });
+            }
+
+            $globalHistoryLogs = $historyQuery->paginate(15, ['*'], 'historyLogPage');
+
+            if ($globalHistoryLogs->currentPage() > 1 && $globalHistoryLogs->currentPage() > $globalHistoryLogs->lastPage()) {
+                $this->setPage(max(1, $globalHistoryLogs->lastPage()), 'historyLogPage');
+                $globalHistoryLogs = $historyQuery->paginate(15, ['*'], 'historyLogPage');
+            }
+        }
+
         return view('livewire.kepegawaian.absensi.rekap', [
-            'ruangans' => $ruangans,
-            'karyawans' => $karyawans,
-            'records' => $records,
-            'summary' => $summary,
             'rekapKaryawan' => $rekapKaryawan,
-            'paginatedKaryawans' => $paginatedKaryawans
+            'summaryStats' => $summaryStats,
+            'records' => $records,
+            'globalHistoryLogs' => $globalHistoryLogs,
         ]);
     }
 }
