@@ -25,12 +25,11 @@ class Form extends Component
     public $account_password = '';
 
     // Mekari Sign Customization
-    public $stamp_position = 'bottom_right';
+    public $stamp_position = 'top_right';
     public $stamp_x = 70; // percentage from left (0 to 100)
     public $stamp_y = 75; // percentage from top (0 to 100)
     public $stamp_scale = 100; // percentage scale (50% to 180%)
     public $signature_type = 'qr_seal'; // 'qr_seal', 'digital_stamp'
-    public $previewPdfBase64 = null;
     public $fileSizeFormatted = null;
     public $fileHashSHA256 = null;
 
@@ -99,7 +98,6 @@ class Form extends Component
             $realPath = $this->pdf_file->getRealPath();
             $this->fileHashSHA256 = hash_file('sha256', $realPath);
             $this->fileSizeFormatted = number_format(filesize($realPath)) . ' bytes';
-            $this->previewPdfBase64 = null;
 
             if (empty($this->title)) {
                 $filename = pathinfo($this->pdf_file->getClientOriginalName(), PATHINFO_FILENAME);
@@ -251,7 +249,7 @@ class Form extends Component
 
             // Close modal & reset form
             $this->showPasswordModal = false;
-            $this->reset(['pdf_file', 'title', 'keterangan', 'account_password', 'previewPdfBase64', 'fileSizeFormatted', 'fileHashSHA256']);
+            $this->reset(['pdf_file', 'title', 'keterangan', 'account_password', 'fileSizeFormatted', 'fileHashSHA256']);
             $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
 
             // Dispatch event to parent component to switch to list tab and notify
