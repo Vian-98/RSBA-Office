@@ -1,8 +1,7 @@
 <div class="w-full bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 w-full">
         <div>
-            <h2 class="text-base font-bold text-slate-800">Daftar Surat PDF Ter-Sign</h2>
-            <p class="text-xs text-slate-500">Docstore Vault & Single Source of Truth</p>
+            <h2 class="text-base font-bold text-slate-800">Daftar Surat Ter-Sign</h2>
         </div>
         <div class="w-full md:w-80">
             <input 
@@ -18,10 +17,10 @@
         <table class="w-full text-left text-sm text-slate-600">
             <thead class="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
                 <tr>
-                    <th class="px-6 py-4">Dokumen</th>
-                    <th class="px-6 py-4">ByteCounter</th>
-                    <th class="px-6 py-4">Docstore ID</th>
-                    <th class="px-6 py-4 text-right">Aksi</th>
+                    <th class="px-6 py-4 text-center">Dokumen</th>
+                    <th class="px-6 py-4 text-center">ByteCounter</th>
+                    <th class="px-6 py-4 text-center">Docstore ID</th>
+                    <th class="px-6 py-4 text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">

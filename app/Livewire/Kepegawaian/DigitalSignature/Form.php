@@ -78,6 +78,19 @@ class Form extends Component
         }
     }
 
+    public function getPreviewPdfUrlProperty()
+    {
+        if (!$this->pdf_file) {
+            return null;
+        }
+        try {
+            return $this->pdf_file->temporaryUrl();
+        } catch (\Throwable $e) {
+            $realPath = $this->pdf_file->getRealPath();
+            return 'data:application/pdf;base64,' . base64_encode(file_get_contents($realPath));
+        }
+    }
+
     public function updatedPdfFile()
     {
         $this->validateOnly('pdf_file');
@@ -86,7 +99,7 @@ class Form extends Component
             $realPath = $this->pdf_file->getRealPath();
             $this->fileHashSHA256 = hash_file('sha256', $realPath);
             $this->fileSizeFormatted = number_format(filesize($realPath)) . ' bytes';
-            $this->previewPdfBase64 = 'data:application/pdf;base64,' . base64_encode(file_get_contents($realPath));
+            $this->previewPdfBase64 = null;
 
             if (empty($this->title)) {
                 $filename = pathinfo($this->pdf_file->getClientOriginalName(), PATHINFO_FILENAME);
