@@ -47,6 +47,7 @@ class DigitalSignatureService
             $res = $this->docstoreSyncService->generateVaultCertificate($payload);
 
             if ($res['status'] ?? false) {
+                \Illuminate\Support\Facades\Cache::forget('vault_active_cert_' . $user->id);
                 // Update previous local certs to inactive
                 SignatureCerts::where('user_id', $user->id)->update(['is_active' => 0]);
 
@@ -90,7 +91,10 @@ class DigitalSignatureService
      */
     public function getActiveCertificate(int $userId)
     {
-        $vaultCert = $this->docstoreSyncService->getActiveVaultCertificate($userId);
+        $cacheKey = 'vault_active_cert_' . $userId;
+        $vaultCert = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($userId) {
+            return $this->docstoreSyncService->getActiveVaultCertificate($userId);
+        });
 
         if ($vaultCert) {
             // Return an object compatible with SignatureCerts model interface
