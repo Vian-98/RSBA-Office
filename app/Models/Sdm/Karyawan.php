@@ -234,6 +234,51 @@ class Karyawan extends Model
         return $this->ruanganKoordinasi()->where('ruangan.id', $ruanganId)->exists();
     }
 
+    public function getIhsStatusAttribute(): string
+    {
+        return !empty($this->ihs_number) ? 'ada' : 'belum_ada';
+    }
+
+    public function getStrStatusAttribute(): string
+    {
+        if (empty($this->no_str) || empty($this->str_berakhir)) {
+            return 'belum_ada';
+        }
+
+        $exp = Carbon::parse($this->str_berakhir)->startOfDay();
+        $now = Carbon::now()->startOfDay();
+
+        if ($exp->isPast() && !$exp->isToday()) {
+            return 'expired';
+        }
+
+        if ($now->diffInDays($exp, false) <= 90) {
+            return 'warning';
+        }
+
+        return 'aktif';
+    }
+
+    public function getSipStatusAttribute(): string
+    {
+        if (empty($this->no_sip) || empty($this->sip_berakhir)) {
+            return 'belum_ada';
+        }
+
+        $exp = Carbon::parse($this->sip_berakhir)->startOfDay();
+        $now = Carbon::now()->startOfDay();
+
+        if ($exp->isPast() && !$exp->isToday()) {
+            return 'expired';
+        }
+
+        if ($now->diffInDays($exp, false) <= 90) {
+            return 'warning';
+        }
+
+        return 'aktif';
+    }
+
     public function ruangan()
     {
         return $this->belongsTo(\App\Models\Ruangan::class, 'ruangan_id');

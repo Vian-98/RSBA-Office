@@ -49,7 +49,31 @@ class TableDokter extends Component implements HasTable, HasForms, HasActions
                     ->default('-'),
 
                 TextColumn::make('spesialis.nama')
-                    ->label('Sub Spesialis')
+                    ->label('Sub Spesialis'),
+
+                TextColumn::make('karyawan.ihs_number')
+                    ->label('IHS Number')
+                    ->default('-')
+                    ->copyable()
+                    ->badge()
+                    ->color(fn($record) => !empty($record?->karyawan?->ihs_number) ? 'success' : 'gray'),
+
+                TextColumn::make('karyawan.no_str')
+                    ->label('No. STR')
+                    ->default('-')
+                    ->searchable(),
+
+                TextColumn::make('karyawan.str_berakhir')
+                    ->label('STR Expired')
+                    ->formatStateUsing(fn($state) => $state ? \Carbon\Carbon::parse($state)->format('d/m/Y') : null)
+                    ->placeholder('-')
+                    ->badge()
+                    ->color(fn($record) => match ($record?->karyawan?->str_status ?? 'belum_ada') {
+                        'aktif' => 'success',
+                        'warning' => 'warning',
+                        'expired' => 'danger',
+                        default => 'gray',
+                    }),
             ])
             ->filters([
                 SelectFilter::make('spesialis_id')
@@ -80,19 +104,7 @@ class TableDokter extends Component implements HasTable, HasForms, HasActions
                     ->tooltip('Atur Ruangan Koordinasi')
                     ->color('info')
                     ->visible(
-                        fn() => auth()->user()->can('edit-kepegawaian-karyawan') || auth()->user()->can('view-kepegawaian-master-bagian-koordinator') || auth()->user()->isKoordinator()
-                    )
-                    ->action(fn(Dokter $dokter, $livewire) => $livewire->openKoorRuangan(
-                        id: $dokter->getKey()
-                    )),
-
-                Action::make('koor-ruangan')
-                    ->iconButton()
-                    ->icon('tabler-building-hospital')
-                    ->tooltip('Atur Ruangan Koordinasi')
-                    ->color('info')
-                    ->visible(
-                        fn() => auth()->user()->hasAnyRole(['Super-Admin', 'Staff-SDM', 'Kepala-Bidang', 'Wakil-Direktur'])
+                        fn() => auth()->user()->can('edit-kepegawaian-karyawan') || auth()->user()->can('view-kepegawaian-master-bagian-koordinator') || auth()->user()->isKoordinator() || auth()->user()->hasAnyRole(['Super-Admin', 'Staff-SDM', 'Kepala-Bidang', 'Wakil-Direktur'])
                     )
                     ->action(fn(Dokter $dokter, $livewire) => $livewire->openKoorRuangan(
                         id: $dokter->getKey()

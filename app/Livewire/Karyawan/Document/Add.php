@@ -24,7 +24,8 @@ class Add extends Component
     public $jenisDocsOpt = [
         ['value' => 'ijazah', 'label' => 'Ijazah'],
         ['value' => 'sertifikat', 'label' => 'Sertifikat'],
-        ['value' => 'sip', 'label' => 'SIP'],
+        ['value' => 'str', 'label' => 'STR (Surat Tanda Registrasi)'],
+        ['value' => 'sip', 'label' => 'SIP (Surat Izin Praktik)'],
         ['value' => 'pribadi', 'label' => 'Pribadi'],
         ['value' => 'lain', 'label' => 'Lain-Lain']
     ];

@@ -12,10 +12,15 @@ use Livewire\Attributes\Lazy;
 use App\Livewire\Forms\KaryawanForm;
 use TallStackUi\Traits\Interactions;
 
+use Livewire\WithFileUploads;
+use App\Models\Sdm\KaryawanDocument;
+use Illuminate\Support\Facades\Storage;
+
 #[Lazy]
 class EditIdentitas extends Component
 {
     use Interactions;
+    use WithFileUploads;
 
     public KaryawanForm $form;
 
@@ -40,6 +45,9 @@ class EditIdentitas extends Component
     ];
 
     public $isDomisiliKTP = false;
+    public $showLisensiSection = false;
+    public $file_str;
+    public $current_str_doc;
 
     public function mount($id)
     {
@@ -51,14 +59,63 @@ class EditIdentitas extends Component
         $this->status_options = StatusKaryawan::options();
         $this->agama_options = Agama::options();
         $this->jk_options = Kelamin::options();
+
+        $jabatan = $karyawan->jabatan->first();
+        $bagianId = $jabatan?->pivot?->bagian_id ?? $jabatan?->bagian_id;
+        $bagian = $bagianId ? \App\Models\Sdm\Bagian::find($bagianId) : null;
+        $this->showLisensiSection = ($bagian?->group === 'medis');
+
+        $this->loadStrDoc();
+    }
+
+    public function loadStrDoc()
+    {
+        if ($this->form->karyawan?->id) {
+            $this->current_str_doc = KaryawanDocument::where('karyawan_id', $this->form->karyawan->id)
+                ->where('jenis', 'str')
+                ->latest()
+                ->first();
+        }
+    }
+
+    public function toggleLisensiSection()
+    {
+        $this->showLisensiSection = ! $this->showLisensiSection;
     }
 
     public function update()
     {
         $this->validate();
 
+        if ($this->file_str) {
+            $this->validate([
+                'file_str' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            ]);
+        }
+
         try {
             $this->form->updateIdentitas();
+
+            if ($this->file_str) {
+                $filename = $this->file_str->store('karyawan/docs', 'public');
+
+                if ($this->current_str_doc && $this->current_str_doc->filename && Storage::disk('public')->exists($this->current_str_doc->filename)) {
+                    Storage::disk('public')->delete($this->current_str_doc->filename);
+                }
+
+                $this->current_str_doc = KaryawanDocument::updateOrCreate(
+                    [
+                        'karyawan_id' => $this->form->karyawan->id,
+                        'jenis' => 'str',
+                    ],
+                    [
+                        'nama' => 'Dokumen STR - ' . $this->form->karyawan->full_nama,
+                        'filename' => $filename,
+                    ]
+                );
+
+                $this->reset('file_str');
+            }
 
             // Clear cache for updated employee's user, and current logged-in user
             $karyawan = $this->form->karyawan;
@@ -70,11 +127,26 @@ class EditIdentitas extends Component
             $this->dispatch('updated-karywan');
 
             $this->toast()
-                ->success('Updated', 'Update identitas karyawan berhasil.')
+                ->success('Updated', 'Update identitas & lisensi karyawan berhasil.')
                 ->send();
         } catch (Throwable $e) {
             $this->toast()
                 ->error('Failed', 'Error ' . $e->getMessage())
+                ->send();
+        }
+    }
+
+    public function deleteStrDoc()
+    {
+        if ($this->current_str_doc) {
+            if ($this->current_str_doc->filename && Storage::disk('public')->exists($this->current_str_doc->filename)) {
+                Storage::disk('public')->delete($this->current_str_doc->filename);
+            }
+            $this->current_str_doc->delete();
+            $this->current_str_doc = null;
+
+            $this->toast()
+                ->success('Dokumen Dihapus', 'Softcopy dokumen STR berhasil dihapus.')
                 ->send();
         }
     }
