@@ -27,4 +27,9 @@ class KaryawanJabatan extends Model
     {
         return $this->belongsTo(Bagian::class, 'bagian_id');
     }
+
+    public function document(): BelongsTo
+    {
+        return $this->belongsTo(KaryawanDocument::class, 'document_id');
+    }
 }

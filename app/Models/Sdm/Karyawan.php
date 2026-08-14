@@ -94,8 +94,8 @@ class Karyawan extends Model
     // Get History Jabatan
     function historyJabatan()
     {
-        return $this->belongsToMany(Jabatan::class, KaryawanJabatan::class)
-            ->withPivot('id', 'bagian_id', 'created_at', 'tgl_mulai', 'tgl_berakhir')
+        return $this->belongsToMany(Jabatan::class, 'sdm_kary_jabatan', 'karyawan_id', 'jabatan_id')
+            ->withPivot('id', 'bagian_id', 'no_sk', 'document_id', 'created_at', 'tgl_mulai', 'tgl_berakhir')
             ->orderByPivot('created_at', 'desc');
     }
 
@@ -104,7 +104,7 @@ class Karyawan extends Model
     function jabatan()
     {
         return $this->belongsToMany(Jabatan::class, 'sdm_kary_jabatan', 'karyawan_id', 'jabatan_id')
-            ->withPivot('id', 'bagian_id', 'created_at', 'tgl_mulai', 'tgl_berakhir')
+            ->withPivot('id', 'bagian_id', 'no_sk', 'document_id', 'created_at', 'tgl_mulai', 'tgl_berakhir')
             ->wherePivotNull('tgl_berakhir')
             ->orderByPivot('tgl_mulai', 'desc');
     }
@@ -126,7 +126,7 @@ class Karyawan extends Model
     {
         return $this->belongsToMany(\App\Models\Ruangan::class, 'sdm_kary_ruangan', 'karyawan_id', 'ruangan_id')
             ->using(KaryawanRuangan::class)
-            ->withPivot('id', 'created_at', 'tgl_mulai', 'tgl_berakhir', 'is_utama', 'keterangan')
+            ->withPivot('id', 'no_sk', 'document_id', 'created_at', 'tgl_mulai', 'tgl_berakhir', 'is_utama', 'keterangan')
             ->orderByPivot('created_at', 'desc');
     }
 
@@ -135,8 +135,14 @@ class Karyawan extends Model
     {
         return $this->belongsToMany(\App\Models\Ruangan::class, 'sdm_kary_ruangan', 'karyawan_id', 'ruangan_id')
             ->using(KaryawanRuangan::class)
-            ->withPivot('id', 'tgl_mulai', 'tgl_berakhir', 'is_utama', 'keterangan')
+            ->withPivot('id', 'no_sk', 'document_id', 'tgl_mulai', 'tgl_berakhir', 'is_utama', 'keterangan')
             ->wherePivotNull('tgl_berakhir');
+    }
+
+    // Dokumen Karyawan
+    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(KaryawanDocument::class, 'karyawan_id');
     }
 
     // Get Ruangan Utama (Primary Room)
