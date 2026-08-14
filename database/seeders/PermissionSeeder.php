@@ -158,6 +158,9 @@ class PermissionSeeder extends Seeder
             'delete-kepegawaian-master-bagian-koordinator',
             'view-dashboard-poli',
             'edit-tgl-masuk-karyawan',
+            'view-kepegawaian-surat-balasan-pkl',
+            'view-kepegawaian-surat-balasan-penelitian',
+            'view-kepegawaian-surat-perintah-tugas',
         ];
 
         foreach ($permissions as $permission) {
