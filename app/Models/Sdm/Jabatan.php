@@ -222,5 +222,57 @@ class Jabatan extends Model
             'atasanLangsungId' => $atasanLangsungId ?? $options->first()['value'] ?? null,
         ];
     }
+
+    /**
+     * Ambil daftar pejabat Direktur aktif untuk penandatangan surat
+     */
+    public static function getDirekturList(): array
+    {
+        $jabatans = static::where(function ($q) {
+            $q->where('tingkat_id', 1)
+              ->orWhere('nama', 'LIKE', '%direktur utama%')
+              ->orWhere('nama', 'LIKE', '%direktur%');
+        })
+        ->where('nama', 'NOT LIKE', '%wakil%')
+        ->where('nama', 'NOT LIKE', '%wadir%')
+        ->with(['jabatans' => function ($q) {
+            $q->whereNull('tgl_berakhir')->orderBy('id', 'desc')->with('karyawan');
+        }])
+        ->get();
+
+        $list = [];
+        foreach ($jabatans as $j) {
+            $kj = $j->jabatans->first();
+            if ($kj && $kj->karyawan) {
+                $list[] = [
+                    'jabatan_id'   => $j->id,
+                    'jabatan_nama' => $j->nama,
+                    'karyawan_id'  => $kj->karyawan->id,
+                    'nama'         => $kj->karyawan->full_nama ?: $kj->karyawan->nama,
+                    'nip'          => $kj->karyawan->nip ?: '-',
+                    'label'        => ($kj->karyawan->full_nama ?: $kj->karyawan->nama) . " ({$j->nama})",
+                ];
+            }
+        }
+
+        // Fallback jika tidak ada record aktif di sdm_karyawan_jabatan
+        if (empty($list)) {
+            $dirJabatan = static::where('tingkat_id', 1)->first() ?? static::where('nama', 'LIKE', '%direktur%')->first();
+            $dirKaryawan = \App\Models\Sdm\Karyawan::where('nama', 'LIKE', '%rachmawati%')->first()
+                ?? \App\Models\Sdm\Karyawan::first();
+
+            $list[] = [
+                'jabatan_id'   => $dirJabatan?->id ?? 1,
+                'jabatan_nama' => $dirJabatan?->nama ?? 'Direktur',
+                'karyawan_id'  => $dirKaryawan?->id ?? 1,
+                'nama'         => $dirKaryawan?->full_nama ?? $dirKaryawan?->nama ?? 'dr. Rachmawati, MPH',
+                'nip'          => $dirKaryawan?->nip ?? '24170002',
+                'label'        => ($dirKaryawan?->full_nama ?? 'dr. Rachmawati, MPH') . ' (Direktur)',
+            ];
+        }
+
+        return $list;
+    }
 }
+
 
