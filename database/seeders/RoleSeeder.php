@@ -112,7 +112,18 @@ class RoleSeeder extends Seeder
             }
             return false;
         });
-        $keuangan->syncPermissions(array_unique(array_merge($keuanganPermissions, $commonPermissions)));
+        $safeSync($keuangan, array_unique(array_merge(
+            $keuanganPermissions,
+            $commonPermissions,
+            [
+                'view-kepegawaian-surat-sp3',
+                'view-keuangan-kuitansi',
+                'create-keuangan-kuitansi',
+                'print-keuangan-kuitansi',
+                'void-keuangan-kuitansi',
+            ]
+        )));
+
 
         $wadirMedis = Role::firstOrCreate(['name' => 'Wadir-Medis-Keperawatan']);
         $wadirSdm   = Role::firstOrCreate(['name' => 'Wadir-SDM-Umum']);

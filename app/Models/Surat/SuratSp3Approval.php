@@ -2,6 +2,7 @@
 
 namespace App\Models\Surat;
 
+use App\Enums\TahapApprovalSp3;
 use Carbon\Carbon;
 use App\Enums\StatusApproval;
 use App\Models\User;
@@ -14,7 +15,8 @@ class SuratSp3Approval extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'status' => StatusApproval::class
+        'status' => StatusApproval::class,
+        'tahap'  => TahapApprovalSp3::class,
     ];
 
     function surat(): BelongsTo

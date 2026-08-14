@@ -172,4 +172,98 @@ class KaryawanController extends Controller
 
         return response()->json($data);
     }
+
+    /**
+     * Approver picker untuk Kuitansi:
+     * Menampilkan daftar pegawai yang diprioritaskan: Atasan & Keuangan di atas, sisanya di bawah.
+     */
+    public function kuitansiApprover(Request $request)
+    {
+        $search = $request->input('search');
+
+        $query = Karyawan::with(['jabatan.tingkat', 'jabatan.bagian', 'user.roles'])
+            ->select('sdm_karyawan.id', 'sdm_karyawan.nama', 'sdm_karyawan.gelar_depan', 'sdm_karyawan.gelar_belakang')
+            ->whereHas('user')
+            ->when($search, fn($q) => $q->where('sdm_karyawan.nama', 'like', "%{$search}%"))
+            ->orderBy('sdm_karyawan.nama');
+
+        $all = $query->get()->map(function ($k) {
+            $jab = $k->jabatan->first();
+            $tingkat = (int) ($jab?->tingkat?->urutan ?? 99);
+            $namaBagian = $jab?->bagian?->nama ?? '';
+            $groupBagian = strtolower($jab?->bagian?->group ?? '');
+            $userRoles = $k->user?->roles->pluck('name')->map('strtolower')->toArray() ?? [];
+
+            // Prioritas: Atasan / Pejabat (tingkat <= 3), Bagian Keuangan, atau Role Keuangan / Wadir-Keuangan
+            $isKeuanganOrAtasan = $tingkat <= 3
+                || str_contains(strtolower($namaBagian), 'keuangan')
+                || str_contains(strtolower($jab?->nama ?? ''), 'keuangan')
+                || in_array('keuangan', $userRoles)
+                || in_array('wadir-keuangan', $userRoles)
+                || in_array('super-admin', $userRoles);
+
+            return [
+                'id'                 => $k->id,
+                'label'              => $k->full_nama,
+                'description'        => ($jab?->nama ?? '-') . ($namaBagian ? ' · ' . $namaBagian : ''),
+                'tingkat'            => $tingkat,
+                'is_keu_or_atasan'   => $isKeuanganOrAtasan,
+            ];
+        })->sortBy('tingkat')->values();
+
+        $keuDanAtasan = $all->where('is_keu_or_atasan', true)->values();
+        $lainnya      = $all->where('is_keu_or_atasan', false)->values();
+
+        $result = [];
+        if ($keuDanAtasan->isNotEmpty()) {
+            $result[] = [
+                'label' => '★ Atasan & Keuangan',
+                'value' => $keuDanAtasan->toArray(),
+            ];
+        }
+        if ($lainnya->isNotEmpty()) {
+            $result[] = [
+                'label' => 'Lainnya',
+                'value' => $lainnya->toArray(),
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * List Verifikator Keuangan untuk form SP3:
+     * Karyawan dengan role Keuangan/Wadir-Keuangan atau bagian Keuangan.
+     */
+    public function verifikatorKeuangan(Request $request)
+    {
+        $search = $request->input('search');
+
+        $query = Karyawan::with(['jabatan.bagian', 'user.roles'])
+            ->select('sdm_karyawan.id', 'sdm_karyawan.nama', 'sdm_karyawan.gelar_depan', 'sdm_karyawan.gelar_belakang')
+            ->whereHas('user', function ($uq) {
+                $uq->whereHas('roles', function ($rq) {
+                    $rq->whereIn('name', ['Keuangan', 'Wadir-Keuangan', 'Super-Admin']);
+                });
+            })
+            ->orWhereHas('jabatan', function ($jq) {
+                $jq->whereHas('bagian', fn($bq) => $bq->where('nama', 'like', '%keuangan%')->orWhere('group', 'manajemen'))
+                   ->orWhere('sdm_jabatan.nama', 'like', '%keuangan%');
+            })
+            ->when($search, fn($q) => $q->where('sdm_karyawan.nama', 'like', "%{$search}%"))
+            ->orderBy('sdm_karyawan.nama');
+
+        $list = $query->get()->unique('id')->map(function ($k) {
+            $jab = $k->jabatan->first();
+            $namaBagian = $jab?->bagian?->nama ?? '';
+            return [
+                'id'          => $k->id,
+                'label'       => $k->full_nama,
+                'description' => ($jab?->nama ?? 'Staf Keuangan') . ($namaBagian ? ' · ' . $namaBagian : ''),
+            ];
+        })->values();
+
+        return response()->json($list);
+    }
 }
+

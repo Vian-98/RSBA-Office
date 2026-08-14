@@ -45,15 +45,24 @@ class Details extends Component
     #[Computed]
     public function approvals()
     {
-        // return $approved->approvals;
-        $data = $this->suratSp3->approvals->map(function ($item) {
+        $barcode = new DNS2D();
+
+        $data = $this->suratSp3->approvals->map(function ($item) use ($barcode) {
             $isManual = $item->status === \App\Enums\StatusApproval::MANUAL || str_contains(strtolower($item->keterangan ?? ''), 'manual');
+            $tahapLabel = is_object($item->tahap) ? $item->tahap->nama() : ($item->tahap === 'verifikasi_keuangan' ? 'Verifikasi Keuangan' : 'Tanda Tangan Atasan');
+            $sigBarcode = null;
+            if ($item->signature_hash) {
+                $sigBarcode = $barcode->getBarcodePNG($item->signature_hash, 'QRCODE');
+            }
+
             return [
-                'status' => $isManual ? 'Manual' : $item->status->nama(),
-                'nama' => $item->users->karyawan->nama ?? $item->users->nama,
+                'tahap'       => $tahapLabel,
+                'status'      => $isManual ? 'Manual' : (is_object($item->status) ? $item->status->nama() : ucfirst($item->status)),
+                'nama'        => $item->users->karyawan->full_nama ?? $item->users->karyawan->nama ?? $item->users->name,
                 'approved_at' => $item->approved_at,
-                'signature' => $item->signature_hash,
-                'is_manual' => $isManual,
+                'signature'   => $item->signature_hash,
+                'barcode'     => $sigBarcode,
+                'is_manual'   => $isManual,
             ];
         });
 
@@ -63,10 +72,15 @@ class Details extends Component
     #[Computed]
     public function generateBarcode()
     {
-        $key = $this->approvals();
+        $ttdAtasan = $this->suratSp3->approvals->firstWhere('tahap', \App\Enums\TahapApprovalSp3::TTD_ATASAN);
+        $sig = $ttdAtasan?->signature_hash ?? $this->suratSp3->qr_hash ?? $this->suratSp3->approvals->first()?->signature_hash;
+
+        if (!$sig) {
+            return '';
+        }
 
         $barcode = new DNS2D();
-        return $barcode->getBarcodePNG($key[0]['signature'], 'QRCODE');
+        return $barcode->getBarcodePNG($sig, 'QRCODE');
     }
 
     public function render()
@@ -74,3 +88,4 @@ class Details extends Component
         return view('livewire.surat.sp3.details');
     }
 }
+

@@ -73,11 +73,13 @@ class Verify extends Component
             $this->dataSuratAsli = $suratHeader->approvals->map(function ($app) {
                 $user = $app->users ?? User::find($app->disetujui);
                 $signerName = $user?->karyawan?->nama ?? $user?->name ?? $app->penyetuju?->nama ?? 'Pejabat SP3';
+                $tahapLabel = is_object($app->tahap) ? $app->tahap->nama() : ($app->tahap === 'verifikasi_keuangan' ? 'Verifikasi Keuangan' : 'Tanda Tangan Atasan');
                 return [
                     'surat_sp3_id' => $app->surat_sp3_id,
-                    'disetujui' => $signerName,
-                    'status' => is_object($app->status) ? $app->status->nama() : (string)$app->status,
-                    'keterangan' => $app->keterangan ?? '-',
+                    'tahap'       => $tahapLabel,
+                    'disetujui'   => $signerName,
+                    'status'      => is_object($app->status) ? $app->status->nama() : (string)$app->status,
+                    'keterangan'  => $app->keterangan ?? '-',
                     'approved_at' => $app->approved_at ?? $app->created_at,
                 ];
             })->toArray();
@@ -115,18 +117,21 @@ class Verify extends Component
 
         $user = $suratApproval->users ?? User::find($suratApproval->disetujui);
         $signerName = $user?->karyawan?->nama ?? $user?->name ?? 'Pejabat SP3';
+        $tahapLabel = is_object($suratApproval->tahap) ? $suratApproval->tahap->nama() : ($suratApproval->tahap === 'verifikasi_keuangan' ? 'Verifikasi Keuangan' : 'Tanda Tangan Atasan');
 
         $this->bgColor = $this->verify ? 'green' : 'red';
         $this->dataSuratAsli = [
             [
                 'surat_sp3_id' => $suratApproval->surat_sp3_id,
-                'disetujui' => $signerName,
-                'status' => is_object($suratApproval->status) ? $suratApproval->status->nama() : (string)$suratApproval->status,
-                'keterangan' => $suratApproval->keterangan ?? '-',
+                'tahap'       => $tahapLabel,
+                'disetujui'   => $signerName,
+                'status'      => is_object($suratApproval->status) ? $suratApproval->status->nama() : (string)$suratApproval->status,
+                'keterangan'  => $suratApproval->keterangan ?? '-',
                 'approved_at' => $suratApproval->approved_at ?? $suratApproval->created_at,
             ]
         ];
     }
+
 
     private function verifySignature(string $data, string $signature, string $publicKey): bool
     {

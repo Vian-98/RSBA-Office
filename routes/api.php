@@ -27,8 +27,15 @@ Route::prefix('karyawan')
         Route::get('/ref', [KaryawanController::class, 'list'])->name('ref');
         Route::get('/listnjabatan/{atasan?}', [KaryawanController::class, 'listWithJabatan'])->name('listnjabatan');
         Route::get('/atasan-approver/{jabatanId?}', [KaryawanController::class, 'atasanApprover'])->name('atasan.approver');
+        Route::get('/kuitansi-approver', [KaryawanController::class, 'kuitansiApprover'])->name('kuitansi.approver');
+        Route::get('/verifikator-keuangan', [KaryawanController::class, 'verifikatorKeuangan'])->name('verifikator.keuangan');
         Route::get('reg/dokter', [KaryawanController::class, 'registerDokter'])->name('reg.dokter');
     });
+
+Route::prefix('metode-bayar')->name('api.metode-bayar.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Keuangan\MetodeBayarController::class, 'list'])->name('list');
+    Route::post('/', [\App\Http\Controllers\Keuangan\MetodeBayarController::class, 'store'])->name('store');
+});
 
 
 # Wilayah

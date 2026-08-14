@@ -15,9 +15,12 @@ class SuratSp3 extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'status' => StatusApproval::class,
+        'status'             => StatusApproval::class,
         'docstore_synced_at' => 'datetime',
+        'signed_at'          => 'datetime',
+        'is_valid'           => 'boolean',
     ];
+
 
     public function details()
     {
@@ -55,8 +58,24 @@ class SuratSp3 extends Model
         return $this->hasMany(SuratSp3Approval::class, 'surat_sp3_id', 'id');
     }
 
+    public function verifikasiKeuangan()
+    {
+        return $this->hasOne(SuratSp3Approval::class, 'surat_sp3_id', 'id')->where('tahap', 'verifikasi_keuangan');
+    }
+
+    public function ttdAtasan()
+    {
+        return $this->hasOne(SuratSp3Approval::class, 'surat_sp3_id', 'id')->where('tahap', 'ttd_atasan');
+    }
+
+    public function verifikatorKeuangan()
+    {
+        return $this->belongsTo(Karyawan::class, 'verifikator_keuangan_id', 'id');
+    }
+
     public function penyetuju()
     {
         return $this->belongsTo(Karyawan::class, 'disetujui', 'id');
     }
 }
+

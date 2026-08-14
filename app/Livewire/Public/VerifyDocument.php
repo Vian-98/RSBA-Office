@@ -144,6 +144,46 @@ class VerifyDocument extends Component
             return;
         }
 
+        // 3. Cari pada Kuitansi
+        $kuitansi = \App\Models\Keuangan\Kuitansi::where('qr_hash', $this->hash)->first();
+
+        if (!$kuitansi) {
+            foreach (\App\Models\Keuangan\Kuitansi::all() as $k) {
+                $calc = hash('sha256', 'kuitansi-' . $k->id . '-' . config('app.key'));
+                if ($calc === $this->hash) {
+                    $k->qr_hash = $this->hash;
+                    $k->save();
+                    $kuitansi = $k;
+                    break;
+                }
+            }
+        }
+
+        if ($kuitansi) {
+            $this->documentTypeLabel = 'Kuitansi Pembayaran';
+            $this->nomorSurat = (string) $kuitansi->nomor;
+            $this->tanggalSurat = $kuitansi->tanggal ? $kuitansi->tanggal->format('Y-m-d') : '-';
+            $this->namaPegawai = $kuitansi->penerima_nama ?? '-';
+            $this->unitKerja = 'Keuangan RSBA';
+            $this->perihal = 'Pembayaran: ' . $kuitansi->keterangan . ' (Jumlah: ' . formatRupiah($kuitansi->jumlah) . ')';
+            $this->signedAt = $kuitansi->signed_at ?? $kuitansi->created_at;
+
+            $this->approvals = $kuitansi->approvals->map(function ($app) {
+                $signerName = $app->disetujuiOleh?->full_nama ?? $app->disetujuiOleh?->nama ?? 'Pejabat Keuangan';
+                return [
+                    'nama' => $signerName,
+                    'jabatan' => $app->disetujuiOleh?->jabatan?->first()?->nama ?? 'Pejabat Keuangan',
+                    'status' => is_object($app->status) ? $app->status->nama() : (string)$app->status,
+                    'approved_at' => $app->approved_at ?? $app->created_at,
+                ];
+            })->toArray();
+
+            $this->isValid = $this->customValidationCheck($kuitansi);
+
+            $this->logScanEvent('kuitansi', $kuitansi->id);
+            return;
+        }
+
         // 3. Fallback: Cari di signature_logs
         $log = SignatureLogs::where('data_hash', $this->hash)
             ->orWhere('signature', $this->hash)

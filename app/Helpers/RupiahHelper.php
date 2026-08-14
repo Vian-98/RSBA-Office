@@ -11,7 +11,7 @@ if (!function_exists('formatRupiah')) {
      * @param bool $thousandSeparator Thousand separator (default: '.')
      * @return string Formatted rupiah string
      */
-    function formatRupiah($number, $withPrefix = true, $withDecimals = true, $decimalSeparator = ',', $thousandSeparator = '.')
+    function formatRupiah($number, $withPrefix = true, $withDecimals = true, $decimalSeparator = ',', $thousandSeparator = '.', $withSpace = false)
     {
         // Convert to float and handle invalid input
         $number = is_numeric($number) ? $number : 0;
@@ -24,13 +24,18 @@ if (!function_exists('formatRupiah')) {
             $formatted = number_format($number, 0, $decimalSeparator, $thousandSeparator);
         }
 
-        // Add prefix if required
+        // Add prefix if required (Sesuai kaidah EYD/PUEBI: Rp tanpa titik dan tanpa spasi)
         if ($withPrefix) {
-            return 'Rp ' . $formatted;
+            if (is_string($withPrefix)) {
+                return $withPrefix . $formatted;
+            }
+            return ($withSpace ? 'Rp ' : 'Rp') . $formatted;
         }
+
 
         return $formatted;
     }
+
 }
 
 if (!function_exists('parseRupiah')) {

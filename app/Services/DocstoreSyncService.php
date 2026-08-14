@@ -124,6 +124,7 @@ class DocstoreSyncService
     }
 
     /**
+    /**
      * Sync dokumen Tanda Tangan Digital (PDF) ke docstore (bank surat).
      */
     public function syncDigitalSignatureDoc(
@@ -187,6 +188,52 @@ class DocstoreSyncService
         return false;
     }
 
+    /**
+     * Sync Kuitansi ke docstore (bank surat).
+     * Dipanggil setiap kali ada perubahan status pada Kuitansi.
+     */
+    public function syncKuitansi(\App\Models\Keuangan\Kuitansi $kuitansi): bool
+    {
+        $kuitansi = \App\Models\Keuangan\Kuitansi::with(['penerima.jabatan', 'approvals.disetujuiOleh.jabatan', 'details', 'createdBy.karyawan'])->findOrFail($kuitansi->id);
+
+        $content = [
+            'nomor'         => $kuitansi->nomor,
+            'tanggal'       => $kuitansi->tanggal ? $kuitansi->tanggal->format('Y-m-d') : date('Y-m-d'),
+            'diterima_dari' => $kuitansi->diterima_dari,
+            'jumlah'        => $kuitansi->jumlah,
+            'terbilang'     => $kuitansi->terbilang,
+            'keterangan'    => $kuitansi->keterangan,
+            'penerima'      => $kuitansi->penerima_nama,
+            'metode_bayar'  => $kuitansi->metode_bayar,
+            'kasir'         => optional($kuitansi->createdBy?->karyawan)->full_nama ?? optional($kuitansi->createdBy)->name,
+            'items'         => $kuitansi->details->map(fn($det) => [
+                'keterangan' => $det->keterangan,
+                'nominal'    => $det->nominal,
+            ])->toArray(),
+        ];
+
+        $signatures = $this->buildKuitansiSignatures($kuitansi);
+
+        $payload = [
+            'document_type'   => 'kuitansi',
+            'document_id'     => $kuitansi->id,
+            'document_number' => $kuitansi->nomor,
+            'status'          => is_object($kuitansi->status) ? $kuitansi->status->value : $kuitansi->status,
+            'content'         => $content,
+            'signatures'      => $signatures,
+        ];
+
+        $result = $this->sendToDocstore($payload);
+
+        if ($result['success'] && !empty($result['docstore_key'])) {
+            $kuitansi->updateQuietly([
+                'docstore_key'       => $result['docstore_key'],
+                'docstore_synced_at' => now(),
+            ]);
+        }
+
+        return $result['success'];
+    }
 
     /**
      * Ambil data surat dari docstore berdasarkan docstore_key.
@@ -454,6 +501,70 @@ class DocstoreSyncService
     }
 
     /**
+     * Bangun array signatures untuk Kuitansi
+     */
+    protected function buildKuitansiSignatures(\App\Models\Keuangan\Kuitansi $kuitansi): array
+    {
+        $signatures = [];
+        foreach ($kuitansi->approvals as $approval) {
+            if (!$approval->signature_hash) {
+                $signatures[] = [
+                    'signature_hash' => 'pending_' . md5($kuitansi->id . '_' . ($approval->disetujui_oleh ?? 0)),
+                    'original_data'  => 'PENDING_APPROVAL',
+                    'signature'      => 'PENDING_APPROVAL',
+                    'data_hash'      => null,
+                    'algorithm'      => 'sha256',
+                    'public_key'     => 'PENDING',
+                    'signer_name'    => optional($approval->disetujuiOleh)->full_nama ?? optional($approval->disetujuiOleh)->nama ?? 'Pejabat',
+                    'signer_role'    => optional(optional($approval->disetujuiOleh)->jabatan?->first())->nama,
+                    'status'         => is_object($approval->status) ? $approval->status->value : ($approval->status ?? 'pending'),
+                    'signed_at'      => $approval->approved_at ?? null,
+                ];
+                continue;
+            }
+
+            $user = User::where('karyawan_id', $approval->disetujui_oleh)->first();
+
+            $log = SignatureLogs::where('sign_type', 'kuitansi_approval')
+                ->where('sign_id', $kuitansi->id)
+                ->when($user, fn($q) => $q->where('user_id', $user->id))
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $certs = null;
+            if ($user && $log) {
+                $certs = $log->certificate_id
+                    ? SignatureCerts::find($log->certificate_id)
+                    : SignatureCerts::where('user_id', $user->id)->latest('id')->first();
+            }
+
+            $originalData = $log ? $log->data : 'MOCK_SIGNATURE_' . $approval->signature_hash;
+            $signature    = $log ? $log->signature : 'MOCK_SIGNATURE_' . $approval->signature_hash;
+            $publicKey    = '';
+            if ($certs) {
+                $publicKey = $certs->public_key;
+            } else {
+                $fallbackCert = SignatureCerts::where('user_id', 1)->first();
+                $publicKey    = $fallbackCert ? $fallbackCert->public_key : 'MOCK_PUBLIC_KEY';
+            }
+
+            $signatures[] = [
+                'signature_hash' => $approval->signature_hash,
+                'original_data'  => $originalData,
+                'signature'      => $signature,
+                'data_hash'      => $log ? $log->data_hash : null,
+                'algorithm'      => $log ? ($log->algorithm ?? 'sha256') : 'sha256',
+                'public_key'     => $publicKey,
+                'signer_name'    => optional($approval->disetujuiOleh)->full_nama ?? optional($approval->disetujuiOleh)->nama ?? 'Sistem',
+                'signer_role'    => optional(optional($approval->disetujuiOleh)->jabatan?->first())->nama,
+                'status'         => is_object($approval->status) ? $approval->status->value : $approval->status,
+                'signed_at'      => $approval->approved_at ?? now()->toIso8601String(),
+            ];
+        }
+        return $signatures;
+    }
+
+    /**
      * Helper sentral untuk memanggil endpoint Vault API di docstore
      */
     public function callVaultApi(string $method, string $endpointPath, array $payload = []): array
@@ -529,4 +640,5 @@ class DocstoreSyncService
         return $this->callVaultApi('POST', 'vault/signatures/sign', $payload);
     }
 }
+
 

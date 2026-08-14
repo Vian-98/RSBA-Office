@@ -38,16 +38,26 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
 
         return $table
             ->query(
-                SuratSp3::withSum('details', 'nominal')->with(['approvals', 'createdBy'])
+                SuratSp3::withSum('details', 'nominal')->with(['approvals', 'createdBy', 'verifikasiKeuangan', 'ttdAtasan'])
                     ->when(!$userLogin->hasRole('Super-Admin'), function ($query) use ($userLogin) {
                         $jabatanId = $userLogin->karyawan?->jabatan?->first()?->id;
+                        $karyawanId = $userLogin->karyawan_id;
                         $userId = $userLogin->id;
+                        $isKeuangan = $userLogin->hasRole(['Keuangan', 'Wadir-Keuangan']) || $userLogin->isKabagKeuangan();
 
-                        $query->where(function ($q) use ($jabatanId, $userId) {
-                            $q->orWhere('surat_sp3.created_by', $userId); // where dibuat oleh user login
+                        $query->where(function ($q) use ($jabatanId, $userId, $karyawanId, $isKeuangan) {
+                            $q->orWhere('surat_sp3.created_by', $userId);
 
                             if ($jabatanId) {
-                                $q->orWhere('surat_sp3.jabatan_id', $jabatanId); //atau where mengetahui user login
+                                $q->orWhere('surat_sp3.jabatan_id', $jabatanId);
+                            }
+
+                            if ($karyawanId) {
+                                $q->orWhere('surat_sp3.verifikator_keuangan_id', $karyawanId);
+                            }
+
+                            if ($isKeuangan) {
+                                $q->orWhereNotNull('surat_sp3.id');
                             }
                         });
                     })
@@ -79,7 +89,6 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
                 TextColumn::make('dibuatOleh')
                     ->label('Dibuat Oleh'),
 
-
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -96,6 +105,7 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
                 Action::make('view')
                     ->iconButton()
                     ->icon('tabler-file-description')
+                    ->tooltip('Detail SP3')
                     ->action(
                         fn($record, $livewire) => $livewire->openModal(
                             modal: 'modal-detail-sp3',
@@ -103,29 +113,70 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
                         )
                     ),
 
+                Action::make('verifikasi_keuangan')
+                    ->icon('tabler-file-dollar')
+                    ->iconButton()
+                    ->color('warning')
+                    ->tooltip('Verifikasi Keuangan')
+                    ->action(
+                        fn($record, $livewire) => $livewire->openModal(
+                            modal: 'modal-verifikasi-keuangan-sp3',
+                            id: $record->getKey()
+                        )
+                    )
+                    ->visible(function (SuratSp3 $record) use ($userLogin) {
+                        if ($record->status !== StatusApproval::PENDING) {
+                            return false;
+                        }
+
+                        $isAssignedVerifier = $record->verifikator_keuangan_id && $record->verifikator_keuangan_id == $userLogin->karyawan_id;
+                        $isKeuanganAuthorized = $userLogin->hasRole(['Super-Admin', 'Wadir-Keuangan', 'Keuangan']) || $userLogin->isKabagKeuangan();
+
+                        return ($isAssignedVerifier || $isKeuanganAuthorized) && !$record->verifikasiKeuangan;
+                    }),
+
                 Action::make('approval')
                     ->icon('tabler-file-check')
                     ->iconButton()
                     ->color('success')
+                    ->tooltip('Persetujuan / TTD Atasan')
                     ->action(
                         fn($record, $livewire) => $livewire->openModal(
                             modal: 'modal-approval-sp3',
                             id: $record->getKey()
                         )
                     )
-                    ->visible(
-                        fn($record) => (
-                            (
-                                auth()->user()->hasRole('Super-Admin') //super admin
-                                or
-                                $record->jabatan_id === auth()->user()?->karyawan?->jabatan?->first()?->id //jabatan yg mengetahui
-                            ) and
-                            $record->approvals->count() === 0
+                    ->visible(function (SuratSp3 $record) use ($userLogin) {
+                        if ($record->status !== StatusApproval::WAITING) {
+                            return false;
+                        }
+
+                        $isApprover = $userLogin->hasRole('Super-Admin')
+                            || $record->jabatan_id === $userLogin->karyawan?->jabatan?->first()?->id;
+
+                        return $isApprover && !$record->ttdAtasan;
+                    }),
+
+                Action::make('edit')
+                    ->icon('tabler-edit')
+                    ->iconButton()
+                    ->color('info')
+                    ->tooltip('Edit & Ajukan Ulang')
+                    ->action(
+                        fn($record, $livewire) => $livewire->openModal(
+                            modal: 'modal-edit-sp3',
+                            id: $record->getKey()
                         )
-
                     )
+                    ->visible(function (SuratSp3 $record) use ($userLogin) {
+                        $canEdit = $record->status === StatusApproval::REJECTED || $record->status === StatusApproval::PENDING;
+                        $isOwner = $record->created_by === $userLogin->id || $userLogin->hasRole('Super-Admin');
 
+                        return $canEdit && $isOwner;
+                    }),
             ]);
+
+
     }
 
     public function updatedFilterStatus()   { $this->resetTable(); }
@@ -150,8 +201,12 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
     function openModal($modal, $id)
     {
         $this->suratSp3 = SuratSp3::findOrFail($id);
+        if ($modal === 'modal-edit-sp3') {
+            $this->dispatch('buka-edit-sp3', id: $id);
+        }
         return $this->dispatch('open-modal', id: $modal);
     }
+
 
     #[On('update-approval')]
     public function refreshTable()
