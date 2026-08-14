@@ -38,7 +38,7 @@ class Sidebar extends Component
         cache()->forget('user-sidebar-menu:' . auth()->id());
         cache()->forget('user-permissions:view:' . auth()->id());
         cache()->forget('user-sidebar-menu:base');
-        
+
         $this->loadMenus();
     }
 
@@ -48,7 +48,7 @@ class Sidebar extends Component
     private function loadMenus(): void
     {
         $allMenus = $this->getPermittedMenus(auth()->id());
-        $allMenus = $this->injectAkreditasiSubMenus($allMenus);
+        // $allMenus = $this->injectAkreditasiSubMenus($allMenus);
         $this->menus = $this->applySearchFilter($allMenus);
     }
 
