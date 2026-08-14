@@ -37,7 +37,10 @@
         <div class="flex items-center gap-3 min-w-0">
             {{-- icon --}}
             @if ($menu['icon'])
-                <x-ts:icon name="tabler.{{ $menu['icon'] }}" class="h-5 w-5 shrink-0" />
+                @php
+                    $iconName = 'tabler.' . ltrim(str_replace('tabler.', '', $menu['icon']), '.');
+                @endphp
+                <x-ts:icon :name="$iconName" class="h-5 w-5 shrink-0" />
             @endif
             {{-- title --}}
             <span x-show="!(isCollapsed && isAboveBreakpoint)"
@@ -77,7 +80,10 @@
 
         {{-- icons --}}
         @if ($menu['icon'])
-            <x-ts:icon name="tabler.{{ $menu['icon'] }}" class="h-5 w-5 shrink-0" />
+            @php
+                $iconName = 'tabler.' . ltrim(str_replace('tabler.', '', $menu['icon']), '.');
+            @endphp
+            <x-ts:icon :name="$iconName" class="h-5 w-5 shrink-0" />
         @endif
 
         {{-- title --}}
