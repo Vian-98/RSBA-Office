@@ -139,21 +139,38 @@ class PrintSp3 extends Component
     }
 
     #[Computed]
-    public function generateBarcode()
+    public function ttdAtasan(): ?array
     {
         $sigs = $this->approvals();
-        $ttdSig = collect($sigs)->firstWhere('tahap', 'Tanda Tangan Atasan')['signature'] ?? null;
-        if (!$ttdSig && !empty($sigs[0]['signature'])) {
-            $ttdSig = $sigs[0]['signature'];
+        $atasanSig = collect($sigs)->first(function ($s) {
+            $tahap = strtolower($s['tahap'] ?? '');
+            return str_contains($tahap, 'atasan') || str_contains($tahap, 'direktur') || empty($tahap);
+        });
+
+        if (!$atasanSig && !empty($sigs)) {
+            $first = $sigs[0];
+            if (!str_contains(strtolower($first['tahap'] ?? ''), 'keuangan')) {
+                $atasanSig = $first;
+            }
         }
 
-        if (empty($ttdSig)) {
-            return $this->generateHeaderQrCode();
+        return $atasanSig;
+    }
+
+    #[Computed]
+    public function generateBarcode()
+    {
+        $ttd = $this->ttdAtasan();
+        $ttdSig = $ttd['signature'] ?? null;
+
+        if (empty($ttdSig) || $ttdSig === 'PENDING_APPROVAL' || str_starts_with($ttdSig, 'pending_') || str_starts_with($ttdSig, 'REJECTED_')) {
+            return '';
         }
 
         $barcode = new DNS2D();
         return $barcode->getBarcodePNG($ttdSig, 'QRCODE');
     }
+
 
 
     /**

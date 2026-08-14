@@ -312,7 +312,141 @@ class Sp3VerifikasiKeuanganTest extends TestCase
         $this->assertEquals(750000, $fresh->details()->sum('nominal'));
         $this->assertEquals(0, $fresh->approvals()->count());
     }
+
+    public function test_direktur_cannot_acc_when_sp3_not_yet_verified_by_finance(): void
+    {
+        $pembuat = $this->createKaryawan('20013', 'Pembuat Belum Verif');
+        $verifikator = $this->createKaryawan('20014', 'Verifikator Belum Verif');
+        $atasan = $this->createKaryawan('20015', 'Direktur Belum Verif');
+        $jabatan = Jabatan::forceCreate(['nama' => 'Direktur Utama', 'kode_surat' => 'DIR']);
+
+        $userDirektur = User::forceCreate([
+            'email'       => 'direktur_test@test.com',
+            'password'    => bcrypt('password'),
+            'karyawan_id' => $atasan->id,
+        ]);
+
+        $sp3 = SuratSp3::create([
+            'no'                      => '4/S4/SP.3/PBA-DIR/14.08.2026',
+            'tahun'                   => 2026,
+            'tgl'                     => '2026-08-14',
+            'rekanan'                 => 'PT Vendor Pending',
+            'bayar'                   => 'trf',
+            'keterangan'              => 'SP3 masih pending finance',
+            'jabatan_id'              => $jabatan->id,
+            'verifikator_keuangan_id' => $verifikator->id,
+            'status'                  => StatusApproval::PENDING,
+            'created_by'              => $userDirektur->id,
+        ]);
+
+        $this->actingAs($userDirektur);
+
+        \Livewire\Livewire::test(\App\Livewire\Surat\Sp3\Approval::class, ['suratSp3' => $sp3])
+            ->set('status', 'approved')
+            ->call('submit');
+
+        // Status must remain PENDING because finance verification has not approved it yet
+        $this->assertEquals(StatusApproval::PENDING, $sp3->fresh()->status);
+        $this->assertNull($sp3->fresh()->ttdAtasan);
+    }
+
+    public function test_sp3_approval_logs_history_records_all_stages(): void
+    {
+        $pembuat = $this->createKaryawan('20016', 'Pembuat Log');
+        $verifikator = $this->createKaryawan('20017', 'Verifikator Log');
+        $atasan = $this->createKaryawan('20018', 'Direktur Log');
+        $jabatan = Jabatan::forceCreate(['nama' => 'Direktur Utama', 'kode_surat' => 'DIR']);
+
+        $userPembuat = User::forceCreate([
+            'email'       => 'pembuat_log@test.com',
+            'password'    => bcrypt('password'),
+            'karyawan_id' => $pembuat->id,
+        ]);
+
+        $userVerif = User::forceCreate([
+            'email'       => 'verif_log@test.com',
+            'password'    => bcrypt('password'),
+            'karyawan_id' => $verifikator->id,
+        ]);
+
+        $userDirektur = User::forceCreate([
+            'email'       => 'direktur_log@test.com',
+            'password'    => bcrypt('password'),
+            'karyawan_id' => $atasan->id,
+        ]);
+
+        $this->actingAs($userPembuat);
+
+        // 1. Pembuatan SP3
+        $sp3 = SuratSp3::create([
+            'no'                      => '5/S4/SP.3/PBA-DIR/14.08.2026',
+            'tahun'                   => 2026,
+            'tgl'                     => '2026-08-14',
+            'rekanan'                 => 'PT Log Test',
+            'bayar'                   => 'trf',
+            'keterangan'              => 'SP3 untuk tes riwayat log',
+            'jabatan_id'              => $jabatan->id,
+            'verifikator_keuangan_id' => $verifikator->id,
+            'status'                  => StatusApproval::PENDING,
+            'created_by'              => $userPembuat->id,
+        ]);
+
+        \App\Models\Surat\SuratSp3Log::create([
+            'surat_sp3_id'   => $sp3->id,
+            'user_id'        => $userPembuat->id,
+            'nama_pelaku'    => $pembuat->nama,
+            'jabatan_pelaku' => 'Staf',
+            'aksi'           => 'Dibuat',
+            'status'         => 'pending',
+            'catatan'        => 'Surat SP3 dibuat dan diteruskan ke Bagian Keuangan.',
+        ]);
+
+        // 2. Verifikasi Keuangan Tolak
+        $this->actingAs($userVerif);
+        \Livewire\Livewire::test(\App\Livewire\Surat\Sp3\VerifikasiKeuangan::class, ['suratSp3' => $sp3])
+            ->set('status', 'rejected')
+            ->set('keterangan', 'Kuitansi belum lengkap')
+            ->call('submit');
+
+        $this->assertEquals(StatusApproval::REJECTED, $sp3->fresh()->status);
+
+        // 3. Pembuat Edit & Ajukan Ulang
+        $this->actingAs($userPembuat);
+        \Livewire\Livewire::test(\App\Livewire\Surat\Sp3\Edit::class, ['suratSp3' => $sp3->fresh()])
+            ->set('rekanan', 'PT Log Test Revisi')
+            ->set('listSp3', [['nominal' => '100.000', 'keterangan' => 'Item revisi']])
+            ->call('submit');
+
+        $this->assertEquals(StatusApproval::PENDING, $sp3->fresh()->status);
+
+        // 4. Verifikasi Keuangan Setujui
+        $this->actingAs($userVerif);
+        \Livewire\Livewire::test(\App\Livewire\Surat\Sp3\VerifikasiKeuangan::class, ['suratSp3' => $sp3->fresh()])
+            ->set('status', 'approved')
+            ->set('keterangan', 'Dokumen sudah lengkap')
+            ->call('submit');
+
+        $this->assertEquals(StatusApproval::WAITING, $sp3->fresh()->status);
+
+        // 5. Direktur ACC Setujui
+        $this->actingAs($userDirektur);
+        \Livewire\Livewire::test(\App\Livewire\Surat\Sp3\Approval::class, ['suratSp3' => $sp3->fresh()])
+            ->set('status', 'approved')
+            ->call('submit');
+
+        $this->assertEquals(StatusApproval::APPROVED, $sp3->fresh()->status);
+
+        // Verifikasi seluruh riwayat log tercatat secara kronologis
+        $logs = $sp3->fresh()->logs;
+        $this->assertCount(5, $logs);
+        $this->assertEquals('Dibuat', $logs[0]->aksi);
+        $this->assertEquals('Verifikasi Keuangan - Ditolak', $logs[1]->aksi);
+        $this->assertEquals('Diedit & Diajukan Ulang', $logs[2]->aksi);
+        $this->assertEquals('Verifikasi Keuangan - Disetujui', $logs[3]->aksi);
+        $this->assertEquals('ACC Direktur / Atasan - Disetujui', $logs[4]->aksi);
+    }
 }
+
 
 
 
