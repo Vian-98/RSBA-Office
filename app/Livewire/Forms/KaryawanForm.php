@@ -54,6 +54,8 @@ class KaryawanForm extends Form
     public $jabatan;
     public $bagian;
     public $tgl_jabatan;
+    public $no_sk_jabatan;
+    public $document_id_jabatan;
     public $dinas;
     public $tgl_dinas;
     public $ket_dinas;
@@ -62,6 +64,8 @@ class KaryawanForm extends Form
 
     public $ruangan;
     public $tgl_ruangan;
+    public $no_sk_ruangan;
+    public $document_id_ruangan;
     public $kategori_kerja = 'shift';
     public $pendidikan_setara;
 

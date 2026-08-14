@@ -7,11 +7,13 @@ use Livewire\Component;
 use App\Models\Sdm\Jabatan;
 use App\Models\Sdm\Bagian;
 use App\Models\Sdm\Karyawan;
+use App\Models\Sdm\KaryawanDocument;
 use App\Enums\StatusKaryawan;
 use App\Enums\KategoriKerja;
 use App\Livewire\Forms\KaryawanForm;
 use App\Models\Sdm\KaryawanJabatan;
 use Livewire\Attributes\Lazy;
+use Livewire\Attributes\On;
 use Illuminate\Validation\Rule;
 use TallStackUi\Traits\Interactions;
 
@@ -42,7 +44,8 @@ class EditKedinasan extends Component
     public $tgl_dinas;
     public $pendidikan_options = [];
     public $auto_pendidikan_label = '';
-
+    public $document_options = [];
+    public ?KaryawanDocument $previewDocument = null;
 
     public function rules(): array
     {
@@ -55,7 +58,13 @@ class EditKedinasan extends Component
             'form.tgl_jabatan' => Rule::requiredIf(fn() =>
                 $this->form->jabatan != $this->jabatan_init || $this->form->bagian != $this->bagian_init
             ),
+            'form.no_sk_jabatan' => Rule::requiredIf(fn() =>
+                $this->form->jabatan != $this->jabatan_init || $this->form->bagian != $this->bagian_init
+            ),
+            'form.document_id_jabatan' => 'nullable|exists:sdm_kary_document,id',
             'form.tgl_ruangan' => Rule::requiredIf(fn() => $this->form->ruangan != $this->ruangan_init),
+            'form.no_sk_ruangan' => Rule::requiredIf(fn() => $this->form->ruangan != $this->ruangan_init),
+            'form.document_id_ruangan' => 'nullable|exists:sdm_kary_document,id',
             'form.tgl_dinas' => Rule::requiredIf(fn() => $this->form->dinas != $this->dinas_init)
         ];
     }
@@ -78,6 +87,8 @@ class EditKedinasan extends Component
         $this->jabatan_init = $this->form->jabatan;
         $this->bagian_init = $this->form->bagian;
         $this->ruangan_init = $karyawan->ruangan_id ?? '';
+
+        $this->loadDocumentOptions($id);
 
         // Load education options from matrix groups & current auto default
         $groups = \Illuminate\Support\Facades\DB::table('sdm_payroll_golongan_matrix')
@@ -116,6 +127,41 @@ class EditKedinasan extends Component
         }
 
         $this->auto_pendidikan_label = \App\Enums\TingkatPendidikan::tryFrom($tingkat)?->nama() ?? 'SMA';
+    }
+
+    public function loadDocumentOptions($karyawanId): void
+    {
+        $docs = KaryawanDocument::where('karyawan_id', $karyawanId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $options = [];
+        foreach ($docs as $d) {
+            $options[] = [
+                'id' => $d->id,
+                'nama' => $d->nama . ' (' . strtoupper($d->jenis) . ')',
+            ];
+        }
+        $this->document_options = $options;
+    }
+
+    #[On('document-karyawan-created')]
+    #[On('document-karyawan-deleted')]
+    public function refreshDocuments(): void
+    {
+        if ($this->form->karyawan) {
+            $this->loadDocumentOptions($this->form->karyawan->id);
+        }
+    }
+
+    public function viewDocument($documentId): void
+    {
+        $this->previewDocument = KaryawanDocument::find($documentId);
+        if ($this->previewDocument) {
+            $this->dispatch('open-modal', id: 'view-sk-document-modal');
+        } else {
+            $this->toast()->error('Dokumen Tidak Ditemukan', 'File dokumen tidak ditemukan atau telah dihapus.')->send();
+        }
     }
 
     public function updatedFormJabatan($value): void
@@ -198,9 +244,6 @@ class EditKedinasan extends Component
             $this->status_init = $this->form->status;
             $this->kategori_init = $this->form->kategori_kerja;
 
-            // update
-            $this->form->karyawan->update($data);
-
             // event
             $this->dispatch('status-updated');
 
@@ -227,11 +270,19 @@ class EditKedinasan extends Component
                 ->whereNull('tgl_berakhir')
                 ->update(['tgl_berakhir' => $this->form->tgl_jabatan]);
 
+            $documentId = $this->form->document_id_jabatan;
+            if (is_array($documentId)) {
+                $documentId = $documentId['id'] ?? $documentId['value'] ?? (isset($documentId[0]) ? $documentId[0] : null);
+            }
+            $documentId = empty($documentId) ? null : (int) $documentId;
+
             $data = [
                 'jabatan_id'  => $this->form->jabatan,
                 'karyawan_id' => $this->form->karyawan->id,
                 'bagian_id'   => $this->form->bagian,
-                'tgl_mulai'   => $this->form->tgl_jabatan
+                'tgl_mulai'   => $this->form->tgl_jabatan,
+                'no_sk'       => $this->form->no_sk_jabatan,
+                'document_id' => $documentId,
             ];
 
             // insert data new jabatan
@@ -259,6 +310,9 @@ class EditKedinasan extends Component
 
             $this->jabatan_init = $this->form->jabatan;
             $this->bagian_init = $this->form->bagian;
+            $this->form->tgl_jabatan = null;
+            $this->form->no_sk_jabatan = null;
+            $this->form->document_id_jabatan = null;
 
             $this->dispatch('new-jabatan-created'); //dispatch event
 
@@ -280,6 +334,12 @@ class EditKedinasan extends Component
             $newRuanganId = $this->form->ruangan;
             $tglRuangan = $this->form->tgl_ruangan;
 
+            $documentId = $this->form->document_id_ruangan;
+            if (is_array($documentId)) {
+                $documentId = $documentId['id'] ?? $documentId['value'] ?? (isset($documentId[0]) ? $documentId[0] : null);
+            }
+            $documentId = empty($documentId) ? null : (int) $documentId;
+
             // Update tgl_berakhir penugasan ruangan aktif terdahulu
             \App\Models\Sdm\KaryawanRuangan::where('karyawan_id', $karyawan->id)
                 ->whereNull('tgl_berakhir')
@@ -291,6 +351,8 @@ class EditKedinasan extends Component
                 'ruangan_id'  => $newRuanganId,
                 'tgl_mulai'   => $tglRuangan,
                 'tgl_berakhir'=> null,
+                'no_sk'       => $this->form->no_sk_ruangan,
+                'document_id' => $documentId,
                 'is_utama'    => true,
                 'keterangan'  => 'Rotasi / Perubahan Ruangan via Edit Kedinasan',
             ]);
@@ -299,6 +361,10 @@ class EditKedinasan extends Component
             $karyawan->update(['ruangan_id' => $newRuanganId]);
 
             $this->ruangan_init = $newRuanganId;
+            $this->form->tgl_ruangan = null;
+            $this->form->no_sk_ruangan = null;
+            $this->form->document_id_ruangan = null;
+
             $this->dispatch('new-ruangan-created');
 
             $this->toast()
