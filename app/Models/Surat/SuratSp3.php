@@ -77,5 +77,11 @@ class SuratSp3 extends Model
     {
         return $this->belongsTo(Karyawan::class, 'disetujui', 'id');
     }
+
+    public function logs()
+    {
+        return $this->hasMany(SuratSp3Log::class, 'surat_sp3_id', 'id')->orderBy('id', 'asc');
+    }
 }
+
 
