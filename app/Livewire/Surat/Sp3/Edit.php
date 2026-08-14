@@ -83,18 +83,11 @@ class Edit extends Component
 
     public function loadMengetahuiOptions(): void
     {
-        $this->mengetahuiOptions = Jabatan::with('bagian')
-            ->whereHas('bagian', function ($query) {
-                $query->where('group', 'manajemen');
-            })
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'label' => $item->nama,
-                    'value' => $item->id
-                ];
-            });
+        $creator = $this->suratSp3?->created_by ? \App\Models\User::find($this->suratSp3->created_by) : auth()->user();
+        $data = Jabatan::getMengetahuiOptionsForUser($creator);
+        $this->mengetahuiOptions = $data['options'];
     }
+
 
     public function loadData(): void
     {
@@ -190,6 +183,49 @@ class Edit extends Component
 
         $this->validate();
 
+        // 1. Rekam data sebelum diedit untuk mencatat riwayat perubahan (diff)
+        $oldRekanan          = $this->suratSp3->rekanan;
+        $oldTgl              = $this->suratSp3->tgl;
+        $oldBayar            = $this->suratSp3->bayar ?? $this->suratSp3->method_bayar;
+        $oldKeterangan       = $this->suratSp3->keterangan;
+        $oldJabatanId        = $this->suratSp3->jabatan_id;
+        $oldJabatanNama      = optional($this->suratSp3->jabatans)->nama ?? '-';
+        $oldVerifikatorId    = $this->suratSp3->verifikator_keuangan_id;
+        $oldVerifikatorNama  = optional($this->suratSp3->verifikatorKeuangan)->full_nama ?? optional($this->suratSp3->verifikatorKeuangan)->nama ?? '-';
+        $oldTotal            = (float)$this->suratSp3->details->sum('nominal');
+        $oldDetailsCount     = $this->suratSp3->details->count();
+
+        $newTotal            = (float)collect($this->listSp3)->sum('nominal');
+        $newJabatanNama      = optional(\App\Models\Sdm\Jabatan::find($this->jabatan))->nama ?? '-';
+        $newVerifikator      = \App\Models\Sdm\Karyawan::find($this->verifikator_keuangan_id);
+        $newVerifikatorNama  = $newVerifikator?->full_nama ?? $newVerifikator?->nama ?? '-';
+
+        $perubahan = [];
+        if ($oldRekanan !== $this->rekanan) {
+            $perubahan[] = ['field' => 'Rekanan / Pelaksana', 'dari' => $oldRekanan, 'menjadi' => $this->rekanan];
+        }
+        if ($oldTgl !== $this->tgl) {
+            $perubahan[] = ['field' => 'Tanggal Surat', 'dari' => date('d M Y', strtotime($oldTgl)), 'menjadi' => date('d M Y', strtotime($this->tgl))];
+        }
+        if ($oldBayar !== $this->method_bayar) {
+            $perubahan[] = ['field' => 'Metode Bayar', 'dari' => strtoupper($oldBayar), 'menjadi' => strtoupper($this->method_bayar)];
+        }
+        if ($oldKeterangan !== $this->keterangan) {
+            $perubahan[] = ['field' => 'Keterangan / Berita', 'dari' => $oldKeterangan, 'menjadi' => $this->keterangan];
+        }
+        if ($oldJabatanId != $this->jabatan) {
+            $perubahan[] = ['field' => 'Mengetahui (Atasan TTD)', 'dari' => $oldJabatanNama, 'menjadi' => $newJabatanNama];
+        }
+        if ($oldVerifikatorId != $this->verifikator_keuangan_id) {
+            $perubahan[] = ['field' => 'Verifikator Keuangan', 'dari' => $oldVerifikatorNama, 'menjadi' => $newVerifikatorNama];
+        }
+        if (abs($oldTotal - $newTotal) > 0.01) {
+            $perubahan[] = ['field' => 'Total Nominal', 'dari' => formatRupiah($oldTotal), 'menjadi' => formatRupiah($newTotal)];
+        }
+        if ($oldDetailsCount !== count($this->listSp3)) {
+            $perubahan[] = ['field' => 'Jumlah Item Pembayaran', 'dari' => $oldDetailsCount . ' item', 'menjadi' => count($this->listSp3) . ' item'];
+        }
+
         DB::beginTransaction();
         try {
             // Update SP3 header dan kembalikan status ke PENDING
@@ -216,10 +252,25 @@ class Edit extends Component
             // Hapus riwayat approval sebelumnya agar bisa diverifikasi ulang
             $this->suratSp3->approvals()->delete();
 
+            // Log history edit & ajukan ulang beserta rincian perubahannya
+            \App\Models\Surat\SuratSp3Log::create([
+                'surat_sp3_id'   => $this->suratSp3->id,
+                'user_id'        => auth()->id(),
+                'karyawan_id'    => auth()->user()?->karyawan_id,
+                'nama_pelaku'    => auth()->user()?->karyawan?->full_nama ?? auth()->user()?->name ?? 'Pembuat SP3',
+                'jabatan_pelaku' => optional(auth()->user()?->karyawan?->jabatan?->first())->nama ?? 'Staf',
+                'aksi'           => 'Diedit & Diajukan Ulang',
+                'status'         => 'pending',
+                'catatan'        => 'Surat SP3 diperbaiki oleh pembuat dan diajukan ulang ke Bagian Keuangan.',
+                'perubahan'      => !empty($perubahan) ? $perubahan : null,
+            ]);
+
             // Sync ke docstore
             app(\App\Services\DocstoreSyncService::class)->syncSp3($this->suratSp3->fresh());
 
             DB::commit();
+
+
 
 
             $this->dispatch('update-approval');

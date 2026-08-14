@@ -131,8 +131,23 @@ class VerifikasiKeuangan extends Component
                 'status' => $newStatus,
             ]);
 
+            // Log history verifikasi keuangan
+            $isApproved = $this->status === 'approved';
+            \App\Models\Surat\SuratSp3Log::create([
+                'surat_sp3_id'   => $this->suratSp3->id,
+                'user_id'        => $user->id,
+                'karyawan_id'    => $user->karyawan_id,
+                'nama_pelaku'    => $user->karyawan?->full_nama ?? $user->name,
+                'jabatan_pelaku' => optional($user->karyawan?->jabatan?->first())->nama ?? 'Verifikator Keuangan',
+                'aksi'           => $isApproved ? 'Verifikasi Keuangan - Disetujui' : 'Verifikasi Keuangan - Ditolak',
+                'status'         => $this->status,
+                'catatan'        => $this->keterangan ?: ($isApproved ? 'Diverifikasi dan diteruskan ke Direktur / Atasan untuk ACC.' : 'Ditolak oleh Verifikator Keuangan.'),
+                'signature_hash' => $signatureHash,
+            ]);
+
             // Sync docstore (without finalizing yet)
             app(DocumentSignatureService::class)->triggerDocstoreSync($this->suratSp3->fresh());
+
 
             DB::commit();
 

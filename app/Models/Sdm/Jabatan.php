@@ -137,4 +137,90 @@ class Jabatan extends Model
         // 7. Staf / Pelaksana Operasional Biasa
         return 'Guest';
     }
+
+    /**
+     * Mengambil daftar opsi atasan (Mengetahui) secara dinamis berdasarkan hierarki jabatan user login
+     */
+    public static function getMengetahuiOptionsForUser(?\App\Models\User $user = null): array
+    {
+        $user = $user ?? auth()->user();
+        $karyawan = $user?->karyawan;
+        $myJabatan = $karyawan?->jabatan?->first();
+
+        $options = collect();
+        $atasanLangsungId = null;
+
+        if ($myJabatan) {
+            // 1. Jalur hierarki atasan struktural ke atas
+            $curr = $myJabatan;
+            $visited = [];
+            $isFirst = true;
+
+            while ($curr && $curr->parent_id && !in_array($curr->parent_id, $visited)) {
+                $visited[] = $curr->parent_id;
+                $atasan = self::find($curr->parent_id);
+                if ($atasan) {
+                    if ($isFirst) {
+                        $atasanLangsungId = $atasan->id;
+                        $isFirst = false;
+                    }
+                    $options->push([
+                        'label'      => $atasan->nama . ($atasan->id === $atasanLangsungId ? ' (Atasan Langsung)' : ''),
+                        'value'      => $atasan->id,
+                        'tingkat_id' => $atasan->tingkat_id,
+                        'is_direct'  => ($atasan->id === $atasanLangsungId),
+                    ]);
+                    $curr = $atasan;
+                } else {
+                    break;
+                }
+            }
+
+            // 2. Tambahkan jajaran Direksi (Tingkat 1 & 2) yang belum ada di rantai
+            $direksi = self::whereIn('tingkat_id', [1, 2])
+                ->whereNotIn('id', $options->pluck('value'))
+                ->orderBy('tingkat_id')
+                ->get();
+
+            foreach ($direksi as $dir) {
+                $options->push([
+                    'label'      => $dir->nama,
+                    'value'      => $dir->id,
+                    'tingkat_id' => $dir->tingkat_id,
+                    'is_direct'  => false,
+                ]);
+            }
+        } else {
+            // Super-Admin atau user tanpa mapping jabatan: tampilkan seluruh pejabat struktural (Tingkat 1 - 4)
+            $all = self::where('tingkat_id', '<=', 4)
+                ->orderBy('tingkat_id')
+                ->get();
+
+            foreach ($all as $item) {
+                $options->push([
+                    'label'      => $item->nama,
+                    'value'      => $item->id,
+                    'tingkat_id' => $item->tingkat_id,
+                    'is_direct'  => false,
+                ]);
+            }
+        }
+
+        // Fallback jika kosong: ambil semua jabatan
+        if ($options->isEmpty()) {
+            $all = self::all();
+            foreach ($all as $item) {
+                $options->push([
+                    'label' => $item->nama,
+                    'value' => $item->id,
+                ]);
+            }
+        }
+
+        return [
+            'options'          => $options->values()->toArray(),
+            'atasanLangsungId' => $atasanLangsungId ?? $options->first()['value'] ?? null,
+        ];
+    }
 }
+

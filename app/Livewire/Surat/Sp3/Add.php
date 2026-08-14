@@ -68,18 +68,14 @@ class Add extends Component
     public function mount()
     {
         $this->tgl = date('Y-m-d');
-        $this->mengetahuiOptions = Jabatan::with('bagian')
-            ->whereHas('bagian', function ($query) {
-                $query->where('group', 'manajemen');
-            })
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'label' => $item->nama,
-                    'value' => $item->id
-                ];
-            });
+        $data = Jabatan::getMengetahuiOptionsForUser(auth()->user());
+        $this->mengetahuiOptions = $data['options'];
+        if (!empty($data['atasanLangsungId'])) {
+            $this->jabatan = $data['atasanLangsungId'];
+            $this->updatedJabatan($this->jabatan);
+        }
     }
+
 
     public function updatedRekananId($value)
     {
@@ -165,8 +161,21 @@ class Add extends Component
             // insert into database
             SuratSp3Detail::insert($itemsDetail);
 
+            // Log history pembuatan SP3
+            \App\Models\Surat\SuratSp3Log::create([
+                'surat_sp3_id'   => $suratSp3->id,
+                'user_id'        => auth()->id(),
+                'karyawan_id'    => auth()->user()?->karyawan_id,
+                'nama_pelaku'    => auth()->user()?->karyawan?->full_nama ?? auth()->user()?->name ?? 'Pembuat SP3',
+                'jabatan_pelaku' => optional(auth()->user()?->karyawan?->jabatan?->first())->nama ?? 'Staf',
+                'aksi'           => 'Dibuat',
+                'status'         => 'pending',
+                'catatan'        => 'Surat SP3 dibuat dan diteruskan ke Bagian Keuangan.',
+            ]);
+
             // Sync immediately to docstore
             app(\App\Services\DocstoreSyncService::class)->syncSp3($suratSp3);
+
 
             DB::commit();
             $this->dispatch('created-sp3');
