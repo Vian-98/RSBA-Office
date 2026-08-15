@@ -58,6 +58,7 @@ Route::prefix('asset')
     ->name('api.asset.')
     ->group(function () {
         Route::get('main_item/{in?}', [AssetController::class, 'mainItem'])->name('main_item');
+        Route::get('ref', [AssetController::class, 'list'])->name('ref');
     });
 
 

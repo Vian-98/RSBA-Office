@@ -16,13 +16,19 @@ use App\Models\Maintenance\Request as MaintenanceRequest;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Filters\SelectFilter;
-use Livewire\Attributes\Isolate;
+use Livewire\Attributes\On;
 
 #[Isolate]
 class ListPermintaan extends Component implements HasTable, HasForms, HasActions
 {
     use InteractsWithActions;
     use InteractsWithTable, InteractsWithForms;
+
+    #[On('maintenance-ticket-created')]
+    public function refreshTable(): void
+    {
+        // Table auto refreshes
+    }
 
     #[Locked]
     public ?MaintenanceRequest $maintenanceRequest;

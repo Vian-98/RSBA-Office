@@ -13,6 +13,22 @@ class Index extends Component
 {
     use AuthorizesFromRoute;
 
+    public $selectedId;
+
+    #[\Livewire\Attributes\On('open-asset-modal')]
+    public function openAssetModal($modal, $id)
+    {
+        $this->selectedId = $id;
+        $this->dispatch('open-modal', id: $modal);
+    }
+
+    #[\Livewire\Attributes\On('print-asset-label')]
+    public function printAssetLabel($id)
+    {
+        $this->selectedId = $id;
+        $this->dispatch('print-label');
+    }
+
     protected function authorizeFromRoute(): void
     {
         $permission = $this->buildPermission();

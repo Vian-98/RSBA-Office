@@ -40,6 +40,11 @@ class AssetBarang extends Model
         return $this->hasMany(AssetSpecs::class, 'asset_id', 'id');
     }
 
+    public function maintenanceSchedules(): HasMany
+    {
+        return $this->hasMany(AssetMaintenanceSchedule::class, 'asset_barang_id', 'id');
+    }
+
     function logs(): HasMany
     {
         return $this->hasMany(AssetLogs::class, 'asset_id', 'id');

@@ -110,6 +110,17 @@ class Add extends Component
 
             $targetAsset = AssetBarang::findOrFail($this->target_asset_id);
 
+            // Check if asset is already under active maintenance
+            $hasActiveTicket = MaintenanceRequest::where('asset_id', $targetAsset->id)
+                ->active()
+                ->exists();
+
+            if ($hasActiveTicket || $targetAsset->status === 'diperbaiki') {
+                DB::rollBack();
+                $this->toast()->error('Gagal Mengajukan', 'Aset ' . ($targetAsset->barang->nama ?? 'Aset') . ' sedang dalam perbaikan/maintenance aktif. Selesaikan perbaikan yang ada terlebih dahulu.')->send();
+                return;
+            }
+
             // Perpared data for submission
             $data = [
                 'asset_id' => $targetAsset->id,
