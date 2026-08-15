@@ -59,6 +59,24 @@ class DmsMiddlewareClient
         return Http::timeout(5)->withToken($token)->baseUrl("{$this->baseUrl}/api/v1");
     }
 
+    public function getServerRoomStatus(?string $startDate = null, ?string $endDate = null, int $limit = 100): array
+    {
+        try {
+            $params = ['limit' => $limit];
+            if ($startDate) {
+                $params['start_date'] = $startDate;
+            }
+            if ($endDate) {
+                $params['end_date'] = $endDate;
+            }
+
+            $response = Http::timeout(5)->baseUrl("{$this->baseUrl}/api/v1")->get('/iot/server-room', $params);
+            return $response->successful() ? (array) ($response->json('data') ?? []) : [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
     public function getDisplays(): array
     {
         try {
