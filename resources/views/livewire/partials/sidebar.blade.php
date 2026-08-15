@@ -36,6 +36,7 @@
                 </div>
             </div>
 
+
             {{-- menu list --}}
             <div class="px-3">
                 <x-menus :menus="$menus" class="flex" />

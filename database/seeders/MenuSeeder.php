@@ -509,14 +509,24 @@ class MenuSeeder extends Seeder
                 'group' => 'sdm',
             ],
             [
+                'id' => 57,
+                'nama' => 'Tanda Tangan Digital',
+                'route' => 'kepegawaian.digital-signature.index',
+                'icon' => 'signature',
+                'permission' => ['view-surat-ttd', 'sign-surat-ttd', 'view-tanda-tangan-digital'],
+                'parent_id' => 1,
+                'group' => null,
+            ],
+            [
                 'id' => 68,
                 'nama' => 'Poli Admin',
                 'route' => 'dashboard.poli.admin',
                 'icon' => 'stethoscope',
-                'permission' => ['view-dashboard-poli'],
+                'permission' => ['view-poli-admin'],
                 'parent_id' => 1,
                 'group' => null,
             ],
+
             [
                 'id' => 69,
                 'nama' => 'Pajak PPh 21',
