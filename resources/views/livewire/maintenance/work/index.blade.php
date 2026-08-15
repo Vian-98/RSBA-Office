@@ -27,10 +27,9 @@
     </div>
 
     <div class="flex justify-end">
-        <x-ts:button outline sm danger>
+        <x-ts:button outline sm danger x-on:click="$dispatch('close-modal', { id: 'modal-maintenance-work' })">
             Tutup
         </x-ts:button>
-
     </div>
     {{-- </div> --}}
 </div>

@@ -1,5 +1,7 @@
+@props(['images' => []])
+
 @php
-    $rawLampirans = is_array($lampirans) ? $lampirans : (is_string($lampirans) ? (json_decode($lampirans, true) ?? []) : []);
+    $rawLampirans = is_array($images) ? $images : (is_string($images) ? (json_decode($images, true) ?? []) : []);
     $imageUrls = array_map(function($path) {
         if (empty($path)) return '';
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/storage/')) {
