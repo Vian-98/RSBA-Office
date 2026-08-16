@@ -21,8 +21,8 @@
                     <x-logo class="h-10 w-auto" />
                 </div>
                 <div class="flex flex-col">
-                    <span class="whitespace-nowrap text-sm font-bold tracking-wider text-slate-800">RS Bintang Amin</span>
-                    <span class="mt-0.5 text-[10px] font-semibold uppercase leading-none tracking-widest text-slate-400">Office Portal</span>
+                    <span class="whitespace-nowrap text-sm font-bold uppercase tracking-wider text-slate-800">{{ $rs->nama }}</span>
+                    <span class="mt-0.5 text-[10px] uppercase leading-none tracking-widest text-slate-400">{{ config('app.name') }}</span>
                 </div>
             </div>
 
@@ -68,3 +68,89 @@
 
     </div>
 </div>
+
+@push('script')
+    <script>
+        function sidebar() {
+            const breakpoint = 120
+            return {
+                open: {
+                    sidebar: false,
+                    navbar: false,
+                },
+                isCollapsed: localStorage.getItem('sidebar-collapsed') === 'true',
+
+                isAboveBreakpoint: window.innerWidth >= breakpoint,
+
+                handleResize() {
+                    this.isAboveBreakpoint = window.innerWidth >= breakpoint
+                },
+
+                isOpen() {
+                    if (this.isAboveBreakpoint) {
+                        return this.open.sidebar
+                    }
+                    return this.open.navbar
+                },
+
+                isSidebarExpanded() {
+                    if (this.isAboveBreakpoint) {
+                        return this.open.sidebar
+                    }
+                    return this.open.navbar
+                },
+
+                handleOpen() {
+                    if (this.isAboveBreakpoint) {
+                        this.open.sidebar = true
+                    } else {
+                        this.open.navbar = true
+                    }
+                    this.scrollToActiveMenu()
+                },
+
+                toggle() {
+                    if (this.isAboveBreakpoint) {
+                        this.open.sidebar = !this.open.sidebar
+                    } else {
+                        this.open.navbar = !this.open.navbar
+                    }
+                    if (this.isOpen()) {
+                        this.scrollToActiveMenu()
+                    }
+                },
+
+                handleClose() {
+                    this.open.sidebar = false
+                    this.open.navbar = false
+                },
+
+                handleAway() {
+                    if (!this.isAboveBreakpoint) {
+                        this.open.navbar = false
+                    }
+                    this.open.sidebar = false
+                },
+
+                scrollToActiveMenu() {
+                    setTimeout(() => {
+                        const container = document.getElementById('sidebar-scroll-container')
+                        if (!container) return
+                        const activeItem = container.querySelector('.bg-primary-500, .active, [class*="bg-primary"]')
+                        if (activeItem) {
+                            activeItem.scrollIntoView({
+                                block: 'center',
+                                behavior: 'smooth'
+                            })
+                        }
+                    }, 120)
+                },
+
+
+                init() {
+                    this.scrollToActiveMenu()
+                },
+            }
+        }
+    </script>
+@endpush

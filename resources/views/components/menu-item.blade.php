@@ -47,25 +47,16 @@
         </svg>
     </div>
 @else
-    @php
-        $menuUrl = '#';
-        $hasValidRoute = !empty($menu['route']) && Route::has($menu['route']);
-        if ($hasValidRoute) {
-            $menuParams = is_array($menu['route_params'] ?? null) ? $menu['route_params'] : [];
-            $menuUrl = route($menu['route'], $menuParams);
-        }
-    @endphp
-    <a href="{{ $menuUrl }}" {{ $attributes->merge([]) }} :class="isCollapsed && isAboveBreakpoint ? 'justify-center mx-1 px-1' : 'justify-start gap-3 mx-2 px-3'"
-        class="{{ $baseClass }} group relative flex cursor-pointer items-center rounded-lg py-2.5 transition-all duration-200" @click="handleAway(); handleClose()"
-        @if ($hasValidRoute) wire:navigate @else onclick="return false;" @endif>
+    <a href="{{ !empty($menu['route']) ? route($menu['route']) : '' }}" {{ $attributes->merge(['class' => $class]) }} wire:navigate>
 
-        {{-- icons --}}
-        @if ($menu['icon'])
-            <x-ts:icon name="tabler.{{ $menu['icon'] }}" class="h-5 w-5 shrink-0" />
-        @endif
+        <div class="flex items-center gap-2">
+            {{-- icons --}}
+            @if ($menu['icon'])
+                <x-ts:icon name="tabler.{{ $menu['icon'] }}" class="h-5 w-5" />
+            @endif
 
-        {{-- title --}}
-        {{ $menu['nama'] }}
+            {{-- title --}}
+            {{ $menu['nama'] }}
         </div>
 
     </a>
@@ -74,13 +65,11 @@
 
 {{-- submenu dependence --}}
 @if (!empty($menu['submenus']))
-    <div id="{{ $menu['id'] }}" :class="isCollapsed && isAboveBreakpoint ? '!hidden' : ''" {{ $attributes->merge(['class' => 'submenu ml-4 ' . ($submenuActive ? 'active' : 'hidden')]) }}>
+    <div id="{{ $menu['id'] }}" {{ $attributes->merge(['class' => 'submenu ml-4 ' . ($submenuActive ? 'active' : 'hidden')]) }}>
         <div class="ml-2 space-y-1 border-l-2 border-indigo-500/25">
             @foreach ($menu['submenus'] as $submenu)
-                @php
-                    $subActive = !empty($submenu['route']) && Route::has($submenu['route']) ? request()->routeIs($submenu['route']) : false;
-                @endphp
-                <x-menu-item :menu="$submenu" :active="$subActive" />
+                {{-- {{ request()->routeIs($submenu['route']) }} --}}
+                <x-menu-item :menu="$submenu" :active="request()->routeIs($submenu['route'])" />
             @endforeach
         </div>
     </div>
