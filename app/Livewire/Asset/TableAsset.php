@@ -27,8 +27,6 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
     use InteractsWithActions;
     use InteractsWithTable, InteractsWithForms;
 
-    #[Locked]
-    public $selectedId;
 
     public function canManageAsset(): bool
     {
@@ -357,8 +355,7 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
                         ->label('Cetak Label')
                         ->icon('tabler-tags')
                         ->action(function ($record) {
-                            $this->selectedId = $record->getKey();
-                            $this->dispatch('print-label');
+                            $this->dispatch('print-asset-label', id: $record->getKey());
                         })
                         ->visible(fn() => $this->canManageAsset()),
 
@@ -382,8 +379,7 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
 
     function modalAsset($modal, $id)
     {
-        $this->selectedId = $id;
-        $this->dispatch('open-modal', id: $modal);
+        $this->dispatch('open-asset-modal', modal: $modal, id: $id);
     }
 
     public function render()

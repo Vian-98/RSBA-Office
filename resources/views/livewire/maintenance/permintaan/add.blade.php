@@ -42,6 +42,11 @@
                 </form>
             </x-ts:tab.items>
 
+            {{-- tab maintenance annual / berkala --}}
+            <x-ts:tab.items tab="Maintenance Annual">
+                <livewire:Maintenance.Permintaan.AnnualSchedule :asset_id="$assetBarang->id" :key="'annual-' . $assetBarang->id" />
+            </x-ts:tab.items>
+
         </x-ts:tab>
 
     </div>

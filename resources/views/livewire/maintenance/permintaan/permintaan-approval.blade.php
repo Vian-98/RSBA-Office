@@ -39,7 +39,7 @@
                 <span role="button" x-on:click="$dispatch('open-modal',{id:'modal-lampiran-permintaan'})" class="flex flex-row items-center gap-1">
                     <x-ts:icon name="tabler.paperclip" class="h-4 w-auto" />
                     <span class="text-indigo-500">
-                        {{ count($maintenanceRequest->lampiran) }}</span>
+                        {{ count($maintenanceRequest->lampiran ?? []) }}</span>
                     Lampiran
                 </span>
             </div>
@@ -90,7 +90,7 @@
             <span class="text-lg font-semibold">Lampiran Permintaan</span>
         </x-slot>
 
-        <livewire:Maintenance.Permintaan.PermintaanLampiran :lampiranRequest="$maintenanceRequest->lampiran" />
+        <x-image-gallery :images="$maintenanceRequest->lampiran" />
     </x-filament::modal>
 
 </div>

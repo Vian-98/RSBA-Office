@@ -36,9 +36,9 @@ return [
     ],
 
     'dms' => [
-        'base_url' => env('DMS_MIDDLEWARE_API_URL', 'http://127.0.0.1:8000'),
-        'email' => env('DMS_MIDDLEWARE_EMAIL', 'admin@dms.local'),
-        'password' => env('DMS_MIDDLEWARE_PASSWORD', 'password'),
+        'base_url' => env('DMS_MIDDLEWARE_API_URL', 'http://middlewaredms.test'),
+        'email' => env('DMS_MIDDLEWARE_EMAIL', 'faisal@dms.local'),
+        'password' => env('DMS_MIDDLEWARE_PASSWORD', '123'),
     ],
 
     'docstore' => [
