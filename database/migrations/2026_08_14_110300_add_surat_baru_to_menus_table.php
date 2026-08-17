@@ -30,7 +30,7 @@ return new class extends Migration
             [
                 'nama'        => 'Balasan PKL',
                 'route'       => 'kepegawaian.surat.balasan-pkl',
-                'icon'        => 'school',
+                'icon'        => null,
                 'parent_id'   => $parentId,
                 'permission'  => json_encode(['view-kepegawaian-surat-balasan-pkl']),
                 'group'       => 'sdm',
@@ -40,7 +40,7 @@ return new class extends Migration
             [
                 'nama'        => 'Balasan Penelitian',
                 'route'       => 'kepegawaian.surat.balasan-penelitian',
-                'icon'        => 'microscope',
+                'icon'        => null,
                 'parent_id'   => $parentId,
                 'permission'  => json_encode(['view-kepegawaian-surat-balasan-penelitian']),
                 'group'       => 'sdm',
@@ -50,7 +50,7 @@ return new class extends Migration
             [
                 'nama'        => 'Perintah Tugas',
                 'route'       => 'kepegawaian.surat.perintah-tugas',
-                'icon'        => 'clipboard-list',
+                'icon'        => null,
                 'parent_id'   => $parentId,
                 'permission'  => json_encode(['view-kepegawaian-surat-perintah-tugas']),
                 'group'       => 'sdm',

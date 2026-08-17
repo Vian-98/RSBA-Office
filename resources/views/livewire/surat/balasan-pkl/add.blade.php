@@ -18,10 +18,42 @@
     </div>
 
     {{-- Baris 4: Periode Pelaksanaan & Lama Bulan --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <x-ts:input label="Tanggal Mulai *" type="date" wire:model="tgl_mulai" />
-        <x-ts:input label="Tanggal Selesai *" type="date" wire:model="tgl_selesai" />
-        <x-ts:input label="Lama Praktik (Bulan) *" type="number" min="1" wire:model.live="lama_praktik_bulan" />
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+        <x-ts:input label="Tanggal Mulai *" type="date" wire:model.live="tgl_mulai" />
+        <x-ts:input label="Tanggal Selesai *" type="date" wire:model.live="tgl_selesai" />
+        <div>
+            <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-semibold text-slate-700">
+                    Lama Praktik (Bulan) *
+                </label>
+                <button type="button" 
+                        wire:click="toggleManualBulan" 
+                        class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded transition-all shadow-2xs {{ $is_manual_bulan ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-300' }}"
+                        title="{{ $is_manual_bulan ? 'Mode Manual Aktif. Klik gembok untuk hitung otomatis dari tanggal.' : 'Mode Otomatis Aktif (Dihitung dari tanggal). Klik gembok untuk ubah angka manual.' }}">
+                    @if($is_manual_bulan)
+                        <x-tabler-lock-open class="size-3 text-white" />
+                        <span>Manual</span>
+                    @else
+                        <x-tabler-lock class="size-3 text-slate-500" />
+                        <span>Otomatis</span>
+                    @endif
+                </button>
+            </div>
+            <x-ts:input type="number" 
+                        min="1" 
+                        wire:model.live="lama_praktik_bulan" 
+                        :readonly="!$is_manual_bulan" 
+                        :class="!$is_manual_bulan ? 'bg-slate-100/80 font-bold text-indigo-700 cursor-not-allowed' : 'font-bold text-amber-800 focus:ring-amber-500'" />
+            <p class="text-[10px] mt-1 {{ $is_manual_bulan ? 'text-amber-600 font-medium' : 'text-slate-400' }}">
+                @if($is_manual_bulan)
+                    <span class="inline-flex items-center gap-0.5">
+                        <x-tabler-pencil class="size-3" /> Input manual aktif.
+                    </span>
+                @else
+                    * Dihitung otomatis dari tanggal mulai & selesai.
+                @endif
+            </p>
+        </div>
     </div>
 
     {{-- Baris 5: Snapshot Tarif yang Diterapkan --}}
@@ -46,9 +78,9 @@
         </div>
 
         <div class="mt-2.5 pt-2 border-t border-indigo-200/60 flex items-center justify-between text-xs font-bold text-slate-700">
-            <span>Estimasi Total Biaya ({{ $jumlah_mahasiswa }} Mhs x {{ $lama_praktik_bulan }} Bln):</span>
+            <span>Estimasi Total Biaya ({{ (int) ($jumlah_mahasiswa ?: 1) }} Mhs x {{ (int) ($lama_praktik_bulan ?: 1) }} Bln):</span>
             <span class="text-indigo-700 text-sm font-mono">
-                Rp {{ number_format(($snap_biaya_praktik * $jumlah_mahasiswa * $lama_praktik_bulan) + ($snap_biaya_orientasi * $jumlah_mahasiswa), 0, ',', '.') }}
+                Rp {{ number_format($this->totalEstimasi, 0, ',', '.') }}
             </span>
         </div>
     </div>

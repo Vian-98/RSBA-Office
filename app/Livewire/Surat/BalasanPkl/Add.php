@@ -25,6 +25,7 @@ class Add extends Component
     public $prodi = '';
     public $jumlah_mahasiswa = 1;
     public $lama_praktik_bulan = 1;
+    public bool $is_manual_bulan = false;
     public $tgl_mulai;
     public $tgl_selesai;
 
@@ -70,6 +71,8 @@ class Add extends Component
         $this->tgl_mulai = date('Y-m-d');
         $this->tgl_selesai = date('Y-m-d', strtotime('+1 month'));
 
+        $this->recalculateBulan();
+
         // Load active tariff snapshot
         $tarif = SuratTarifPkl::getAktif();
         $this->snap_biaya_praktik   = $tarif->biaya_praktik_per_bulan;
@@ -80,6 +83,56 @@ class Add extends Component
         $this->direkturOptions = Jabatan::getDirekturList();
         if (!empty($this->direkturOptions)) {
             $this->selectDirektur(0);
+        }
+    }
+
+    public function updatedTglMulai()
+    {
+        if (!$this->is_manual_bulan) {
+            $this->recalculateBulan();
+        }
+    }
+
+    public function updatedTglSelesai()
+    {
+        if (!$this->is_manual_bulan) {
+            $this->recalculateBulan();
+        }
+    }
+
+    public function toggleManualBulan()
+    {
+        $this->is_manual_bulan = !$this->is_manual_bulan;
+        if (!$this->is_manual_bulan) {
+            $this->recalculateBulan();
+        }
+    }
+
+    public function recalculateBulan()
+    {
+        if (!$this->tgl_mulai || !$this->tgl_selesai) {
+            $this->lama_praktik_bulan = 1;
+            return;
+        }
+
+        try {
+            $start = \Carbon\Carbon::parse($this->tgl_mulai)->startOfDay();
+            $end = \Carbon\Carbon::parse($this->tgl_selesai)->startOfDay();
+
+            if ($end->lt($start)) {
+                $this->lama_praktik_bulan = 1;
+                return;
+            }
+
+            // Perhitungan berbasis Bulan Kalender (tgl 1 setiap bulan):
+            // Setiap bulan kalender yang tersentuh (walaupun hanya 1 hari) dihitung 1 bulan penuh
+            $diffYears = $end->year - $start->year;
+            $diffMonths = $end->month - $start->month;
+            $totalCalendarMonths = ($diffYears * 12) + $diffMonths + 1;
+
+            $this->lama_praktik_bulan = max(1, $totalCalendarMonths);
+        } catch (\Throwable $e) {
+            $this->lama_praktik_bulan = 1;
         }
     }
 
@@ -193,7 +246,18 @@ class Add extends Component
         $this->prodi = '';
         $this->mahasiswaList = [['nama' => '', 'npm' => '']];
         $this->jumlah_mahasiswa = 1;
-        $this->lama_praktik_bulan = 1;
+        $this->is_manual_bulan = false;
+        $this->recalculateBulan();
+    }
+
+    public function getTotalEstimasiProperty(): float
+    {
+        $biayaPraktik = (float) ($this->snap_biaya_praktik ?: 0);
+        $mhs = (int) ($this->jumlah_mahasiswa ?: 1);
+        $bulan = (int) ($this->lama_praktik_bulan ?: 1);
+        $biayaOrientasi = (float) ($this->snap_biaya_orientasi ?: 0);
+
+        return ($biayaPraktik * $mhs * $bulan) + ($biayaOrientasi * $mhs);
     }
 
     public function render()

@@ -222,4 +222,32 @@ class SuratBaruTest extends TestCase
         );
         $this->assertEquals('8/S4/SPT/PBA-DIR/14.08.2026', $nomorSpt);
     }
+
+    public function test_balasan_pkl_auto_month_calculation_and_override()
+    {
+        $this->actingAs($this->user);
+
+        // 1. Kasus 17/08/2026 s.d 03/09/2026 (Agustus s.d September) -> Dihitung 2 bulan kalender
+        \Livewire\Livewire::test(\App\Livewire\Surat\BalasanPkl\Add::class)
+            ->set('tgl_mulai', '2026-08-17')
+            ->set('tgl_selesai', '2026-09-03')
+            ->assertSet('lama_praktik_bulan', 2)
+            // Kasus 17/08/2026 s.d 22/10/2026 (Agustus, September, Oktober) -> Dihitung 3 bulan
+            ->set('tgl_selesai', '2026-10-22')
+            ->assertSet('lama_praktik_bulan', 3)
+            // Kasus 17/08/2026 s.d 31/08/2026 (dalam bulan yang sama) -> Dihitung 1 bulan
+            ->set('tgl_selesai', '2026-08-31')
+            ->assertSet('lama_praktik_bulan', 1)
+            // 2. Override manual: aktifkan toggle gembok manual lalu isi angka 6
+            ->call('toggleManualBulan')
+            ->assertSet('is_manual_bulan', true)
+            ->set('lama_praktik_bulan', 6)
+            // Ganti tanggal tidak boleh mengubah angka 6 saat mode manual
+            ->set('tgl_selesai', '2026-11-22')
+            ->assertSet('lama_praktik_bulan', 6)
+            // 3. Kembalikan ke otomatis (gembok terkunci) -> Otomatis hitung ulang kalender (Agustus s.d November = 4 bulan)
+            ->call('toggleManualBulan')
+            ->assertSet('is_manual_bulan', false)
+            ->assertSet('lama_praktik_bulan', 4);
+    }
 }
