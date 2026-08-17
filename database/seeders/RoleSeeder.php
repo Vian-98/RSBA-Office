@@ -88,7 +88,7 @@ class RoleSeeder extends Seeder
         });
         $sdmSyncedPermissions = collect(array_unique(array_merge($sdmPermissions, $commonPermissions)))
             ->toArray();
-        $staffSdm->syncPermissions($sdmSyncedPermissions);
+        $safeSync($staffSdm, $sdmSyncedPermissions);
 
         // 2. Umum permissions
         $umumKeywords = ['umum', 'supplier', 'kategori', 'satuan', 'penyimpanan', 'barang', 'pembelian', 'distribusi', 'gudang', 'asset', 'opname', 'maintenance', 'pengajuan', 'laporang'];
@@ -100,7 +100,7 @@ class RoleSeeder extends Seeder
             }
             return false;
         });
-        $bagianUmum->syncPermissions(array_unique(array_merge($umumPermissions, $commonPermissions)));
+        $safeSync($bagianUmum, array_unique(array_merge($umumPermissions, $commonPermissions)));
 
         // 3. Keuangan permissions
         $keuanganKeywords = ['keuangan', 'kas', 'rekening', 'transaksi', 'jurnal', 'coa', 'piutang', 'hutang', 'rekanan', 'akuntansi'];
@@ -124,19 +124,6 @@ class RoleSeeder extends Seeder
             ]
         )));
 
-
-        $wadirMedis = Role::firstOrCreate(['name' => 'Wadir-Medis-Keperawatan']);
-        $wadirSdm   = Role::firstOrCreate(['name' => 'Wadir-SDM-Umum']);
-        $wadirKeu   = Role::firstOrCreate(['name' => 'Wadir-Keuangan']);
-        $direktur   = Role::firstOrCreate(['name' => 'Direktur']);
-
-        $safeSync($kabid, $executivePermissions);
-        $safeSync($wadir, $executivePermissions);
-        $safeSync($wadirMedis, $executivePermissions);
-        $safeSync($wadirSdm, $executivePermissions);
-        $safeSync($wadirKeu, $executivePermissions);
-        $safeSync($direktur, $executivePermissions);
-
         // 4. Administrasi permissions
         $admKeywords = ['administrasi', 'pasien', 'registrasi'];
         $admPermissions = array_filter($allPermissions, function ($permission) use ($admKeywords) {
@@ -147,23 +134,23 @@ class RoleSeeder extends Seeder
             }
             return false;
         });
-        $administrasi->syncPermissions(array_unique(array_merge($admPermissions, $commonPermissions)));
+        $safeSync($administrasi, array_unique(array_merge($admPermissions, $commonPermissions)));
 
         // 5. Perencanaan & Evaluasi basic permissions
-        $perencanaan->syncPermissions($commonPermissions);
+        $safeSync($perencanaan, $commonPermissions);
 
         // 6. IT permissions (Full Access like Super-Admin)
-        $staffIt->syncPermissions($allPermissions);
+        $safeSync($staffIt, $allPermissions);
 
         // Common Guest / Staff Basic permissions
-        $guest->syncPermissions(array_unique(array_merge(
+        $safeSync($guest, array_unique(array_merge(
             $commonPermissions,
             ['view-kepegawaian-jadwal-kerja']
         )));
         
         // 7. Bedah & UGD basic permissions
-        $staffBedah->syncPermissions($commonPermissions);
-        $staffUgd->syncPermissions($commonPermissions);
+        $safeSync($staffBedah, $commonPermissions);
+        $safeSync($staffUgd, $commonPermissions);
 
         // 8. Pajak permissions
         $pajakPermissions = [
@@ -181,13 +168,13 @@ class RoleSeeder extends Seeder
             'view-dokter',
         ];
         $pajakRole = Role::firstOrCreate(['name' => 'Pajak']);
-        $pajakRole->syncPermissions($pajakPermissions);
+        $safeSync($pajakRole, $pajakPermissions);
 
         // 9. Dokter & Koordinator Dokter permissions
         $dokterRole = Role::firstOrCreate(['name' => 'Dokter']);
-        $dokterRole->syncPermissions(array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja'])));
+        $safeSync($dokterRole, array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja'])));
 
         $koorDokterRole = Role::firstOrCreate(['name' => 'Koordinator-Dokter']);
-        $koorDokterRole->syncPermissions(array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'view-kepegawaian-konfigurasi-jadwal'])));
+        $safeSync($koorDokterRole, array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'view-kepegawaian-konfigurasi-jadwal'])));
     }
 }

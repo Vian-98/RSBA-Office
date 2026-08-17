@@ -170,12 +170,20 @@ class JadwalKerja extends Model
 
         // Fallback pencarian role
         if ($targetTingkatId === 2) {
-            $wadirUser = \App\Models\User::role(['Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum'])->first();
-            return $wadirUser?->karyawan?->full_nama ?? $wadirUser?->name ?? 'Wakil Direktur';
+            try {
+                $wadirUser = \App\Models\User::role(['Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum'])->first();
+                return $wadirUser?->karyawan?->full_nama ?? $wadirUser?->name ?? 'Wakil Direktur';
+            } catch (\Throwable $e) {
+                return 'Wakil Direktur';
+            }
         }
 
-        $kabidUser = \App\Models\User::role('Kepala-Bidang')->first();
-        return $kabidUser?->karyawan?->full_nama ?? $kabidUser?->name ?? 'Kepala Dept';
+        try {
+            $kabidUser = \App\Models\User::role('Kepala-Bidang')->first();
+            return $kabidUser?->karyawan?->full_nama ?? $kabidUser?->name ?? 'Kepala Dept';
+        } catch (\Throwable $e) {
+            return 'Kepala Dept';
+        }
     }
 
     public static function ensureEmployeeDetailsExist($karyawanId, $bulan, $tahun)
