@@ -73,4 +73,36 @@ class SuratBalasanPkl extends Model
     {
         return $this->total_biaya_praktik + $this->total_biaya_orientasi;
     }
+
+    /**
+     * Format nama universitas untuk tampilan rapi tanpa duplikasi awalan institusi
+     */
+    public function getDisplayUniversitasAttribute(): string
+    {
+        $univ = trim($this->tujuan_universitas ?? '');
+        if (empty($univ)) {
+            return '....................';
+        }
+        if (preg_match('/^(universitas|institut|politeknik|poltekkes|stikes|akademi|sekolah tinggi)/i', $univ)) {
+            return $univ;
+        }
+        return 'Universitas ' . $univ;
+    }
+
+    /**
+     * Format nama universitas tanpa prefix 'Universitas' jika dibutuhkan
+     */
+    public function getFormattedUniversitasAttribute(): string
+    {
+        $univ = trim($this->tujuan_universitas ?? '');
+        return preg_replace('/^(universitas|univ\.?)\s+/i', '', $univ);
+    }
+
+    /**
+     * Format nomor surat yang aman untuk nama file unduhan PDF
+     */
+    public function getNoCleanAttribute(): string
+    {
+        return str_replace(['/', '\\', ' '], '-', $this->no ?? 'surat-balasan-pkl');
+    }
 }
