@@ -32,12 +32,19 @@ class DigitalSignaturePrintController extends Controller
         $stampY = is_array($stampMeta) && isset($stampMeta['stamp_y']) ? $stampMeta['stamp_y'] : 75;
         $stampScale = is_array($stampMeta) && isset($stampMeta['stamp_scale']) ? $stampMeta['stamp_scale'] : 100;
 
+        $qrService = app(\App\Services\QrGeneratorService::class);
+        $verifyUrl = $doc->docstore_key 
+            ? $qrService->getDocstoreVerifyUrl($doc->docstore_key) 
+            : $qrService->getVerificationUrl($doc->signature_hash ?? $doc->byte_counter_hash);
+        $qrBase64 = $qrService->generateQrPngBase64($verifyUrl, 3, 3);
+
         return view('kepegawaian.digital-signature-print', [
             'document'   => $doc,
             'pdfBase64'  => $pdfBase64,
             'stampX'     => $stampX,
             'stampY'     => $stampY,
             'stampScale' => $stampScale,
+            'qrBase64'   => $qrBase64,
         ]);
     }
 

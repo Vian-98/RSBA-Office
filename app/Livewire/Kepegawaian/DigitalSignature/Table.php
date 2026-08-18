@@ -6,12 +6,15 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\On;
+use TallStackUi\Traits\Interactions;
 use App\Models\DigitalSignatureDocument;
+use App\Services\DocstoreSyncService;
 
 #[Lazy]
 class Table extends Component
 {
     use WithPagination;
+    use Interactions;
 
     public $search = '';
 
@@ -32,7 +35,6 @@ class Table extends Component
         $this->resetPage();
     }
 
-
     public function openPrintModal($id)
     {
         $this->selectedDocument = DigitalSignatureDocument::with('user')->findOrFail($id);
@@ -43,6 +45,35 @@ class Table extends Component
     {
         $this->showPrintModal = false;
         $this->selectedDocument = null;
+    }
+
+    public function downloadPdf($id, DocstoreSyncService $docstoreSyncService)
+    {
+        $doc = DigitalSignatureDocument::findOrFail($id);
+
+        $pdfBase64 = null;
+        if ($doc->docstore_key) {
+            $docstoreData = $docstoreSyncService->fetchFromDocstore($doc->docstore_key);
+            $content = $docstoreData['document']['content'] 
+                ?? $docstoreData['data']['document']['content'] 
+                ?? [];
+            $pdfBase64 = is_array($content) ? ($content['pdf_base64'] ?? null) : null;
+        }
+
+        if (!$pdfBase64) {
+            $this->toast()->error('Gagal Unduh', 'Berkas PDF resmi tidak ditemukan di Docstore Vault.')->send();
+            return null;
+        }
+
+        $pdfBytes = base64_decode($pdfBase64);
+        $cleanFileName = preg_replace('/[^\w\-\.]/', '_', pathinfo($doc->file_name ?? 'Dokumen_Digital', PATHINFO_FILENAME));
+        $filename = $cleanFileName . '_Signed.pdf';
+
+        return response()->streamDownload(function () use ($pdfBytes) {
+            echo $pdfBytes;
+        }, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     public function placeholder()
