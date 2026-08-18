@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             MenuSeeder::class,
             PerusahaanSeeder::class,
             WilayahSeeder::class,
+            CutiJenisSeeder::class,
+            CutiBersamaSeeder::class,
             UmDataSeeder::class,
             UmumSeeder::class,
             JadwalSeeder::class,
@@ -31,8 +33,6 @@ class DatabaseSeeder extends Seeder
             JadwalDummyJuniSeeder::class,
             SkenarioTriRahayuSeeder::class,
             JadwalDuaTahunSeeder::class,
-            CutiJenisSeeder::class,
-            CutiBersamaSeeder::class,
             StrukturOrganisasiSeeder::class,
         ];
 

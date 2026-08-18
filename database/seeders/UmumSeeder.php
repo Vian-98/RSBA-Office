@@ -93,7 +93,24 @@ class UmumSeeder extends Seeder
         }
 
         // 3. Tambahan Dummy Pembelian Langsung
-        $supplierId = DB::table('um_supplier')->inRandomOrder()->first()?->id ?? 1;
+        $supplier = DB::table('um_supplier')->first();
+        if (!$supplier) {
+            $supplierId = DB::table('um_supplier')->insertGetId([
+                'nama' => 'PT Sumber Medika Abadi',
+                'alamat' => 'Jl. Kesehatan Raya No. 45, Jakarta Pusat',
+                'telp' => '021-5551234',
+                'email' => 'supplier@sumbermedika.com',
+                'npwp' => '01.234.567.8-901.000',
+                'bank' => 'BCA',
+                'norek' => '1234567890',
+                'an' => 'PT Sumber Medika Abadi',
+                'status' => '1',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $supplierId = $supplier->id;
+        }
         
         for ($i = 1; $i <= 3; $i++) {
             $pembelianId = DB::table('um_pembelian')->insertGetId([

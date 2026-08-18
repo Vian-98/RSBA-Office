@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Sdm\Karyawan;
+use App\Livewire\Gaji\Services\PayrollCalculator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 

@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Sdm\Karyawan;
-use App\Services\PayrollCalculator;
+use App\Livewire\Gaji\Services\PayrollCalculator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
