@@ -29,10 +29,10 @@ class DatabaseSeeder extends Seeder
             KaryawanExcelSeeder::class,
             DummyPayrollSlipSeeder::class,
             JadwalDummyJuniSeeder::class,
-            SkenarioTriRahayuSeeder::class,
-            JadwalDuaTahunSeeder::class,
             CutiJenisSeeder::class,
             CutiBersamaSeeder::class,
+            SkenarioTriRahayuSeeder::class,
+            JadwalDuaTahunSeeder::class,
             StrukturOrganisasiSeeder::class,
         ];
 

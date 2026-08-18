@@ -31,6 +31,12 @@ class CutiJenisSeeder extends Seeder
                 'lama' => 90,
                 'periode' => 'L',
             ],
+            [
+                'id' => 4,
+                'nama' => 'Cuti Alasan Penting',
+                'lama' => 30,
+                'periode' => 'Y',
+            ],
         ];
 
         foreach ($jenisList as $jenis) {
@@ -44,6 +50,6 @@ class CutiJenisSeeder extends Seeder
             );
         }
 
-        CutiJenis::whereNotIn('id', [1, 2, 3])->delete();
+        CutiJenis::whereNotIn('id', [1, 2, 3, 4])->delete();
     }
 }
