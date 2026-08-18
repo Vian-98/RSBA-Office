@@ -132,6 +132,8 @@ Route::prefix('surat')
         Route::get('cuti', App\Livewire\Surat\Cuti\Index::class)->name('cuti');
         Route::get('sp3', App\Livewire\Surat\Sp3\Index::class)->name('sp3');
         Route::get('balasan-pkl', App\Livewire\Surat\BalasanPkl\Index::class)->name('balasan-pkl');
+        Route::get('balasan-pkl/{id}/pdf', [App\Http\Controllers\Surat\SuratBalasanPklPdfController::class, 'download'])->name('balasan-pkl.pdf');
+        Route::get('balasan-pkl/{id}/preview-pdf', [App\Http\Controllers\Surat\SuratBalasanPklPdfController::class, 'stream'])->name('balasan-pkl.preview-pdf');
         Route::get('balasan-penelitian', App\Livewire\Surat\BalasanPenelitian\Index::class)->name('balasan-penelitian');
         Route::get('perintah-tugas', App\Livewire\Surat\PerintahTugas\Index::class)->name('perintah-tugas');
         // Audit Bank Surat — laporan keaslian surat dari docstore (source of truth)
