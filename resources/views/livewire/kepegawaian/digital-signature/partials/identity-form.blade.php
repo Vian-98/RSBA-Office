@@ -19,7 +19,7 @@
     {{-- Stamp Resizer Quick Controller in Sidebar --}}
     <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100 space-y-2.5">
         <div class="flex items-center justify-between text-xs font-bold text-indigo-900 uppercase tracking-wider">
-            <span>Ukuran Stempel (Scale)</span>
+            <span>Ukuran Stempel QR Code (Scale)</span>
             <span class="font-mono text-indigo-700 font-bold" x-text="scale + '%'"></span>
         </div>
         <div class="flex items-center space-x-3">

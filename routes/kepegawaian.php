@@ -138,7 +138,7 @@ Route::prefix('surat')
         Route::get('audit-bank-surat', App\Livewire\Surat\AuditBankSurat::class)->name('audit-bank-surat');
     });
 
-// Tanda Tangan Digital (Privy / Mekari style)
+// Tanda Tangan Digital (RSBA E-Signature & QR Code Verification)
 Route::get('digital-signature', App\Livewire\Kepegawaian\DigitalSignature\Index::class)->name('digital-signature.index');
 
 

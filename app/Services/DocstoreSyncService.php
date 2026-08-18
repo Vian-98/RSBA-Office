@@ -13,15 +13,69 @@ use Illuminate\Support\Facades\Cache;
 
 class DocstoreSyncService
 {
+    protected string $baseUrl;
     protected string $apiUrl;
     protected string $apiToken;
+    protected string $clientId;
+    protected string $clientSecret;
     protected string $hmacSecret;
+    protected bool $verifySsl;
 
     public function __construct()
     {
-        $this->apiUrl     = env('DOCSTORE_API_URL', 'http://localhost:8000/api');
-        $this->apiToken   = env('DOCSTORE_API_TOKEN', '');
-        $this->hmacSecret = env('DOCSTORE_HMAC_SECRET', '');
+        $this->baseUrl      = rtrim(env('DOCSTORE_BASE_URL', 'http://localhost:8000'), '/');
+        $this->apiUrl       = rtrim(env('DOCSTORE_API_URL', 'http://localhost:8000/api'), '/');
+        $this->apiToken     = env('DOCSTORE_API_TOKEN', '');
+        $this->clientId     = env('DOCSTORE_OAUTH_CLIENT_ID', '');
+        $this->clientSecret = env('DOCSTORE_OAUTH_CLIENT_SECRET', '');
+        $this->hmacSecret   = env('DOCSTORE_HMAC_SECRET', '');
+        $this->verifySsl    = filter_var(env('DOCSTORE_VERIFY_SSL', false), FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Dapatkan OAuth2 M2M Access Token (Client Credentials Grant) dari Docstore dengan caching dinamis.
+     */
+    public function getM2mToken(): ?string
+    {
+        if (!empty($this->apiToken)) {
+            return $this->apiToken;
+        }
+
+        if (empty($this->clientId) || empty($this->clientSecret)) {
+            Log::warning('Docstore OAuth M2M Client ID / Secret belum dikonfigurasi di .env');
+            return null;
+        }
+
+        $cacheKey = 'docstore_m2m_token_' . md5($this->clientId);
+
+        return Cache::remember($cacheKey, now()->addHours(6), function () {
+            try {
+                $oauthUrl = $this->baseUrl . '/oauth/token';
+
+                $response = Http::withOptions(['verify' => $this->verifySsl])
+                    ->asForm()
+                    ->timeout(10)
+                    ->post($oauthUrl, [
+                        'grant_type'    => 'client_credentials',
+                        'client_id'     => $this->clientId,
+                        'client_secret' => $this->clientSecret,
+                        'scope'         => 'docstore:sync docstore:read',
+                    ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    return $data['access_token'] ?? null;
+                }
+
+                Log::error('Gagal mendapatkan Docstore M2M Token: ' . $response->body(), [
+                    'status' => $response->status()
+                ]);
+                return null;
+            } catch (\Throwable $e) {
+                Log::error('Koneksi OAuth Docstore gagal: ' . $e->getMessage());
+                return null;
+            }
+        });
     }
 
     /**
@@ -327,34 +381,42 @@ class DocstoreSyncService
     // =============================================
 
     /**
-     * Kirim payload ke docstore dengan HMAC signing.
+     * Kirim payload ke docstore dengan OAuth2 M2M Token dan HMAC Anti-Replay signing.
      * @return array ['success' => bool, 'docstore_key' => ?string]
      */
     protected function sendToDocstore(array $payload): array
     {
         try {
+            $token = $this->getM2mToken();
             $jsonPayload = json_encode($payload);
+            $timestamp = time();
 
-            // Hitung HMAC dari JSON payload
+            // Hitung HMAC dari timestamp . '.' . jsonPayload
             $headers = [
                 'Content-Type' => 'application/json',
+                'X-Timestamp'  => (string)$timestamp,
             ];
             if (!empty($this->hmacSecret)) {
-                $hmacSignature = hash_hmac('sha256', $jsonPayload, $this->hmacSecret);
-                $headers['X-Payload-Signature'] = $hmacSignature;
+                $payloadToSign = $timestamp . '.' . $jsonPayload;
+                $headers['X-Payload-Signature'] = hash_hmac('sha256', $payloadToSign, $this->hmacSecret);
             }
 
-            $response = Http::withToken($this->apiToken)
+            $request = Http::withOptions(['verify' => $this->verifySsl])
                 ->withHeaders($headers)
-                ->timeout(10)
-                ->withBody($jsonPayload, 'application/json')
+                ->timeout(15);
+
+            if ($token) {
+                $request = $request->withToken($token);
+            }
+
+            $response = $request->withBody($jsonPayload, 'application/json')
                 ->post($this->apiUrl . '/documents');
 
             if ($response->successful()) {
                 $body = $response->json();
                 return [
                     'success'      => true,
-                    'docstore_key' => $body['docstore_key'] ?? null,
+                    'docstore_key' => $body['docstore_key'] ?? ($body['data']['docstore_key'] ?? null),
                 ];
             }
 

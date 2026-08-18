@@ -24,9 +24,15 @@ class Index extends Component
 
         $msg = $synced 
             ? 'Dokumen PDF berhasil di-sign & terkirim ke Docstore Vault dengan ID: ' . $docstoreKey 
-            : 'Dokumen PDF berhasil di-sign, namun gagal sinkronisasi ke Docstore Vault.';
+            : 'Dokumen PDF berhasil di-sign secara lokal, namun belum tersinkron ke Docstore.';
 
         session()->flash($synced ? 'success' : 'warning', $msg);
+
+        if ($synced) {
+            $this->toast()->success('Tanda Tangan Berhasil', $msg)->send();
+        } else {
+            $this->toast()->warning('Tanda Tangan Lokal', $msg)->send();
+        }
     }
 
     public function render()

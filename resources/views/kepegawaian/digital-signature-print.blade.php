@@ -97,13 +97,13 @@
 
         .seal-stamp {
             position: absolute;
-            background: rgba(255, 255, 255, 0.96);
+            background: rgba(255, 255, 255, 0.98);
             padding: 10px 12px;
             border-radius: 12px;
-            border: 2px solid #10b981;
+            border: 2px solid #059669;
             box-shadow: 0 10px 30px rgba(0,0,0,0.25), 0 0 0 3px rgba(16, 185, 129, 0.2);
             text-align: left;
-            width: 190px;
+            width: 230px;
             z-index: 40;
             pointer-events: none;
         }
@@ -113,17 +113,17 @@
             gap: 6px;
             border-bottom: 1px solid #d1fae5;
             padding-bottom: 5px;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
         .seal-icon {
             width: 15px; height: 15px;
-            background: #10b981;
+            background: #059669;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 900;
             flex-shrink: 0;
         }
@@ -132,21 +132,49 @@
             font-weight: 900;
             text-transform: uppercase;
             color: #065f46;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.04em;
         }
-        .seal-name { font-size: 11px; font-weight: 700; color: #1e293b; }
-        .seal-date { font-size: 8.5px; color: #64748b; font-family: monospace; margin-top: 2px; }
+        .seal-body {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .seal-qr-box {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 3px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .seal-meta {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .seal-name { font-size: 11px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .seal-date { font-size: 8.5px; color: #64748b; font-family: monospace; }
         .seal-hash {
-            font-size: 8px;
+            font-size: 7.5px;
             font-family: monospace;
             color: #4338ca;
-            margin-top: 4px;
             background: #eef2ff;
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 4px;
+            border: 1px solid #e0e7ff;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        .seal-valid-badge {
+            font-size: 7px;
+            color: #059669;
+            font-weight: 700;
         }
 
         /* === Media Print === */
@@ -235,9 +263,10 @@
         const stampX = @json($stampX);
         const stampY = @json($stampY);
         const stampScale = @json($stampScale);
+        const qrBase64 = @json($qrBase64 ?? null);
         const userName = @json(optional($document->user)->name ?? 'Super Admin');
         const signDate = @json($document->created_at->format('d M Y H:i'));
-        const byteHash = @json(substr($document->byte_counter_hash, 0, 18));
+        const byteHash = @json(substr($document->byte_counter_hash, 0, 14));
 
         document.addEventListener('DOMContentLoaded', async function() {
             try {
@@ -270,8 +299,9 @@
 
                     pageDiv.appendChild(canvas);
 
-                    // Attach Mekari Vault Seal Stamp Badge onto Page 1
-                    if (pageNum === 1) {
+                    // Note: Hard-stamped PDF files already contain the RSBA QR Seal directly inside Page 1 PDF stream.
+                    // If stamp overlay is enabled for fallback:
+                    if (pageNum === 1 && (stampX === -1)) {
                         const stampDiv = document.createElement('div');
                         stampDiv.className = 'seal-stamp';
                         stampDiv.style.left = stampX + '%';
@@ -279,14 +309,26 @@
                         stampDiv.style.transform = `scale(${stampScale / 100})`;
                         stampDiv.style.transformOrigin = 'top left';
 
+                        const qrImgHtml = qrBase64 
+                            ? `<img src="data:image/png;base64,${qrBase64}" alt="QR" style="width:56px;height:56px;display:block;">`
+                            : `<div style="width:56px;height:56px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:8px;">QR</div>`;
+
                         stampDiv.innerHTML = `
                             <div class="seal-header">
                                 <div class="seal-icon">✓</div>
-                                <span class="seal-label">SIGNED BY MEKARI VAULT</span>
+                                <span class="seal-label">E-SIGNATURE & VERIFIKASI RSBA</span>
                             </div>
-                            <div class="seal-name">${userName}</div>
-                            <div class="seal-date">${signDate} WIB</div>
-                            <div class="seal-hash">SHA: ${byteHash}...</div>
+                            <div class="seal-body">
+                                <div class="seal-qr-box">
+                                    ${qrImgHtml}
+                                    <span style="font-size:6px;color:#64748b;font-weight:600;margin-top:1px;">Scan Verifikasi</span>
+                                </div>
+                                <div class="seal-meta">
+                                    <div class="seal-name">${userName}</div>
+                                    <div class="seal-date">${signDate} WIB</div>
+                                    <div class="seal-valid-badge">Dokumen Sah Terdaftar</div>
+                                </div>
+                            </div>
                         `;
                         pageDiv.appendChild(stampDiv);
                     }

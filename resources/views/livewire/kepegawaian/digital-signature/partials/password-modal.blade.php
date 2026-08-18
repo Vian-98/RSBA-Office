@@ -1,5 +1,5 @@
 
-{{-- MEKARI SIGN SECURITY POPUP MODAL --}}
+{{-- RSBA DIGITAL SIGNATURE SECURITY POPUP MODAL --}}
 @if ($showPasswordModal)
     <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-150">
@@ -11,7 +11,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-base font-bold text-slate-800">Konfirmasi Tanda Tangan (Mekari Vault)</h3>
+                        <h3 class="text-base font-bold text-slate-800">Konfirmasi Tanda Tangan Digital & QR Stamp</h3>
                         <p class="text-xs text-slate-500">Verifikasi Keaslian Pengirim & Password Akun</p>
                     </div>
                 </div>
@@ -70,6 +70,7 @@
                     Batal
                 </button>
                 <button 
+                    type="button"
                     wire:click="confirmAndSign" 
                     wire:loading.attr="disabled"
                     wire:target="confirmAndSign" 

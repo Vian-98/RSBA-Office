@@ -5,6 +5,7 @@ namespace App\Livewire\Kepegawaian\DigitalSignature;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Lazy;
+use TallStackUi\Traits\Interactions;
 use App\Models\DigitalSignatureDocument;
 use App\Services\DigitalSignatureService;
 use App\Services\DocstoreSyncService;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 class Form extends Component
 {
     use WithFileUploads;
+    use Interactions;
 
     // Form inputs
     public $pdf_file;
@@ -24,7 +26,7 @@ class Form extends Component
     public $keterangan = '';
     public $account_password = '';
 
-    // Mekari Sign Customization
+    // Digital Signature & QR Stamp Customization
     public $stamp_position = 'top_right';
     public $stamp_x = 70; // percentage from left (0 to 100)
     public $stamp_y = 75; // percentage from top (0 to 100)
@@ -90,6 +92,20 @@ class Form extends Component
         }
     }
 
+    public function getPreviewQrCodeProperty()
+    {
+        if (!$this->fileHashSHA256) {
+            return null;
+        }
+        try {
+            $qrService = app(\App\Services\QrGeneratorService::class);
+            $verifyUrl = $qrService->getVerificationUrl($this->fileHashSHA256);
+            return $qrService->generateQrPngBase64($verifyUrl, 3, 3);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     public function updatedPdfFile()
     {
         $this->validateOnly('pdf_file');
@@ -129,7 +145,7 @@ class Form extends Component
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p class="text-sm font-bold text-slate-700 mt-4">Memuat Studio Mekari Sign (Lazyload)...</p>
+            <p class="text-sm font-bold text-slate-700 mt-4">Memuat Studio Tanda Tangan Digital (Lazyload)...</p>
             <p class="text-xs text-slate-400 mt-1">Menyiapkan engine RSA, Canvas Drag-and-Drop & ByteCounter</p>
         </div>
         HTML;
@@ -153,6 +169,7 @@ class Form extends Component
         // Verifikasi Password Akun Pengirim
         if (!Hash::check($this->account_password, $user->password)) {
             $this->addError('account_password', 'Password akun yang Anda masukkan salah. Silakan coba lagi.');
+            $this->toast()->error('Password Salah', 'Password akun yang Anda masukkan salah. Silakan coba lagi.')->send();
             return;
         }
 
@@ -193,12 +210,12 @@ class Form extends Component
                     ];
                     $signatureHash = hash('sha256', $signResult['signature']);
                 } else {
+                    $this->toast()->error('Gagal Sign', 'Gagal tanda tangan digital: ' . $signResult['message'])->send();
                     session()->flash('error', 'Gagal tanda tangan digital: ' . $signResult['message']);
                     $this->closePasswordModal();
                     return;
                 }
             } else {
-
                 // Generasi hash tanda tangan standar jika belum ada p12 sertifikat
                 $signatureHash = hash('sha256', 'DS_SIG_' . $byteCounterHash . '_' . time());
                 $signatureData = [
@@ -214,7 +231,10 @@ class Form extends Component
                 ];
             }
 
-            // 3. Hard-stamp Mekari Vault Seal directly into PDF Binary stream
+            // 3. Hard-stamp RSBA QR Code Digital Signature directly into PDF Binary stream
+            $qrService = app(\App\Services\QrGeneratorService::class);
+            $verifyUrl = $qrService->getVerificationUrl($byteCounterHash);
+
             $pdfStamperService = app(\App\Services\PdfStamperService::class);
             $stampedPdfBytes = $pdfStamperService->stampPdf(
                 pdfPathOrBytes: $realPath,
@@ -225,7 +245,8 @@ class Form extends Component
                 signedAtDate: date('d M Y H:i') . ' WIB',
                 shaHash: $byteCounterHash,
                 documentNumber: $this->document_number,
-                title: $this->title
+                title: $this->title,
+                verifyUrl: $verifyUrl
             );
 
             $stampedByteHash = hash('sha256', $stampedPdfBytes);
@@ -267,17 +288,21 @@ class Form extends Component
                 @unlink($realPath);
             }
 
+            $docstoreKey = $doc->fresh()->docstore_key;
+
             // Close modal & reset form
             $this->showPasswordModal = false;
             $this->reset(['pdf_file', 'title', 'keterangan', 'account_password', 'fileSizeFormatted', 'fileHashSHA256']);
             $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
 
             // Dispatch event to parent component to switch to list tab and notify
-            $this->dispatch('document-signed', docstoreKey: $doc->fresh()->docstore_key, synced: $synced);
+            $this->dispatch('document-signed', docstoreKey: $docstoreKey, synced: $synced);
 
             if ($synced) {
-                session()->flash('success', 'Dokumen PDF berhasil di-sign & terkirim ke Docstore dengan ID: ' . $doc->fresh()->docstore_key);
+                $this->toast()->success('Tanda Tangan Berhasil', 'Dokumen berhasil di-sign & terkirim ke Docstore (ID: ' . $docstoreKey . ')')->send();
+                session()->flash('success', 'Dokumen PDF berhasil di-sign & terkirim ke Docstore dengan ID: ' . $docstoreKey);
             } else {
+                $this->toast()->warning('Tanda Tangan Lokal', 'Dokumen berhasil di-sign secara lokal.')->send();
                 session()->flash('warning', 'Dokumen PDF berhasil di-sign secara lokal, namun gagal sinkronisasi otomatis ke Docstore.');
             }
 
@@ -285,6 +310,7 @@ class Form extends Component
             Log::error('Error signing digital signature document: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
+            $this->toast()->error('Terjadi Kesalahan', $e->getMessage())->send();
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
             $this->closePasswordModal();
         }
