@@ -22,7 +22,7 @@ class DisplayMonitorAdmin extends Component
         if (!$user) {
             return false;
         }
-        return $user->hasRole(['Super-Admin', 'SuperAdmin', 'superadmin']) || ($user->is_superadmin ?? false);
+        return $user->traitHasPermissionTo('super-admin-bypass') || ($user->is_superadmin ?? false);
     }
 
     public function canAccessServerRoom(): bool
@@ -33,8 +33,7 @@ class DisplayMonitorAdmin extends Component
         }
 
         return $this->isSuperAdmin()
-            || $user->can('view-server-room-monitoring')
-            || $user->hasRole(['Super-Admin', 'SuperAdmin', 'superadmin', 'IT-Support', 'IT']);
+            || $user->can('view-server-room-monitoring');
     }
 
     public function render()

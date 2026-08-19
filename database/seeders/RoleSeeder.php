@@ -44,6 +44,9 @@ class RoleSeeder extends Seeder
             $role->syncPermissions($perms);
         };
 
+        // Explicitly sync all permissions + bypass to Super-Admin
+        $safeSync($superAdmin, array_unique(array_merge($allPermissions, ['super-admin-bypass', 'unlock-payroll-approved'])));
+
         // Assign comprehensive executive permissions to Kepala-Bidang & Wakil-Direktur
         $systemSettingsOnly = [
             'view-admin-settings-menu',
@@ -172,11 +175,29 @@ class RoleSeeder extends Seeder
         $pajakRole = Role::firstOrCreate(['name' => 'Pajak']);
         $pajakRole->syncPermissions($pajakPermissions);
 
-        // 9. Dokter & Koordinator Dokter permissions
+        // 9. Dokter, Koordinator, & Koordinator-Dokter permissions
         $dokterRole = Role::firstOrCreate(['name' => 'Dokter']);
-        $dokterRole->syncPermissions(array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja'])));
+        $dokterRole->syncPermissions(array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'view-dokter'])));
+
+        $koordinatorPermissions = array_unique(array_merge($commonPermissions, [
+            'view-kepegawaian-jadwal-kerja',
+            'add-kepegawaian-jadwal-kerja',
+            'edit-kepegawaian-jadwal-kerja',
+            'delete-kepegawaian-jadwal-kerja',
+            'view-kepegawaian-absensi',
+            'view-kepegawaian-konfigurasi-jadwal',
+            'view-kepegawaian-surat-cuti',
+            'view-kepegawaian-surat-sp3',
+            'view-kepegawaian-master-jadwal-shift',
+            'view-kepegawaian-master-jadwal-aturan',
+            'view-kepegawaian-master-ruangan-shift',
+            'view-kepegawaian-master-bagian-koordinator',
+        ]));
+
+        $koordinatorRole = Role::firstOrCreate(['name' => 'Koordinator']);
+        $safeSync($koordinatorRole, $koordinatorPermissions);
 
         $koorDokterRole = Role::firstOrCreate(['name' => 'Koordinator-Dokter']);
-        $koorDokterRole->syncPermissions(array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'view-kepegawaian-konfigurasi-jadwal'])));
+        $safeSync($koorDokterRole, array_unique(array_merge($koordinatorPermissions, ['view-dokter'])));
     }
 }

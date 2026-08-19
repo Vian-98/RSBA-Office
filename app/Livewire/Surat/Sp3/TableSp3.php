@@ -39,7 +39,7 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
         return $table
             ->query(
                 SuratSp3::withSum('details', 'nominal')->with(['approvals', 'createdBy'])
-                    ->when(!$userLogin->hasRole('Super-Admin'), function ($query) use ($userLogin) {
+                    ->when(!$userLogin->can('approve-kepegawaian-sp3'), function ($query) use ($userLogin) {
                         $jabatanId = $userLogin->karyawan?->jabatan?->first()?->id;
                         $userId = $userLogin->id;
 
@@ -116,7 +116,7 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
                     ->visible(
                         fn($record) => (
                             (
-                                auth()->user()->hasRole('Super-Admin') //super admin
+                                auth()->user()->can('approve-kepegawaian-sp3')
                                 or
                                 $record->jabatan_id === auth()->user()?->karyawan?->jabatan?->first()?->id //jabatan yg mengetahui
                             ) and

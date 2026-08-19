@@ -44,7 +44,7 @@ class ListJadwal extends Component implements HasTable, HasForms, HasActions
             ->query(
                 Jadwal::with('request', 'asset', 'asset.barang', 'asset.ruangan', 'teknisi.user', 'work')
                     ->when(
-                        !$userLogin->hasRole('Super-Admin'),
+                        !$userLogin->can('view-umum-maintenance'),
                         function ($query) use ($userLogin) {
                             // filter jadwal as user login
                             $query->whereHas('teknisi', function ($q) use ($userLogin) {

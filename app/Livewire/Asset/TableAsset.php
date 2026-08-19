@@ -33,10 +33,7 @@ class TableAsset extends Component implements HasTable, HasForms, HasActions
         $user = auth()->user();
         if (!$user) return false;
 
-        return $user->hasRole('Super-Admin')
-            || $user->hasRole('Staff-Umum')
-            || $user->hasRole('Admin-Umum')
-            || $user->can('manage-umum-asset')
+        return $user->can('manage-umum-asset')
             || $user->can('manage-asset');
     }
 

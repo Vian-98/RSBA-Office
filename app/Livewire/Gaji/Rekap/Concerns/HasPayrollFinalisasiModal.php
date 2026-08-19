@@ -131,7 +131,7 @@ trait HasPayrollFinalisasiModal
     public function unlockPeriode(string $periode, PayrollPeriodService $periodService): void
     {
         try {
-            $isSuperAdmin = (bool) auth()->user()?->hasRole('Super-Admin');
+            $isSuperAdmin = (bool) auth()->user()?->traitHasPermissionTo('unlock-payroll-approved');
             $periodService->unlockPeriode($periode, $isSuperAdmin);
             $this->toast()->success('Berhasil !', 'Kunci payroll periode ' . $periode . ' berhasil dibuka. Status dikembalikan ke draft.')->send();
         } catch (\Throwable $e) {
