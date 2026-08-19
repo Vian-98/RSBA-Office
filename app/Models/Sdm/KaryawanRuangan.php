@@ -26,4 +26,8 @@ class KaryawanRuangan extends Pivot
     {
         return $this->belongsTo(Ruangan::class, 'ruangan_id');
     }
+    public function document(): BelongsTo
+    {
+        return $this->belongsTo(KaryawanDocument::class, 'document_id');
+    }
 }

@@ -44,7 +44,7 @@ class BagianAturanModal extends Component
 
     public function saveAturan(): void
     {
-        if (!auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum'])) {
+        if (!auth()->user()?->can('manage-kepegawaian-master-aturan')) {
             $this->toast()->error('Akses Ditolak', 'Penambahan / perubahan aturan khusus hanya dapat dilakukan oleh Tim SDM.')->send();
             return;
         }
@@ -114,7 +114,7 @@ class BagianAturanModal extends Component
 
     public function deleteAturan(int $id): void
     {
-        if (!auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum'])) {
+        if (!auth()->user()?->can('manage-kepegawaian-master-aturan')) {
             $this->toast()->error('Akses Ditolak', 'Penghapusan aturan khusus hanya dapat dilakukan oleh Tim SDM.')->send();
             return;
         }

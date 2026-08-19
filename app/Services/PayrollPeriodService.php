@@ -18,7 +18,7 @@ class PayrollPeriodService
 
         $status = $lock->status ?? 'draft';
         $user = auth()->user();
-        $isOnlyPajak = $user && $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
+        $isOnlyPajak = $user && $user->traitHasPermissionTo('view-kepegawaian-master-aturan-pajak') && !$user->traitHasPermissionTo('approve-kepegawaian-gaji');
 
         $isLocked = false;
         if ($status === 'approved') {

@@ -40,7 +40,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
         $query = JadwalAturan::query()->with('bagian');
 
         $actions = [];
-        if ($user && $user->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum'])) {
+        if ($user && $user->can('manage-kepegawaian-master-aturan')) {
             $actions = [
                 Action::make('edit')
                     ->iconButton()
@@ -110,7 +110,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
     public function confirmResetAllToAturanUmum()
     {
-        if (!auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum'])) {
+        if (!auth()->user()?->can('manage-kepegawaian-master-aturan')) {
             $this->toast()->error('Akses Ditolak', 'Reset aturan hanya dapat dilakukan oleh Tim SDM.')->send();
             return;
         }
@@ -126,7 +126,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
     public function executeResetAllToAturanUmum()
     {
-        if (!auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum'])) {
+        if (!auth()->user()?->can('manage-kepegawaian-master-aturan')) {
             $this->toast()->error('Akses Ditolak', 'Reset aturan hanya dapat dilakukan oleh Tim SDM.')->send();
             return;
         }

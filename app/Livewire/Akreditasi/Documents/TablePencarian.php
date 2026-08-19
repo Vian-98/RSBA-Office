@@ -190,7 +190,7 @@ class TablePencarian extends Component implements HasTable, HasForms, HasActions
                         }
                     )
                     ->visible(
-                        fn($record) => !is_null($record->deleted_at) and auth()->user()->hasRole('Super-Admin')
+                        fn($record) => !is_null($record->deleted_at) and auth()->user()->can('view-kepegawaian-akreditasi')
                     )
 
             ])

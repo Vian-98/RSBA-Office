@@ -172,6 +172,7 @@
 
         <div class="flex gap-2 flex-shrink-0">
             <x-ts:button outline href="{{ route('kepegawaian.jadwal-kerja.index') }}" icon="tabler.arrow-left">Kembali</x-ts:button>
+            <x-ts:button outline color="rose" href="{{ route('kepegawaian.jadwal-kerja.export-pdf', $jadwalKerja->id) }}" target="_blank" icon="tabler.file-type-pdf">Export PDF</x-ts:button>
             <x-ts:button outline color="secondary" x-on:click="$tsui.open.modal('modal-riwayat'); Livewire.dispatch('load-riwayat', {jadwalKerjaId: {{ $jadwalKerja->id }}})" icon="tabler.history">Riwayat</x-ts:button>
             <x-ts:button outline color="secondary" x-on:click="$tsui.open.modal('modal-log-approval'); Livewire.dispatch('load-log-approval', {jadwalKerjaId: {{ $jadwalKerja->id }}})" icon="tabler.certificate">Log Persetujuan</x-ts:button>
 
