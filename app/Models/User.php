@@ -360,7 +360,19 @@ class User extends Authenticatable
         if (!$this->karyawan_id) {
             return false;
         }
-        return \App\Models\Sdm\Dokter::where('karyawan_id', $this->karyawan_id)->exists();
+        if (\App\Models\Sdm\Dokter::where('karyawan_id', $this->karyawan_id)->exists()) {
+            return true;
+        }
+        $karyawan = $this->karyawan;
+        if ($karyawan) {
+            $gelarDepan = strtolower($karyawan->gelar_depan ?? '');
+            $gelarBelakang = strtolower($karyawan->gelar_belakang ?? '');
+            $nama = strtolower($karyawan->nama ?? '');
+            if (str_contains($gelarDepan, 'dr') || str_contains($gelarBelakang, 'sp') || str_starts_with($nama, 'dr.') || str_starts_with($nama, 'dr ')) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

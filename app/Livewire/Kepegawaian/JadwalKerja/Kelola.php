@@ -123,30 +123,15 @@ class Kelola extends Component
             }
 
             // Validasi tipe jadwal: Koor Dokter hanya boleh buka tipe=dokter, Koor Karyawan hanya tipe=karyawan
-            if ($user->isKoordinatorDokter() && $this->jadwalKerja->tipe !== 'dokter') {
-                abort(403, 'Anda adalah Koordinator Dokter, jadwal ini adalah Jadwal Karyawan.');
-            }
-            if ($user->isKoordinatorKaryawan() && $this->jadwalKerja->tipe === 'dokter') {
-                abort(403, 'Jadwal Dokter tidak dapat dikelola oleh Koordinator Karyawan.');
-            }
-
-            $ownRuanganId = $user->karyawan?->ruangan_id;
-            $ruanganIds = $user->isKoordinator() ? ($user->getRuanganKoordinatorIds() ?? []) : [];
-
-            if ($this->jadwalKerja->ruangan_id === $ownRuanganId || in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
-                $canView = true;
-            }
-
-            if (in_array($this->jadwalKerja->ruangan_id, $ruanganIds)) {
-                $canManage = true;
-            }
-
-            // Validasi tipe jadwal: Koor Dokter hanya boleh buka tipe=dokter, Koor Karyawan hanya tipe=karyawan
-            if ($user->isKoordinatorDokter() && $this->jadwalKerja->tipe !== 'dokter') {
-                abort(403, 'Anda adalah Koordinator Dokter, jadwal ini adalah Jadwal Karyawan.');
-            }
-            if ($user->isKoordinatorKaryawan() && $this->jadwalKerja->tipe === 'dokter') {
-                abort(403, 'Jadwal Dokter tidak dapat dikelola oleh Koordinator Karyawan.');
+            // Hanya berlaku untuk koordinator ruangan murni (bukan pejabat struktural / approver seperti Kabid, Wadir, SDM)
+            $isStructuralApprover = $user->can('approve-jadwal-wadir') || $user->can('approve-jadwal-kabid') || $user->can('view-kepegawaian-karyawan') || $user->isKepalaDept() || $user->isWadir();
+            if (!$isStructuralApprover) {
+                if ($user->isKoordinatorDokter() && $this->jadwalKerja->tipe !== 'dokter') {
+                    abort(403, 'Anda adalah Koordinator Dokter, jadwal ini adalah Jadwal Karyawan.');
+                }
+                if ($user->isKoordinatorKaryawan() && $this->jadwalKerja->tipe === 'dokter') {
+                    abort(403, 'Jadwal Dokter tidak dapat dikelola oleh Koordinator Karyawan.');
+                }
             }
         }
 

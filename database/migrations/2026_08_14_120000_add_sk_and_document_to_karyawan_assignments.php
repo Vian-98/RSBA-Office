@@ -45,7 +45,7 @@ return new class extends Migration
         }
 
         // 3. Tambah opsi 'sk' pada ENUM jenis di sdm_kary_document
-        if (Schema::hasTable('sdm_kary_document')) {
+        if (Schema::hasTable('sdm_kary_document') && DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE sdm_kary_document MODIFY COLUMN jenis ENUM('ijazah', 'sertifikat', 'str', 'sip', 'sk', 'pribadi', 'lain') NOT NULL");
         }
     }
@@ -79,7 +79,7 @@ return new class extends Migration
             });
         }
 
-        if (Schema::hasTable('sdm_kary_document')) {
+        if (Schema::hasTable('sdm_kary_document') && DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE sdm_kary_document MODIFY COLUMN jenis ENUM('ijazah', 'sertifikat', 'str', 'sip', 'pribadi', 'lain') NOT NULL");
         }
     }
