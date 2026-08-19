@@ -117,6 +117,7 @@ class Sp3Synchronizer implements DocumentSynchronizerInterface
                 'status'         => $statusText,
                 'signed_at'      => $approval->approved_at ? $approval->approved_at->toIso8601String() : null,
                 'signature_hash' => $approval->qr_verification_hash ?: ($sigLog->data_hash ?? null),
+                'signature'      => $sigLog->signature ?? null,
                 'signature_data' => $sigLog->signature ?? null,
                 'original_data'  => $sigLog->data ?? null,
                 'public_key'     => optional($cert)->public_key ?? null,

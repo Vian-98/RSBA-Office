@@ -127,6 +127,7 @@ class BalasanPklSynchronizer implements DocumentSynchronizerInterface
             'status'         => $statusText,
             'signed_at'      => $model->signed_at ? $model->signed_at->toIso8601String() : null,
             'signature_hash' => $model->qr_verification_hash ?: ($sigLog->data_hash ?? null),
+            'signature'      => $sigLog->signature ?? null,
             'signature_data' => $sigLog->signature ?? null,
             'original_data'  => $sigLog->data ?? null,
             'public_key'     => optional($cert)->public_key ?? null,
