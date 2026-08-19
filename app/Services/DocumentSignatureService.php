@@ -99,6 +99,12 @@ class DocumentSignatureService
                 $syncService->syncCuti($surat->fresh());
             } elseif (str_contains($modelClass, 'SuratSp3')) {
                 $syncService->syncSp3($surat->fresh());
+            } elseif (str_contains($modelClass, 'SuratBalasanPkl')) {
+                $syncService->syncBalasanPkl($surat->fresh());
+            } elseif (str_contains($modelClass, 'SuratBalasanPenelitian')) {
+                $syncService->syncBalasanPenelitian($surat->fresh());
+            } elseif (str_contains($modelClass, 'SuratPerintahTugas')) {
+                $syncService->syncPerintahTugas($surat->fresh());
             } elseif (str_contains($modelClass, 'Kuitansi')) {
                 $syncService->syncKuitansi($surat->fresh());
             } else {

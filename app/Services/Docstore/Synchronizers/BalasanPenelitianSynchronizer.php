@@ -1,0 +1,147 @@
+<?php
+
+namespace App\Services\Docstore\Synchronizers;
+
+use App\Models\Surat\SuratBalasanPenelitian;
+use App\Models\SignatureLogs;
+use App\Models\SignatureCerts;
+use App\Models\User;
+use App\Services\Docstore\Contracts\DocumentSynchronizerInterface;
+use App\Services\Docstore\DocstoreClient;
+use Illuminate\Database\Eloquent\Model;
+
+class BalasanPenelitianSynchronizer implements DocumentSynchronizerInterface
+{
+    public function __construct(protected DocstoreClient $client)
+    {
+    }
+
+    public function supports(Model $model): bool
+    {
+        return $model instanceof SuratBalasanPenelitian;
+    }
+
+    public function sync(Model $model): bool
+    {
+        if (!$this->supports($model)) {
+            return false;
+        }
+
+        /** @var SuratBalasanPenelitian $model */
+        $model->loadMissing(['direktur', 'mahasiswa', 'biaya']);
+        $payload = $this->buildPayload($model);
+
+        $result = $this->client->postDocument($payload);
+
+        if ($result && ($result['success'] ?? false)) {
+            $docstoreKey = $result['docstore_key'] ?? ($result['data']['docstore_key'] ?? null);
+            $model->updateQuietly([
+                'docstore_key'       => $docstoreKey,
+                'docstore_synced_at' => now(),
+                'docstore_status'    => 'synced',
+            ]);
+            $this->client->invalidateCache($docstoreKey);
+            return true;
+        }
+
+        $model->updateQuietly([
+            'docstore_status' => 'failed',
+        ]);
+        return false;
+    }
+
+    public function buildPayload(Model $model): array
+    {
+        /** @var SuratBalasanPenelitian $model */
+        $statusDoc = $this->mapDocumentStatus($model);
+
+        $mahasiswaList = $model->mahasiswa->map(fn($m) => [
+            'id'               => $m->id,
+            'nama'             => $m->nama,
+            'npm'              => $m->npm,
+            'fakultas_pt'      => $m->fakultas_pt,
+            'judul_penelitian' => $m->judul_penelitian,
+        ])->toArray();
+
+        $biayaList = $model->biaya->map(fn($b) => [
+            'id'             => $b->id,
+            'keterangan'     => $b->keterangan,
+            'jumlah_orang'   => (int) $b->jumlah_orang,
+            'jasa_sarana'    => (float) $b->jasa_sarana,
+            'jasa_pelayanan' => (float) $b->jasa_pelayanan,
+            'subtotal'       => (float) $b->total,
+        ])->toArray();
+
+        return [
+            'document_number' => $model->no,
+            'document_type'   => 'balasan_penelitian',
+            'status'          => $statusDoc,
+            'docstore_key'    => $model->docstore_key ?: null,
+            'content'         => [
+                'surat_id'                 => $model->id,
+                'no'                       => $model->no,
+                'tgl'                      => $model->tgl ? $model->tgl->format('Y-m-d') : null,
+                'tujuan_institusi_id'      => $model->tujuan_institusi_id,
+                'tujuan_universitas'       => $model->tujuan_universitas,
+                'tujuan_fakultas'          => $model->tujuan_fakultas,
+                'tujuan_nama'              => $model->tujuan_nama,
+                'tujuan_alamat'            => $model->tujuan_alamat,
+                'nomor_surat_masuk'        => $model->nomor_surat_masuk,
+                'tgl_surat_masuk'          => $model->tgl_surat_masuk ? $model->tgl_surat_masuk->format('Y-m-d') : null,
+                'perihal_surat_masuk'      => $model->perihal_surat_masuk,
+                'total_biaya'              => (float) $model->total_biaya,
+                'direktur_user_id'         => $model->direktur_user_id,
+                'nama_direktur'            => optional($model->direktur)->full_nama ?? 'dr. Rachmawati, MPH',
+                'nip_direktur'             => optional($model->direktur)->nip ?? '24170002',
+                'mahasiswa'                => $mahasiswaList,
+                'biaya'                    => $biayaList,
+            ],
+            'signatures' => $this->buildSignatures($model),
+        ];
+    }
+
+    public function buildSignatures(Model $model): array
+    {
+        /** @var SuratBalasanPenelitian $model */
+        $signatures = [];
+
+        $userId = $model->direktur_user_id;
+        $user = $userId ? User::find($userId) : null;
+        $sigLog = SignatureLogs::where('reference_id', $model->id)
+            ->where('reference_type', 'balasan_penelitian')
+            ->latest()
+            ->first();
+
+        $cert = $userId ? SignatureCerts::where('user_id', $userId)->where('status', 'active')->first() : null;
+
+        $statusText = $model->status === 'approved' ? 'SIGNED' : ($model->status === 'rejected' ? 'REJECTED' : 'PENDING');
+
+        $signatures[] = [
+            'signer_name'    => optional($model->direktur)->full_nama ?? optional($user)->name ?? 'dr. Rachmawati, MPH',
+            'signer_role'    => 'Direktur Rumah Sakit',
+            'signer_order'   => 1,
+            'status'         => $statusText,
+            'signed_at'      => $model->approved_at ? $model->approved_at->toIso8601String() : ($model->tgl ? $model->tgl->toIso8601String() : null),
+            'signature_hash' => $model->qr_verification_hash ?: ($sigLog->signature_hash ?? null),
+            'signature_data' => $sigLog->signature_data ?? null,
+            'original_data'  => $sigLog->original_data ?? null,
+            'public_key'     => optional($cert)->public_key ?? null,
+            'is_manual'      => false,
+            'manual_note'    => null,
+        ];
+
+        return $signatures;
+    }
+
+    protected function mapDocumentStatus(SuratBalasanPenelitian $model): string
+    {
+        $statusLower = strtolower($model->status ?? 'approved');
+        if (in_array($statusLower, ['rejected', 'ditolak'])) {
+            return 'rejected';
+        }
+        if (in_array($statusLower, ['pending', 'draft', 'proses'])) {
+            return 'pending';
+        }
+        return 'approved';
+    }
+}

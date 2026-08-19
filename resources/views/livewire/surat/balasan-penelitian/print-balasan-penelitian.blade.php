@@ -1,10 +1,30 @@
 <div id="print-balasan-penelitian-content" style="font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #000; line-height: 1.5; background: #fff; width: 100%; max-width: 210mm; margin: 0 auto; padding: 10px;">
-    @if ($suratBalasanPenelitian)
+    @if (!$this->canPrint)
+        {{-- Docstore Error Alert Component --}}
+        <x-surat.docstore-error-alert
+            :error="$this->docstoreError"
+            :docstore-key="$suratBalasanPenelitian->docstore_key ?? null"
+        />
+    @else
+        {{-- Docstore Success State --}}
         @php
-            $tglSuratIndo = \Carbon\Carbon::parse($suratBalasanPenelitian->tgl)->translatedFormat('d F Y');
-            $tglMasukIndo = $suratBalasanPenelitian->tgl_surat_masuk ? \Carbon\Carbon::parse($suratBalasanPenelitian->tgl_surat_masuk)->translatedFormat('d F Y') : '....................';
-            $namaDirektur = optional($suratBalasanPenelitian->direktur)->full_nama ?? 'dr. Rachmawati, MPH';
-            $nipDirektur  = optional($suratBalasanPenelitian->direktur)->nip ?? '24170002';
+            $doc = $this->docstoreData['document'] ?? [];
+            $content = $doc['content'] ?? [];
+
+            $tglSuratIndo = !empty($content['tgl']) ? \Carbon\Carbon::parse($content['tgl'])->translatedFormat('d F Y');
+            $tglMasukIndo = !empty($content['tgl_surat_masuk']) ? \Carbon\Carbon::parse($content['tgl_surat_masuk'])->translatedFormat('d F Y') : ($suratBalasanPenelitian->tgl_surat_masuk ? \Carbon\Carbon::parse($suratBalasanPenelitian->tgl_surat_masuk)->translatedFormat('d F Y') : '....................');
+            $namaDirektur = $content['nama_direktur'] ?? (optional($suratBalasanPenelitian->direktur)->full_nama ?? 'dr. Rachmawati, MPH');
+            $nipDirektur  = $content['nip_direktur'] ?? (optional($suratBalasanPenelitian->direktur)->nip ?? '24170002');
+            $nomorSurat   = $content['no'] ?? $suratBalasanPenelitian->no;
+            $univ         = $content['tujuan_universitas'] ?? $suratBalasanPenelitian->tujuan_universitas;
+            $fakultas     = $content['tujuan_fakultas'] ?? $suratBalasanPenelitian->tujuan_fakultas;
+            $tujuanNama   = $content['tujuan_nama'] ?? $suratBalasanPenelitian->tujuan_nama;
+            $tujuanAlamat = $content['tujuan_alamat'] ?? $suratBalasanPenelitian->tujuan_alamat;
+            $noSuratMasuk = $content['nomor_surat_masuk'] ?? $suratBalasanPenelitian->nomor_surat_masuk;
+            $perihalSurat = $content['perihal_surat_masuk'] ?? $suratBalasanPenelitian->perihal_surat_masuk;
+            $mahasiswaList= $content['mahasiswa'] ?? $suratBalasanPenelitian->mahasiswa->toArray();
+            $biayaList    = $content['biaya'] ?? $suratBalasanPenelitian->biaya->toArray();
+            $totalBiaya   = (float) ($content['total_biaya'] ?? $suratBalasanPenelitian->total_biaya);
         @endphp
 
         <style>
@@ -36,29 +56,19 @@
             }
         </style>
 
+        {{-- Docstore Verified Badge Component --}}
+        <x-surat.docstore-badge
+            :version="$this->docstoreData['meta']['version'] ?? ($this->docstoreData['document']['version'] ?? 1)"
+            :docstore-key="$suratBalasanPenelitian->docstore_key"
+        />
+
         {{-- ============================================================
              HALAMAN 1: SURAT BALASAN PENELITIAN
              ============================================================ --}}
         <div style="min-height: 250mm; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-                {{-- KOP SURAT RESMI RS BINTANG AMIN --}}
-                <div style="display: flex; align-items: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 18px;">
-                    <div style="width: 80px; text-align: center; flex-shrink: 0;">
-                        <img src="{{ asset('logo-fallback.png') }}" alt="Logo RSBA" style="height: 60px; max-width: 80px; object-fit: contain;" onerror="this.style.display='none'">
-                    </div>
-                    <div style="flex: 1; text-align: center; padding-right: 80px;">
-                        <div style="font-size: 15pt; font-weight: bold; text-transform: uppercase; color: #000; letter-spacing: 0.5px; margin: 0; line-height: 1.2;">
-                            RUMAH SAKIT BINTANG AMIN
-                        </div>
-                        <div style="font-size: 11pt; font-weight: bold; color: #111; margin: 2px 0 0 0; line-height: 1.2;">
-                            PT. BINTANG AMIN HUSADA
-                        </div>
-                        <div style="font-size: 9pt; color: #333; margin-top: 3px; line-height: 1.3;">
-                            Jl. Pramuka No. 27 Kemiling – Bandar Lampung | Telp: (0721) 273601 - 273608<br>
-                            Email: cs@rspba.co.id / sdm@rspba.co.id | Website: www.rspba.co.id
-                        </div>
-                    </div>
-                </div>
+                {{-- Kop Surat RSBA Component --}}
+                <x-surat.kop-surat />
 
                 {{-- Tanggal Surat --}}
                 <div style="text-align: right; margin-bottom: 14px; font-size: 11pt;">
@@ -70,7 +80,7 @@
                     <tr>
                         <td style="width: 90px; vertical-align: top; padding: 2px 0;">Nomor</td>
                         <td style="width: 15px; vertical-align: top; padding: 2px 0; text-align: center;">:</td>
-                        <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $suratBalasanPenelitian->no }}</td>
+                        <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $nomorSurat }}</td>
                     </tr>
                     <tr>
                         <td style="vertical-align: top; padding: 2px 0;">Lampiran</td>
@@ -80,17 +90,17 @@
                     <tr>
                         <td style="vertical-align: top; padding: 2px 0; font-weight: bold;">Perihal</td>
                         <td style="vertical-align: top; padding: 2px 0; text-align: center; font-weight: bold;">:</td>
-                        <td style="vertical-align: top; padding: 2px 0; font-weight: bold;">{{ $suratBalasanPenelitian->perihal_surat_masuk }}</td>
+                        <td style="vertical-align: top; padding: 2px 0; font-weight: bold;">{{ $perihalSurat }}</td>
                     </tr>
                 </table>
 
                 {{-- Kepada Yth --}}
                 <div style="margin-bottom: 16px; font-size: 11pt; line-height: 1.4;">
                     <div>Kepada Yth;</div>
-                    @if($suratBalasanPenelitian->tujuan_nama)
-                        <div style="font-weight: bold;">{{ $suratBalasanPenelitian->tujuan_nama }}</div>
+                    @if($tujuanNama)
+                        <div style="font-weight: bold;">{{ $tujuanNama }}</div>
                     @endif
-                    <div style="font-weight: bold;">Fakultas {{ $suratBalasanPenelitian->tujuan_fakultas }} – Universitas {{ $suratBalasanPenelitian->tujuan_universitas }}</div>
+                    <div style="font-weight: bold;">Fakultas {{ $fakultas }} – Universitas {{ $univ }}</div>
                     <div>Di &nbsp; tempat</div>
                 </div>
 
@@ -101,7 +111,7 @@
 
                 {{-- Paragraf 1 --}}
                 <p style="text-align: justify; text-indent: 35px; margin: 0 0 10px 0; font-size: 11pt; line-height: 1.5;">
-                    Menindaklanjuti surat dari Fakultas {{ $suratBalasanPenelitian->tujuan_fakultas }} - Universitas {{ $suratBalasanPenelitian->tujuan_universitas }}, Nomor: {{ $suratBalasanPenelitian->nomor_surat_masuk ?: '....................' }} tentang {{ $suratBalasanPenelitian->perihal_surat_masuk }} di RS. Bintang Amin Lampung, berdasarkan surat tersebut maka kami :
+                    Menindaklanjuti surat dari Fakultas {{ $fakultas }} - Universitas {{ $univ }}, Nomor: {{ $noSuratMasuk ?: '....................' }} tentang {{ $perihalSurat }} di RS. Bintang Amin Lampung, berdasarkan surat tersebut maka kami :
                 </p>
 
                 {{-- Identitas RS --}}
@@ -120,7 +130,7 @@
 
                 {{-- Paragraf Pernyataan Bersedia --}}
                 <p style="text-align: justify; text-indent: 35px; margin: 0 0 10px 0; font-size: 11pt; line-height: 1.5;">
-                    Menyatakan bahwa kami <strong>bersedia</strong> menerima Mahasiswa/i Fakultas {{ $suratBalasanPenelitian->tujuan_fakultas }} Universitas {{ $suratBalasanPenelitian->tujuan_universitas }} untuk Penelitian di RS. Bintang Amin.
+                    Menyatakan bahwa kami <strong>bersedia</strong> menerima Mahasiswa/i Fakultas {{ $fakultas }} Universitas {{ $univ }} untuk Penelitian di RS. Bintang Amin.
                 </p>
 
                 <p style="text-align: justify; margin: 0 0 10px 0; font-size: 11pt;">
@@ -139,13 +149,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($suratBalasanPenelitian->mahasiswa as $mIdx => $mhs)
+                        @foreach($mahasiswaList as $mIdx => $mhs)
                             <tr>
                                 <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; vertical-align: top;">{{ $mIdx + 1 }}</td>
-                                <td style="border: 1px solid #000; padding: 6px 8px; font-weight: bold; vertical-align: top;">{{ $mhs->nama }}</td>
-                                <td style="border: 1px solid #000; padding: 6px 8px; text-align: center; font-family: monospace; vertical-align: top;">{{ $mhs->npm ?: '-' }}</td>
-                                <td style="border: 1px solid #000; padding: 6px 8px; vertical-align: top;">{{ $mhs->fakultas_pt }}</td>
-                                <td style="border: 1px solid #000; padding: 6px 8px; vertical-align: top;">{{ $mhs->judul_penelitian ?: '-' }}</td>
+                                <td style="border: 1px solid #000; padding: 6px 8px; font-weight: bold; vertical-align: top;">{{ $mhs['nama'] ?? '-' }}</td>
+                                <td style="border: 1px solid #000; padding: 6px 8px; text-align: center; font-family: monospace; vertical-align: top;">{{ $mhs['npm'] ?? '-' }}</td>
+                                <td style="border: 1px solid #000; padding: 6px 8px; vertical-align: top;">{{ $mhs['fakultas_pt'] ?? '-' }}</td>
+                                <td style="border: 1px solid #000; padding: 6px 8px; vertical-align: top;">{{ $mhs['judul_penelitian'] ?? '-' }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -157,14 +167,13 @@
                 </p>
             </div>
 
-            {{-- Kolom TTD Direktur --}}
-            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-                <div style="text-align: center; min-width: 220px; font-size: 11pt;">
-                    <div>Hormat Kami</div>
-                    <div style="margin-bottom: 75px;">Direktur,</div>
-                    <div style="font-weight: bold; text-decoration: underline;">{{ $namaDirektur }}</div>
-                </div>
-            </div>
+            {{-- Kolom TTD Direktur + QR Code Verifikasi Component --}}
+            <x-surat.signature-block
+                title="Hormat Kami"
+                role="Direktur,"
+                :name="$namaDirektur"
+                :qr-code="$this->generateHeaderQrCode"
+            />
         </div>
 
         {{-- Page Break untuk Lampiran --}}
@@ -183,7 +192,7 @@
                     <tr>
                         <td style="width: 90px; vertical-align: top; padding: 2px 0;">Nomor</td>
                         <td style="width: 15px; vertical-align: top; padding: 2px 0; text-align: center;">:</td>
-                        <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $suratBalasanPenelitian->no }}</td>
+                        <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $nomorSurat }}</td>
                     </tr>
                 </table>
 
@@ -199,28 +208,34 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($suratBalasanPenelitian->biaya as $bIdx => $item)
+                        @foreach($biayaList as $bIdx => $item)
+                            @php
+                                $sarana = (float) ($item['jasa_sarana'] ?? 0);
+                                $pelayanan = (float) ($item['jasa_pelayanan'] ?? 0);
+                                $jmlOrg = (int) ($item['jumlah_orang'] ?? 1);
+                                $subtotal = $item['subtotal'] ?? ($item['total'] ?? (($sarana + $pelayanan) * ($jmlOrg ?: 1)));
+                            @endphp
                             <tr>
                                 <td style="border: 1px solid #000; padding: 8px 6px; text-align: center; font-weight: bold; vertical-align: top;">{{ $bIdx + 1 }}</td>
                                 <td style="border: 1px solid #000; padding: 8px 10px; vertical-align: top;">
-                                    <div style="font-weight: bold;">{{ $item->keterangan }}</div>
-                                    <div style="font-size: 9.5pt; color: #475569;">{{ $item->jumlah_orang }} org x Rp. {{ number_format($item->jasa_sarana + $item->jasa_pelayanan, 0, ',', '.') }}</div>
+                                    <div style="font-weight: bold;">{{ $item['keterangan'] ?? '-' }}</div>
+                                    <div style="font-size: 9.5pt; color: #475569;">{{ $jmlOrg }} org x Rp. {{ number_format($sarana + $pelayanan, 0, ',', '.') }}</div>
                                 </td>
                                 <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; vertical-align: top;">
-                                    Rp. {{ number_format($item->jasa_sarana, 0, ',', '.') }}
+                                    Rp. {{ number_format($sarana, 0, ',', '.') }}
                                 </td>
                                 <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; vertical-align: top;">
-                                    Rp. {{ number_format($item->jasa_pelayanan, 0, ',', '.') }}
+                                    Rp. {{ number_format($pelayanan, 0, ',', '.') }}
                                 </td>
                                 <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; font-weight: bold; vertical-align: top;">
-                                    Rp. {{ number_format($item->total, 0, ',', '.') }}
+                                    Rp. {{ number_format($subtotal, 0, ',', '.') }}
                                 </td>
                             </tr>
                         @endforeach
                         <tr style="font-weight: bold; background-color: #f1f5f9;">
                             <td colspan="4" style="border: 1px solid #000; padding: 8px 10px; text-align: center; text-transform: uppercase;">Total</td>
                             <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; font-size: 11pt;">
-                                Rp. {{ number_format($suratBalasanPenelitian->total_biaya, 0, ',', '.') }}
+                                Rp. {{ number_format($totalBiaya, 0, ',', '.') }}
                             </td>
                         </tr>
                     </tbody>
@@ -232,14 +247,14 @@
                 </div>
             </div>
 
-            {{-- Kolom Tanda Tangan Lampiran --}}
-            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-                <div style="text-align: center; min-width: 220px; font-size: 11pt;">
-                    <div style="margin-bottom: 2px;">Bandar Lampung, {{ $tglSuratIndo }}</div>
-                    <div style="margin-bottom: 75px;">Direktur,</div>
-                    <div style="font-weight: bold; text-decoration: underline;">{{ $namaDirektur }}</div>
-                </div>
-            </div>
+            {{-- Kolom Tanda Tangan Lampiran + QR Code Component --}}
+            <x-surat.signature-block
+                role="Direktur,"
+                :name="$namaDirektur"
+                city="Bandar Lampung"
+                :date="$tglSuratIndo"
+                :qr-code="$this->generateHeaderQrCode"
+            />
         </div>
     @endif
 </div>

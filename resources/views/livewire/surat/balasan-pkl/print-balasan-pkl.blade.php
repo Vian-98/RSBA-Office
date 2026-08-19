@@ -1,13 +1,37 @@
 <div id="print-balasan-pkl-content" style="font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #000; line-height: 1.5; background: #fff; width: 100%; max-width: 210mm; margin: 0 auto; padding: 10px;">
-    @if ($suratBalasanPkl)
+    @if (!$this->canPrint)
+        {{-- Docstore Error Alert Component --}}
+        <x-surat.docstore-error-alert
+            :error="$this->docstoreError"
+            :docstore-key="$suratBalasanPkl->docstore_key ?? null"
+        />
+    @else
+        {{-- Docstore Success State --}}
         @php
-            $tglSuratIndo = \Carbon\Carbon::parse($suratBalasanPkl->tgl)->translatedFormat('d F Y');
-            $tglMasukIndo = $suratBalasanPkl->tgl_surat_masuk ? \Carbon\Carbon::parse($suratBalasanPkl->tgl_surat_masuk)->translatedFormat('d F Y') : '....................';
-            $tglMulaiIndo = $suratBalasanPkl->tgl_mulai ? \Carbon\Carbon::parse($suratBalasanPkl->tgl_mulai)->translatedFormat('d F Y') : '-';
-            $tglSelesaiIndo = $suratBalasanPkl->tgl_selesai ? \Carbon\Carbon::parse($suratBalasanPkl->tgl_selesai)->translatedFormat('d F Y') : '-';
-            $namaDirektur = optional($suratBalasanPkl->direktur)->full_nama ?? 'dr. Rachmawati, MPH';
-            $nipDirektur  = optional($suratBalasanPkl->direktur)->nip ?? '24170002';
-            $hasOrientasi = (float)$suratBalasanPkl->snap_biaya_orientasi > 0;
+            $doc = $this->docstoreData['document'] ?? [];
+            $content = $doc['content'] ?? [];
+
+            $tglSuratIndo = !empty($content['tgl']) ? \Carbon\Carbon::parse($content['tgl'])->translatedFormat('d F Y') : \Carbon\Carbon::parse($suratBalasanPkl->tgl)->translatedFormat('d F Y');
+            $tglMasukIndo = !empty($content['tgl_surat_masuk']) ? \Carbon\Carbon::parse($content['tgl_surat_masuk'])->translatedFormat('d F Y') : ($suratBalasanPkl->tgl_surat_masuk ? \Carbon\Carbon::parse($suratBalasanPkl->tgl_surat_masuk)->translatedFormat('d F Y') : '....................');
+            $tglMulaiIndo = !empty($content['tgl_mulai']) ? \Carbon\Carbon::parse($content['tgl_mulai'])->translatedFormat('d F Y') : ($suratBalasanPkl->tgl_mulai ? \Carbon\Carbon::parse($suratBalasanPkl->tgl_mulai)->translatedFormat('d F Y') : '-');
+            $tglSelesaiIndo = !empty($content['tgl_selesai']) ? \Carbon\Carbon::parse($content['tgl_selesai'])->translatedFormat('d F Y') : ($suratBalasanPkl->tgl_selesai ? \Carbon\Carbon::parse($suratBalasanPkl->tgl_selesai)->translatedFormat('d F Y') : '-');
+            $namaDirektur = $content['nama_direktur'] ?? (optional($suratBalasanPkl->direktur)->full_nama ?? 'dr. Rachmawati, MPH');
+            $nipDirektur  = $content['nip_direktur'] ?? (optional($suratBalasanPkl->direktur)->nip ?? '24170002');
+            $snapBiayaPraktik = (float) ($content['snap_biaya_praktik'] ?? $suratBalasanPkl->snap_biaya_praktik);
+            $snapBiayaOrientasi = (float) ($content['snap_biaya_orientasi'] ?? $suratBalasanPkl->snap_biaya_orientasi);
+            $hasOrientasi = $snapBiayaOrientasi > 0;
+            $jumlahMhs = (int) ($content['jumlah_mahasiswa'] ?? $suratBalasanPkl->jumlah_mahasiswa);
+            $lamaBulan = (int) ($content['lama_praktik_bulan'] ?? $suratBalasanPkl->lama_praktik_bulan);
+            $totPraktik = (float) ($content['total_biaya_praktik'] ?? $suratBalasanPkl->total_biaya_praktik);
+            $totOrientasi = (float) ($content['total_biaya_orientasi'] ?? $suratBalasanPkl->total_biaya_orientasi);
+            $grandTotal = (float) ($content['grand_total_biaya'] ?? $suratBalasanPkl->grand_total_biaya);
+            $nomorSurat = $content['no'] ?? $suratBalasanPkl->no;
+            $univ = $content['tujuan_universitas'] ?? $suratBalasanPkl->tujuan_universitas;
+            $prodi = $content['prodi'] ?? $suratBalasanPkl->prodi;
+            $tujuanNama = $content['tujuan_nama'] ?? $suratBalasanPkl->tujuan_nama;
+            $tujuanAlamat = $content['tujuan_alamat'] ?? $suratBalasanPkl->tujuan_alamat;
+            $noSuratMasuk = $content['nomor_surat_masuk'] ?? $suratBalasanPkl->nomor_surat_masuk;
+            $snapSk = $content['snap_nomor_sk'] ?? $suratBalasanPkl->snap_nomor_sk;
         @endphp
 
         <style>
@@ -39,29 +63,19 @@
             }
         </style>
 
+        {{-- Docstore Verified Badge Component --}}
+        <x-surat.docstore-badge
+            :version="$this->docstoreData['meta']['version'] ?? ($this->docstoreData['document']['version'] ?? 1)"
+            :docstore-key="$suratBalasanPkl->docstore_key"
+        />
+
         {{-- ============================================================
              HALAMAN 1: SURAT BALASAN PKL
              ============================================================ --}}
         <div style="min-height: 250mm; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-                {{-- KOP SURAT RESMI RS BINTANG AMIN --}}
-                <div style="display: flex; align-items: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 18px;">
-                    <div style="width: 80px; text-align: center; flex-shrink: 0;">
-                        <img src="{{ asset('logo-fallback.png') }}" alt="Logo RSBA" style="height: 60px; max-width: 80px; object-fit: contain;" onerror="this.style.display='none'">
-                    </div>
-                    <div style="flex: 1; text-align: center; padding-right: 80px;">
-                        <div style="font-size: 15pt; font-weight: bold; text-transform: uppercase; color: #000; letter-spacing: 0.5px; margin: 0; line-height: 1.2;">
-                            RUMAH SAKIT BINTANG AMIN
-                        </div>
-                        <div style="font-size: 11pt; font-weight: bold; color: #111; margin: 2px 0 0 0; line-height: 1.2;">
-                            PT. BINTANG AMIN HUSADA
-                        </div>
-                        <div style="font-size: 9pt; color: #333; margin-top: 3px; line-height: 1.3;">
-                            Jl. Pramuka No. 27 Kemiling – Bandar Lampung | Telp: (0721) 273601 - 273608<br>
-                            Email: cs@rspba.co.id / sdm@rspba.co.id | Website: www.rspba.co.id
-                        </div>
-                    </div>
-                </div>
+                {{-- Kop Surat RSBA Component --}}
+                <x-surat.kop-surat />
 
                 {{-- Tanggal Surat --}}
                 <div style="text-align: right; margin-bottom: 14px; font-size: 11pt;">
@@ -73,7 +87,7 @@
                     <tr>
                         <td style="width: 90px; vertical-align: top; padding: 2px 0;">Nomor</td>
                         <td style="width: 15px; vertical-align: top; padding: 2px 0; text-align: center;">:</td>
-                        <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $suratBalasanPkl->no }}</td>
+                        <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $nomorSurat }}</td>
                     </tr>
                     <tr>
                         <td style="vertical-align: top; padding: 2px 0;">Lampiran</td>
@@ -90,12 +104,12 @@
                 {{-- Kepada Yth --}}
                 <div style="margin-bottom: 16px; font-size: 11pt; line-height: 1.4;">
                     <div>Kepada Yth;</div>
-                    @if($suratBalasanPkl->tujuan_nama)
-                        <div style="font-weight: bold;">{{ $suratBalasanPkl->tujuan_nama }}</div>
+                    @if($tujuanNama)
+                        <div style="font-weight: bold;">{{ $tujuanNama }}</div>
                     @endif
-                    <div style="font-weight: bold;">Universitas {{ $suratBalasanPkl->tujuan_universitas }}</div>
-                    @if($suratBalasanPkl->tujuan_alamat)
-                        <div>{{ $suratBalasanPkl->tujuan_alamat }}</div>
+                    <div style="font-weight: bold;">Universitas {{ $univ }}</div>
+                    @if($tujuanAlamat)
+                        <div>{{ $tujuanAlamat }}</div>
                     @endif
                     <div>Di</div>
                     <div style="padding-left: 20px;">Tempat</div>
@@ -108,22 +122,22 @@
 
                 {{-- Paragraf 1 --}}
                 <p style="text-align: justify; text-indent: 35px; margin: 0 0 10px 0; font-size: 11pt; line-height: 1.5;">
-                    Menindaklanjuti surat Universitas {{ $suratBalasanPkl->tujuan_universitas }} dengan nomor surat : {{ $suratBalasanPkl->nomor_surat_masuk ?: '....................' }} tanggal {{ $tglMasukIndo }}, tentang Surat Izin Praktik dengan Jumlah Mahasiswi {{ $suratBalasanPkl->jumlah_mahasiswa }} orang. Pelaksanaan Praktik tersebut akan dilaksanakan pada tanggal {{ $tglMulaiIndo }} s.d {{ $tglSelesaiIndo }}.
+                    Menindaklanjuti surat Universitas {{ $univ }} dengan nomor surat : {{ $noSuratMasuk ?: '....................' }} tanggal {{ $tglMasukIndo }}, tentang Surat Izin Praktik dengan Jumlah Mahasiswi {{ $jumlahMhs }} orang. Pelaksanaan Praktik tersebut akan dilaksanakan pada tanggal {{ $tglMulaiIndo }} s.d {{ $tglSelesaiIndo }}.
                 </p>
 
                 {{-- Paragraf 2 --}}
                 <p style="text-align: justify; text-indent: 35px; margin: 0 0 10px 0; font-size: 11pt; line-height: 1.5;">
-                    Pada dasarnya pihak RS Bintang Amin Lampung, Bersedia memberikan izin Kunjungan Rumah Sakit kepada Mahasiswa Prodi {{ $suratBalasanPkl->prodi }} Universitas {{ $suratBalasanPkl->tujuan_universitas }} dengan ketentuan sebagai berikut :
+                    Pada dasarnya pihak RS Bintang Amin Lampung, Bersedia memberikan izin Kunjungan Rumah Sakit kepada Mahasiswa Prodi {{ $prodi }} Universitas {{ $univ }} dengan ketentuan sebagai berikut :
                 </p>
 
                 {{-- Poin Ketentuan --}}
                 <ol style="margin: 0 0 12px 0; padding-left: 30px; font-size: 11pt; line-height: 1.5; text-align: justify;">
                     <li style="margin-bottom: 4px;">
-                        Biaya praktik Mahasiswa/i Rp. {{ number_format($suratBalasanPkl->snap_biaya_praktik, 0, ',', '.') }},-/Mahasiswa /Bulan (sesuai dengan Surat Keputusan Direktur Nomor {{ $suratBalasanPkl->snap_nomor_sk ?: '023/Kpts-S4/PBA-A10/10.01.22' }})
+                        Biaya praktik Mahasiswa/i Rp. {{ number_format($snapBiayaPraktik, 0, ',', '.') }},-/Mahasiswa /Bulan (sesuai dengan Surat Keputusan Direktur Nomor {{ $snapSk ?: '023/Kpts-S4/PBA-A10/10.01.22' }})
                     </li>
                     @if($hasOrientasi)
                         <li style="margin-bottom: 4px;">
-                            Biaya Orientasi Rp {{ number_format($suratBalasanPkl->snap_biaya_orientasi, 0, ',', '.') }}./Mahasiswa/i
+                            Biaya Orientasi Rp {{ number_format($snapBiayaOrientasi, 0, ',', '.') }}./Mahasiswa/i
                         </li>
                     @endif
                     <li style="margin-bottom: 4px;">
@@ -147,14 +161,13 @@
                 </div>
             </div>
 
-            {{-- Kolom Tanda Tangan Direktur --}}
-            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-                <div style="text-align: center; min-width: 220px; font-size: 11pt;">
-                    <div style="font-weight: bold;">RS. Bintang Amin</div>
-                    <div style="margin-bottom: 75px;">Direktur</div>
-                    <div style="font-weight: bold; text-decoration: underline;">{{ $namaDirektur }}</div>
-                </div>
-            </div>
+            {{-- Kolom Tanda Tangan Direktur + QR Code Verifikasi Component --}}
+            <x-surat.signature-block
+                title="RS. Bintang Amin"
+                role="Direktur"
+                :name="$namaDirektur"
+                :qr-code="$this->generateHeaderQrCode"
+            />
         </div>
 
         {{-- Page Break untuk Lampiran --}}
@@ -173,7 +186,7 @@
                     <tr>
                         <td style="width: 90px; vertical-align: top; padding: 2px 0;">Nomor</td>
                         <td style="width: 15px; vertical-align: top; padding: 2px 0; text-align: center;">:</td>
-                        <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $suratBalasanPkl->no }}</td>
+                        <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $nomorSurat }}</td>
                     </tr>
                     <tr>
                         <td style="vertical-align: top; padding: 2px 0; font-weight: bold;">Perihal</td>
@@ -203,12 +216,12 @@
                             <td style="border: 1px solid #000; padding: 8px 6px; text-align: center; font-weight: bold; vertical-align: top;">1</td>
                             <td style="border: 1px solid #000; padding: 8px 10px; vertical-align: top;">
                                 <div style="font-weight: bold;">Izin Praktek</div>
-                                <div style="font-size: 9.5pt; color: #475569;">Rp. {{ number_format($suratBalasanPkl->snap_biaya_praktik, 0, ',', '.') }},-/ orang/ bulan</div>
+                                <div style="font-size: 9.5pt; color: #475569;">Rp. {{ number_format($snapBiayaPraktik, 0, ',', '.') }},-/ orang/ bulan</div>
                             </td>
-                            <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">{{ $suratBalasanPkl->jumlah_mahasiswa }} Orang</td>
-                            <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">{{ $suratBalasanPkl->lama_praktik_bulan }} Bulan</td>
+                            <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">{{ $jumlahMhs }} Orang</td>
+                            <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">{{ $lamaBulan }} Bulan</td>
                             <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; font-size: 10.5pt; vertical-align: top;">
-                                Rp. {{ number_format($suratBalasanPkl->total_biaya_praktik, 0, ',', '.') }},-
+                                Rp. {{ number_format($totPraktik, 0, ',', '.') }},-
                             </td>
                         </tr>
                         @if($hasOrientasi)
@@ -216,34 +229,34 @@
                                 <td style="border: 1px solid #000; padding: 8px 6px; text-align: center; font-weight: bold; vertical-align: top;">2</td>
                                 <td style="border: 1px solid #000; padding: 8px 10px; vertical-align: top;">
                                     <div style="font-weight: bold;">Orientasi</div>
-                                    <div style="font-size: 9.5pt; color: #475569;">Rp. {{ number_format($suratBalasanPkl->snap_biaya_orientasi, 0, ',', '.') }},-/ orang</div>
+                                    <div style="font-size: 9.5pt; color: #475569;">Rp. {{ number_format($snapBiayaOrientasi, 0, ',', '.') }},-/ orang</div>
                                 </td>
-                                <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">{{ $suratBalasanPkl->jumlah_mahasiswa }} Orang</td>
+                                <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">{{ $jumlahMhs }} Orang</td>
                                 <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">-</td>
                                 <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; font-size: 10.5pt; vertical-align: top;">
-                                    Rp. {{ number_format($suratBalasanPkl->total_biaya_orientasi, 0, ',', '.') }},-
+                                    Rp. {{ number_format($totOrientasi, 0, ',', '.') }},-
                                 </td>
                             </tr>
                         @endif
                         <tr style="font-weight: bold; background-color: #f1f5f9;">
                             <td colspan="4" style="border: 1px solid #000; padding: 8px 10px; text-align: center; text-transform: uppercase;">Total</td>
                             <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; font-size: 11pt;">
-                                Rp. {{ number_format($suratBalasanPkl->grand_total_biaya, 0, ',', '.') }},-
+                                Rp. {{ number_format($grandTotal, 0, ',', '.') }},-
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            {{-- Kolom Tanda Tangan Lampiran --}}
-            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-                <div style="text-align: center; min-width: 220px; font-size: 11pt;">
-                    <div style="margin-bottom: 2px;">Bandar Lampung, {{ $tglSuratIndo }}</div>
-                    <div style="font-weight: bold;">RS. Bintang Amin</div>
-                    <div style="margin-bottom: 75px;">Direktur</div>
-                    <div style="font-weight: bold; text-decoration: underline;">{{ $namaDirektur }}</div>
-                </div>
-            </div>
+            {{-- Kolom Tanda Tangan Lampiran + QR Code Component --}}
+            <x-surat.signature-block
+                title="RS. Bintang Amin"
+                role="Direktur"
+                :name="$namaDirektur"
+                city="Bandar Lampung"
+                :date="$tglSuratIndo"
+                :qr-code="$this->generateHeaderQrCode"
+            />
         </div>
     @endif
 </div>
