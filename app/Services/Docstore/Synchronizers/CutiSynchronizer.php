@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Services\Docstore\Contracts\DocumentSynchronizerInterface;
 use App\Services\Docstore\DocstoreClient;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Log;
 
 class CutiSynchronizer implements DocumentSynchronizerInterface
 {
@@ -41,7 +40,9 @@ class CutiSynchronizer implements DocumentSynchronizerInterface
                 'docstore_synced_at' => now(),
                 'docstore_status'    => 'synced',
             ]);
-            $this->client->invalidateCache($docstoreKey);
+            if (!empty($docstoreKey)) {
+                $this->client->invalidateCache($docstoreKey);
+            }
             return true;
         }
 
@@ -96,13 +97,16 @@ class CutiSynchronizer implements DocumentSynchronizerInterface
         foreach ($model->approvals as $approval) {
             $user = User::find($approval->user_id);
             $sigLog = SignatureLogs::where('user_id', $approval->user_id)
-                ->where('reference_id', $model->id)
-                ->where('reference_type', 'cuti')
-                ->latest()
+                ->where('sign_id', $model->id)
+                ->where(function ($q) {
+                    $q->where('sign_type', 'cuti')
+                      ->orWhere('sign_type', 'surat_cuti');
+                })
+                ->latest('id')
                 ->first();
 
             $cert = SignatureCerts::where('user_id', $approval->user_id)
-                ->where('status', 'active')
+                ->where('is_active', 1)
                 ->first();
 
             $statusText = 'PENDING';
@@ -118,9 +122,9 @@ class CutiSynchronizer implements DocumentSynchronizerInterface
                 'signer_order'   => (int) ($approval->order ?? 1),
                 'status'         => $statusText,
                 'signed_at'      => $approval->approved_at ? $approval->approved_at->toIso8601String() : null,
-                'signature_hash' => $approval->qr_verification_hash ?: ($sigLog->signature_hash ?? null),
-                'signature_data' => $sigLog->signature_data ?? null,
-                'original_data'  => $sigLog->original_data ?? null,
+                'signature_hash' => $approval->qr_verification_hash ?: ($sigLog->data_hash ?? null),
+                'signature_data' => $sigLog->signature ?? null,
+                'original_data'  => $sigLog->data ?? null,
                 'public_key'     => optional($cert)->public_key ?? null,
                 'is_manual'      => (bool) ($approval->is_manual ?? ($approval->status === 'manual')),
                 'manual_note'    => $approval->catatan ?? null,

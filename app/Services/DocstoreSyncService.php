@@ -161,4 +161,23 @@ class DocstoreSyncService
     {
         $this->client->invalidateCache($docstoreKey);
     }
+
+    // =========================================================================
+    // VAULT DIGITAL SIGNATURE PROXY
+    // =========================================================================
+
+    public function generateVaultCertificate(array $payload): ?array
+    {
+        return $this->client->generateVaultCertificate($payload);
+    }
+
+    public function getActiveVaultCertificate(int $userId): ?array
+    {
+        return $this->client->getActiveVaultCertificate($userId);
+    }
+
+    public function signVaultData(array $payload): ?array
+    {
+        return $this->client->signVaultData($payload);
+    }
 }

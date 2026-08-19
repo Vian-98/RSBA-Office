@@ -138,10 +138,9 @@
             </div>
         </div>
 
-        {{-- Tombol Cetak --}}
         <div class="ml-auto flex items-center gap-2 pt-2 border-t border-slate-100">
             <div id="print-balasan-pkl" class="hidden">
-                <livewire:Surat.BalasanPkl.PrintBalasanPkl :$suratBalasanPkl />
+                <livewire:Surat.BalasanPkl.PrintBalasanPkl :$suratBalasanPkl :key="'print-balasan-pkl-'.$suratBalasanPkl->id.'-'.($suratBalasanPkl->docstore_key ?? 'draft')" />
             </div>
             <x-ts:button sm icon="tabler.printer" x-on:click="printArea('print-balasan-pkl')">
                 Cetak Surat & Lampiran

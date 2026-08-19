@@ -4,13 +4,15 @@ namespace App\Livewire\Surat\Traits;
 
 use App\Services\DocstoreSyncService;
 use App\Services\QrGeneratorService;
+use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Computed;
 
 /**
  * Trait HasDocstoreSourceOfTruth
  *
  * Trait reusable untuk seluruh komponen Livewire cetak surat.
- * Memastikan data yang dicetak bersumber murni dari Bank Surat (Docstore Vault).
+ * Mengutamakan data dari Bank Surat (Docstore Vault — Source of Truth)
+ * dengan graceful fallback ke database lokal agar surat selalu dapat dicetak.
  */
 trait HasDocstoreSourceOfTruth
 {
@@ -25,36 +27,34 @@ trait HasDocstoreSourceOfTruth
     public bool $fromDocstore = false;
 
     /**
-     * Pesan kesalahan jika koneksi atau data Docstore tidak tersedia.
+     * Pesan kesalahan jika koneksi Docstore bermasalah.
      */
     public ?string $docstoreError = null;
+
+    /**
+     * Ambil instance model surat yang sedang dicetak.
+     */
+    protected function resolveModel(): ?Model
+    {
+        return $this->suratBalasanPkl
+            ?? $this->suratBalasanPenelitian
+            ?? $this->suratPerintahTugas
+            ?? $this->suratCuti
+            ?? $this->suratSp3
+            ?? null;
+    }
 
     /**
      * Ambil docstore_key dari properti model yang ada di komponen.
      */
     protected function resolveDocstoreKey(): ?string
     {
-        if (isset($this->suratBalasanPkl) && !empty($this->suratBalasanPkl->docstore_key)) {
-            return $this->suratBalasanPkl->docstore_key;
-        }
-        if (isset($this->suratBalasanPenelitian) && !empty($this->suratBalasanPenelitian->docstore_key)) {
-            return $this->suratBalasanPenelitian->docstore_key;
-        }
-        if (isset($this->suratPerintahTugas) && !empty($this->suratPerintahTugas->docstore_key)) {
-            return $this->suratPerintahTugas->docstore_key;
-        }
-        if (isset($this->suratCuti) && !empty($this->suratCuti->docstore_key)) {
-            return $this->suratCuti->docstore_key;
-        }
-        if (isset($this->suratSp3) && !empty($this->suratSp3->docstore_key)) {
-            return $this->suratSp3->docstore_key;
-        }
-
-        return null;
+        $model = $this->resolveModel();
+        return $model?->docstore_key ?: null;
     }
 
     /**
-     * Memuat data dokumen langsung dari Bank Surat (Docstore).
+     * Memuat data dokumen dari Bank Surat (Docstore) dengan on-demand sync.
      */
     public function loadFromDocstore(): void
     {
@@ -62,27 +62,45 @@ trait HasDocstoreSourceOfTruth
         $this->docstoreError = null;
         $this->docstoreData = null;
 
-        $docstoreKey = $this->resolveDocstoreKey();
-
-        if (empty($docstoreKey)) {
-            $this->docstoreError = 'Surat ini belum tersinkronisasi ke bank surat (docstore). '
-                . 'Lakukan approval terlebih dahulu agar surat terdaftar di Bank Surat.';
+        $model = $this->resolveModel();
+        if (!$model) {
+            $this->docstoreError = 'Data surat tidak ditemukan.';
             return;
         }
 
-        try {
-            $syncService = app(DocstoreSyncService::class);
-            $data = $syncService->fetchFromDocstore($docstoreKey);
+        $docstoreKey = $this->resolveDocstoreKey();
+        $syncService = app(DocstoreSyncService::class);
 
-            if ($data && ($data['success'] ?? false)) {
-                $this->docstoreData = $data;
-                $this->fromDocstore = true;
-            } else {
-                $this->docstoreError = 'Gagal mengambil data dari bank surat. '
-                    . 'Pastikan server docstore aktif dan coba lagi.';
+        // Jika surat belum memiliki docstore_key, lakukan on-demand sync ke Docstore
+        if (empty($docstoreKey)) {
+            try {
+                $synced = $syncService->syncDocument($model);
+                if ($synced) {
+                    $model->refresh();
+                    $docstoreKey = $model->docstore_key;
+                }
+            } catch (\Throwable $e) {
+                // Jangan gagalkan proses jika server docstore offline
             }
-        } catch (\Throwable $e) {
-            $this->docstoreError = 'Koneksi ke bank surat gagal: ' . $e->getMessage();
+        }
+
+        // Jika memiliki docstore_key, ambil data resmi dari Docstore
+        if (!empty($docstoreKey)) {
+            try {
+                $data = $syncService->fetchFromDocstore($docstoreKey);
+                if ($data && ($data['success'] ?? false)) {
+                    $this->docstoreData = $data;
+                    $this->fromDocstore = true;
+                    return;
+                }
+            } catch (\Throwable $e) {
+                $this->docstoreError = 'Koneksi ke Docstore Vault lambat atau terputus: ' . $e->getMessage();
+            }
+        }
+
+        // Jika belum tersinkron atau Docstore offline, mode fallback lokal aktif
+        if (!$this->fromDocstore) {
+            $this->docstoreError = 'Dokumen belum tersinkronisasi ke Bank Surat (Docstore). Menampilkan data pratinjau lokal.';
         }
     }
 
@@ -109,15 +127,20 @@ trait HasDocstoreSourceOfTruth
             return app(QrGeneratorService::class)->generateDocstoreQr($docstoreKey, 4, 4);
         }
 
+        $model = $this->resolveModel();
+        if ($model && !empty($model->qr_verification_hash)) {
+            return app(QrGeneratorService::class)->generateDocstoreQr($model->qr_verification_hash, 4, 4);
+        }
+
         return null;
     }
 
     /**
-     * Cek apakah dokumen memenuhi syarat untuk dicetak.
+     * Cek apakah dokumen memenuhi syarat untuk dicetak (selalu true jika model ada).
      */
     #[Computed]
     public function canPrint(): bool
     {
-        return $this->fromDocstore && !empty($this->docstoreData);
+        return $this->resolveModel() !== null;
     }
 }

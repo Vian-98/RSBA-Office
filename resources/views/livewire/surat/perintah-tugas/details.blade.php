@@ -89,10 +89,9 @@
             </div>
         </div>
 
-        {{-- Tombol Cetak --}}
         <div class="ml-auto flex items-center gap-2 pt-2 border-t border-slate-100">
             <div id="print-perintah-tugas" class="hidden">
-                <livewire:Surat.PerintahTugas.PrintPerintahTugas :$suratPerintahTugas />
+                <livewire:Surat.PerintahTugas.PrintPerintahTugas :$suratPerintahTugas :key="'print-perintah-tugas-'.$suratPerintahTugas->id.'-'.($suratPerintahTugas->docstore_key ?? 'draft')" />
             </div>
             <x-ts:button sm icon="tabler.printer" x-on:click="printArea('print-perintah-tugas')">
                 Cetak Surat Perintah Tugas

@@ -40,7 +40,9 @@ class BalasanPenelitianSynchronizer implements DocumentSynchronizerInterface
                 'docstore_synced_at' => now(),
                 'docstore_status'    => 'synced',
             ]);
-            $this->client->invalidateCache($docstoreKey);
+            if (!empty($docstoreKey)) {
+                $this->client->invalidateCache($docstoreKey);
+            }
             return true;
         }
 
@@ -55,22 +57,22 @@ class BalasanPenelitianSynchronizer implements DocumentSynchronizerInterface
         /** @var SuratBalasanPenelitian $model */
         $statusDoc = $this->mapDocumentStatus($model);
 
-        $mahasiswaList = $model->mahasiswa->map(fn($m) => [
+        $mahasiswaList = $model->mahasiswa ? $model->mahasiswa->map(fn($m) => [
             'id'               => $m->id,
             'nama'             => $m->nama,
             'npm'              => $m->npm,
             'fakultas_pt'      => $m->fakultas_pt,
             'judul_penelitian' => $m->judul_penelitian,
-        ])->toArray();
+        ])->toArray() : [];
 
-        $biayaList = $model->biaya->map(fn($b) => [
+        $biayaList = $model->biaya ? $model->biaya->map(fn($b) => [
             'id'             => $b->id,
             'keterangan'     => $b->keterangan,
             'jumlah_orang'   => (int) $b->jumlah_orang,
             'jasa_sarana'    => (float) $b->jasa_sarana,
             'jasa_pelayanan' => (float) $b->jasa_pelayanan,
             'subtotal'       => (float) $b->total,
-        ])->toArray();
+        ])->toArray() : [];
 
         return [
             'document_number' => $model->no,
@@ -90,7 +92,7 @@ class BalasanPenelitianSynchronizer implements DocumentSynchronizerInterface
                 'tgl_surat_masuk'          => $model->tgl_surat_masuk ? $model->tgl_surat_masuk->format('Y-m-d') : null,
                 'perihal_surat_masuk'      => $model->perihal_surat_masuk,
                 'total_biaya'              => (float) $model->total_biaya,
-                'direktur_user_id'         => $model->direktur_user_id,
+                'disetujui_oleh'           => $model->disetujui_oleh,
                 'nama_direktur'            => optional($model->direktur)->full_nama ?? 'dr. Rachmawati, MPH',
                 'nip_direktur'             => optional($model->direktur)->nip ?? '24170002',
                 'mahasiswa'                => $mahasiswaList,
@@ -105,29 +107,35 @@ class BalasanPenelitianSynchronizer implements DocumentSynchronizerInterface
         /** @var SuratBalasanPenelitian $model */
         $signatures = [];
 
-        $userId = $model->direktur_user_id;
-        $user = $userId ? User::find($userId) : null;
-        $sigLog = SignatureLogs::where('reference_id', $model->id)
-            ->where('reference_type', 'balasan_penelitian')
-            ->latest()
+        $karyawanId = $model->disetujui_oleh;
+        $user = $karyawanId ? User::where('karyawan_id', $karyawanId)->first() : null;
+        $userId = $user?->id;
+
+        $sigLog = SignatureLogs::where('sign_id', $model->id)
+            ->where(function ($q) {
+                $q->where('sign_type', 'balasan_penelitian')
+                  ->orWhere('sign_type', 'surat_balasan_penelitian');
+            })
+            ->latest('id')
             ->first();
 
-        $cert = $userId ? SignatureCerts::where('user_id', $userId)->where('status', 'active')->first() : null;
+        $cert = $userId ? SignatureCerts::where('user_id', $userId)->where('is_active', 1)->first() : null;
 
-        $statusText = $model->status === 'approved' ? 'SIGNED' : ($model->status === 'rejected' ? 'REJECTED' : 'PENDING');
+        $statusVal = $this->mapDocumentStatus($model);
+        $statusText = $statusVal === 'approved' ? 'SIGNED' : ($statusVal === 'rejected' ? 'REJECTED' : 'PENDING');
 
         $signatures[] = [
             'signer_name'    => optional($model->direktur)->full_nama ?? optional($user)->name ?? 'dr. Rachmawati, MPH',
             'signer_role'    => 'Direktur Rumah Sakit',
             'signer_order'   => 1,
             'status'         => $statusText,
-            'signed_at'      => $model->approved_at ? $model->approved_at->toIso8601String() : ($model->tgl ? $model->tgl->toIso8601String() : null),
-            'signature_hash' => $model->qr_verification_hash ?: ($sigLog->signature_hash ?? null),
-            'signature_data' => $sigLog->signature_data ?? null,
-            'original_data'  => $sigLog->original_data ?? null,
+            'signed_at'      => $model->signed_at ? $model->signed_at->toIso8601String() : null,
+            'signature_hash' => $model->qr_verification_hash ?: ($sigLog->data_hash ?? null),
+            'signature_data' => $sigLog->signature ?? null,
+            'original_data'  => $sigLog->data ?? null,
             'public_key'     => optional($cert)->public_key ?? null,
             'is_manual'      => false,
-            'manual_note'    => null,
+            'manual_note'    => $model->catatan_approval ?? null,
         ];
 
         return $signatures;
@@ -135,13 +143,16 @@ class BalasanPenelitianSynchronizer implements DocumentSynchronizerInterface
 
     protected function mapDocumentStatus(SuratBalasanPenelitian $model): string
     {
-        $statusLower = strtolower($model->status ?? 'approved');
+        $rawStatus = $model->status;
+        $statusStr = is_object($rawStatus) && isset($rawStatus->value) ? $rawStatus->value : (string) $rawStatus;
+        $statusLower = strtolower($statusStr);
+
         if (in_array($statusLower, ['rejected', 'ditolak'])) {
             return 'rejected';
         }
-        if (in_array($statusLower, ['pending', 'draft', 'proses'])) {
-            return 'pending';
+        if (in_array($statusLower, ['approved', 'disetujui', 'signed'])) {
+            return 'approved';
         }
-        return 'approved';
+        return 'pending';
     }
 }

@@ -221,6 +221,9 @@ class Add extends Component
 
             DB::commit();
 
+            // Sync langsung ke Docstore Bank Surat
+            app(\App\Services\DocumentSignatureService::class)->triggerDocstoreSync($surat->fresh());
+
             $this->dispatch('refresh-table-balasan-pkl');
             $this->dispatch('close-modal', id: 'modal-add-balasan-pkl');
 

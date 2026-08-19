@@ -128,13 +128,24 @@ class DocumentSignatureService
      */
     public function checkAndGenerateHeaderQr(Model $surat): bool
     {
+        if (!method_exists($surat, 'approvals')) {
+            // Untuk model single approval (Balasan PKL, Balasan Penelitian, Perintah Tugas)
+            $rawStatus = $surat->status;
+            $statusStr = is_object($rawStatus) && isset($rawStatus->value) ? $rawStatus->value : (string) $rawStatus;
+            if (in_array(strtolower($statusStr), ['approved', 'disetujui', 'signed'])) {
+                $this->triggerDocstoreSync($surat);
+                return true;
+            }
+            return false;
+        }
+
         if (!$surat->relationLoaded('approvals')) {
             $surat->load('approvals');
         }
 
         $approvals = $surat->approvals;
 
-        if ($approvals->isEmpty()) {
+        if (!$approvals || $approvals->isEmpty()) {
             return false;
         }
 
