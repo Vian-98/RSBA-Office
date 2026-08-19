@@ -162,6 +162,40 @@ class Rekap extends Component
             403,
             'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Rekap Absensi.'
         );
+        $this->bulan = $this->bulan ?: (int) date('m');
+        $this->tahun = $this->tahun ?: (int) date('Y');
+    }
+
+    public function render()
+    {
+        $user = auth()->user();
+        $allowedRuanganIds = null;
+        if ($user && !$user->can('view-kepegawaian-laporan')) {
+            $allowedRuanganIds = $user->getRuanganKoordinatorIds() ?? [];
+        }
+
+        $ruanganQuery = Ruangan::orderBy('nama');
+        if ($allowedRuanganIds !== null) {
+            $ruanganQuery->whereIn('id', $allowedRuanganIds);
+        }
+        $ruangans = $ruanganQuery->get();
+
+        $karyawanListQuery = Karyawan::orderBy('nama');
+        if ($allowedRuanganIds !== null) {
+            $karyawanListQuery->whereIn('ruangan_id', $allowedRuanganIds);
+        }
+        $karyawans = $karyawanListQuery->get();
+
+        // 1. Base Query for JadwalKerjaDetail
+        $baseQuery = JadwalKerjaDetail::query()
+            ->whereNotNull('status_kehadiran');
+
+        if ($allowedRuanganIds !== null) {
+            $baseQuery->whereHas('jadwalKerja', function ($q) use ($allowedRuanganIds) {
+                $q->whereIn('ruangan_id', $allowedRuanganIds);
+            });
+        }
+
         if ($this->mode === 'bulanan') {
             $baseQuery->whereMonth('tanggal', $this->bulan)
                       ->whereYear('tanggal', $this->tahun);
@@ -431,9 +465,12 @@ class Rekap extends Component
         }
 
         return view('livewire.kepegawaian.absensi.rekap', [
-            'rekapKaryawan' => $rekapKaryawan,
-            'summaryStats' => $summaryStats,
+            'ruangans' => $ruangans,
+            'karyawans' => $karyawans,
             'records' => $records,
+            'summary' => $summary,
+            'rekapKaryawan' => $rekapKaryawan,
+            'paginatedKaryawans' => $paginatedKaryawans,
             'globalHistoryLogs' => $globalHistoryLogs,
         ]);
     }
