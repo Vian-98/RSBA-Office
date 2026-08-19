@@ -144,7 +144,6 @@ class Karyawan extends Model
     {
         return $this->hasMany(KaryawanDocument::class, 'karyawan_id');
     }
-
     // Get Ruangan Utama (Primary Room)
     public function ruanganUtama()
     {

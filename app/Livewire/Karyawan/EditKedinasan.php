@@ -154,89 +154,85 @@ class EditKedinasan extends Component
         }
     }
 
-    public function viewDocument($documentId): void
+    public function viewDocument(int $documentId): void
     {
-        $this->previewDocument = KaryawanDocument::find($documentId);
-        if ($this->previewDocument) {
-            $this->dispatch('open-modal', id: 'view-sk-document-modal');
-        } else {
-            $this->toast()->error('Dokumen Tidak Ditemukan', 'File dokumen tidak ditemukan atau telah dihapus.')->send();
+        $doc = KaryawanDocument::find($documentId);
+        if (!$doc) {
+            $this->toast()->error('File tidak ditemukan', 'Dokumen SK tidak tersedia di database.')->send();
+            return;
         }
+
+        $this->previewDocument = $doc;
+        $this->dispatch('open-modal', id: 'view-sk-document-modal');
     }
 
-    public function updatedFormJabatan($value): void
+    public function updated($field)
     {
-        $jabatan = Jabatan::find($value);
-        $this->form->bagian = $jabatan?->bagian_id ?? '';
-    }
+        // When status is changed to pns / ptt_daerah / ptt_pusat -> auto set golongan
+        if ($field === 'form.status' && in_array($this->form->status, ['pns', 'ptt_daerah', 'ptt_pusat'])) {
+            $this->form->autoSetGolongan();
+        }
 
-    public function updatedFormRuangan($value)
-    {
-        if (is_array($value)) {
-            $this->form->ruangan = $value['id'] ?? $value['value'] ?? (isset($value[0]) ? $value[0] : null);
+        // When custom pendidikan matrix selection changes -> re-evaluate golongan
+        if ($field === 'form.pendidikan_golongan') {
+            $this->form->autoSetGolongan();
         }
     }
 
     public function update()
     {
-        $this->validate($this->rules());
+        $this->validate();
 
-        // update status or kategori kerja
-        if (($this->form->status != $this->status_init) || ($this->form->kategori_kerja != $this->kategori_init)) {
+        // update status
+        if ($this->form->status != $this->status_init) {
             $this->updateStatus();
         }
 
+        // update kategori kerja
+        if ($this->form->kategori_kerja != $this->kategori_init) {
+            $this->updateKategoriKerja();
+        }
+
         // update jabatan
-        if ($this->form->tgl_jabatan && (
-            $this->form->jabatan != $this->jabatan_init ||
-            $this->form->bagian != $this->bagian_init
-        )) {
+        if ($this->form->jabatan != $this->jabatan_init || $this->form->bagian != $this->bagian_init) {
             $this->updateJabatan();
         }
 
         // update ruangan
-        if ($this->form->tgl_ruangan && ($this->form->ruangan != $this->ruangan_init)) {
+        if ($this->form->ruangan != $this->ruangan_init) {
             $this->updateRuangan();
         }
 
-        // update ruangan, kategori kerja, dan pendidikan terakhir
-        $data = [];
-        
-        $ruanganRaw = $this->form->ruangan;
-        if (is_array($ruanganRaw)) {
-            $ruanganRaw = $ruanganRaw['id'] ?? $ruanganRaw['value'] ?? (isset($ruanganRaw[0]) ? $ruanganRaw[0] : null);
+        // update dinas
+        if ($this->form->dinas != $this->dinas_init) {
+            $this->updateDinas();
         }
-        $ruanganId = (empty($ruanganRaw) || $ruanganRaw == '') ? null : (int) $ruanganRaw;
-
-        if ($ruanganId != $this->ruangan_init) {
-            $data['ruangan_id'] = $ruanganId;
-            $this->ruangan_init = $ruanganId;
-            $this->form->ruangan = $ruanganId;
-        }
-        
-        $data['kategori_kerja'] = $this->form->kategori_kerja;
-        $data['pendidikan_setara'] = empty($this->form->pendidikan_setara) ? null : $this->form->pendidikan_setara;
-        
-        if (count($data) > 0) {
-            $this->form->karyawan->update($data);
-            if ($this->form->kategori_kerja === 'reguler' || $this->form->kategori_kerja === \App\Enums\KategoriKerja::REGULER) {
-                \App\Models\Sdm\JadwalKerja::syncKaryawanRegulerSchedule($this->form->karyawan->id);
-            }
-            $this->dispatch('updated-karywan');
-        }
-
-        $this->toast()
-            ->success('Sukses', 'Update data kedinasan berhasil.')
-            ->send();
     }
 
-    function updateStatus()
+    public function updateKategoriKerja()
     {
+        try {
+            $this->form->karyawan->update([
+                'kategori_kerja' => $this->form->kategori_kerja,
+            ]);
+            $this->kategori_init = $this->form->kategori_kerja;
+            $this->dispatch('kategori-kerja-updated');
+            $this->toast()
+                ->success('Sukses', 'Kategori kerja berhasil diperbarui.')
+                ->send();
+        } catch (Throwable $th) {
+            $this->toast()
+                ->error('Failed', 'Error : ' . $th->getMessage())
+                ->send();
+        }
+    }
 
+    public function updateStatus()
+    {
         try {
             $data = [
-                'status' => $this->form->status,
-                'kategori_kerja' => $this->form->kategori_kerja,
+                'status'     => $this->form->status,
+                'tgl_status' => $this->form->tgl_status,
             ];
 
             // update

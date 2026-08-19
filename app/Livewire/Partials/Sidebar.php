@@ -5,7 +5,6 @@ namespace App\Livewire\Partials;
 use App\Models\Menu;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Isolate;
 use Livewire\Attributes\On;
 
@@ -38,7 +37,7 @@ class Sidebar extends Component
         cache()->forget('user-sidebar-menu:' . auth()->id());
         cache()->forget('user-permissions:view:' . auth()->id());
         cache()->forget('user-sidebar-menu:base');
-        
+
         $this->loadMenus();
     }
 
@@ -48,7 +47,6 @@ class Sidebar extends Component
     private function loadMenus(): void
     {
         $allMenus = $this->getPermittedMenus(auth()->id());
-        $allMenus = $this->injectAkreditasiSubMenus($allMenus);
         $this->menus = $this->applySearchFilter($allMenus);
     }
 
@@ -109,7 +107,6 @@ class Sidebar extends Component
                     'permission'   => $menu->permission ?? '',
                     'group'        => $menu->group?->nama() ?? '',
                     'submenus'   => $menu->submenus
-                        ->sortBy(fn($sub) => trim($sub->nama) === 'Rekap Bulanan' ? '00_rekap_bulanan' : $sub->nama)
                         ->map(fn($sub) => [
                             'id'           => $sub->id,
                             'nama'         => $sub->nama,
@@ -178,7 +175,6 @@ class Sidebar extends Component
 
         return $menus;
     }
-
 
 
     private function applySearchFilter(array $menus): array
@@ -332,30 +328,30 @@ class Sidebar extends Component
                 }
             }
             // Dokter otomatis memiliki akses melihat "Jadwal Kerja"
-            if ($user && $user->isDokter()) {
-                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
-                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
-                }
-            }
+            // if ($user && $user->isDokter()) {
+            //     if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+            //         $permissions[] = 'view-kepegawaian-jadwal-kerja';
+            //     }
+            // }
 
             // Filter ketersediaan menu Jadwal Kerja sesuai wewenang user
-            if ($user && ($user->can('view-kepegawaian-jadwal-kerja') || $user->isDokter() || $user->isKoordinator())) {
-                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
-                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
-                }
-            } else {
-                $permissions = array_values(array_filter($permissions, fn($p) => $p !== 'view-kepegawaian-jadwal-kerja'));
-            }
+            // if ($user && ($user->can('view-kepegawaian-jadwal-kerja') || $user->isDokter() || $user->isKoordinator())) {
+            //     if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+            //         $permissions[] = 'view-kepegawaian-jadwal-kerja';
+            //     }
+            // } else {
+            //     $permissions = array_values(array_filter($permissions, fn($p) => $p !== 'view-kepegawaian-jadwal-kerja'));
+            // }
 
             // Allow users with assigned ruangan to view the asset & pengajuan menu
-            if ($user?->karyawan?->ruangan_id) {
-                if (!in_array('view-umum-asset', $permissions)) {
-                    $permissions[] = 'view-umum-asset';
-                }
-                if (!in_array('view-umum-pengajuan', $permissions)) {
-                    $permissions[] = 'view-umum-pengajuan';
-                }
-            }
+            // if ($user?->karyawan?->ruangan_id) {
+            //     if (!in_array('view-umum-asset', $permissions)) {
+            //         $permissions[] = 'view-umum-asset';
+            //     }
+            //     if (!in_array('view-umum-pengajuan', $permissions)) {
+            //         $permissions[] = 'view-umum-pengajuan';
+            //     }
+            // }
 
             return $permissions;
         });

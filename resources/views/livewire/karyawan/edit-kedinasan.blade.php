@@ -131,7 +131,7 @@
                                     <td class="px-3 py-2 font-semibold text-slate-800">
                                         {{ $histR->nama }}
                                         @if($histR->pivot->is_utama)
-                                            <span class="text-[10px] text-emerald-600 font-bold ml-1">(Utama)</span>
+                                             <span class="text-[10px] text-emerald-600 font-bold ml-1">(Utama)</span>
                                         @endif
                                     </td>
                                     <td class="px-3 py-2 font-medium text-slate-700">

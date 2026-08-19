@@ -158,7 +158,6 @@ class PermissionSeeder extends Seeder
             'delete-kepegawaian-master-bagian-koordinator',
             'view-dashboard-poli',
             'edit-tgl-masuk-karyawan',
-
             // ── Hak Akses Eksekutif & Otorisasi Global ──
             'super-admin-bypass',
             'approve-kepegawaian-cuti',
@@ -168,6 +167,7 @@ class PermissionSeeder extends Seeder
             'manage-kepegawaian-master-aturan',
             'unlock-payroll-approved',
             'view-umum-maintenance-ticket-detail',
+            'view-server-room-monitoring',
         ];
 
         foreach ($permissions as $permission) {

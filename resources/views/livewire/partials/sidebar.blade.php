@@ -21,8 +21,8 @@
                     <x-logo class="h-10 w-auto" />
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-sm font-bold text-slate-800 tracking-wider whitespace-nowrap">RS Bintang Amin</span>
-                    <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-widest leading-none mt-0.5">Office Portal</span>
+                    <span class="text-sm font-bold text-slate-800 tracking-wider whitespace-nowrap">{{ $rs?->nama ?? 'RS Bintang Amin' }}</span>
+                    <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-widest leading-none mt-0.5">{{ config('app.name', 'Office Portal') }}</span>
                 </div>
             </div>
 
@@ -36,10 +36,7 @@
                 </div>
             </div>
 
-            {{-- menu list --}}
-            <div class="px-3">
-                <x-menus :menus="$menus" class="flex" />
-            </div>
+            <x-menus :menus="$menus" class="flex" />
         </div>
 
         {{-- Profile Footer --}}

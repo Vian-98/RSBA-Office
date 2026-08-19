@@ -40,7 +40,6 @@ class KaryawanForm extends Form
     public $dom_kec;
     public $dom_desa;
     public $dom_alamat;
-
     public $ihs_number;
     public $no_str;
     public $jenis_str;

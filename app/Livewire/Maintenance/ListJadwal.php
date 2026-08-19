@@ -29,6 +29,7 @@ class ListJadwal extends Component implements HasTable, HasForms, HasActions
     public int $selectedId; // selected jadwal id
 
     #[On('maintenance-work-updated')]
+    #[On('maintenance-ticket-created')]
     public function refreshTable(): void
     {
         $this->resetTable();
