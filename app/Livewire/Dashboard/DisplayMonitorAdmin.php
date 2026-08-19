@@ -22,7 +22,7 @@ class DisplayMonitorAdmin extends Component
         if (!$user) {
             return false;
         }
-        return $user->hasRole(['Super-Admin', 'SuperAdmin', 'superadmin']) || ($user->is_superadmin ?? false);
+        return $user->traitHasPermissionTo('super-admin-bypass') || ($user->is_superadmin ?? false);
     }
 
     public function render()

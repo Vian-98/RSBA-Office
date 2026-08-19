@@ -126,10 +126,10 @@ class TableCuti extends Component implements HasTable, HasForms, HasActions
                             $approved_me = $record->approvals
                                 ->contains('disetujui_oleh', auth()->user()->karyawan_id);
 
-                            $isSuperAdmin = auth()->user()->hasRole('Super-Admin');
+                            $canApproveGlobal = auth()->user()->can('approve-kepegawaian-cuti');
 
                             return ($record->status === StatusApproval::WAITING || $record->status === StatusApproval::PENDING)
-                                && ($approved_me || $isSuperAdmin);
+                                && ($approved_me || $canApproveGlobal);
                         }
                     ),
 

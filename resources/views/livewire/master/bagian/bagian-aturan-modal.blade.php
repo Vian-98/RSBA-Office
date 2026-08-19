@@ -4,7 +4,7 @@
     </div>
 
     @php
-        $isSdmUser = auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum']);
+        $isSdmUser = auth()->user()?->can('manage-kepegawaian-master-aturan');
     @endphp
 
     {{-- Form Tambah/Edit Aturan (Hanya untuk SDM ke atas) --}}

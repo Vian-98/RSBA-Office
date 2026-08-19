@@ -11,7 +11,7 @@ class JadwalKerjaPolicy
 {
     public function generate(User $user): bool
     {
-        if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+        if ($user->can('add-kepegawaian-jadwal-kerja')) {
             return true;
         }
 
@@ -27,10 +27,6 @@ class JadwalKerjaPolicy
     {
         if (!$user->can('edit-kepegawaian-jadwal-kerja')) {
             return false;
-        }
-
-        if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
-            return true;
         }
 
         $ruanganIds = $user->getRuanganKoordinatorIds();
@@ -73,7 +69,7 @@ class JadwalKerjaPolicy
             return false;
         }
 
-        return $user->can('approve-jadwal-kabid') || $user->isKepalaDept() || $user->hasRole('Kepala-Bidang');
+        return $user->can('approve-jadwal-kabid') || $user->isKepalaDept();
     }
 
     public function setujuiWadir(User $user, JadwalKerja $jadwalKerja): bool
@@ -82,7 +78,7 @@ class JadwalKerjaPolicy
             return false;
         }
 
-        return $user->can('approve-jadwal-wadir') || $user->isWadir() || $user->hasRole('Wakil-Direktur');
+        return $user->can('approve-jadwal-wadir') || $user->isWadir();
     }
 
     public function kembalikanDraft(User $user, JadwalKerja $jadwalKerja): bool
@@ -109,13 +105,13 @@ class JadwalKerjaPolicy
             return false;
         }
 
-        if ($user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+        $ruanganIds = $user->getRuanganKoordinatorIds();
+        if ($ruanganIds === null) {
             return true;
         }
 
         // Restrict based on the ruangan of the schedule details being swapped
         $ruanganIdDetail = $jadwalTukar->detailPemohon?->jadwalKerja?->ruangan_id;
-        $ruanganIds = $user->getRuanganKoordinatorIds();
-        return $ruanganIds !== null && in_array($ruanganIdDetail, $ruanganIds);
+        return in_array($ruanganIdDetail, $ruanganIds);
     }
 }

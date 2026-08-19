@@ -62,7 +62,7 @@ class Sidebar extends Component
         return cache()->remember($cacheKey, 60, function () use ($userId) {
             $allMenus = $this->getCachedBaseMenus();
 
-            if (Auth::user()->hasRole('Super-Admin')) {
+            if (Auth::user()->traitHasPermissionTo('super-admin-bypass')) {
                 return $allMenus;
             }
 
@@ -132,8 +132,7 @@ class Sidebar extends Component
     private function injectAkreditasiSubMenus(array $menus): array
     {
         $user = Auth::user();
-        $hasAccess = $user?->hasRole('Super-Admin')
-            || $user?->can('view-kepegawaian-akreditasi')
+        $hasAccess = $user?->can('view-kepegawaian-akreditasi')
             || $user?->can('assesor-akreditasi');
 
         if (!$hasAccess) {
@@ -272,8 +271,8 @@ class Sidebar extends Component
                 }));
             }
 
-            // Modul Umum & Asset: Hanya untuk Kabag Umum / Wadir SDM-Umum / Super-Admin / Bagian-Umum
-            if ($user && ($user->isKabagUmum() || $user->isWadir() || $user->hasRole(['Super-Admin', 'Bagian-Umum']))) {
+            // Modul Umum & Asset: Hanya untuk Kabag Umum / Wadir SDM-Umum / User dengan izin view-umum-asset
+            if ($user && ($user->isKabagUmum() || $user->isWadir() || $user->can('view-umum-asset'))) {
                 $permissions = array_merge($permissions, [
                     'view-umum-asset',
                     'view-umum-pengajuan',
@@ -282,8 +281,8 @@ class Sidebar extends Component
                 ]);
             }
 
-            // Modul Keuangan: Hanya untuk Kabag Keuangan / Super-Admin / Keuangan
-            if ($user && ($user->isKabagKeuangan() || $user->hasRole(['Super-Admin', 'Keuangan']))) {
+            // Modul Keuangan: Hanya untuk Kabag Keuangan / User dengan izin view-keuangan-hutang
+            if ($user && ($user->isKabagKeuangan() || $user->can('view-keuangan-hutang'))) {
                 $permissions = array_merge($permissions, [
                     'view-keuangan-hutang',
                     'view-keuangan-piutang',
@@ -308,7 +307,7 @@ class Sidebar extends Component
             }
 
             // Tim Pajak otomatis mendapatkan akses menu Pajak PPh 21, Rekap Gaji, Karyawan, & Dokter
-            if ($user && ($user->hasRole('Pajak') || $user->hasRole('Super-Admin'))) {
+            if ($user && $user->can('view-kepegawaian-master-aturan-pajak')) {
                 if (!in_array('view-kepegawaian-master-aturan-pajak', $permissions)) {
                     $permissions[] = 'view-kepegawaian-master-aturan-pajak';
                 }

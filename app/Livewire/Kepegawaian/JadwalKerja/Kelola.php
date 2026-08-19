@@ -59,8 +59,7 @@ class Kelola extends Component
         $canManage = false;
 
         if ($user) {
-            $isRestrictedGuest = $user->hasRole('Guest')
-                && !$user->isKoordinator()
+            $isRestrictedGuest = !$user->isKoordinator()
                 && !$user->isKepalaDept()
                 && !$user->isWadir()
                 && !$user->can('view-kepegawaian-jadwal-kerja');

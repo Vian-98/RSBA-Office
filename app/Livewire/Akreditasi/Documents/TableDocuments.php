@@ -166,7 +166,7 @@ class TableDocuments extends Component implements HasTable, HasForms, HasActions
                             ->send();
                     })
                     ->visible(
-                        fn() => auth()->user()->hasRole('Super-Admin') or auth()->user()->can('sekretariat-akreditasi')
+                        fn() => auth()->user()->can('view-kepegawaian-akreditasi') or auth()->user()->can('sekretariat-akreditasi')
                     )
             ])
 

@@ -40,7 +40,7 @@ class JadwalKerjaPdfController extends Controller
         }
 
         $user = auth()->user();
-        if ($user && $user->hasRole('Guest') && !$user->isKoordinator() && !$user->can('view-kepegawaian-jadwal-kerja')) {
+        if ($user && !$user->can('view-kepegawaian-jadwal-kerja') && !$user->isKoordinator()) {
             abort_unless(
                 in_array((int) $jadwalKerja->ruangan_id, $user->getOwnRuanganIds(), true),
                 403,
