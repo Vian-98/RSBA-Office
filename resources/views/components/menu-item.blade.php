@@ -2,23 +2,31 @@
 
 
 @php
-    $class =
-        $active ?? false
-            ? 'py-1.5 px-2 mx-3 rounded-md transition duration-200 cursor-pointer bg-primary-500 text-white flex justify-between items-center'
-            : 'py-1.5 px-2 mx-3 rounded-md transition duration-200 hover:bg-indigo-500/20 cursor-pointer flex justify-between items-center';
+    $isActive = $active ?? false;
+    if (!$isActive && !empty($menu['route']) && Route::has($menu['route'])) {
+        $isActive = request()->routeIs($menu['route']);
+    }
+
+    $baseClass = $isActive
+        ? 'bg-primary-500 text-white font-semibold shadow-sm'
+        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900';
+
+    $class = $isActive
+        ? 'py-1.5 px-2 mx-3 rounded-md transition duration-200 cursor-pointer bg-primary-500 text-white flex justify-between items-center'
+        : 'py-1.5 px-2 mx-3 rounded-md transition duration-200 hover:bg-indigo-500/20 cursor-pointer flex justify-between items-center';
 
     // conditional submenu active or not, when active open carret icon
     $submenuActive = false;
     if (!empty($menu['submenus'])) {
         foreach ($menu['submenus'] as $submenu) {
-            if (request()->routeIs($submenu['route'])) {
+            if (!empty($submenu['route']) && Route::has($submenu['route']) && request()->routeIs($submenu['route'])) {
                 $submenuActive = true;
                 break;
             }
 
             if (!empty($submenu['submenus'])) {
                 foreach ($submenu['submenus'] as $subsubmenu) {
-                    if (request()->routeIs($subsubmenu['route'])) {
+                    if (!empty($subsubmenu['route']) && Route::has($subsubmenu['route']) && request()->routeIs($subsubmenu['route'])) {
                         $submenuActive = true;
                         break;
                     }
