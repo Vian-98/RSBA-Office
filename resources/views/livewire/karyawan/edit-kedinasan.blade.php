@@ -105,11 +105,11 @@
                     🏢 Riwayat Penugasan Ruangan
                 </h3>
                 <span class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">
-                    {{ $form->karyawan?->historyRuangan->count() ?? 0 }} Record
+                    {{ $karyawan?->historyRuangan?->count() ?? 0 }} Record
                 </span>
             </div>
 
-            @if($form->karyawan?->historyRuangan->isEmpty())
+            @if(empty($karyawan?->historyRuangan) || $karyawan->historyRuangan->isEmpty())
                 <div class="text-center py-6 text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
                     Belum ada riwayat penugasan ruangan.
                 </div>
@@ -126,7 +126,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            @foreach($form->karyawan->historyRuangan as $histR)
+                            @foreach($karyawan->historyRuangan as $histR)
                                 <tr class="hover:bg-slate-50/80">
                                     <td class="px-3 py-2 font-semibold text-slate-800">
                                         {{ $histR->nama }}
@@ -144,23 +144,23 @@
                                     </td>
                                     <td class="px-3 py-2 text-center">
                                         @if($histR->pivot->document_id)
-                                            <button type="button" wire:click="viewDocument({{ $histR->pivot->document_id }})" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors">
-                                                <x-tabler-file-text class="w-3.5 h-3.5" />
-                                                Lihat SK
-                                            </button>
+                                             <button type="button" wire:click="viewDocument({{ $histR->pivot->document_id }})" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors">
+                                                 <x-tabler-file-text class="w-3.5 h-3.5" />
+                                                 Lihat SK
+                                             </button>
                                         @else
-                                            <span class="text-slate-400">-</span>
+                                             <span class="text-slate-400">-</span>
                                         @endif
                                     </td>
                                     <td class="px-3 py-2 text-center">
                                         @if(is_null($histR->pivot->tgl_berakhir))
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                                Aktif
-                                            </span>
+                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                                 Aktif
+                                             </span>
                                         @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
-                                                Riwayat
-                                            </span>
+                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
+                                                 Riwayat
+                                             </span>
                                         @endif
                                     </td>
                                 </tr>
@@ -178,11 +178,11 @@
                     👔 Riwayat Mutasi Jabatan
                 </h3>
                 <span class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">
-                    {{ $form->karyawan?->historyJabatan->count() ?? 0 }} Record
+                    {{ $karyawan?->historyJabatan?->count() ?? 0 }} Record
                 </span>
             </div>
 
-            @if($form->karyawan?->historyJabatan->isEmpty())
+            @if(empty($karyawan?->historyJabatan) || $karyawan->historyJabatan->isEmpty())
                 <div class="text-center py-6 text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
                     Belum ada riwayat mutasi jabatan.
                 </div>
@@ -200,7 +200,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            @foreach($form->karyawan->historyJabatan as $histJ)
+                            @foreach($karyawan->historyJabatan as $histJ)
                                 <tr class="hover:bg-slate-50/80">
                                     <td class="px-3 py-2 font-semibold text-slate-800">
                                         {{ $histJ->nama }}
@@ -218,23 +218,23 @@
                                     </td>
                                     <td class="px-3 py-2 text-center">
                                         @if($histJ->pivot->document_id)
-                                            <button type="button" wire:click="viewDocument({{ $histJ->pivot->document_id }})" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors">
-                                                <x-tabler-file-text class="w-3.5 h-3.5" />
-                                                Lihat SK
-                                            </button>
+                                             <button type="button" wire:click="viewDocument({{ $histJ->pivot->document_id }})" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors">
+                                                 <x-tabler-file-text class="w-3.5 h-3.5" />
+                                                 Lihat SK
+                                             </button>
                                         @else
-                                            <span class="text-slate-400">-</span>
+                                             <span class="text-slate-400">-</span>
                                         @endif
                                     </td>
                                     <td class="px-3 py-2 text-center">
                                         @if(is_null($histJ->pivot->tgl_berakhir))
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                                Aktif
-                                            </span>
+                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                                 Aktif
+                                             </span>
                                         @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
-                                                Riwayat
-                                            </span>
+                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
+                                                 Riwayat
+                                             </span>
                                         @endif
                                     </td>
                                 </tr>

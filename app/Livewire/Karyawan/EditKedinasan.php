@@ -23,23 +23,25 @@ class EditKedinasan extends Component
     use Interactions;
 
     public KaryawanForm $form;
+    public ?Karyawan $karyawan = null;
+    public $karyawanId;
 
-    public $status_options;
-    public $status_init;
-    public $kategori_options;
-    public $kategori_init;
-    public $jabatan_options;
-    public $bagian_options;
-    public $jabatan_init;
-    public $bagian_init;
+    public $status_options = [];
+    public $status_init = '';
+    public $kategori_options = [];
+    public $kategori_init = '';
+    public $jabatan_options = [];
+    public $bagian_options = [];
+    public $jabatan_init = '';
+    public $bagian_init = '';
 
     public $dinas_options = [
         ['id' => 'resign', 'label' => 'Resign / Mengundurkan Diri'],
         ['id' => 'dipecat', 'label' => 'Dipecat'],
         ['id' => 'end_kontrak', 'label' => 'Habis Kontrak'],
     ];
-    public $dinas_init;
-    public $ruangan_init;
+    public $dinas_init = '';
+    public $ruangan_init = '';
     public $dinas;
     public $tgl_dinas;
     public $pendidikan_options = [];
@@ -54,7 +56,7 @@ class EditKedinasan extends Component
             'form.kategori_kerja' => 'required',
             'form.jabatan' => 'required',
             'form.bagian' => 'required|exists:bagian,id',
-            'form.tgl_status' => Rule::requiredIf(fn() => $this->form->status != $this->status_init),
+            'form.tgl_status' => Rule::requiredIf(fn() => (string) ($this->form->status instanceof StatusKaryawan ? $this->form->status->value : $this->form->status) !== (string) ($this->status_init instanceof StatusKaryawan ? $this->status_init->value : $this->status_init)),
             'form.tgl_jabatan' => Rule::requiredIf(fn() =>
                 $this->form->jabatan != $this->jabatan_init || $this->form->bagian != $this->bagian_init
             ),
@@ -69,18 +71,38 @@ class EditKedinasan extends Component
         ];
     }
 
+    public function boot(): void
+    {
+        $this->status_options = StatusKaryawan::options();
+        $this->kategori_options = KategoriKerja::options();
+        $this->jabatan_options = Jabatan::all();
+        $this->bagian_options = Bagian::query()->where('is_active', true)->orderBy('nama')->get();
+    }
+
+    public function hydrate(): void
+    {
+        if ($this->karyawanId && !$this->karyawan) {
+            $this->karyawan = Karyawan::find($this->karyawanId);
+            if ($this->karyawan) {
+                $this->form->mount($this->karyawan);
+            }
+        }
+    }
+
     public function mount($id)
     {
+        $this->karyawanId = $id;
         $karyawan = Karyawan::findOrFail($id);
+        $this->karyawan = $karyawan;
         $this->form->mount($karyawan); //new instance form
 
         $this->form->setKedinasan($karyawan);
 
         $this->status_options = StatusKaryawan::options();
-        $this->status_init = $karyawan->status;
+        $this->status_init = $karyawan->status instanceof StatusKaryawan ? $karyawan->status->value : (string) ($karyawan->status ?? '');
 
         $this->kategori_options = KategoriKerja::options();
-        $this->kategori_init = $karyawan->kategori_kerja?->value ?? 'shift';
+        $this->kategori_init = $karyawan->kategori_kerja instanceof KategoriKerja ? $karyawan->kategori_kerja->value : (string) ($karyawan->kategori_kerja?->value ?? 'shift');
 
         $this->jabatan_options = Jabatan::all();
         $this->bagian_options = Bagian::query()->where('is_active', true)->orderBy('nama')->get();
@@ -183,13 +205,19 @@ class EditKedinasan extends Component
     {
         $this->validate();
 
+        $formStatus = $this->form->status instanceof StatusKaryawan ? $this->form->status->value : (string) $this->form->status;
+        $initStatus = $this->status_init instanceof StatusKaryawan ? $this->status_init->value : (string) $this->status_init;
+
         // update status
-        if ($this->form->status != $this->status_init) {
+        if ($formStatus !== $initStatus) {
             $this->updateStatus();
         }
 
+        $formKategori = $this->form->kategori_kerja instanceof KategoriKerja ? $this->form->kategori_kerja->value : (string) $this->form->kategori_kerja;
+        $initKategori = $this->kategori_init instanceof KategoriKerja ? $this->kategori_init->value : (string) $this->kategori_init;
+
         // update kategori kerja
-        if ($this->form->kategori_kerja != $this->kategori_init) {
+        if ($formKategori !== $initKategori) {
             $this->updateKategoriKerja();
         }
 
@@ -212,10 +240,11 @@ class EditKedinasan extends Component
     public function updateKategoriKerja()
     {
         try {
+            $kategoriVal = $this->form->kategori_kerja instanceof KategoriKerja ? $this->form->kategori_kerja->value : (string) $this->form->kategori_kerja;
             $this->form->karyawan->update([
-                'kategori_kerja' => $this->form->kategori_kerja,
+                'kategori_kerja' => $kategoriVal,
             ]);
-            $this->kategori_init = $this->form->kategori_kerja;
+            $this->kategori_init = $kategoriVal;
             $this->dispatch('kategori-kerja-updated');
             $this->toast()
                 ->success('Sukses', 'Kategori kerja berhasil diperbarui.')
@@ -230,15 +259,16 @@ class EditKedinasan extends Component
     public function updateStatus()
     {
         try {
+            $statusVal = $this->form->status instanceof StatusKaryawan ? $this->form->status->value : (string) $this->form->status;
             $data = [
-                'status'     => $this->form->status,
+                'status'     => $statusVal,
                 'tgl_status' => $this->form->tgl_status,
             ];
 
             // update
             $this->form->karyawan->update($data);
-            $this->status_init = $this->form->status;
-            $this->kategori_init = $this->form->kategori_kerja;
+            $this->status_init = $statusVal;
+            $this->kategori_init = $this->form->kategori_kerja instanceof KategoriKerja ? $this->form->kategori_kerja->value : (string) $this->form->kategori_kerja;
 
             // event
             $this->dispatch('status-updated');
@@ -376,6 +406,9 @@ class EditKedinasan extends Component
 
     public function render()
     {
-        return view('livewire.karyawan.edit-kedinasan');
+        $karyawan = $this->karyawan ?? ($this->karyawanId ? Karyawan::find($this->karyawanId) : null);
+        return view('livewire.karyawan.edit-kedinasan', [
+            'karyawan' => $karyawan,
+        ]);
     }
 }
