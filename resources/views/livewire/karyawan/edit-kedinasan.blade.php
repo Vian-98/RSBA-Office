@@ -1,23 +1,28 @@
 <div class="w-full">
-    <form wire:submit.prevent='update' class="space-y-4">
+    <form wire:submit="update" class="space-y-4">
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div class="w-full">
                 <x-ts:select.styled wire:model.live="form.status" searchable placeholder="Status Pegawai" :options="$status_options" select="label:label|value:value" />
+                @error('form.status') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
                 @if ($form->status != $status_init)
                     <div class="w-full mt-1.5">
-                        <x-ts:date wire:model.lazy='form.tgl_status' placeholder="Tgl Status Baru" />
+                        <x-ts:date wire:model="form.tgl_status" placeholder="Tgl Status Baru" />
+                        @error('form.tgl_status') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
                     </div>
                 @endif
             </div>
             <div class="w-full">
                 <x-ts:select.styled wire:model.live="form.kategori_kerja" placeholder="Kategori Kerja" :options="$kategori_options" select="label:label|value:value" />
+                @error('form.kategori_kerja') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
             </div>
             <div class="w-full">
                 <x-ts:select.styled wire:model.live="form.jabatan" searchable placeholder="Jabatan" :options="$jabatan_options" select="label:nama|value:id" />
+                @error('form.jabatan') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
             </div>
             <div class="w-full">
                 <x-ts:select.styled wire:model.live="form.bagian" searchable placeholder="Bagian / Departemen" :options="$bagian_options" select="label:nama|value:id" />
+                @error('form.bagian') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
             </div>
         </div>
 
@@ -31,18 +36,18 @@
                 <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Mulai / Penugasan Baru <span class="text-red-500">*</span></label>
-                        <x-ts:date wire:model.lazy='form.tgl_jabatan' placeholder="Pilih Tanggal Mulai" />
-                        @error('form.tgl_jabatan') <span class="text-[11px] text-red-500 italic">{{ $message }}</span> @enderror
+                        <x-ts:date wire:model="form.tgl_jabatan" placeholder="Pilih Tanggal Mulai" />
+                        @error('form.tgl_jabatan') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nomor SK Jabatan <span class="text-red-500">*</span></label>
-                        <x-ts:input wire:model.lazy='form.no_sk_jabatan' placeholder="Contoh: 045/SK-DIR/RSBA/VIII/2026" />
-                        @error('form.no_sk_jabatan') <span class="text-[11px] text-red-500 italic">{{ $message }}</span> @enderror
+                        <x-ts:input wire:model="form.no_sk_jabatan" placeholder="Contoh: 045/SK-DIR/RSBA/VIII/2026" />
+                        @error('form.no_sk_jabatan') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Pilih Dokumen SK (Profil / Dokumen)</label>
                         <x-ts:select.styled wire:model.live='form.document_id_jabatan' placeholder="Pilih Dokumen yang Diupload" :options="$document_options" select="label:nama|value:id" searchable />
-                        @error('form.document_id_jabatan') <span class="text-[11px] text-red-500 italic">{{ $message }}</span> @enderror
+                        @error('form.document_id_jabatan') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 <p class="text-[11px] text-amber-700/90 italic">
@@ -55,6 +60,7 @@
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div class="w-full">
                 <x-ts:select.styled wire:model.live="form.ruangan" placeholder="Ruangan Utama" :request="route('api.ruangan')" select="label:nama|value:id" />
+                @error('form.ruangan') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
             </div>
         </div>
 
@@ -68,18 +74,18 @@
                 <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Mulai Ruangan Baru <span class="text-red-500">*</span></label>
-                        <x-ts:date wire:model.lazy='form.tgl_ruangan' placeholder="Pilih Tanggal Mulai" />
-                        @error('form.tgl_ruangan') <span class="text-[11px] text-red-500 italic">{{ $message }}</span> @enderror
+                        <x-ts:date wire:model="form.tgl_ruangan" placeholder="Pilih Tanggal Mulai" />
+                        @error('form.tgl_ruangan') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nomor SK Ruangan <span class="text-red-500">*</span></label>
-                        <x-ts:input wire:model.lazy='form.no_sk_ruangan' placeholder="Contoh: 046/SK-DIR/RSBA/VIII/2026" />
-                        @error('form.no_sk_ruangan') <span class="text-[11px] text-red-500 italic">{{ $message }}</span> @enderror
+                        <x-ts:input wire:model="form.no_sk_ruangan" placeholder="Contoh: 046/SK-DIR/RSBA/VIII/2026" />
+                        @error('form.no_sk_ruangan') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Pilih Dokumen SK (Profil / Dokumen)</label>
                         <x-ts:select.styled wire:model.live='form.document_id_ruangan' placeholder="Pilih Dokumen yang Diupload" :options="$document_options" select="label:nama|value:id" searchable />
-                        @error('form.document_id_ruangan') <span class="text-[11px] text-red-500 italic">{{ $message }}</span> @enderror
+                        @error('form.document_id_ruangan') <span class="text-[11px] text-red-500 italic block mt-1">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 <p class="text-[11px] text-indigo-700/90 italic">
@@ -89,7 +95,7 @@
         @endif
 
         <div class="flex justify-end gap-2 pt-2">
-            <x-ts:button loading="update" xs outline icon="tabler.briefcase" type="submit">Update</x-ts:button>
+            <x-ts:button loading="update" type="submit" xs outline icon="tabler.briefcase">Update</x-ts:button>
         </div>
     </form>
 

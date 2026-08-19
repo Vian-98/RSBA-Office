@@ -10,19 +10,18 @@ use App\Models\Sdm\Karyawan;
 use App\Models\Sdm\KaryawanDocument;
 use App\Enums\StatusKaryawan;
 use App\Enums\KategoriKerja;
-use App\Livewire\Forms\KaryawanForm;
+use App\Livewire\Forms\Karyawan\EditKedinasanForm;
 use App\Models\Sdm\KaryawanJabatan;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\On;
 use Illuminate\Validation\Rule;
 use TallStackUi\Traits\Interactions;
 
-#[Lazy]
 class EditKedinasan extends Component
 {
     use Interactions;
 
-    public KaryawanForm $form;
+    public EditKedinasanForm $form;
     public ?Karyawan $karyawan = null;
     public $karyawanId;
 
@@ -84,7 +83,7 @@ class EditKedinasan extends Component
         if ($this->karyawanId && !$this->karyawan) {
             $this->karyawan = Karyawan::find($this->karyawanId);
             if ($this->karyawan) {
-                $this->form->mount($this->karyawan);
+                $this->form->karyawan = $this->karyawan;
             }
         }
     }
@@ -94,7 +93,6 @@ class EditKedinasan extends Component
         $this->karyawanId = $id;
         $karyawan = Karyawan::findOrFail($id);
         $this->karyawan = $karyawan;
-        $this->form->mount($karyawan); //new instance form
 
         $this->form->setKedinasan($karyawan);
 
