@@ -7,6 +7,7 @@ use App\Models\Surat\SuratBalasanPkl;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\TextColumn;
@@ -48,9 +49,9 @@ class TableBalasanPkl extends Component implements HasTable, HasForms, HasAction
                     ->date('d M Y')
                     ->sortable(),
 
-                TextColumn::make('tujuan_universitas')
+                TextColumn::make('display_universitas')
                     ->label('Universitas')
-                    ->searchable()
+                    ->searchable(['tujuan_universitas'])
                     ->wrap(),
 
                 TextColumn::make('prodi')
@@ -88,6 +89,14 @@ class TableBalasanPkl extends Component implements HasTable, HasForms, HasAction
                         )
                     ),
 
+                Action::make('pdf')
+                    ->icon('tabler-file-type-pdf')
+                    ->iconButton()
+                    ->color('danger')
+                    ->tooltip('Unduh Dokumen PDF')
+                    ->url(fn(SuratBalasanPkl $record) => route('kepegawaian.surat.balasan-pkl.pdf', $record->getKey()))
+                    ->openUrlInNewTab(),
+
                 Action::make('approval')
                     ->icon('tabler-file-check')
                     ->iconButton()
@@ -106,6 +115,37 @@ class TableBalasanPkl extends Component implements HasTable, HasForms, HasAction
                             || ($userLogin->karyawan && $record->jabatan_id === optional($userLogin->karyawan->jabatan->first())->id);
 
                         return $isPending && $isDirektur;
+                    }),
+
+                Action::make('cancel')
+                    ->icon('tabler-ban')
+                    ->iconButton()
+                    ->color('danger')
+                    ->tooltip('Batalkan Surat')
+                    ->requiresConfirmation()
+                    ->modalHeading('Batalkan Surat Balasan PKL')
+                    ->modalDescription('Apakah Anda yakin ingin membatalkan surat ini?')
+                    ->form([
+                        Textarea::make('alasan_batal')
+                            ->label('Alasan Pembatalan')
+                            ->required()
+                            ->rows(3)
+                            ->placeholder('Contoh: Mahasiswa membatalkan rencana PKL / revisi jadwal.'),
+                    ])
+                    ->action(function (SuratBalasanPkl $record, array $data) {
+                        $record->update([
+                            'status' => StatusApproval::CANCELLED,
+                            'catatan_approval' => trim(($record->catatan_approval ? $record->catatan_approval . "\n" : '') . '[Dibatalkan]: ' . $data['alasan_batal']),
+                        ]);
+                    })
+                    ->visible(function (SuratBalasanPkl $record) use ($userLogin) {
+                        $canCancel = $record->status !== StatusApproval::CANCELLED;
+                        $isAuthorized = $userLogin->hasRole('Super-Admin')
+                            || ($userLogin->karyawan && $record->disetujui_oleh == $userLogin->karyawan->id)
+                            || ($userLogin->karyawan && $record->jabatan_id === optional($userLogin->karyawan->jabatan->first())->id)
+                            || ($record->created_by === $userLogin->id);
+
+                        return $canCancel && $isAuthorized;
                     }),
             ]);
     }

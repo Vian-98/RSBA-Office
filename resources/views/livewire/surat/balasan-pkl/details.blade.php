@@ -19,7 +19,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                 <div>
                     <span class="text-slate-400 uppercase font-semibold text-[10px] block">Tujuan Surat / Kampus:</span>
-                    <span class="font-bold text-slate-800">{{ $suratBalasanPkl->tujuan_universitas }}</span>
+                    <span class="font-bold text-slate-800">{{ $suratBalasanPkl->display_universitas }}</span>
                     @if($suratBalasanPkl->tujuan_nama)
                         <span class="text-slate-500 block">u.p. {{ $suratBalasanPkl->tujuan_nama }}</span>
                     @endif
@@ -128,6 +128,10 @@
                     <span class="inline-flex items-center gap-1 text-emerald-700 font-bold text-xs bg-emerald-100 px-2 py-0.5 rounded-full mb-1">
                         <x-tabler-checks class="size-3.5" /> Disetujui
                     </span>
+                @elseif($suratBalasanPkl->status === \App\Enums\StatusApproval::CANCELLED)
+                    <span class="inline-flex items-center gap-1 text-rose-700 font-bold text-xs bg-rose-100 px-2 py-0.5 rounded-full mb-1">
+                        <x-tabler-x class="size-3.5" /> Dibatalkan
+                    </span>
                 @else
                     <span class="inline-flex items-center gap-1 text-amber-700 font-semibold text-[11px] mb-1">
                         <x-tabler-clock class="size-3.5" /> Menunggu Persetujuan
@@ -138,11 +142,16 @@
             </div>
         </div>
 
+        {{-- Tombol Cetak & Unduh PDF --}}
         <div class="ml-auto flex items-center gap-2 pt-2 border-t border-slate-100">
             <div id="print-balasan-pkl" class="hidden">
                 <livewire:Surat.BalasanPkl.PrintBalasanPkl :$suratBalasanPkl :key="'print-balasan-pkl-'.$suratBalasanPkl->id.'-'.($suratBalasanPkl->docstore_key ?? 'draft')" />
             </div>
-            <x-ts:button sm icon="tabler.printer" x-on:click="printArea('print-balasan-pkl')">
+            <a href="{{ route('kepegawaian.surat.balasan-pkl.pdf', $suratBalasanPkl->id) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors shadow-2xs">
+                <x-tabler-file-type-pdf class="size-4 text-rose-600" />
+                <span>Unduh PDF</span>
+            </a>
+            <x-ts:button sm color="primary" icon="tabler.printer" x-on:click="printArea('print-balasan-pkl')">
                 Cetak Surat & Lampiran
             </x-ts:button>
         </div>
