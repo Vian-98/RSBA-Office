@@ -57,4 +57,14 @@ class SuratBalasanPenelitian extends Model
             return ($item->jasa_sarana + $item->jasa_pelayanan) * ($item->jumlah_orang ?: 1);
         });
     }
+
+    /**
+     * Format nomor surat yang aman untuk nama file unduhan PDF
+     */
+    public function getNoCleanAttribute(): string
+    {
+        $clean = preg_replace('/[^A-Za-z0-9\-_]/', '-', $this->no ?? "Balasan-Penelitian-{$this->id}");
+        $clean = preg_replace('/-+/', '-', $clean);
+        return trim($clean, '-');
+    }
 }

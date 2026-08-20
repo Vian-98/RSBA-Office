@@ -90,6 +90,14 @@ class TableBalasanPenelitian extends Component implements HasTable, HasForms, Ha
                         )
                     ),
 
+                Action::make('pdf')
+                    ->icon('tabler-file-type-pdf')
+                    ->iconButton()
+                    ->color('danger')
+                    ->tooltip('Unduh Dokumen PDF')
+                    ->url(fn(SuratBalasanPenelitian $record) => route('kepegawaian.surat.balasan-penelitian.pdf', $record->getKey()))
+                    ->openUrlInNewTab(),
+
                 Action::make('approval')
                     ->icon('tabler-file-check')
                     ->iconButton()
@@ -108,6 +116,23 @@ class TableBalasanPenelitian extends Component implements HasTable, HasForms, Ha
                             || ($userLogin->karyawan && $record->jabatan_id === optional($userLogin->karyawan->jabatan->first())->id);
 
                         return $isPending && $isDirektur;
+                    }),
+
+                Action::make('cancel')
+                    ->icon('tabler-ban')
+                    ->iconButton()
+                    ->color('danger')
+                    ->tooltip('Batalkan Surat')
+                    ->requiresConfirmation()
+                    ->modalHeading('Batalkan Surat Balasan Penelitian')
+                    ->modalDescription('Apakah Anda yakin ingin membatalkan surat ini?')
+                    ->action(function (SuratBalasanPenelitian $record) {
+                        $record->update([
+                            'status' => StatusApproval::CANCELLED,
+                        ]);
+                    })
+                    ->visible(function (SuratBalasanPenelitian $record) use ($userLogin) {
+                        return $record->status === StatusApproval::PENDING && $userLogin->hasRole('Super-Admin');
                     }),
             ]);
     }
