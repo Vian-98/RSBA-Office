@@ -44,4 +44,35 @@ class SuratPerintahTugas extends Model
     {
         return optional($this->createdBy)->karyawan->nama ?? optional($this->createdBy)->name ?? '-';
     }
+
+    /**
+     * Pastikan format hari dan tanggal selalu dalam Bahasa Indonesia
+     */
+    public function getHariTanggalIndoAttribute(): string
+    {
+        $val = $this->hari_tanggal;
+        if (!$val) {
+            return '-';
+        }
+
+        $map = [
+            'Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa',
+            'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu',
+            'January' => 'Januari', 'February' => 'Februari', 'March' => 'Maret', 'April' => 'April',
+            'May' => 'Mei', 'June' => 'Juni', 'July' => 'Juli', 'August' => 'Agustus',
+            'September' => 'September', 'October' => 'Oktober', 'November' => 'November', 'December' => 'Desember'
+        ];
+
+        return strtr($val, $map);
+    }
+
+    /**
+     * Format nomor surat yang aman untuk nama file unduhan PDF
+     */
+    public function getNoCleanAttribute(): string
+    {
+        $clean = preg_replace('/[^A-Za-z0-9\-_]/', '-', $this->no ?? "SPT-{$this->id}");
+        $clean = preg_replace('/-+/', '-', $clean);
+        return trim($clean, '-');
+    }
 }

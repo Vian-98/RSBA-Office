@@ -82,6 +82,14 @@ class TablePerintahTugas extends Component implements HasTable, HasForms, HasAct
                         )
                     ),
 
+                Action::make('pdf')
+                    ->icon('tabler-file-type-pdf')
+                    ->iconButton()
+                    ->color('danger')
+                    ->tooltip('Unduh Dokumen PDF')
+                    ->url(fn(SuratPerintahTugas $record) => route('kepegawaian.surat.perintah-tugas.pdf', $record->getKey()))
+                    ->openUrlInNewTab(),
+
                 Action::make('approval')
                     ->icon('tabler-file-check')
                     ->iconButton()
@@ -100,6 +108,23 @@ class TablePerintahTugas extends Component implements HasTable, HasForms, HasAct
                             || ($userLogin->karyawan && $record->jabatan_id === optional($userLogin->karyawan->jabatan->first())->id);
 
                         return $isPending && $isDirektur;
+                    }),
+
+                Action::make('cancel')
+                    ->icon('tabler-ban')
+                    ->iconButton()
+                    ->color('danger')
+                    ->tooltip('Batalkan Surat Perintah Tugas')
+                    ->requiresConfirmation()
+                    ->modalHeading('Batalkan Surat Perintah Tugas')
+                    ->modalDescription('Apakah Anda yakin ingin membatalkan surat perintah tugas ini?')
+                    ->action(function (SuratPerintahTugas $record) {
+                        $record->update([
+                            'status' => StatusApproval::CANCELLED,
+                        ]);
+                    })
+                    ->visible(function (SuratPerintahTugas $record) use ($userLogin) {
+                        return $record->status === StatusApproval::PENDING && $userLogin->hasRole('Super-Admin');
                     }),
             ]);
     }

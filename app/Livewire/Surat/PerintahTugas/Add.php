@@ -50,7 +50,7 @@ class Add extends Component
     public function mount()
     {
         $this->tgl = date('Y-m-d');
-        $this->hari_tanggal = \Carbon\Carbon::now()->translatedFormat('l / d F Y');
+        $this->hari_tanggal = \Carbon\Carbon::now()->locale('id')->translatedFormat('l / d F Y');
 
         // Load Direktur options
         $this->direkturOptions = Jabatan::getDirekturList();
