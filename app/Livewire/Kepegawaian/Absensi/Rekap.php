@@ -61,6 +61,28 @@ class Rekap extends Component
     public $historyLogs = [];
     public $historyRecordInfo = '';
 
+    // Properties for Edit/Correction Modal
+    public $showEditModal = false;
+    public $editingRecordId = null;
+    public $editStatus = '';
+    public $editAbsenMasuk = '';
+    public $editAbsenKeluar = '';
+    public $editCatatan = '';
+
+    // Properties for Global Audit Log Modal
+    public $showGlobalHistoryModal = false;
+    public $historySearch = '';
+
+    public function openGlobalHistoryModal()
+    {
+        $this->showGlobalHistoryModal = true;
+    }
+
+    public function closeGlobalHistoryModal()
+    {
+        $this->showGlobalHistoryModal = false;
+    }
+
     public function editRecord($id)
     {
         $record = JadwalKerjaDetail::findOrFail($id);
@@ -162,6 +184,23 @@ class Rekap extends Component
             403,
             'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Rekap Absensi.'
         );
+        $this->bulan = $this->bulan ?: (int) date('m');
+        $this->tahun = $this->tahun ?: (int) date('Y');
+    }
+
+    public function render()
+    {
+        $user = auth()->user();
+        $allowedRuanganIds = $user ? $user->getRuanganKoordinatorIds() : [];
+
+        // 1. Build Base Detail Query
+        $baseQuery = JadwalKerjaDetail::query();
+        if ($allowedRuanganIds !== null) {
+            $baseQuery->whereHas('jadwalKerja', function ($q) use ($allowedRuanganIds) {
+                $q->whereIn('ruangan_id', $allowedRuanganIds);
+            });
+        }
+
         if ($this->mode === 'bulanan') {
             $baseQuery->whereMonth('tanggal', $this->bulan)
                       ->whereYear('tanggal', $this->tahun);
@@ -432,7 +471,8 @@ class Rekap extends Component
 
         return view('livewire.kepegawaian.absensi.rekap', [
             'rekapKaryawan' => $rekapKaryawan,
-            'summaryStats' => $summaryStats,
+            'summary' => $summary,
+            'paginatedKaryawans' => $paginatedKaryawans,
             'records' => $records,
             'globalHistoryLogs' => $globalHistoryLogs,
         ]);
