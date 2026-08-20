@@ -15,13 +15,13 @@
             <x-tabler-eye-check class="h-5 w-5" />
         </div>
         <div class="text-xs font-medium">
-            @if($isOnlyPajak)
+            @can('approve-kepegawaian-gaji-pajak')
                 <span class="font-bold block text-amber-900 mb-0.5">Menunggu Review Anda (Tim Pajak)</span>
                 Silakan review data potongan pajak PPh 21 pada setiap slip. Setelah selesai, setujui melalui halaman <b>Rekap Bulanan</b>.
             @else
                 <span class="font-bold block text-amber-900 mb-0.5">Sedang Direview Tim Pajak</span>
                 Data gaji periode <b>{{ \Carbon\Carbon::parse($periode . '-01')->translatedFormat('F Y') }}</b> sedang dalam proses review oleh Tim Pajak. Data tidak dapat diedit.
-            @endif
+            @endcan
         </div>
     </div>
 @elseif($periodStatus === 'review_sdm')

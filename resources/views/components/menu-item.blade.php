@@ -2,31 +2,23 @@
 
 
 @php
-    $isActive = $active ?? false;
-    if (!$isActive && !empty($menu['route']) && Route::has($menu['route'])) {
-        $isActive = request()->routeIs($menu['route']);
-    }
-
-    $baseClass = $isActive
-        ? 'bg-primary-500 text-white font-semibold shadow-sm'
-        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900';
-
-    $class = $isActive
-        ? 'py-1.5 px-2 mx-3 rounded-md transition duration-200 cursor-pointer bg-primary-500 text-white flex justify-between items-center'
-        : 'py-1.5 px-2 mx-3 rounded-md transition duration-200 hover:bg-indigo-500/20 cursor-pointer flex justify-between items-center';
+    $class =
+        $active ?? false
+            ? 'py-1.5 px-2 mx-3 rounded-md transition duration-200 cursor-pointer bg-primary-500 text-white flex justify-between items-center'
+            : 'py-1.5 px-2 mx-3 rounded-md transition duration-200 hover:bg-indigo-500/20 cursor-pointer flex justify-between items-center';
 
     // conditional submenu active or not, when active open carret icon
     $submenuActive = false;
     if (!empty($menu['submenus'])) {
         foreach ($menu['submenus'] as $submenu) {
-            if (!empty($submenu['route']) && Route::has($submenu['route']) && request()->routeIs($submenu['route'])) {
+            if (request()->routeIs($submenu['route'])) {
                 $submenuActive = true;
                 break;
             }
 
             if (!empty($submenu['submenus'])) {
                 foreach ($submenu['submenus'] as $subsubmenu) {
-                    if (!empty($subsubmenu['route']) && Route::has($subsubmenu['route']) && request()->routeIs($subsubmenu['route'])) {
+                    if (request()->routeIs($subsubmenu['route'])) {
                         $submenuActive = true;
                         break;
                     }
@@ -55,20 +47,7 @@
         </svg>
     </div>
 @else
-    @php
-        $menuUrl = '#';
-        $hasValidRoute = !empty($menu['route']) && Route::has($menu['route']);
-        if ($hasValidRoute) {
-            $menuParams = is_array($menu['route_params'] ?? null) ? $menu['route_params'] : [];
-            $menuUrl = route($menu['route'], $menuParams);
-        }
-    @endphp
-    <a href="{{ $menuUrl }}" 
-       {{ $attributes->merge([]) }} 
-       :class="isCollapsed && isAboveBreakpoint ? 'justify-center mx-1 px-1' : 'justify-start gap-3 mx-2 px-3'"
-       class="py-2.5 rounded-lg transition-all duration-200 cursor-pointer flex items-center relative group {{ $baseClass }}" 
-       @click="handleAway(); handleClose()"
-       @if($hasValidRoute) wire:navigate @else onclick="return false;" @endif>
+    <a href="{{ !empty($menu['route']) ? route($menu['route']) : '' }}" {{ $attributes->merge(['class' => $class]) }} wire:navigate>
 
         <div class="flex items-center gap-2">
             {{-- icons --}}
@@ -86,17 +65,11 @@
 
 {{-- submenu dependence --}}
 @if (!empty($menu['submenus']))
-    <div id="{{ $menu['id'] }}" 
-         :class="isCollapsed && isAboveBreakpoint ? '!hidden' : ''"
-         {{ $attributes->merge(['class' => 'submenu ml-4 ' . ($submenuActive ? 'active' : 'hidden')]) }}>
+    <div id="{{ $menu['id'] }}" {{ $attributes->merge(['class' => 'submenu ml-4 ' . ($submenuActive ? 'active' : 'hidden')]) }}>
         <div class="ml-2 space-y-1 border-l-2 border-indigo-500/25">
             @foreach ($menu['submenus'] as $submenu)
-                @php
-                    $subActive = !empty($submenu['route']) && Route::has($submenu['route'])
-                        ? request()->routeIs($submenu['route'])
-                        : false;
-                @endphp
-                <x-menu-item :menu="$submenu" :active="$subActive" />
+                {{-- {{ request()->routeIs($submenu['route']) }} --}}
+                <x-menu-item :menu="$submenu" :active="request()->routeIs($submenu['route'])" />
             @endforeach
         </div>
     </div>

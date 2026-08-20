@@ -97,8 +97,8 @@
                                                 <x-tabler-lock-open class="h-4 w-4" />
                                             </button>
                                         @else
-                                            {{-- SP3 Pending / Approved -> Hanya Super Admin yang boleh buka kunci --}}
-                                            @role('Super-Admin')
+                                            {{-- SP3 Pending / Approved -> Hanya yang memiliki permission unlock yang boleh buka kunci --}}
+                                            @can('unlock-payroll-approved')
                                                 <button type="button" wire:click="unlockPeriode('{{ $item['periode'] }}')" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-orange-600 bg-orange-50 hover:bg-orange-100 hover:text-orange-800 transition-all whitespace-nowrap" title="Force Unlock (Super Admin)">
                                                     <x-tabler-shield-lock class="h-4 w-4" />
                                                 </button>
@@ -106,20 +106,22 @@
                                                 <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 bg-slate-50 border border-slate-200 cursor-not-allowed whitespace-nowrap" title="Payroll dikunci & dikirim ke SP3. Hanya Super Admin yang dapat membuka kunci.">
                                                     <x-tabler-lock class="h-4 w-4" />
                                                 </span>
-                                            @endrole
+                                            @endcan
                                         @endif
                                     @endif
                                 @endif
 
                                 {{-- Pajak Actions --}}
-                                @if($isOnlyPajak && $item['status'] === 'review_pajak')
-                                    <button type="button" wire:click="approveByPajak('{{ $item['periode'] }}')" wire:confirm="Setujui data pajak untuk periode ini dan kembalikan ke SDM?" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 transition-all whitespace-nowrap" title="Setujui Pajak">
-                                        <x-tabler-check class="h-4 w-4" />
-                                    </button>
-                                    <button type="button" wire:click="rejectByPajak('{{ $item['periode'] }}')" wire:confirm="Tolak dan kembalikan ke SDM untuk diperbaiki?" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 transition-all whitespace-nowrap" title="Tolak Pajak (Kembalikan ke SDM)">
-                                        <x-tabler-x class="h-4 w-4" />
-                                    </button>
-                                @endif
+                                @can('approve-kepegawaian-gaji-pajak')
+                                    @if($item['status'] === 'review_pajak')
+                                        <button type="button" wire:click="approveByPajak('{{ $item['periode'] }}')" wire:confirm="Setujui data pajak untuk periode ini dan kembalikan ke SDM?" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 transition-all whitespace-nowrap" title="Setujui Pajak">
+                                            <x-tabler-check class="h-4 w-4" />
+                                        </button>
+                                        <button type="button" wire:click="rejectByPajak('{{ $item['periode'] }}')" wire:confirm="Tolak dan kembalikan ke SDM untuk diperbaiki?" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 transition-all whitespace-nowrap" title="Tolak Pajak (Kembalikan ke SDM)">
+                                            <x-tabler-x class="h-4 w-4" />
+                                        </button>
+                                    @endif
+                                @endcan
                             </div>
                         </td>
                     </tr>

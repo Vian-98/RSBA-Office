@@ -13,11 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    use Notifiable;
-
-    use HasRoles {
-        hasPermissionTo as traitHasPermissionTo;
-    }
+    use Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -82,7 +78,7 @@ class User extends Authenticatable
      */
     public function isKoordinator(): bool
     {
-        if ($this->traitHasPermissionTo('edit-kepegawaian-jadwal-kerja')) {
+        if ($this->can('edit-kepegawaian-jadwal-kerja')) {
             return true;
         }
 
@@ -112,7 +108,7 @@ class User extends Authenticatable
      */
     public function isKepalaDept(): bool
     {
-        if ($this->traitHasPermissionTo('approve-jadwal-kabid')) {
+        if ($this->can('approve-jadwal-kabid')) {
             return true;
         }
 
@@ -133,7 +129,7 @@ class User extends Authenticatable
      */
     public function isWadir(): bool
     {
-        if ($this->traitHasPermissionTo('approve-jadwal-wadir')) {
+        if ($this->can('approve-jadwal-wadir')) {
             return true;
         }
 
@@ -151,7 +147,7 @@ class User extends Authenticatable
 
     public function isKabagSDM(): bool
     {
-        if ($this->traitHasPermissionTo('view-kepegawaian-karyawan')) {
+        if ($this->can('view-kepegawaian-karyawan')) {
             return true;
         }
 
@@ -170,7 +166,7 @@ class User extends Authenticatable
 
     public function isKabagUmum(): bool
     {
-        if ($this->traitHasPermissionTo('manage-umum-asset')) {
+        if ($this->can('manage-umum-asset')) {
             return true;
         }
 
@@ -189,7 +185,7 @@ class User extends Authenticatable
 
     public function isKabagKeuangan(): bool
     {
-        if ($this->traitHasPermissionTo('view-keuangan-hutang')) {
+        if ($this->can('view-keuangan-hutang')) {
             return true;
         }
 
@@ -219,7 +215,7 @@ class User extends Authenticatable
 
         $targetRoleName = $jabatanAktif->resolveTargetRoleName();
 
-        if ($targetRoleName && !$this->traitHasPermissionTo('super-admin-bypass')) {
+        if ($targetRoleName && !$this->can('super-admin-bypass')) {
             $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => $targetRoleName]);
             $this->syncRoles([$role]);
         }
@@ -234,7 +230,7 @@ class User extends Authenticatable
      */
     public function getBagianScopedRuanganIds(): ?array
     {
-        if ($this->isWadir() || $this->traitHasPermissionTo('view-kepegawaian-karyawan')) {
+        if ($this->isWadir() || $this->can('view-kepegawaian-karyawan')) {
             return null; // null = akses semua ruangan
         }
 
@@ -300,7 +296,7 @@ class User extends Authenticatable
      */
     public function getRuanganKoordinatorIds(): ?array
     {
-        if ($this->isWadir() || $this->traitHasPermissionTo('view-kepegawaian-karyawan')) {
+        if ($this->isWadir() || $this->can('view-kepegawaian-karyawan')) {
             return null; // null = akses semua ruangan
         }
 
@@ -332,7 +328,7 @@ class User extends Authenticatable
      */
     public function isDokterOrApprover(): bool
     {
-        if ($this->isDokter() || $this->isWadir() || $this->traitHasPermissionTo('view-kepegawaian-jadwal-kerja')) {
+        if ($this->isDokter() || $this->isWadir() || $this->can('view-kepegawaian-jadwal-kerja')) {
             return true;
         }
 
