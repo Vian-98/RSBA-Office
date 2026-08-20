@@ -59,7 +59,7 @@ class HistoryTable extends Component
     public function unlockPeriode(string $periode, PayrollPeriodService $periodService)
     {
         try {
-            $isSuperAdmin = (bool) auth()->user()?->traitHasPermissionTo('unlock-payroll-approved');
+            $isSuperAdmin = (bool) auth()->user()?->can('unlock-payroll-approved');
             $periodService->unlockPeriode($periode, $isSuperAdmin);
             $this->toast()->success('Berhasil !', 'Kunci payroll periode ' . $periode . ' telah dibuka kembali.')->send();
         } catch (\Throwable $e) {
