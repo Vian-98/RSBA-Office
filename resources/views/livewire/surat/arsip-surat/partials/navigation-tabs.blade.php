@@ -8,11 +8,6 @@
         >
             <x-tabler-files class="size-4" />
             <span>Semua Kategori</span>
-            @if(isset($docstoreData['meta']['total']))
-                <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-full {{ $filterType === 'all' ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-700' }}">
-                    {{ $docstoreData['meta']['total'] }}
-                </span>
-            @endif
         </button>
 
         @foreach ($kategoriList as $cat)
