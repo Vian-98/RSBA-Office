@@ -1,27 +1,15 @@
 <div class="space-y-6">
     {{-- Header Banner & Action Button --}}
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 rounded-2xl text-white shadow-lg border border-slate-800">
-        <div class="flex items-center gap-4">
-            <div class="p-3 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300 backdrop-blur-md">
-                <x-tabler-archive class="size-8" />
-            </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                    Arsip Surat Resmi (Bank Surat Docstore)
-                    <span class="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        <x-tabler-lock class="size-3" /> Source of Truth
-                    </span>
-                </h1>
-                <p class="text-xs text-slate-300 mt-1">
-                    Pusat arsip terpusat dari seluruh jenis dokumen resmi RS Bintang Amin yang tersinkronisasi ke Bank Surat Vault Docstore.
-                </p>
-            </div>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+        <div>
+            <h1 class="text-base sm:text-lg font-bold text-slate-800 tracking-tight">Arsip Surat Resmi</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Pusat arsip terpusat dari seluruh jenis dokumen resmi RS Bintang Amin.</p>
         </div>
 
-        <div class="flex items-center gap-2">
-            <button wire:click="openModalKategori" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-xl shadow-md transition-all border border-indigo-400/30 cursor-pointer">
+        <div class="flex items-center gap-2 shrink-0">
+            <button wire:click="openModalKategori" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl shadow-2xs transition-all cursor-pointer">
                 <x-tabler-plus class="size-4" />
-                <span>Tambah Jenis Arsip</span>
+                <span>Tambah Jenis Arsip Surat</span>
             </button>
         </div>
     </div>
@@ -257,7 +245,7 @@
     </div>
 
     {{-- MODAL TAMBAH JENIS ARSIP BARU --}}
-    <x-ts:modal wire:model="modalKategori" title="Tambah Jenis / Kategori Arsip Surat" blur>
+    <x-ts:modal wire="modalKategori" title="Tambah Jenis / Kategori Arsip Surat" blur>
         <form wire:submit.prevent="simpanKategori" class="space-y-4 text-xs">
             <div>
                 <label class="block font-bold text-slate-700 mb-1">Nama Jenis / Kategori Surat <span class="text-rose-500">*</span></label>
@@ -306,7 +294,7 @@
             </div>
 
             <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <x-ts:button x-on:click="$modalKategori = false" color="slate" variant="flat" size="sm">
+                <x-ts:button type="button" wire:click="$set('modalKategori', false)" color="slate" variant="flat" size="sm">
                     Batal
                 </x-ts:button>
                 <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer">
@@ -317,7 +305,7 @@
     </x-ts:modal>
 
     {{-- DRAWER / MODAL DETAIL DOKUMEN DOCSTORE --}}
-    <x-ts:modal wire:model="modalDetail" title="Detail Arsip Bank Surat (Docstore Vault)" size="2xl" blur>
+    <x-ts:modal wire="modalDetail" title="Detail Arsip Bank Surat (Docstore Vault)" size="2xl" blur>
         @if($loadingDetail)
             <div class="p-8 text-center text-slate-500">
                 <x-tabler-loader-2 class="size-8 animate-spin mx-auto mb-2 text-indigo-600" />

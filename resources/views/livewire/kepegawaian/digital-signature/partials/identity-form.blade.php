@@ -5,17 +5,6 @@
         <p class="text-xs text-slate-400">Lengkapi metadata sebelum penandatanganan</p>
     </div>
 
-    {{-- ByteCounter SHA-256 Box --}}
-    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-        <div class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
-            <span>ByteCounter SHA-256</span>
-            <span class="text-[10px] text-emerald-600 font-mono font-bold">AUTHENTIC</span>
-        </div>
-        <div class="font-mono text-xs text-indigo-900 bg-white p-2.5 rounded-xl border border-slate-200 break-all">
-            {{ $fileHashSHA256 }}
-        </div>
-    </div>
-
     {{-- Stamp Resizer Quick Controller in Sidebar --}}
     <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100 space-y-2.5">
         <div class="flex items-center justify-between text-xs font-bold text-indigo-900 uppercase tracking-wider">
@@ -44,6 +33,29 @@
         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Nomor Surat</label>
         <input type="text" wire:model="document_number" placeholder="Nomor Surat..." class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono text-slate-800 bg-white" />
         @error('document_number') <span class="text-xs text-rose-500 mt-1 block font-medium">{{ $message }}</span> @enderror
+    </div>
+
+    {{-- Jenis / Kategori Arsip Surat --}}
+    <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Jenis / Kategori Arsip Surat <span class="text-rose-500">*</span>
+        </label>
+        <select 
+            wire:model="document_type" 
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-slate-800 bg-white cursor-pointer font-medium"
+        >
+            @if(isset($kategoriList) && count($kategoriList) > 0)
+                @foreach($kategoriList as $cat)
+                    <option value="{{ $cat->kode }}">
+                        {{ $cat->nama }} {{ !$cat->is_system ? '(Kustom)' : '' }}
+                    </option>
+                @endforeach
+            @else
+                <option value="file_text">📄 File Text / Umum</option>
+            @endif
+        </select>
+        <span class="text-[11px] text-slate-400 mt-1 block">Pilih kategori agar terarsip otomatis secara terdata di Bank Surat.</span>
+        @error('document_type') <span class="text-xs text-rose-500 mt-1 block font-medium">{{ $message }}</span> @enderror
     </div>
 
     {{-- Keterangan --}}

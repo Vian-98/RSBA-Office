@@ -3,6 +3,9 @@
         <div class="font-bold text-slate-800 text-sm">{{ $doc->title }}</div>
         <div class="text-xs text-slate-500 font-mono mt-0.5">{{ $doc->document_number }}</div>
         <div class="flex items-center space-x-2 mt-1.5">
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                {{ strtoupper(str_replace('_', ' ', $doc->document_type ?? 'file_text')) }}
+            </span>
         </div>
     </td>
     <td class="px-6 py-4">

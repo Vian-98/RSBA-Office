@@ -109,6 +109,8 @@ class Index extends Component
 
     public function simpanKategori(): void
     {
+        $this->newKode = Str::slug($this->newKode ?: $this->newNama, '_');
+
         $this->validate([
             'newNama' => 'required|string|max:100',
             'newKode' => 'required|string|max:50|unique:surat_kategori_arsip,kode',
@@ -121,7 +123,7 @@ class Index extends Component
         ]);
 
         SuratKategoriArsip::create([
-            'kode'        => Str::slug($this->newKode, '_'),
+            'kode'        => $this->newKode,
             'nama'        => $this->newNama,
             'deskripsi'   => $this->newDeskripsi,
             'icon'        => $this->newIcon,
@@ -130,6 +132,7 @@ class Index extends Component
         ]);
 
         $this->modalKategori = false;
+        $this->reset(['newNama', 'newKode', 'newDeskripsi', 'newIcon']);
         $this->toast()->success('Berhasil', "Jenis arsip '{$this->newNama}' berhasil ditambahkan.")->send();
     }
 

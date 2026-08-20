@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
+use App\Models\Surat\SuratKategoriArsip;
+
 #[Lazy]
 class Form extends Component
 {
@@ -23,6 +25,7 @@ class Form extends Component
     public $pdf_file;
     public $title = '';
     public $document_number = '';
+    public $document_type = 'file_text';
     public $keterangan = '';
     public $account_password = '';
 
@@ -42,6 +45,7 @@ class Form extends Component
         'pdf_file'        => 'required|file|mimes:pdf|max:10240', // Max 10MB PDF
         'title'           => 'required|string|max:255',
         'document_number' => 'required|string|max:100',
+        'document_type'   => 'required|string|max:50',
         'keterangan'      => 'nullable|string|max:500',
     ];
 
@@ -51,6 +55,7 @@ class Form extends Component
         'pdf_file.max'             => 'Ukuran berkas PDF maksimal 10 MB.',
         'title.required'           => 'Judul / nama surat wajib diisi.',
         'document_number.required' => 'Nomor surat wajib diisi.',
+        'document_type.required'   => 'Jenis / kategori arsip surat wajib dipilih.',
     ];
 
     public function mount()
@@ -272,6 +277,7 @@ class Form extends Component
                 'user_id'           => $user->id,
                 'title'             => $this->title,
                 'document_number'   => $this->document_number,
+                'document_type'     => $this->document_type,
                 'file_name'         => $fileName,
                 'file_size'         => $fileSize,
                 'byte_counter_hash' => $stampedByteHash,
@@ -318,6 +324,12 @@ class Form extends Component
 
     public function render()
     {
-        return view('livewire.kepegawaian.digital-signature.form');
+        $kategoriList = SuratKategoriArsip::where('is_active', true)
+            ->orderBy('is_system', 'desc')
+            ->get();
+
+        return view('livewire.kepegawaian.digital-signature.form', [
+            'kategoriList' => $kategoriList,
+        ]);
     }
 }

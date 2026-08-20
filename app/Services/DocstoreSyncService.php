@@ -122,6 +122,51 @@ class DocstoreSyncService
     }
 
     /**
+     * Sinkronisasi Dokumen Tanda Tangan Digital langsung ke Bank Surat Docstore.
+     */
+    public function syncDigitalSignatureDoc(Model $doc, string $pdfBase64, array $signatureData): bool
+    {
+        $payload = [
+            'document_type'   => $doc->document_type ?? 'digital_signature',
+            'document_id'     => $doc->id,
+            'document_number' => $doc->document_number,
+            'status'          => $doc->status ?? 'signed',
+            'content'         => [
+                'title'             => $doc->title,
+                'file_name'         => $doc->file_name,
+                'file_size'         => $doc->file_size,
+                'byte_counter_hash' => $doc->byte_counter_hash,
+                'keterangan'        => $doc->keterangan,
+                'pdf_base64'        => $pdfBase64,
+            ],
+            'signatures'      => [
+                [
+                    'signature'      => $signatureData['signature'] ?? '',
+                    'original_data'  => $signatureData['original_data'] ?? '',
+                    'public_key'     => $signatureData['public_key'] ?? '',
+                    'signer_name'    => auth()->user()?->name ?? 'User',
+                    'signer_role'    => auth()->user()?->jabatan?->nama ?? 'Pegawai',
+                    'status'         => 'VALID',
+                    'signed_at'      => now()->toIso8601String(),
+                    'signature_hash' => $doc->signature_hash,
+                ]
+            ],
+        ];
+
+        $response = $this->client->postDocument($payload);
+
+        if ($response && ($response['success'] ?? false)) {
+            $docstoreKey = $response['docstore_key'] ?? ($response['data']['docstore_key'] ?? null);
+            if ($docstoreKey) {
+                $doc->update(['docstore_key' => $docstoreKey]);
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Ambil data dokumen dari Docstore berdasarkan key (Source of Truth).
      */
     public function fetchFromDocstore(string $docstoreKey): ?array
