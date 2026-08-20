@@ -10,36 +10,37 @@ use App\Models\Sdm\Karyawan;
 use App\Models\Sdm\KaryawanDocument;
 use App\Enums\StatusKaryawan;
 use App\Enums\KategoriKerja;
-use App\Livewire\Forms\KaryawanForm;
+use App\Livewire\Forms\Karyawan\EditKedinasanForm;
 use App\Models\Sdm\KaryawanJabatan;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\On;
 use Illuminate\Validation\Rule;
 use TallStackUi\Traits\Interactions;
 
-#[Lazy]
 class EditKedinasan extends Component
 {
     use Interactions;
 
-    public KaryawanForm $form;
+    public EditKedinasanForm $form;
+    public ?Karyawan $karyawan = null;
+    public $karyawanId;
 
-    public $status_options;
-    public $status_init;
-    public $kategori_options;
-    public $kategori_init;
-    public $jabatan_options;
-    public $bagian_options;
-    public $jabatan_init;
-    public $bagian_init;
+    public $status_options = [];
+    public $status_init = '';
+    public $kategori_options = [];
+    public $kategori_init = '';
+    public $jabatan_options = [];
+    public $bagian_options = [];
+    public $jabatan_init = '';
+    public $bagian_init = '';
 
     public $dinas_options = [
         ['id' => 'resign', 'label' => 'Resign / Mengundurkan Diri'],
         ['id' => 'dipecat', 'label' => 'Dipecat'],
         ['id' => 'end_kontrak', 'label' => 'Habis Kontrak'],
     ];
-    public $dinas_init;
-    public $ruangan_init;
+    public $dinas_init = '';
+    public $ruangan_init = '';
     public $dinas;
     public $tgl_dinas;
     public $pendidikan_options = [];
@@ -54,7 +55,7 @@ class EditKedinasan extends Component
             'form.kategori_kerja' => 'required',
             'form.jabatan' => 'required',
             'form.bagian' => 'required|exists:bagian,id',
-            'form.tgl_status' => Rule::requiredIf(fn() => $this->form->status != $this->status_init),
+            'form.tgl_status' => Rule::requiredIf(fn() => (string) ($this->form->status instanceof StatusKaryawan ? $this->form->status->value : $this->form->status) !== (string) ($this->status_init instanceof StatusKaryawan ? $this->status_init->value : $this->status_init)),
             'form.tgl_jabatan' => Rule::requiredIf(fn() =>
                 $this->form->jabatan != $this->jabatan_init || $this->form->bagian != $this->bagian_init
             ),
@@ -69,18 +70,37 @@ class EditKedinasan extends Component
         ];
     }
 
+    public function boot(): void
+    {
+        $this->status_options = StatusKaryawan::options();
+        $this->kategori_options = KategoriKerja::options();
+        $this->jabatan_options = Jabatan::all();
+        $this->bagian_options = Bagian::query()->where('is_active', true)->orderBy('nama')->get();
+    }
+
+    public function hydrate(): void
+    {
+        if ($this->karyawanId && !$this->karyawan) {
+            $this->karyawan = Karyawan::find($this->karyawanId);
+            if ($this->karyawan) {
+                $this->form->karyawan = $this->karyawan;
+            }
+        }
+    }
+
     public function mount($id)
     {
+        $this->karyawanId = $id;
         $karyawan = Karyawan::findOrFail($id);
-        $this->form->mount($karyawan); //new instance form
+        $this->karyawan = $karyawan;
 
         $this->form->setKedinasan($karyawan);
 
         $this->status_options = StatusKaryawan::options();
-        $this->status_init = $karyawan->status;
+        $this->status_init = $karyawan->status instanceof StatusKaryawan ? $karyawan->status->value : (string) ($karyawan->status ?? '');
 
         $this->kategori_options = KategoriKerja::options();
-        $this->kategori_init = $karyawan->kategori_kerja?->value ?? 'shift';
+        $this->kategori_init = $karyawan->kategori_kerja instanceof KategoriKerja ? $karyawan->kategori_kerja->value : (string) ($karyawan->kategori_kerja?->value ?? 'shift');
 
         $this->jabatan_options = Jabatan::all();
         $this->bagian_options = Bagian::query()->where('is_active', true)->orderBy('nama')->get();
@@ -154,95 +174,99 @@ class EditKedinasan extends Component
         }
     }
 
-    public function viewDocument($documentId): void
+    public function viewDocument(int $documentId): void
     {
-        $this->previewDocument = KaryawanDocument::find($documentId);
-        if ($this->previewDocument) {
-            $this->dispatch('open-modal', id: 'view-sk-document-modal');
-        } else {
-            $this->toast()->error('Dokumen Tidak Ditemukan', 'File dokumen tidak ditemukan atau telah dihapus.')->send();
+        $doc = KaryawanDocument::find($documentId);
+        if (!$doc) {
+            $this->toast()->error('File tidak ditemukan', 'Dokumen SK tidak tersedia di database.')->send();
+            return;
         }
+
+        $this->previewDocument = $doc;
+        $this->dispatch('open-modal', id: 'view-sk-document-modal');
     }
 
-    public function updatedFormJabatan($value): void
+    public function updated($field)
     {
-        $jabatan = Jabatan::find($value);
-        $this->form->bagian = $jabatan?->bagian_id ?? '';
-    }
+        // When status is changed to pns / ptt_daerah / ptt_pusat -> auto set golongan
+        if ($field === 'form.status' && in_array($this->form->status, ['pns', 'ptt_daerah', 'ptt_pusat'])) {
+            $this->form->autoSetGolongan();
+        }
 
-    public function updatedFormRuangan($value)
-    {
-        if (is_array($value)) {
-            $this->form->ruangan = $value['id'] ?? $value['value'] ?? (isset($value[0]) ? $value[0] : null);
+        // When custom pendidikan matrix selection changes -> re-evaluate golongan
+        if ($field === 'form.pendidikan_golongan') {
+            $this->form->autoSetGolongan();
         }
     }
 
     public function update()
     {
-        $this->validate($this->rules());
+        $this->validate();
 
-        // update status or kategori kerja
-        if (($this->form->status != $this->status_init) || ($this->form->kategori_kerja != $this->kategori_init)) {
+        $formStatus = $this->form->status instanceof StatusKaryawan ? $this->form->status->value : (string) $this->form->status;
+        $initStatus = $this->status_init instanceof StatusKaryawan ? $this->status_init->value : (string) $this->status_init;
+
+        // update status
+        if ($formStatus !== $initStatus) {
             $this->updateStatus();
         }
 
+        $formKategori = $this->form->kategori_kerja instanceof KategoriKerja ? $this->form->kategori_kerja->value : (string) $this->form->kategori_kerja;
+        $initKategori = $this->kategori_init instanceof KategoriKerja ? $this->kategori_init->value : (string) $this->kategori_init;
+
+        // update kategori kerja
+        if ($formKategori !== $initKategori) {
+            $this->updateKategoriKerja();
+        }
+
         // update jabatan
-        if ($this->form->tgl_jabatan && (
-            $this->form->jabatan != $this->jabatan_init ||
-            $this->form->bagian != $this->bagian_init
-        )) {
+        if ($this->form->jabatan != $this->jabatan_init || $this->form->bagian != $this->bagian_init) {
             $this->updateJabatan();
         }
 
         // update ruangan
-        if ($this->form->tgl_ruangan && ($this->form->ruangan != $this->ruangan_init)) {
+        if ($this->form->ruangan != $this->ruangan_init) {
             $this->updateRuangan();
         }
 
-        // update ruangan, kategori kerja, dan pendidikan terakhir
-        $data = [];
-        
-        $ruanganRaw = $this->form->ruangan;
-        if (is_array($ruanganRaw)) {
-            $ruanganRaw = $ruanganRaw['id'] ?? $ruanganRaw['value'] ?? (isset($ruanganRaw[0]) ? $ruanganRaw[0] : null);
+        // update dinas
+        if ($this->form->dinas != $this->dinas_init) {
+            $this->updateDinas();
         }
-        $ruanganId = (empty($ruanganRaw) || $ruanganRaw == '') ? null : (int) $ruanganRaw;
-
-        if ($ruanganId != $this->ruangan_init) {
-            $data['ruangan_id'] = $ruanganId;
-            $this->ruangan_init = $ruanganId;
-            $this->form->ruangan = $ruanganId;
-        }
-        
-        $data['kategori_kerja'] = $this->form->kategori_kerja;
-        $data['pendidikan_setara'] = empty($this->form->pendidikan_setara) ? null : $this->form->pendidikan_setara;
-        
-        if (count($data) > 0) {
-            $this->form->karyawan->update($data);
-            if ($this->form->kategori_kerja === 'reguler' || $this->form->kategori_kerja === \App\Enums\KategoriKerja::REGULER) {
-                \App\Models\Sdm\JadwalKerja::syncKaryawanRegulerSchedule($this->form->karyawan->id);
-            }
-            $this->dispatch('updated-karywan');
-        }
-
-        $this->toast()
-            ->success('Sukses', 'Update data kedinasan berhasil.')
-            ->send();
     }
 
-    function updateStatus()
+    public function updateKategoriKerja()
     {
-
         try {
+            $kategoriVal = $this->form->kategori_kerja instanceof KategoriKerja ? $this->form->kategori_kerja->value : (string) $this->form->kategori_kerja;
+            $this->form->karyawan->update([
+                'kategori_kerja' => $kategoriVal,
+            ]);
+            $this->kategori_init = $kategoriVal;
+            $this->dispatch('kategori-kerja-updated');
+            $this->toast()
+                ->success('Sukses', 'Kategori kerja berhasil diperbarui.')
+                ->send();
+        } catch (Throwable $th) {
+            $this->toast()
+                ->error('Failed', 'Error : ' . $th->getMessage())
+                ->send();
+        }
+    }
+
+    public function updateStatus()
+    {
+        try {
+            $statusVal = $this->form->status instanceof StatusKaryawan ? $this->form->status->value : (string) $this->form->status;
             $data = [
-                'status' => $this->form->status,
-                'kategori_kerja' => $this->form->kategori_kerja,
+                'status'     => $statusVal,
+                'tgl_status' => $this->form->tgl_status,
             ];
 
             // update
             $this->form->karyawan->update($data);
-            $this->status_init = $this->form->status;
-            $this->kategori_init = $this->form->kategori_kerja;
+            $this->status_init = $statusVal;
+            $this->kategori_init = $this->form->kategori_kerja instanceof KategoriKerja ? $this->form->kategori_kerja->value : (string) $this->form->kategori_kerja;
 
             // event
             $this->dispatch('status-updated');
@@ -380,6 +404,9 @@ class EditKedinasan extends Component
 
     public function render()
     {
-        return view('livewire.karyawan.edit-kedinasan');
+        $karyawan = $this->karyawan ?? ($this->karyawanId ? Karyawan::find($this->karyawanId) : null);
+        return view('livewire.karyawan.edit-kedinasan', [
+            'karyawan' => $karyawan,
+        ]);
     }
 }

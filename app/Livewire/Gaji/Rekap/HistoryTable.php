@@ -59,7 +59,7 @@ class HistoryTable extends Component
     public function unlockPeriode(string $periode, PayrollPeriodService $periodService)
     {
         try {
-            $isSuperAdmin = (bool) auth()->user()?->hasRole('Super-Admin');
+            $isSuperAdmin = (bool) auth()->user()?->traitHasPermissionTo('unlock-payroll-approved');
             $periodService->unlockPeriode($periode, $isSuperAdmin);
             $this->toast()->success('Berhasil !', 'Kunci payroll periode ' . $periode . ' telah dibuka kembali.')->send();
         } catch (\Throwable $e) {
@@ -96,8 +96,8 @@ class HistoryTable extends Component
         $trendMonths = app(PayrollRekapService::class)->getSixMonthTrend($this->periode);
 
         $user = auth()->user();
-        $isOnlyPajak = $user && $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
-        $isSDM = $user && ($user->hasRole('Staff-SDM') || $user->hasRole('Super-Admin') || !$isOnlyPajak);
+        $isOnlyPajak = $user && $user->traitHasPermissionTo('view-kepegawaian-master-aturan-pajak') && !$user->traitHasPermissionTo('approve-kepegawaian-gaji');
+        $isSDM = $user && $user->traitHasPermissionTo('approve-kepegawaian-gaji');
 
         return view('livewire.gaji.rekap.partials.history-table', [
             'trendMonths' => $trendMonths,

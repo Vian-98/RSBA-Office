@@ -24,6 +24,10 @@ Schedule::command('payroll:send-scheduled-slips')
     ->appendOutputTo(storage_path('logs/payroll-auto-send.log'))
     ->description('Pengiriman otomatis slip gaji karyawan via email');
 
-
-
-
+// jalankan pemrosesan maintenance berkala setiap hari jam 01.00
+Schedule::command('maintenance:process-scheduled')
+    ->dailyAt('01:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/maintenance-scheduled.log'))
+    ->description('Memproses jadwal maintenance berkala aset');

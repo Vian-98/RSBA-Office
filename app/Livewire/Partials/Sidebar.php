@@ -5,7 +5,6 @@ namespace App\Livewire\Partials;
 use App\Models\Menu;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Isolate;
 use Livewire\Attributes\On;
 
@@ -38,7 +37,7 @@ class Sidebar extends Component
         cache()->forget('user-sidebar-menu:' . auth()->id());
         cache()->forget('user-permissions:view:' . auth()->id());
         cache()->forget('user-sidebar-menu:base');
-        
+
         $this->loadMenus();
     }
 
@@ -48,7 +47,6 @@ class Sidebar extends Component
     private function loadMenus(): void
     {
         $allMenus = $this->getPermittedMenus(auth()->id());
-        $allMenus = $this->injectAkreditasiSubMenus($allMenus);
         $this->menus = $this->applySearchFilter($allMenus);
     }
 
@@ -62,7 +60,7 @@ class Sidebar extends Component
         return cache()->remember($cacheKey, 60, function () use ($userId) {
             $allMenus = $this->getCachedBaseMenus();
 
-            if (Auth::user()->hasRole('Super-Admin')) {
+            if (Auth::user()->traitHasPermissionTo('super-admin-bypass')) {
                 return $allMenus;
             }
 
@@ -109,7 +107,6 @@ class Sidebar extends Component
                     'permission'   => $menu->permission ?? '',
                     'group'        => $menu->group?->nama() ?? '',
                     'submenus'   => $menu->submenus
-                        ->sortBy(fn($sub) => trim($sub->nama) === 'Rekap Bulanan' ? '00_rekap_bulanan' : $sub->nama)
                         ->map(fn($sub) => [
                             'id'           => $sub->id,
                             'nama'         => $sub->nama,
@@ -132,8 +129,7 @@ class Sidebar extends Component
     private function injectAkreditasiSubMenus(array $menus): array
     {
         $user = Auth::user();
-        $hasAccess = $user?->hasRole('Super-Admin')
-            || $user?->can('view-kepegawaian-akreditasi')
+        $hasAccess = $user?->can('view-kepegawaian-akreditasi')
             || $user?->can('assesor-akreditasi');
 
         if (!$hasAccess) {
@@ -179,7 +175,6 @@ class Sidebar extends Component
 
         return $menus;
     }
-
 
 
     private function applySearchFilter(array $menus): array
@@ -272,8 +267,8 @@ class Sidebar extends Component
                 }));
             }
 
-            // Modul Umum & Asset: Hanya untuk Kabag Umum / Wadir SDM-Umum / Super-Admin / Bagian-Umum
-            if ($user && ($user->isKabagUmum() || $user->isWadir() || $user->hasRole(['Super-Admin', 'Bagian-Umum']))) {
+            // Modul Umum & Asset: Hanya untuk Kabag Umum / Wadir SDM-Umum / User dengan izin view-umum-asset
+            if ($user && ($user->isKabagUmum() || $user->isWadir() || $user->can('view-umum-asset'))) {
                 $permissions = array_merge($permissions, [
                     'view-umum-asset',
                     'view-umum-pengajuan',
@@ -282,8 +277,8 @@ class Sidebar extends Component
                 ]);
             }
 
-            // Modul Keuangan: Hanya untuk Kabag Keuangan / Super-Admin / Keuangan
-            if ($user && ($user->isKabagKeuangan() || $user->hasRole(['Super-Admin', 'Keuangan']))) {
+            // Modul Keuangan: Hanya untuk Kabag Keuangan / User dengan izin view-keuangan-hutang
+            if ($user && ($user->isKabagKeuangan() || $user->can('view-keuangan-hutang'))) {
                 $permissions = array_merge($permissions, [
                     'view-keuangan-hutang',
                     'view-keuangan-piutang',
@@ -308,7 +303,7 @@ class Sidebar extends Component
             }
 
             // Tim Pajak otomatis mendapatkan akses menu Pajak PPh 21, Rekap Gaji, Karyawan, & Dokter
-            if ($user && ($user->hasRole('Pajak') || $user->hasRole('Super-Admin'))) {
+            if ($user && $user->can('view-kepegawaian-master-aturan-pajak')) {
                 if (!in_array('view-kepegawaian-master-aturan-pajak', $permissions)) {
                     $permissions[] = 'view-kepegawaian-master-aturan-pajak';
                 }
@@ -333,30 +328,30 @@ class Sidebar extends Component
                 }
             }
             // Dokter otomatis memiliki akses melihat "Jadwal Kerja"
-            if ($user && $user->isDokter()) {
-                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
-                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
-                }
-            }
+            // if ($user && $user->isDokter()) {
+            //     if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+            //         $permissions[] = 'view-kepegawaian-jadwal-kerja';
+            //     }
+            // }
 
             // Filter ketersediaan menu Jadwal Kerja sesuai wewenang user
-            if ($user && ($user->can('view-kepegawaian-jadwal-kerja') || $user->isDokter() || $user->isKoordinator())) {
-                if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
-                    $permissions[] = 'view-kepegawaian-jadwal-kerja';
-                }
-            } else {
-                $permissions = array_values(array_filter($permissions, fn($p) => $p !== 'view-kepegawaian-jadwal-kerja'));
-            }
+            // if ($user && ($user->can('view-kepegawaian-jadwal-kerja') || $user->isDokter() || $user->isKoordinator())) {
+            //     if (!in_array('view-kepegawaian-jadwal-kerja', $permissions)) {
+            //         $permissions[] = 'view-kepegawaian-jadwal-kerja';
+            //     }
+            // } else {
+            //     $permissions = array_values(array_filter($permissions, fn($p) => $p !== 'view-kepegawaian-jadwal-kerja'));
+            // }
 
             // Allow users with assigned ruangan to view the asset & pengajuan menu
-            if ($user?->karyawan?->ruangan_id) {
-                if (!in_array('view-umum-asset', $permissions)) {
-                    $permissions[] = 'view-umum-asset';
-                }
-                if (!in_array('view-umum-pengajuan', $permissions)) {
-                    $permissions[] = 'view-umum-pengajuan';
-                }
-            }
+            // if ($user?->karyawan?->ruangan_id) {
+            //     if (!in_array('view-umum-asset', $permissions)) {
+            //         $permissions[] = 'view-umum-asset';
+            //     }
+            //     if (!in_array('view-umum-pengajuan', $permissions)) {
+            //         $permissions[] = 'view-umum-pengajuan';
+            //     }
+            // }
 
             return $permissions;
         });

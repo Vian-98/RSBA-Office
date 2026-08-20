@@ -36,4 +36,34 @@ class AssetController extends Controller
 
         return response()->json($data);
     }
+
+    public function list(Request $request): JsonResponse
+    {
+        $search = $request->input('search');
+
+        $data = AssetBarang::with(['barang', 'ruangan'])
+            ->where('status', '!=', 'diperbaiki')
+            ->whereDoesntHave('maintenanceRequests', function ($query) {
+                $query->active();
+            })
+            ->when($search, function ($query) use ($search) {
+                $query->where('kode', 'like', '%' . $search . '%')
+                    ->orWhereHas('barang', function ($q) use ($search) {
+                        $q->where('nama', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('ruangan', function ($q) use ($search) {
+                        $q->where('nama', 'like', '%' . $search . '%');
+                    });
+            })
+            ->orderBy('id', 'desc')
+            ->limit(30)
+            ->get()
+            ->map(fn($item) => [
+                'value' => $item->id,
+                'label' => ($item->kode ? "{$item->kode} - " : '') . ($item->barang?->nama ?? 'Aset') . ($item->ruangan ? " ({$item->ruangan->nama})" : ''),
+                'description' => "Lokasi: " . ($item->ruangan?->nama ?? '-'),
+            ]);
+
+        return response()->json($data);
+    }
 }

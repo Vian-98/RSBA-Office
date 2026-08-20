@@ -191,7 +191,7 @@ class TableEp extends Component implements HasTable, HasForms, HasActions
                     )
                     ->visible(
                         fn() =>
-                        auth()->user()->hasRole('Super-Admin') or
+                        auth()->user()->can('view-kepegawaian-akreditasi') or
                             !auth()->user()->can('assesor-akreditasi')
 
                     )

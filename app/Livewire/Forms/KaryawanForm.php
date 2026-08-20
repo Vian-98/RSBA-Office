@@ -40,7 +40,6 @@ class KaryawanForm extends Form
     public $dom_kec;
     public $dom_desa;
     public $dom_alamat;
-
     public $ihs_number;
     public $no_str;
     public $jenis_str;
@@ -165,13 +164,17 @@ class KaryawanForm extends Form
     // set using different compoenent
     function setKedinasan(Karyawan $karyawan)
     {
-        $this->status = $karyawan->status;
+        $this->status = $karyawan->status instanceof \App\Enums\StatusKaryawan
+            ? $karyawan->status->value
+            : (string) ($karyawan->status ?? '');
         $jabatan = $karyawan->jabatan->first();
         $this->jabatan = $jabatan?->id ?? '';
         $this->bagian = $jabatan?->pivot?->bagian_id ?? $jabatan?->bagian_id ?? '';
         $this->ruangan = $karyawan->ruangan_id ?? '';
         $this->dinas = $karyawan->resign ?? '';
-        $this->kategori_kerja = $karyawan->kategori_kerja?->value ?? 'shift';
+        $this->kategori_kerja = $karyawan->kategori_kerja instanceof \App\Enums\KategoriKerja
+            ? $karyawan->kategori_kerja->value
+            : (string) ($karyawan->kategori_kerja?->value ?? 'shift');
         $this->pendidikan_setara = $karyawan->pendidikan_setara ?? '';
     }
 

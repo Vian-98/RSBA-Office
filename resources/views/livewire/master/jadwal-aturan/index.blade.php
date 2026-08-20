@@ -1,6 +1,6 @@
 <div class="flex flex-col gap-2">
 
-    @if(auth()->user()?->hasRole(['Super-Admin', 'Staff-SDM', 'Wakil-Direktur', 'Wadir-SDM-Umum']))
+    @can('manage-kepegawaian-master-aturan')
         <div class="flex w-full flex-row rounded-lg bg-white">
             <div class="ms-auto px-3 py-2 flex items-center gap-2">
                 <x-ts:button sm color="rose" outline icon="tabler.rotate-2" wire:click="confirmResetAllToAturanUmum">
@@ -11,7 +11,7 @@
                 </x-ts:button>
             </div>
         </div>
-    @endif
+    @endcan
 
     <div class="relative overflow-x-auto rounded-lg bg-white px-4 py-2">
         {{ $this->table }}

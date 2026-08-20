@@ -1,11 +1,10 @@
 <div>
     <nav class="text-primary-700 flex h-16 items-center px-6 text-xl">
-        <div class="flex flex-row items-center gap-2">
-            <a @click.prevent="toggle()" @keyup.enter="alert('Submitted!')" class="hover:text-danger-500" href="#">
+        <div x-show="!isOpen()" class="flex flex-row items-center gap-2">
+            <a x-show="!isOpen()" @click.prevent="handleOpen()" @keyup.enter="alert('Submitted!')" class="hover:text-danger-500" href="#">
                 <div x-data="{ isHover: false }">
                     <x-tabler-menu-2 x-show="!isHover" @mouseover="isHover = true" />
-                    <x-tabler-layout-sidebar-left-expand x-show="isHover && !isSidebarExpanded()" @mouseleave="isHover = false" />
-                    <x-tabler-layout-sidebar-left-collapse x-show="isHover && isSidebarExpanded()" @mouseleave="isHover = false" />
+                    <x-tabler-layout-sidebar-left-expand x-show="isHover" @mouseleave="isHover = false" />
                 </div>
             </a>
             <a href="">
@@ -16,7 +15,7 @@
         <div class="ml-auto flex">
             <div class="flex items-center">
                 <div class="me-6 hidden space-x-4 lg:block">
-                    <x-ts:dropdown position="bottom-end" width="lg">
+                    <x-ts:dropdown position="bottom-end">
                         <x-slot:action>
                             <x-ts:button.circle flat outline class="relative" x-on:click="show = !show">
                                 <x-tabler-bell />
@@ -26,15 +25,15 @@
                             </x-ts:button.circle>
                         </x-slot:action>
 
-                        <div class="w-full p-4 flex flex-col max-h-96">
-                            <div class="flex items-center justify-between border-b border-gray-100 pb-2 mb-3 shrink-0">
-                                <span class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                        <div class="flex max-h-96 w-full flex-col p-4" x-init="$el.closest('[data-floating]').style.width = '26rem'">
+                            <div class="mb-3 flex shrink-0 items-center justify-between border-b border-gray-100 pb-2">
+                                <span class="flex items-center gap-1.5 text-sm font-bold text-slate-800">
                                     <x-tabler-bell class="size-4 text-indigo-500" />
                                     Notifikasi
                                 </span>
                                 <a href="{{ route('profile.notif') }}" class="text-xs font-semibold text-indigo-600 hover:underline">Lihat Semua</a>
                             </div>
-                            <div class="flex-1 overflow-y-auto scrollbar-hidden">
+                            <div class="scrollbar-hidden flex-1 overflow-y-auto">
                                 <livewire:Profile.Notif :key="auth()->user()->id" />
                             </div>
                         </div>

@@ -91,7 +91,7 @@ class Index extends Component
 
             // Clear notifications cache for all admins/SDM staff
             try {
-                $usersToNotify = \App\Models\User::role(['Super-Admin', 'Staff-SDM'])->get();
+                $usersToNotify = \App\Models\User::permission('manage-kepegawaian-master-tunjangan-golongan')->get();
                 foreach ($usersToNotify as $u) {
                     \Illuminate\Support\Facades\Cache::forget('notif_user_' . $u->id);
                 }
@@ -163,7 +163,7 @@ class Index extends Component
 
             // Clear notifications cache for admins
             try {
-                $usersToNotify = \App\Models\User::role(['Super-Admin', 'Staff-SDM'])->get();
+                $usersToNotify = \App\Models\User::permission('manage-kepegawaian-master-tunjangan-golongan')->get();
                 foreach ($usersToNotify as $u) {
                     \Illuminate\Support\Facades\Cache::forget('notif_user_' . $u->id);
                 }
@@ -239,7 +239,7 @@ class Index extends Component
 
             // Clear notifications cache for admins
             try {
-                $usersToNotify = \App\Models\User::role(['Super-Admin', 'Staff-SDM'])->get();
+                $usersToNotify = \App\Models\User::permission('manage-kepegawaian-master-tunjangan-golongan')->get();
                 foreach ($usersToNotify as $u) {
                     \Illuminate\Support\Facades\Cache::forget('notif_user_' . $u->id);
                 }
@@ -282,7 +282,7 @@ class Index extends Component
 
             // Clear notifications cache for admins
             try {
-                $usersToNotify = \App\Models\User::role(['Super-Admin', 'Staff-SDM'])->get();
+                $usersToNotify = \App\Models\User::permission('manage-kepegawaian-master-tunjangan-golongan')->get();
                 foreach ($usersToNotify as $u) {
                     \Illuminate\Support\Facades\Cache::forget('notif_user_' . $u->id);
                 }
@@ -362,7 +362,7 @@ class Index extends Component
 
             // Clear notifications cache for admins
             try {
-                $usersToNotify = \App\Models\User::role(['Super-Admin', 'Staff-SDM'])->get();
+                $usersToNotify = \App\Models\User::permission('manage-kepegawaian-master-tunjangan-golongan')->get();
                 foreach ($usersToNotify as $u) {
                     \Illuminate\Support\Facades\Cache::forget('notif_user_' . $u->id);
                 }
@@ -404,7 +404,7 @@ class Index extends Component
 
             // Clear notifications cache for admins
             try {
-                $usersToNotify = \App\Models\User::role(['Super-Admin', 'Staff-SDM'])->get();
+                $usersToNotify = \App\Models\User::permission('manage-kepegawaian-master-tunjangan-golongan')->get();
                 foreach ($usersToNotify as $u) {
                     \Illuminate\Support\Facades\Cache::forget('notif_user_' . $u->id);
                 }

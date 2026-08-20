@@ -28,7 +28,7 @@ class Catat extends Component
     public function mount($id)
     {
         $user = auth()->user();
-        if (!$user || (!$user->hasRole('Super-Admin') && !$user->hasRole('Staff-Umum') && !$user->hasRole('Admin-Umum') && !$user->can('manage-umum-asset') && !$user->can('manage-asset'))) {
+        if (!$user || (!$user->can('manage-umum-asset') && !$user->can('manage-asset'))) {
             abort(403, 'Hanya Bagian Umum yang berhak melakukan pencatatan aset.');
         }
 

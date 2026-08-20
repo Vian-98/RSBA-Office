@@ -104,7 +104,7 @@ class TableDokter extends Component implements HasTable, HasForms, HasActions
                     ->tooltip('Atur Ruangan Koordinasi')
                     ->color('info')
                     ->visible(
-                        fn() => auth()->user()->can('edit-kepegawaian-karyawan') || auth()->user()->can('view-kepegawaian-master-bagian-koordinator') || auth()->user()->isKoordinator() || auth()->user()->hasAnyRole(['Super-Admin', 'Staff-SDM', 'Kepala-Bidang', 'Wakil-Direktur'])
+                        fn() => auth()->user()->can('edit-kepegawaian-karyawan') || auth()->user()->can('view-kepegawaian-master-bagian-koordinator') || auth()->user()->isKoordinator()
                     )
                     ->action(fn(Dokter $dokter, $livewire) => $livewire->openKoorRuangan(
                         id: $dokter->getKey()

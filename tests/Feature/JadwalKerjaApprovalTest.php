@@ -22,25 +22,8 @@ class JadwalKerjaApprovalTest extends TestCase
     {
         parent::setUp();
 
-        // Create permissions and roles
-        Permission::firstOrCreate(['name' => 'view-kepegawaian-jadwal-kerja']);
-        Permission::firstOrCreate(['name' => 'add-kepegawaian-jadwal-kerja']);
-        Permission::firstOrCreate(['name' => 'edit-kepegawaian-jadwal-kerja']);
-        Permission::firstOrCreate(['name' => 'approve-jadwal-kabid']);
-        Permission::firstOrCreate(['name' => 'approve-jadwal-wadir']);
-
-        $roleSuperAdmin = Role::firstOrCreate(['name' => 'Super-Admin']);
-        $roleKabid = Role::firstOrCreate(['name' => 'Kepala-Bidang']);
-        $roleWadir = Role::firstOrCreate(['name' => 'Wakil-Direktur']);
-        Role::firstOrCreate(['name' => 'Wadir-Medis-Keperawatan']);
-        Role::firstOrCreate(['name' => 'Wadir-SDM-Umum']);
-        Role::firstOrCreate(['name' => 'Wadir-Keuangan']);
-        Role::firstOrCreate(['name' => 'Direktur']);
-        Role::firstOrCreate(['name' => 'Staff-SDM']);
-        Role::firstOrCreate(['name' => 'Koordinator-Dokter']);
-
-        $roleKabid->givePermissionTo(['view-kepegawaian-jadwal-kerja', 'approve-jadwal-kabid']);
-        $roleWadir->givePermissionTo(['view-kepegawaian-jadwal-kerja', 'approve-jadwal-wadir']);
+        $this->seed(\Database\Seeders\PermissionSeeder::class);
+        $this->seed(\Database\Seeders\RoleSeeder::class);
     }
 
     private function createDummyKaryawan(string $nip, string $nama, int $ruanganId): Karyawan
