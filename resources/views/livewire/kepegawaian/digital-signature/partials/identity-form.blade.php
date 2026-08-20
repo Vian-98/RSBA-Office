@@ -47,7 +47,7 @@
             @if(isset($kategoriList) && count($kategoriList) > 0)
                 @foreach($kategoriList as $cat)
                     <option value="{{ $cat->kode }}">
-                        {{ $cat->nama }} {{ !$cat->is_system ? '(Kustom)' : '' }}
+                        {{ $cat->nama }}
                     </option>
                 @endforeach
             @else

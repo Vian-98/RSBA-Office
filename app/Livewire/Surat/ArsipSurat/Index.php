@@ -6,15 +6,42 @@ use App\Models\Surat\SuratKategoriArsip;
 use App\Services\DocstoreSyncService;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use TallStackUi\Traits\Interactions;
 use Illuminate\Support\Str;
 
 #[Title('Arsip Surat - Bank Surat Docstore')]
+#[Lazy]
 class Index extends Component
 {
     use WithPagination, Interactions;
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="space-y-6 animate-pulse">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                <div class="space-y-2">
+                    <div class="h-5 w-48 bg-slate-200 rounded-lg"></div>
+                    <div class="h-3 w-80 bg-slate-100 rounded-lg"></div>
+                </div>
+                <div class="h-9 w-40 bg-indigo-100 rounded-xl"></div>
+            </div>
+            <div class="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
+                <div class="inline-block p-4 rounded-full bg-indigo-50 text-indigo-600">
+                    <svg class="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <p class="text-sm font-bold text-slate-700">Memuat data Arsip Surat dari Bank Surat Docstore...</p>
+                <p class="text-xs text-slate-400">Sinkronisasi data real-time via API Docstore</p>
+            </div>
+        </div>
+        HTML;
+    }
 
     /** @var string Filter kategori/jenis arsip ('all' atau kode kategori) */
     #[Url]
