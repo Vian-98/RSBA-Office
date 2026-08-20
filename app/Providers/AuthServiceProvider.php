@@ -25,7 +25,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(JadwalKerja::class, JadwalKerjaPolicy::class);
 
         Gate::before(function ($user, $ability) {
-            if ($user->traitHasPermissionTo('super-admin-bypass')) {
+            if ($user->hasRole('Super-Admin') || $user->hasPermissionTo('super-admin-bypass')) {
                 return true;
             }
 
@@ -47,7 +47,7 @@ class AuthServiceProvider extends ServiceProvider
 
             if ($ability === 'view-kepegawaian-jadwal-kerja') {
                 if (
-                    $user->traitHasPermissionTo('view-kepegawaian-jadwal-kerja') ||
+                    $user->hasPermissionTo('view-kepegawaian-jadwal-kerja') ||
                     $user->isKoordinator() ||
                     $user->isDokterOrApprover() ||
                     ($user->karyawan && $user->karyawan->kategori_kerja === \App\Enums\KategoriKerja::SHIFT)

@@ -234,7 +234,7 @@ class Index extends Component
 
         $allowanceTypes = DB::table('sdm_payroll_allowance_types')->orderBy('nama', 'asc')->get();
         $user = auth()->user();
-        $isOnlyPajak = $user && $user->traitHasPermissionTo('view-kepegawaian-master-aturan-pajak') && !$user->traitHasPermissionTo('approve-kepegawaian-gaji');
+        $isOnlyPajak = $user && $user->can('approve-kepegawaian-gaji-pajak') && !$user->can('approve-kepegawaian-gaji');
 
         return view('livewire.gaji.index', [
             'karyawans' => $karyawans,

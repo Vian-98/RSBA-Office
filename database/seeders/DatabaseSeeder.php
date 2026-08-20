@@ -13,11 +13,12 @@ class DatabaseSeeder extends Seeder
     {
         // Core / Master Seeders (Always executed)
         $mainSeeders = [
+            MenuSeeder::class,
+            SpecialPermissionSeeder::class,
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
             SuperAdminSignatureSeeder::class,
-            MenuSeeder::class,
             PerusahaanSeeder::class,
             WilayahSeeder::class,
             UmDataSeeder::class,
@@ -29,10 +30,10 @@ class DatabaseSeeder extends Seeder
             KaryawanExcelSeeder::class,
             DummyPayrollSlipSeeder::class,
             JadwalDummyJuniSeeder::class,
-            SkenarioTriRahayuSeeder::class,
-            JadwalDuaTahunSeeder::class,
             CutiJenisSeeder::class,
             CutiBersamaSeeder::class,
+            SkenarioTriRahayuSeeder::class,
+            JadwalDuaTahunSeeder::class,
             StrukturOrganisasiSeeder::class,
         ];
 

@@ -18,17 +18,19 @@ class PayrollPeriodService
 
         $status = $lock->status ?? 'draft';
         $user = auth()->user();
-        $isOnlyPajak = $user && $user->traitHasPermissionTo('view-kepegawaian-master-aturan-pajak') && !$user->traitHasPermissionTo('approve-kepegawaian-gaji');
+        $canApprovePajak = $user && $user->can('approve-kepegawaian-gaji-pajak');
+        $canApproveGaji = $user && $user->can('approve-kepegawaian-gaji');
 
         $isLocked = false;
         if ($status === 'approved') {
             $isLocked = true;
         } elseif ($status === 'review_pajak') {
-            $isLocked = !$isOnlyPajak;
+            $isLocked = !$canApprovePajak;
         } elseif ($status === 'review_sdm') {
             $isLocked = true;
         } else {
-            $isLocked = $isOnlyPajak;
+            // Draft: terkunci bagi reviewer pajak murni
+            $isLocked = $canApprovePajak && !$canApproveGaji;
         }
 
         return [

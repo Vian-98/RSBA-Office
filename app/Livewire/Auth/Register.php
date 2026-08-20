@@ -58,7 +58,7 @@ class Register extends Component
             $user->syncRoleFromJabatan();
 
             // Fallback role sync jika syncRoleFromJabatan menetapkan role dasar namun user adalah Dokter / Koordinator
-            if (!$user->traitHasPermissionTo('edit-kepegawaian-jadwal-kerja')) {
+            if (!$user->can('edit-kepegawaian-jadwal-kerja')) {
                 if ($user->isDokter() && $user->isKoordinator()) {
                     \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Koordinator-Dokter']);
                     $user->syncRoles(['Koordinator-Dokter']);

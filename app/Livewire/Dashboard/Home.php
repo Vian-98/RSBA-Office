@@ -51,7 +51,7 @@ class Home extends Component
             }
 
             try {
-                if ($user->traitHasPermissionTo('super-admin-bypass')) {
+                if ($user->can('super-admin-bypass') || $user->hasRole('Super-Admin')) {
                     $this->loadSuperAdminData();
                 } elseif ($user->isKabagSDM()) {
                     $this->loadSdmData();

@@ -93,7 +93,18 @@ class UmumSeeder extends Seeder
         }
 
         // 3. Tambahan Dummy Pembelian Langsung
-        $supplierId = DB::table('um_supplier')->inRandomOrder()->first()?->id ?? 1;
+        $supplier = DB::table('um_supplier')->first();
+        if (!$supplier) {
+            $supplierId = DB::table('um_supplier')->insertGetId([
+                'nama' => 'PT Supplier Utama',
+                'alamat' => 'Jl. Merdeka No. 123',
+                'telp' => '021-5551234',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $supplierId = $supplier->id;
+        }
         
         for ($i = 1; $i <= 3; $i++) {
             $pembelianId = DB::table('um_pembelian')->insertGetId([

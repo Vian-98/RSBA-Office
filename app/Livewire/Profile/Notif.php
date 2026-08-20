@@ -55,7 +55,7 @@ class Notif extends Component
 
         // 2. Cuti (Leave Requests) Notifications
         try {
-            if ($user->traitHasPermissionTo('approve-kepegawaian-cuti')) {
+            if ($user->can('approve-kepegawaian-cuti')) {
                 // Pending cuti needing approval
                 $pendingCutis = SuratCuti::with('karyawan')
                     ->whereIn('status', [StatusApproval::PENDING, StatusApproval::WAITING])
@@ -103,7 +103,7 @@ class Notif extends Component
 
         // 3. Maintenance (Jadwal) Notifications
         try {
-            if ($user->traitHasPermissionTo('view-umum-maintenance')) {
+            if ($user->can('view-umum-maintenance')) {
                 $maintenance = Jadwal::with('asset')
                     ->latest()
                     ->take(5)
@@ -203,7 +203,7 @@ class Notif extends Component
 
         // 6. Golongan Matrix & Tunjangan Changes (For SDM & Management)
         try {
-            if ($user->traitHasPermissionTo('view-kepegawaian-gaji')) {
+            if ($user->can('view-kepegawaian-gaji')) {
                 $logs = \Illuminate\Support\Facades\DB::table('sdm_payroll_golongan_logs')
                     ->join('users', 'sdm_payroll_golongan_logs.user_id', '=', 'users.id')
                     ->join('sdm_karyawan', 'users.karyawan_id', '=', 'sdm_karyawan.id')

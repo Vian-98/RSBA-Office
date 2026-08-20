@@ -22,7 +22,7 @@ class DisplayMonitorAdmin extends Component
         if (!$user) {
             return false;
         }
-        return $user->traitHasPermissionTo('super-admin-bypass') || ($user->is_superadmin ?? false);
+        return $user->can('super-admin-bypass') || $user->hasRole('Super-Admin');
     }
 
     public function canAccessServerRoom(): bool
