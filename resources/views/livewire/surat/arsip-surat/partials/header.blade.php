@@ -1,7 +1,7 @@
 {{-- Header Banner & Action Button --}}
 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
     <div>
-        <h1 class="text-base sm:text-lg font-bold text-slate-800 tracking-tight">Arsip Surat Resmi</h1>
+        <h1 class="text-base sm:text-lg font-bold text-slate-800 tracking-tight">Arsip Surat RS Bintang Amin</h1>
         <p class="text-xs text-slate-500 mt-0.5">Arsip terpusat dari seluruh jenis dokumen resmi RS Bintang Amin.</p>
     </div>
 

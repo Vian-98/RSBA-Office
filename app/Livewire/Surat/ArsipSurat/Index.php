@@ -12,7 +12,7 @@ use Livewire\Attributes\Url;
 use TallStackUi\Traits\Interactions;
 use Illuminate\Support\Str;
 
-#[Title('Arsip Surat - Bank Surat Docstore')]
+#[Title('Arsip Surat')]
 #[Lazy]
 class Index extends Component
 {
@@ -36,8 +36,7 @@ class Index extends Component
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </div>
-                <p class="text-sm font-bold text-slate-700">Memuat data Arsip Surat dari Bank Surat Docstore...</p>
-                <p class="text-xs text-slate-400">Sinkronisasi data real-time via API Docstore</p>
+                <p class="text-sm font-bold text-slate-700">Memuat data Arsip Surat</p>
             </div>
         </div>
         HTML;
