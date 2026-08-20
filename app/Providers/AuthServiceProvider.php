@@ -25,7 +25,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(JadwalKerja::class, JadwalKerjaPolicy::class);
 
         Gate::before(function ($user, $ability) {
-            if ($user->traitHasPermissionTo('super-admin-bypass')) {
+            if ($user->hasRole('Super-Admin') || $user->traitHasPermissionTo('super-admin-bypass')) {
                 return true;
             }
 

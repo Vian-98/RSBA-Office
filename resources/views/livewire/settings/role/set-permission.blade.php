@@ -6,9 +6,14 @@
     
         }
     }">
-        <span>Berikan Permission :</span>
-        <div class="w-1/2">
-            <x-ts:tag :limit='1' x-on:add="search($event.detail.tag)" x-on:remove="search('')" x-on:erase="search('')" placeholder="Filter" />
+        <div class="flex items-center justify-between gap-2">
+            <div class="w-1/2">
+                <x-ts:tag :limit='1' x-on:add="search($event.detail.tag)" x-on:remove="search('')" x-on:erase="search('')" placeholder="Filter" />
+            </div>
+            <div class="flex items-center gap-2">
+                <x-ts:button type="button" sm outline color="indigo" wire:click="selectAll">Pilih Semua</x-ts:button>
+                <x-ts:button type="button" sm outline color="secondary" wire:click="deselectAll">Kosongkan</x-ts:button>
+            </div>
         </div>
 
         <form wire:submit.prevent='submit'>
