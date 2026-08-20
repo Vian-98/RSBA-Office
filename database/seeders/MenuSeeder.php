@@ -229,6 +229,15 @@ class MenuSeeder extends Seeder
                 'group' => 'sdm',
             ],
             [
+                'id' => 78,
+                'nama' => 'Arsip Surat',
+                'route' => 'kepegawaian.surat.arsip',
+                'icon' => 'archive',
+                'permission' => [],
+                'parent_id' => 17,
+                'group' => 'sdm',
+            ],
+            [
                 'id' => 22,
                 'nama' => 'Master',
                 'route' => null,

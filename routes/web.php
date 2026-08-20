@@ -46,3 +46,9 @@ Route::get('surat/verification', App\Livewire\Surat\Verifikasi\Index::class)->na
 
 // Public Document Verification Portal
 Route::get('/verifikasi-surat/{hash?}', App\Livewire\Public\VerifyDocument::class)->name('surat.verifikasi.publik');
+
+// Explicit PDF & Download Routes Fallback for Herd/Valet
+Route::middleware(['auth', 'web'])->group(function () {
+    Route::get('/kepegawaian/surat/balasan-pkl/{id}/pdf', [App\Http\Controllers\Surat\SuratBalasanPklPdfController::class, 'download'])->name('kepegawaian.surat.balasan-pkl.pdf');
+    Route::get('/kepegawaian/surat/balasan-pkl/{id}/preview-pdf', [App\Http\Controllers\Surat\SuratBalasanPklPdfController::class, 'stream'])->name('kepegawaian.surat.balasan-pkl.preview-pdf');
+});

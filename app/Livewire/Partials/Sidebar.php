@@ -372,7 +372,10 @@ class Sidebar extends Component
 
         $permittedSubmenus = collect($menu['submenus'] ?? [])
             ->filter(function ($submenu) use ($userViewPermissions) {
-                $submenuPermissions = !empty($submenu['permission']) ? $submenu['permission'] : [];
+                $submenuPermissions = !empty($submenu['permission']) ? (array) $submenu['permission'] : [];
+                if (empty($submenuPermissions)) {
+                    return true;
+                }
                 return !empty(array_intersect($submenuPermissions, $userViewPermissions));
             })
             ->values()

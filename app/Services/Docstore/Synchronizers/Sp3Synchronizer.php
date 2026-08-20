@@ -38,7 +38,6 @@ class Sp3Synchronizer implements DocumentSynchronizerInterface
             $model->updateQuietly([
                 'docstore_key'       => $docstoreKey,
                 'docstore_synced_at' => now(),
-                'docstore_status'    => 'synced',
             ]);
             if (!empty($docstoreKey)) {
                 $this->client->invalidateCache($docstoreKey);
@@ -46,9 +45,6 @@ class Sp3Synchronizer implements DocumentSynchronizerInterface
             return true;
         }
 
-        $model->updateQuietly([
-            'docstore_status' => 'failed',
-        ]);
         return false;
     }
 
@@ -64,6 +60,7 @@ class Sp3Synchronizer implements DocumentSynchronizerInterface
         $statusDoc = $this->mapDocumentStatus($model);
 
         return [
+            'document_id'     => $model->id,
             'document_number' => $model->no,
             'document_type'   => 'sp3',
             'status'          => $statusDoc,
@@ -117,9 +114,9 @@ class Sp3Synchronizer implements DocumentSynchronizerInterface
                 'status'         => $statusText,
                 'signed_at'      => $approval->approved_at ? $approval->approved_at->toIso8601String() : null,
                 'signature_hash' => $approval->qr_verification_hash ?: ($sigLog->data_hash ?? null),
-                'signature'      => $sigLog->signature ?? null,
-                'signature_data' => $sigLog->signature ?? null,
-                'original_data'  => $sigLog->data ?? null,
+                'signature'      => $sigLog->signature ?? '',
+                'signature_data' => $sigLog->signature ?? '',
+                'original_data'  => $sigLog->data ?? ($sigLog->signature ?? ''),
                 'public_key'     => optional($cert)->public_key ?? null,
                 'is_manual'      => (bool) ($approval->is_manual ?? ($approval->status === 'manual')),
                 'manual_note'    => $approval->catatan ?? null,

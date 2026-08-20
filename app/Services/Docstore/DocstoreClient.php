@@ -78,7 +78,7 @@ class DocstoreClient
     /**
      * Buat HMAC signature header untuk proteksi anti-tampering dan anti-replay.
      */
-    public function buildHmacHeaders(string $method, string $path, array $body = []): array
+    public function buildHmacHeaders(string $method, string $path, string $rawBody = ''): array
     {
         $timestamp = (string) time();
         $token = $this->getM2mToken();
@@ -94,8 +94,7 @@ class DocstoreClient
         }
 
         if (!empty($this->hmacSecret)) {
-            $bodyJson = !empty($body) ? json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : '';
-            $payloadToSign = strtoupper($method) . "\n" . $path . "\n" . $timestamp . "\n" . $bodyJson;
+            $payloadToSign = $timestamp . '.' . $rawBody;
             $signature = hash_hmac('sha256', $payloadToSign, $this->hmacSecret);
             $headers['X-Payload-Signature'] = $signature;
         }
@@ -111,12 +110,14 @@ class DocstoreClient
         try {
             $path = '/api/documents';
             $url  = $this->apiUrl . '/documents';
+            $rawBody = json_encode($payload);
 
-            $headers  = $this->buildHmacHeaders('POST', $path, $payload);
+            $headers  = $this->buildHmacHeaders('POST', $path, $rawBody);
             $response = Http::withOptions(['verify' => $this->verifySsl])
                 ->withHeaders($headers)
+                ->withBody($rawBody, 'application/json')
                 ->timeout(15)
-                ->post($url, $payload);
+                ->post($url);
 
             if ($response->successful()) {
                 $data = $response->json();
