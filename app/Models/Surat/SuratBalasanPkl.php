@@ -103,6 +103,8 @@ class SuratBalasanPkl extends Model
      */
     public function getNoCleanAttribute(): string
     {
-        return str_replace(['/', '\\', ' '], '-', $this->no ?? 'surat-balasan-pkl');
+        $clean = preg_replace('/[^A-Za-z0-9\-_]/', '-', $this->no ?? "Balasan-PKL-{$this->id}");
+        $clean = preg_replace('/-+/', '-', $clean);
+        return trim($clean, '-');
     }
 }

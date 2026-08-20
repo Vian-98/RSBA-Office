@@ -219,8 +219,13 @@
         <div style="text-align: left; font-size: 11pt; line-height: 1.35; margin: 0;">
             <div style="font-weight: bold;">RS. Bintang Amin</div>
             <div>Direktur</div>
-            {{-- 3-4 ENTER spasi TTD --}}
-            <div style="height: 55px;"></div>
+            @if(!empty($qrBase64))
+                <div style="padding: 4px 0;">
+                    <img src="data:image/png;base64,{{ $qrBase64 }}" style="width: 58px; height: 58px; display: block;" alt="QR Code Verifikasi">
+                </div>
+            @else
+                <div style="height: 55px;"></div>
+            @endif
             <div style="font-weight: bold;">{{ $namaDirektur }}</div>
         </div>
 
@@ -350,8 +355,13 @@
             <div style="margin-bottom: 2px;">Bandar Lampung, {{ $tglSuratIndo }}</div>
             <div style="font-weight: bold;">RS. Bintang Amin</div>
             <div>Direktur</div>
-            {{-- 4 ENTER spasi TTD --}}
-            <div style="height: 55px;"></div>
+            @if(!empty($qrBase64))
+                <div style="padding: 4px 0;">
+                    <img src="data:image/png;base64,{{ $qrBase64 }}" style="width: 58px; height: 58px; display: block;" alt="QR Code Verifikasi">
+                </div>
+            @else
+                <div style="height: 55px;"></div>
+            @endif
             <div style="font-weight: bold;">{{ $namaDirektur }}</div>
         </div>
 

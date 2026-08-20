@@ -1,7 +1,7 @@
-<div id="print-balasan-pkl-content" style="font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #000; line-height: 1.5; background: #fff; width: 100%; max-width: 210mm; margin: 0 auto; padding: 10px;">
+<div id="print-balasan-pkl-content" style="font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #000; line-height: 1.5; background: #fff; width: 100%; max-width: 210mm; margin: 0 auto; padding: 0 10px;">
     @php
-        $isDocstore = $this->fromDocstore && !empty($this->docstoreData);
-        $doc = $this->docstoreData['document'] ?? [];
+        $isDocstore = ($fromDocstore ?? false) && !empty($docstoreData);
+        $doc = ($docstoreData ?? [])['document'] ?? [];
         $content = $isDocstore ? ($doc['content'] ?? []) : [];
 
         $tglSuratIndo = !empty($content['tgl']) ? \Carbon\Carbon::parse($content['tgl'])->translatedFormat('d F Y') : ($suratBalasanPkl->tgl ? \Carbon\Carbon::parse($suratBalasanPkl->tgl)->translatedFormat('d F Y') : '-');
@@ -19,19 +19,21 @@
         $totOrientasi = (float) ($content['total_biaya_orientasi'] ?? $suratBalasanPkl->total_biaya_orientasi);
         $grandTotal = (float) ($content['grand_total_biaya'] ?? $suratBalasanPkl->grand_total_biaya);
         $nomorSurat = $content['no'] ?? $suratBalasanPkl->no;
-        $univ = $content['tujuan_universitas'] ?? $suratBalasanPkl->tujuan_universitas;
+        $univ = $content['tujuan_universitas'] ?? $suratBalasanPkl->display_universitas;
         $prodi = $content['prodi'] ?? $suratBalasanPkl->prodi;
         $tujuanNama = $content['tujuan_nama'] ?? $suratBalasanPkl->tujuan_nama;
         $tujuanAlamat = $content['tujuan_alamat'] ?? $suratBalasanPkl->tujuan_alamat;
         $noSuratMasuk = $content['nomor_surat_masuk'] ?? $suratBalasanPkl->nomor_surat_masuk;
         $snapSk = $content['snap_nomor_sk'] ?? $suratBalasanPkl->snap_nomor_sk;
+        $listMahasiswa = $suratBalasanPkl->mahasiswa ?? collect([]);
+        $qrCode = $qrCode ?? null;
     @endphp
 
     <style>
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 15mm 20mm 15mm 20mm;
+                margin: 15mm 10mm 15mm 30mm;
             }
             body {
                 margin: 0 !important;
@@ -59,7 +61,7 @@
     @if ($isDocstore)
         {{-- Docstore Verified Badge Component --}}
         <x-surat.docstore-badge
-            :version="$this->docstoreData['meta']['version'] ?? ($this->docstoreData['document']['version'] ?? 1)"
+            :version="($docstoreData['meta']['version'] ?? ($docstoreData['document']['version'] ?? 1))"
             :docstore-key="$suratBalasanPkl->docstore_key"
         />
     @elseif(!empty($suratBalasanPkl->docstore_key))
@@ -71,190 +73,270 @@
     {{-- ============================================================
          HALAMAN 1: SURAT BALASAN PKL
          ============================================================ --}}
-    <div style="min-height: 250mm; display: flex; flex-direction: column; justify-content: space-between;">
+    <div style="min-height: 255mm; display: flex; flex-direction: column; justify-content: space-between;">
         <div>
-            {{-- Kop Surat RSBA Component --}}
-            <x-surat.kop-surat />
+            {{-- Kop Surat RSBA Logo Resmi (5.54cm x 2.75cm) --}}
+            <x-surat.kop-resmi />
 
-            {{-- Tanggal Surat --}}
-            <div style="text-align: right; margin-bottom: 14px; font-size: 11pt;">
+            {{-- Tanggal Surat (Rata Kiri) --}}
+            <div style="text-align: left; font-size: 11pt; line-height: 1.5; margin: 0;">
                 Bandar Lampung, {{ $tglSuratIndo }}
             </div>
 
+            {{-- 1 ENTER --}}
+            <div style="height: 14px;"></div>
+
             {{-- Metadata Surat --}}
-            <table style="width: 100%; font-size: 11pt; margin-bottom: 16px; border-collapse: collapse; line-height: 1.4;">
+            <table style="width: 100%; font-size: 11pt; margin: 0; border-collapse: collapse; line-height: 1.25;">
                 <tr>
-                    <td style="width: 90px; vertical-align: top; padding: 2px 0;">Nomor</td>
-                    <td style="width: 15px; vertical-align: top; padding: 2px 0; text-align: center;">:</td>
-                    <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $nomorSurat }}</td>
+                    <td style="width: 75px; vertical-align: top; padding: 0;">Nomor</td>
+                    <td style="width: 15px; vertical-align: top; padding: 0; text-align: center;">:</td>
+                    <td style="vertical-align: top; padding: 0;">{{ $nomorSurat }}</td>
                 </tr>
                 <tr>
-                    <td style="vertical-align: top; padding: 2px 0;">Lampiran</td>
-                    <td style="vertical-align: top; padding: 2px 0; text-align: center;">:</td>
-                    <td style="vertical-align: top; padding: 2px 0;">1 (satu) Berkas</td>
+                    <td style="vertical-align: top; padding: 0;">Lampiran</td>
+                    <td style="vertical-align: top; padding: 0; text-align: center;">:</td>
+                    <td style="vertical-align: top; padding: 0;">1 (satu) Berkas</td>
                 </tr>
                 <tr>
-                    <td style="vertical-align: top; padding: 2px 0; font-weight: bold;">Perihal</td>
-                    <td style="vertical-align: top; padding: 2px 0; text-align: center; font-weight: bold;">:</td>
-                    <td style="vertical-align: top; padding: 2px 0; font-weight: bold;">Biaya dan Izin Praktik</td>
+                    <td style="vertical-align: top; padding: 0; font-weight: bold;">Perihal</td>
+                    <td style="vertical-align: top; padding: 0; text-align: center; font-weight: bold;">:</td>
+                    <td style="vertical-align: top; padding: 0; font-weight: bold;">Biaya dan Izin Praktik</td>
                 </tr>
             </table>
 
-            {{-- Kepada Yth --}}
-            <div style="margin-bottom: 16px; font-size: 11pt; line-height: 1.4;">
-                <div>Kepada Yth;</div>
+            {{-- 1 ENTER --}}
+            <div style="height: 14px;"></div>
+
+            {{-- Blok Kepada Yth --}}
+            <div style="font-size: 11pt; line-height: 1.25; margin: 0;">
+                <div>KepadaYth;</div>
                 @if($tujuanNama)
-                    <div style="font-weight: bold;">{{ $tujuanNama }}</div>
+                    <div>{{ $tujuanNama }}</div>
                 @endif
-                <div style="font-weight: bold;">Universitas {{ $univ }}</div>
+                <div style="font-weight: bold;">{{ $univ }}</div>
                 @if($tujuanAlamat)
                     <div>{{ $tujuanAlamat }}</div>
                 @endif
                 <div>Di</div>
-                <div style="padding-left: 20px;">Tempat</div>
+                <div style="padding-left: 28px;">Tempat</div>
             </div>
 
+            {{-- 1 ENTER --}}
+            <div style="height: 14px;"></div>
+
             {{-- Salam Pembuka --}}
-            <div style="margin-bottom: 10px; font-style: italic; font-weight: bold; font-size: 11pt;">
+            <div style="font-size: 11pt; line-height: 1.5; margin: 0;">
                 Assalamu’alaikum Wr Wb
             </div>
 
-            {{-- Paragraf 1 --}}
-            <p style="text-align: justify; text-indent: 35px; margin: 0 0 10px 0; font-size: 11pt; line-height: 1.5;">
-                Menindaklanjuti surat Universitas {{ $univ }} dengan nomor surat : {{ $noSuratMasuk ?: '....................' }} tanggal {{ $tglMasukIndo }}, tentang Surat Izin Praktik dengan Jumlah Mahasiswi {{ $jumlahMhs }} orang. Pelaksanaan Praktik tersebut akan dilaksanakan pada tanggal {{ $tglMulaiIndo }} s.d {{ $tglSelesaiIndo }}.
-            </p>
+            {{-- Paragraf 1 (Justified, Line 1.5, Indent 0) --}}
+            <div style="text-align: justify; font-size: 11pt; line-height: 1.5; margin: 0; text-indent: 0;">
+                Menindaklanjuti surat {{ $univ }} dengan nomor surat : {{ $noSuratMasuk ?: '....................' }} tanggal {{ $tglMasukIndo }}, tentang Surat Izin Praktik dengan Jumlah Mahasiswa/i {{ $jumlahMhs }} orang. Pelaksanaan Praktik tersebut akan dilaksanakan pada tanggal <strong>{{ $tglMulaiIndo }} s.d {{ $tglSelesaiIndo }}.</strong>
+            </div>
 
-            {{-- Paragraf 2 --}}
-            <p style="text-align: justify; text-indent: 35px; margin: 0 0 10px 0; font-size: 11pt; line-height: 1.5;">
-                Pada dasarnya pihak RS Bintang Amin Lampung, Bersedia memberikan izin Kunjungan Rumah Sakit kepada Mahasiswa Prodi {{ $prodi }} Universitas {{ $univ }} dengan ketentuan sebagai berikut :
-            </p>
+            {{-- Paragraf 2 (Justified, Line 1.5, Indent 0) --}}
+            <div style="text-align: justify; font-size: 11pt; line-height: 1.5; margin: 0; text-indent: 0;">
+                Pada dasarnya pihak RS Bintang Amin Lampung, <strong>Bersedia</strong> memberikan izin Kunjungan Rumah Sakit kepada Mahasiswa/i Prodi {{ $prodi }} {{ $univ }} dengan ketentuan sebagai berikut :
+            </div>
 
-            {{-- Poin Ketentuan --}}
-            <ol style="margin: 0 0 12px 0; padding-left: 30px; font-size: 11pt; line-height: 1.5; text-align: justify;">
-                <li style="margin-bottom: 4px;">
-                    Biaya praktik Mahasiswa/i Rp. {{ number_format($snapBiayaPraktik, 0, ',', '.') }},-/Mahasiswa /Bulan (sesuai dengan Surat Keputusan Direktur Nomor {{ $snapSk ?: '023/Kpts-S4/PBA-A10/10.01.22' }})
-                </li>
+            {{-- 5 Poin Ketentuan --}}
+            @php $pNo = 1; @endphp
+            <table style="width: 100%; font-size: 11pt; line-height: 1.5; text-align: justify; margin: 0; border-collapse: collapse;">
+                <tr>
+                    <td style="width: 24px; vertical-align: top; padding: 0;">{{ $pNo++ }}.</td>
+                    <td style="vertical-align: top; padding: 0; text-align: justify;">
+                        Biaya praktik Mahasiswa/i Rp. {{ number_format($snapBiayaPraktik, 0, ',', '.') }},-/Mahasiswa/i /Bulan (sesuai dengan Surat Keputusan Direktur Nomor {{ $snapSk ?: '023/Kpts-S4/PBA-A10/10.01.22' }})
+                    </td>
+                </tr>
                 @if($hasOrientasi)
-                    <li style="margin-bottom: 4px;">
-                        Biaya Orientasi Rp {{ number_format($snapBiayaOrientasi, 0, ',', '.') }}./Mahasiswa/i
-                    </li>
+                    <tr>
+                        <td style="width: 24px; vertical-align: top; padding: 0;">{{ $pNo++ }}.</td>
+                        <td style="vertical-align: top; padding: 0; text-align: justify;">
+                            Biaya Orientasi Rp {{ number_format($snapBiayaOrientasi, 0, ',', '.') }}./Mahasiswa/i
+                        </td>
+                    </tr>
                 @endif
-                <li style="margin-bottom: 4px;">
-                    Biaya dapat di transfer melalui rekening RSBA dengan Nomor Rekening 555 00 888 12 BNI atas nama RS Bintang Amin.
-                </li>
-                <li style="margin-bottom: 4px;">
-                    Menyelesaikan biaya Administrasi PKL sebelum pelaksanaan praktik dimulai.
-                </li>
-                <li style="margin-bottom: 4px;">
-                    Selama kunjungan mahasiswa Wajib menerapkan protokol kesehatan 3M yaitu Menjaga jarak, Memakai masker dan Mencuci tangan
-                </li>
-            </ol>
+                <tr>
+                    <td style="width: 24px; vertical-align: top; padding: 0;">{{ $pNo++ }}.</td>
+                    <td style="vertical-align: top; padding: 0; text-align: justify;">
+                        Biaya dapat di transfer melalui rekening RSBA dengan Nomor Rekening <strong><em>555 00 888 12</em></strong> BNI atas nama <strong>RS Bintang Amin</strong>.
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 24px; vertical-align: top; padding: 0;">{{ $pNo++ }}.</td>
+                    <td style="vertical-align: top; padding: 0; text-align: justify;">
+                        Menyelesaikan biaya Administrasi PKL sebelum pelaksanaan praktik dimulai.
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 24px; vertical-align: top; padding: 0;">{{ $pNo++ }}.</td>
+                    <td style="vertical-align: top; padding: 0; text-align: justify;">
+                        Selama kunjungan  mahasiswa/i Wajib menerapkan protokol kesehatan 3M yaitu Menjaga jarak, Memakai masker dan Mencuci tangan
+                    </td>
+                </tr>
+            </table>
 
             {{-- Paragraf Penutup --}}
-            <p style="text-align: justify; text-indent: 35px; margin: 0 0 10px 0; font-size: 11pt; line-height: 1.5;">
+            <div style="text-align: justify; font-size: 11pt; line-height: 1.5; margin: 0; text-indent: 0;">
                 Demikian kami sampaikan, Atas perhatian dan kerjasamanya kami ucapkan terimakasih.
-            </p>
+            </div>
 
-            <div style="font-style: italic; font-weight: bold; font-size: 11pt; margin-bottom: 20px;">
+            {{-- Salam Penutup --}}
+            <div style="font-size: 11pt; line-height: 1.5; margin: 0;">
                 Wassalamu’alaikum Wr Wb.
+            </div>
+
+            {{-- 1 ENTER --}}
+            <div style="height: 14px;"></div>
+
+            {{-- Kolom TTD Direktur --}}
+            <div style="text-align: left; font-size: 11pt; line-height: 1.35; margin: 0;">
+                <div style="font-weight: bold;">RS. Bintang Amin</div>
+                <div>Direktur</div>
+                @if($qrCode)
+                    <div style="padding: 4px 0;">
+                        <img src="data:image/png;base64,{{ $qrCode }}" style="width: 58px; height: 58px; display: block;" alt="QR Code Verifikasi">
+                    </div>
+                @else
+                    <div style="height: 55px;"></div>
+                @endif
+                <div style="font-weight: bold;">{{ $namaDirektur }}</div>
             </div>
         </div>
 
-        {{-- Kolom Tanda Tangan Direktur + QR Code Verifikasi Component --}}
-        <x-surat.signature-block
-            title="RS. Bintang Amin"
-            role="Direktur"
-            :name="$namaDirektur"
-            :qr-code="$this->generateHeaderQrCode"
-        />
+        {{-- Footer Kontak Resmi --}}
+        <x-surat.footer-resmi />
     </div>
 
     {{-- Page Break untuk Lampiran --}}
-    <div class="page-break" style="page-break-before: always; break-before: page; margin-top: 25px; border-top: 1px dashed #cbd5e1; padding-top: 15px;"></div>
+    <div class="page-break" style="page-break-before: always; break-before: page;"></div>
 
     {{-- ============================================================
          HALAMAN 2: LAMPIRAN RINCIAN BIAYA PRAKTIK
          ============================================================ --}}
-    <div style="min-height: 250mm; display: flex; flex-direction: column; justify-content: space-between;">
+    <div style="min-height: 255mm; display: flex; flex-direction: column; justify-content: space-between;">
         <div>
+            {{-- Kop Surat RSBA Logo Resmi --}}
+            <x-surat.kop-resmi />
+
             {{-- Header Lampiran --}}
-            <div style="font-weight: bold; font-size: 11pt; margin-bottom: 4px;">
+            <div style="font-size: 11pt; line-height: 1.25; margin: 0;">
                 Lampiran Surat
             </div>
-            <table style="width: 100%; font-size: 11pt; margin-bottom: 20px; border-collapse: collapse; line-height: 1.4;">
+            <table style="width: 100%; font-size: 11pt; margin: 0; border-collapse: collapse; line-height: 1.25;">
                 <tr>
-                    <td style="width: 90px; vertical-align: top; padding: 2px 0;">Nomor</td>
-                    <td style="width: 15px; vertical-align: top; padding: 2px 0; text-align: center;">:</td>
-                    <td style="vertical-align: top; padding: 2px 0; font-weight: 500;">{{ $nomorSurat }}</td>
+                    <td style="width: 75px; vertical-align: top; padding: 0;">Nomor</td>
+                    <td style="width: 15px; vertical-align: top; padding: 0; text-align: center;">:</td>
+                    <td style="vertical-align: top; padding: 0;">{{ $nomorSurat }}</td>
                 </tr>
                 <tr>
-                    <td style="vertical-align: top; padding: 2px 0; font-weight: bold;">Perihal</td>
-                    <td style="vertical-align: top; padding: 2px 0; text-align: center; font-weight: bold;">:</td>
-                    <td style="vertical-align: top; padding: 2px 0; font-weight: bold;">Biaya dan Izin Praktik</td>
+                    <td style="vertical-align: top; padding: 0; font-weight: bold;">Perihal</td>
+                    <td style="vertical-align: top; padding: 0; text-align: center; font-weight: bold;">:</td>
+                    <td style="vertical-align: top; padding: 0; font-weight: bold;">Biaya dan Izin Praktik</td>
                 </tr>
             </table>
 
-            {{-- Judul Tabel Lampiran --}}
-            <div style="text-align: center; font-weight: bold; font-size: 12pt; text-transform: uppercase; margin-bottom: 18px;">
+            {{-- 1 ENTER --}}
+            <div style="height: 14px;"></div>
+
+            {{-- Judul Tabel (Tengah, Bold, En-dash) --}}
+            <div style="text-align: center; font-weight: bold; font-size: 11pt; margin: 0;">
                 Rincian Biaya Praktik di Rumah Sakit Bintang Amin – Lampung
             </div>
 
-            {{-- Tabel Lampiran Sesuai Format Word --}}
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 10.5pt; margin-bottom: 20px;">
+            <div style="height: 10px;"></div>
+
+            {{-- Tabel Lampiran --}}
+            <table style="width: 100%; border: 1.5px solid #000; border-collapse: collapse; font-size: 10pt; margin: 0;">
                 <thead>
-                    <tr style="background-color: #f8fafc; font-weight: bold; text-align: center;">
-                        <th style="border: 1px solid #000; padding: 8px 6px; width: 40px; text-align: center;">No</th>
-                        <th style="border: 1px solid #000; padding: 8px 10px; text-align: left;">Biaya Praktek Kerja Lapangan</th>
-                        <th style="border: 1px solid #000; padding: 8px 10px; width: 120px; text-align: center;">Jumlah Siswa</th>
-                        <th style="border: 1px solid #000; padding: 8px 10px; width: 120px; text-align: center;">Lama Praktik</th>
-                        <th style="border: 1px solid #000; padding: 8px 10px; width: 160px; text-align: right;">Total Biaya</th>
+                    <tr style="background-color: #ffffff;">
+                        <th style="border: 1px solid #000; padding: 6px 4px; width: 35px; text-align: center; font-weight: bold;">No</th>
+                        <th style="border: 1px solid #000; padding: 6px 8px; text-align: center; font-weight: bold;">Biaya Praktek Kerja Lapangan</th>
+                        <th style="border: 1px solid #000; padding: 6px 8px; width: 95px; text-align: center; font-weight: bold;">Jumlah Siswa</th>
+                        <th style="border: 1px solid #000; padding: 6px 8px; width: 95px; text-align: center; font-weight: bold;">Lama Praktik</th>
+                        <th style="border: 1px solid #000; padding: 6px 8px; width: 130px; text-align: center; font-weight: bold;">Total Biaya</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 8px 6px; text-align: center; font-weight: bold; vertical-align: top;">1</td>
-                        <td style="border: 1px solid #000; padding: 8px 10px; vertical-align: top;">
-                            <div style="font-weight: bold;">Izin Praktek</div>
-                            <div style="font-size: 9.5pt; color: #475569;">Rp. {{ number_format($snapBiayaPraktik, 0, ',', '.') }},-/ orang/ bulan</div>
+                        <td style="border: 1px solid #000; padding: 6px 4px; text-align: center;">1</td>
+                        <td style="border: 1px solid #000; padding: 6px 8px; text-align: left;">
+                            <div>Izin Praktek</div>
+                            <div>Rp. {{ number_format($snapBiayaPraktik, 0, ',', '.') }},-/ orang/ bulan</div>
                         </td>
-                        <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">{{ $jumlahMhs }} Orang</td>
-                        <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">{{ $lamaBulan }} Bulan</td>
-                        <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; font-size: 10.5pt; vertical-align: top;">
+                        <td style="border: 1px solid #000; padding: 6px 8px; text-align: center;">{{ $jumlahMhs }} Orang</td>
+                        <td style="border: 1px solid #000; padding: 6px 8px; text-align: center;">{{ $lamaBulan }} Bulan</td>
+                        <td style="border: 1px solid #000; padding: 6px 8px; text-align: left;">
                             Rp. {{ number_format($totPraktik, 0, ',', '.') }},-
                         </td>
                     </tr>
                     @if($hasOrientasi)
                         <tr>
-                            <td style="border: 1px solid #000; padding: 8px 6px; text-align: center; font-weight: bold; vertical-align: top;">2</td>
-                            <td style="border: 1px solid #000; padding: 8px 10px; vertical-align: top;">
-                                <div style="font-weight: bold;">Orientasi</div>
-                                <div style="font-size: 9.5pt; color: #475569;">Rp. {{ number_format($snapBiayaOrientasi, 0, ',', '.') }},-/ orang</div>
+                            <td style="border: 1px solid #000; padding: 6px 4px; text-align: center;">2</td>
+                            <td style="border: 1px solid #000; padding: 6px 8px; text-align: left;">
+                                <div>Orientasi Rp. {{ number_format($snapBiayaOrientasi, 0, ',', '.') }},-/ orang</div>
                             </td>
-                            <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">{{ $jumlahMhs }} Orang</td>
-                            <td style="border: 1px solid #000; padding: 8px 10px; text-align: center; vertical-align: top;">-</td>
-                            <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; font-size: 10.5pt; vertical-align: top;">
+                            <td style="border: 1px solid #000; padding: 6px 8px; text-align: center;">{{ $jumlahMhs }} Orang</td>
+                            <td style="border: 1px solid #000; padding: 6px 8px; text-align: center;">-</td>
+                            <td style="border: 1px solid #000; padding: 6px 8px; text-align: left;">
                                 Rp. {{ number_format($totOrientasi, 0, ',', '.') }},-
                             </td>
                         </tr>
                     @endif
-                    <tr style="font-weight: bold; background-color: #f1f5f9;">
-                        <td colspan="4" style="border: 1px solid #000; padding: 8px 10px; text-align: center; text-transform: uppercase;">Total</td>
-                        <td style="border: 1px solid #000; padding: 8px 10px; text-align: right; font-family: monospace; font-size: 11pt;">
+                    <tr style="font-weight: bold;">
+                        <td colspan="4" style="border: 1px solid #000; padding: 6px 8px; text-align: center;">Total</td>
+                        <td style="border: 1px solid #000; padding: 6px 8px; text-align: left;">
                             Rp. {{ number_format($grandTotal, 0, ',', '.') }},-
                         </td>
                     </tr>
                 </tbody>
             </table>
+
+            {{-- Tabel Daftar Mahasiswa jika ada --}}
+            @if($listMahasiswa->count() > 0)
+                <div style="margin-top: 14px; margin-bottom: 6px; font-weight: bold; font-size: 10pt;">
+                    Daftar Mahasiswa/i ({{ $listMahasiswa->count() }} Orang):
+                </div>
+                <table style="width: 100%; border: 1.5px solid #000; border-collapse: collapse; font-size: 10pt; margin: 0;">
+                    <thead>
+                        <tr style="background-color: #ffffff;">
+                            <th style="border: 1px solid #000; padding: 6px 4px; width: 35px; text-align: center; font-weight: bold;">No</th>
+                            <th style="border: 1px solid #000; padding: 6px 8px; text-align: left; font-weight: bold;">Nama Mahasiswa/i</th>
+                            <th style="border: 1px solid #000; padding: 6px 8px; width: 160px; text-align: center; font-weight: bold;">NPM / NIM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($listMahasiswa as $mIdx => $mhs)
+                            <tr>
+                                <td style="border: 1px solid #000; padding: 6px 4px; text-align: center;">{{ $mIdx + 1 }}</td>
+                                <td style="border: 1px solid #000; padding: 6px 8px; text-align: left;">{{ $mhs->nama }}</td>
+                                <td style="border: 1px solid #000; padding: 6px 8px; text-align: center;">{{ $mhs->npm ?: '-' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            <div style="height: 18px;"></div>
+
+            {{-- Kolom TTD Direktur Lampiran --}}
+            <div style="text-align: left; font-size: 11pt; line-height: 1.35; margin: 0;">
+                <div style="margin-bottom: 2px;">Bandar Lampung, {{ $tglSuratIndo }}</div>
+                <div style="font-weight: bold;">RS. Bintang Amin</div>
+                <div>Direktur</div>
+                @if($qrCode)
+                    <div style="padding: 4px 0;">
+                        <img src="data:image/png;base64,{{ $qrCode }}" style="width: 58px; height: 58px; display: block;" alt="QR Code Verifikasi">
+                    </div>
+                @else
+                    <div style="height: 55px;"></div>
+                @endif
+                <div style="font-weight: bold;">{{ $namaDirektur }}</div>
+            </div>
         </div>
 
-        {{-- Kolom Tanda Tangan Lampiran + QR Code Component --}}
-        <x-surat.signature-block
-            title="RS. Bintang Amin"
-            role="Direktur"
-            :name="$namaDirektur"
-            city="Bandar Lampung"
-            :date="$tglSuratIndo"
-            :qr-code="$this->generateHeaderQrCode"
-        />
+        {{-- Footer Kontak Resmi --}}
+        <x-surat.footer-resmi />
     </div>
 </div>

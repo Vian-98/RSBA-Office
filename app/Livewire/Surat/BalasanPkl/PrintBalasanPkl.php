@@ -4,6 +4,8 @@ namespace App\Livewire\Surat\BalasanPkl;
 
 use App\Livewire\Surat\Traits\HasDocstoreSourceOfTruth;
 use App\Models\Surat\SuratBalasanPkl;
+use App\Services\QrGeneratorService;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -28,8 +30,33 @@ class PrintBalasanPkl extends Component
         $this->refreshDocstore();
     }
 
+    /**
+     * Generate QR Code verifikasi untuk surat.
+     * Prioritas: docstore_key -> qr_hash
+     */
+    #[Computed]
+    public function generateHeaderQrCode(): ?string
+    {
+        $qrService = app(QrGeneratorService::class);
+
+        if (!empty($this->suratBalasanPkl->docstore_key)) {
+            return $qrService->generateDocstoreQr($this->suratBalasanPkl->docstore_key, 4, 4);
+        }
+
+        if (!empty($this->suratBalasanPkl->qr_hash)) {
+            return $qrService->generateQrPngBase64($qrService->getVerificationUrl($this->suratBalasanPkl->qr_hash), 4, 4);
+        }
+
+        return null;
+    }
+
     public function render()
     {
-        return view('livewire.surat.balasan-pkl.print-balasan-pkl');
+        return view('livewire.surat.balasan-pkl.print-balasan-pkl', [
+            'suratBalasanPkl' => $this->suratBalasanPkl,
+            'fromDocstore' => $this->fromDocstore,
+            'docstoreData' => $this->docstoreData,
+            'qrCode' => $this->generateHeaderQrCode(),
+        ]);
     }
 }
