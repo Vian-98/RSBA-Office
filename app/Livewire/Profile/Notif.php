@@ -170,6 +170,59 @@ class Notif extends Component
             report($e);
         }
 
+        // 5. Digital Signature Notifications (Pengajuan Ditolak & Menunggu Approval)
+        try {
+            // A. Dokumen milik user yang Ditolak
+            $rejectedDocs = \App\Models\DigitalSignatureDocument::with(['approvals.user'])
+                ->where('user_id', $user->id)
+                ->where('status', 'rejected')
+                ->latest()
+                ->take(5)
+                ->get();
+
+            foreach ($rejectedDocs as $doc) {
+                $rejectedAppr = $doc->approvals->where('status', 'rejected')->first();
+                $penolakName = $rejectedAppr?->user?->name ?? 'Penandatangan';
+                $reason = $rejectedAppr?->rejection_reason ?? 'Tidak ada catatan feedback';
+
+                $items[] = [
+                    'id' => 'ds-rejected-' . $doc->id,
+                    'type' => 'danger',
+                    'icon' => 'tabler.file-x',
+                    'title' => 'Pengajuan TTD Ditolak: ' . $doc->title,
+                    'message' => "Ditolak oleh {$penolakName}. Catatan: \"{$reason}\"",
+                    'time' => $doc->updated_at->diffForHumans(),
+                    'route' => 'kepegawaian.digital-signature.index',
+                ];
+            }
+
+            // B. Dokumen bertingkat yang Menunggu Persetujuan User Ini
+            $pendingApprovals = \App\Models\DigitalSignatureApproval::with(['document.user'])
+                ->where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->latest()
+                ->take(5)
+                ->get();
+
+            foreach ($pendingApprovals as $appr) {
+                $doc = $appr->document;
+                if ($doc && $doc->isPendingForUser($user->id)) {
+                    $senderName = $doc->user?->name ?? 'Pengirim';
+                    $items[] = [
+                        'id' => 'ds-pending-' . $doc->id,
+                        'type' => 'warning',
+                        'icon' => 'tabler.file-pencil',
+                        'title' => 'Permohonan TTD Bertingkat: ' . $doc->title,
+                        'message' => "Diajukan oleh {$senderName}. Membutuhkan persetujuan & TTD Anda (Tier {$appr->step_order}).",
+                        'time' => $appr->created_at->diffForHumans(),
+                        'route' => 'kepegawaian.digital-signature.index',
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         // 5. Jadwal Kerja Dipublikasikan / Terkunci (Untuk Karyawan)
         try {
             if ($user->karyawan_id) {

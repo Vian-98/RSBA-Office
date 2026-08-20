@@ -91,7 +91,14 @@
                         this.isDragging = false;
                     }
                 }"
-                x-init="$nextTick(() => renderPdfCanvas())"
+                x-init="
+                    $nextTick(() => renderPdfCanvas());
+                    if (typeof Livewire !== 'undefined' && Livewire.hook) {
+                        Livewire.hook('commit', ({ succeed }) => {
+                            succeed(() => $nextTick(() => drawPage()));
+                        });
+                    }
+                "
                 @mousemove.window="onDrag($event)"
                 @mouseup.window="stopDrag()"
                 style="display: flex; flex-wrap: nowrap; gap: 24px; width: 100%; align-items: flex-start; border-top: 1px solid #f1f5f9; padding-top: 24px;"

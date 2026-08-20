@@ -7,6 +7,7 @@ use Livewire\WithFileUploads;
 use Livewire\Attributes\Lazy;
 use TallStackUi\Traits\Interactions;
 use App\Models\DigitalSignatureDocument;
+use App\Models\DigitalSignatureApproval;
 use App\Services\DigitalSignatureService;
 use App\Services\DocstoreSyncService;
 use Illuminate\Support\Facades\Auth;
@@ -30,10 +31,14 @@ class Form extends Component
     public $account_password = '';
 
     // Digital Signature & QR Stamp Customization
-    public $stamp_position = 'top_right';
-    public $stamp_x = 70; // percentage from left (0 to 100)
-    public $stamp_y = 75; // percentage from top (0 to 100)
-    public $stamp_scale = 100; // percentage scale (50% to 180%)
+    public string $stamp_position = 'bottom_right';
+    public float $stamp_x = 70.0;
+    public float $stamp_y = 75.0;
+    public int $stamp_scale = 100;
+
+    // Multi-tier signing properties
+    public array $signer_ids = [];
+    public int $selected_add_user_id = 0;
     public $signature_type = 'qr_seal'; // 'qr_seal', 'digital_stamp'
     public $fileSizeFormatted = null;
     public $fileHashSHA256 = null;
@@ -61,6 +66,57 @@ class Form extends Component
     public function mount()
     {
         $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
+        if (auth()->check() && empty($this->signer_ids)) {
+            $this->signer_ids[] = auth()->id();
+        }
+    }
+
+    public function addSignerUser(): void
+    {
+        if ($this->selected_add_user_id > 0 && !in_array($this->selected_add_user_id, $this->signer_ids)) {
+            $this->signer_ids[] = (int) $this->selected_add_user_id;
+            $this->selected_add_user_id = 0;
+            $this->toast()->success('Penandatangan Ditambahkan', 'Tingkat persetujuan baru berhasil ditambahkan.')->send();
+        }
+    }
+
+    public function removeSignerUser(int $index): void
+    {
+        if (isset($this->signer_ids[$index])) {
+            array_splice($this->signer_ids, $index, 1);
+        }
+    }
+
+    public function resolveHighestRankUser(array $userIds)
+    {
+        if (empty($userIds)) return auth()->user();
+
+        $users = \App\Models\User::with(['karyawan.jabatan.tingkat'])->whereIn('id', $userIds)->get();
+        $bestUser = null;
+        $bestUrutan = 99999;
+
+        foreach ($users as $u) {
+            $urutan = 999;
+            $karyawan = $u->karyawan;
+            if ($karyawan) {
+                $jabatan = $karyawan->jabatan()->with('tingkat')->first();
+                if ($jabatan && $jabatan->tingkat) {
+                    $urutan = (int) ($jabatan->tingkat->urutan ?? 999);
+                }
+            }
+            if ($urutan < $bestUrutan) {
+                $bestUrutan = $urutan;
+                $bestUser = $u;
+            }
+        }
+
+        return $bestUser ?: $users->first();
+    }
+
+    public function getHighestRankSignerNameProperty(): string
+    {
+        $user = $this->resolveHighestRankUser($this->signer_ids);
+        return $user ? $user->name : (auth()->user()?->name ?? 'Penandatangan Digital');
     }
 
     public function setPresetPosition($preset)
@@ -237,6 +293,8 @@ class Form extends Component
             }
 
             // 3. Hard-stamp RSBA QR Code Digital Signature directly into PDF Binary stream
+            $highestRankUser = $this->resolveHighestRankUser($this->signer_ids) ?: $user;
+
             $qrService = app(\App\Services\QrGeneratorService::class);
             $verifyUrl = $qrService->getVerificationUrl($byteCounterHash);
 
@@ -246,7 +304,7 @@ class Form extends Component
                 pctX: (float) $this->stamp_x,
                 pctY: (float) $this->stamp_y,
                 scalePercent: (float) $this->stamp_scale,
-                signerName: $user->name,
+                signerName: $highestRankUser->name,
                 signedAtDate: date('d M Y H:i') . ' WIB',
                 shaHash: $byteCounterHash,
                 documentNumber: $this->document_number,
@@ -270,7 +328,11 @@ class Form extends Component
                 'stamp_y'        => $this->stamp_y,
                 'stamp_scale'    => $this->stamp_scale,
                 'user_note'      => $this->keterangan,
+                'signer_ids'     => $this->signer_ids,
             ];
+
+            $isMultiTier = count($this->signer_ids) > 1 || (count($this->signer_ids) === 1 && $this->signer_ids[0] != $user->id);
+            $docStatus = $isMultiTier ? 'pending_approval' : 'approved';
 
             // 4. Save metadata record to local DB office
             $doc = DigitalSignatureDocument::create([
@@ -282,9 +344,22 @@ class Form extends Component
                 'file_size'         => $fileSize,
                 'byte_counter_hash' => $stampedByteHash,
                 'signature_hash'    => $signatureHash,
-                'status'            => 'approved',
+                'status'            => $docStatus,
                 'keterangan'        => json_encode($stampMetaPayload),
             ]);
+
+            // Save multi-tier approval steps
+            $step = 1;
+            foreach ($this->signer_ids as $sId) {
+                DigitalSignatureApproval::create([
+                    'digital_signature_document_id' => $doc->id,
+                    'user_id'                       => $sId,
+                    'step_order'                    => $step++,
+                    'status'                        => ($sId == $user->id ? 'approved' : 'pending'),
+                    'signed_at'                     => ($sId == $user->id ? now() : null),
+                    'signature_hash'                => ($sId == $user->id ? $signatureHash : null),
+                ]);
+            }
 
             // 5. Send to docstore (Bank Surat & Cryptographic Vault)
             $synced = $docstoreSyncService->syncDigitalSignatureDoc($doc, $pdfBase64, $signatureData);
@@ -328,8 +403,11 @@ class Form extends Component
             ->orderBy('is_system', 'desc')
             ->get();
 
+        $allUsers = \App\Models\User::with(['karyawan.jabatan.tingkat'])->get();
+
         return view('livewire.kepegawaian.digital-signature.form', [
             'kategoriList' => $kategoriList,
+            'allUsers'     => $allUsers,
         ]);
     }
 }

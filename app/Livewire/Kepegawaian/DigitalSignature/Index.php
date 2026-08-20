@@ -12,6 +12,13 @@ class Index extends Component
 {
     use Interactions;
 
+    public string $activeTab = 'create'; // 'create', 'my_submissions', 'pending_approvals'
+
+    public function setTab(string $tab): void
+    {
+        $this->activeTab = $tab;
+    }
+
     #[On('document-signed')]
     public function handleDocumentSigned($docstoreKey = null, $synced = true)
     {
@@ -26,6 +33,8 @@ class Index extends Component
         } else {
             $this->toast()->warning('Tanda Tangan Lokal', $msg)->send();
         }
+
+        $this->activeTab = 'my_submissions';
     }
 
     public function render()

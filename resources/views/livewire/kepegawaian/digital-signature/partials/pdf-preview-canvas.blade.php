@@ -21,6 +21,7 @@
         {{-- PDF.js Canvas Rendering (100% Exact Edge-to-Edge PDF Page 1) --}}
         <canvas 
             x-ref="pdfCanvas" 
+            wire:ignore
             style="width: 100%; height: 100%; display: block; border-radius: 18px; background: white;"
         ></canvas>
 
@@ -58,7 +59,7 @@
 
                     {{-- Metadata Column --}}
                     <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
-                        <div style="font-size: 11px; font-weight: 800; color: #0f172a; line-height: 1.2;" class="truncate">{{ Auth::user()->name }}</div>
+                        <div style="font-size: 11px; font-weight: 800; color: #0f172a; line-height: 1.2;" class="truncate">{{ $this->highestRankSignerName }}</div>
                         <div style="font-size: 8.5px; color: #64748b; font-family: monospace;">{{ date('d M Y H:i') }} WIB</div>
                         <div style="font-size: 7px; color: #059669; font-weight: 700; margin-top: 1px;">
                             Dokumen Sah Terdaftar

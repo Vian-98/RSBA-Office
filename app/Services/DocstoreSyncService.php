@@ -126,13 +126,42 @@ class DocstoreSyncService
      */
     public function syncDigitalSignatureDoc(Model $doc, string $pdfBase64, array $signatureData): bool
     {
-        $signerUser = $doc->user ?? auth()->user();
+        $signaturesList = [];
+        if ($doc->relationLoaded('approvals') ? $doc->approvals->isNotEmpty() : $doc->approvals()->exists()) {
+            $approvals = $doc->approvals()->with(['user.karyawan.jabatan'])->get();
+            foreach ($approvals as $appr) {
+                $u = $appr->user;
+                $signaturesList[] = [
+                    'signature'      => !empty($appr->signature_hash) ? ('SIG_' . $appr->signature_hash) : ('SIG_' . ($doc->signature_hash ?: time())),
+                    'original_data'  => !empty($appr->rejection_reason) ? $appr->rejection_reason : ($doc->byte_counter_hash ?: 'N/A'),
+                    'public_key'     => 'RSA_PUB_KEY_' . ($u?->id ?? 1),
+                    'signer_name'    => $u?->name ?? 'Penandatangan Digital',
+                    'signer_role'    => $u?->karyawan?->jabatan?->first()?->nama ?? 'Pejabat Otorisasi',
+                    'status'         => $appr->status ?? 'approved',
+                    'signed_at'      => $appr->signed_at ? $appr->signed_at->toIso8601String() : now()->toIso8601String(),
+                    'signature_hash' => $appr->signature_hash ?: hash('sha256', ($doc->document_number ?? 'DS') . $appr->id . time()),
+                ];
+            }
+        }
+
+        if (empty($signaturesList)) {
+            $signaturesList[] = [
+                'signature'      => !empty($signatureData['signature']) ? $signatureData['signature'] : ('SIG_' . ($doc->signature_hash ?: $doc->byte_counter_hash ?: time())),
+                'original_data'  => !empty($signatureData['original_data']) ? $signatureData['original_data'] : ($doc->byte_counter_hash ?: $doc->docstore_key ?: time()),
+                'public_key'     => $signatureData['public_key'] ?? '',
+                'signer_name'    => $signerUser?->name ?? 'Pegawai Otorisasi',
+                'signer_role'    => $signerUser?->jabatan?->nama ?? 'Penandatangan Digital',
+                'status'         => $doc->status ?? 'approved',
+                'signed_at'      => now()->toIso8601String(),
+                'signature_hash' => $doc->signature_hash ?: hash('sha256', ($doc->document_number ?? 'DS') . time()),
+            ];
+        }
 
         $payload = [
             'document_type'   => $doc->document_type ?? 'digital_signature',
             'document_id'     => $doc->id,
             'document_number' => $doc->document_number,
-            'status'          => 'approved',
+            'status'          => $doc->status ?? 'approved',
             'content'         => [
                 'title'             => $doc->title,
                 'file_name'         => $doc->file_name,
@@ -141,18 +170,7 @@ class DocstoreSyncService
                 'keterangan'        => $doc->keterangan,
                 'pdf_base64'        => $pdfBase64,
             ],
-            'signatures'      => [
-                [
-                    'signature'      => !empty($signatureData['signature']) ? $signatureData['signature'] : ('SIG_' . ($doc->signature_hash ?: $doc->byte_counter_hash ?: time())),
-                    'original_data'  => !empty($signatureData['original_data']) ? $signatureData['original_data'] : ($doc->byte_counter_hash ?: $doc->docstore_key ?: time()),
-                    'public_key'     => $signatureData['public_key'] ?? '',
-                    'signer_name'    => $signerUser?->name ?? 'Pegawai Otorisasi',
-                    'signer_role'    => $signerUser?->jabatan?->nama ?? 'Penandatangan Digital',
-                    'status'         => 'approved',
-                    'signed_at'      => now()->toIso8601String(),
-                    'signature_hash' => $doc->signature_hash ?: hash('sha256', ($doc->document_number ?? 'DS') . time()),
-                ]
-            ],
+            'signatures'      => $signaturesList,
         ];
 
         $response = $this->client->postDocument($payload);
