@@ -78,10 +78,11 @@ class DocstoreClient
     /**
      * Buat HMAC signature header untuk proteksi anti-tampering dan anti-replay.
      */
-    public function buildHmacHeaders(string $method, string $path, string $rawBody = ''): array
+    public function buildHmacHeaders(string $method, string $path, string|array $rawBody = ''): array
     {
-        $timestamp = (string) time();
-        $token = $this->getM2mToken();
+        $rawBodyStr = is_array($rawBody) ? json_encode($rawBody) : $rawBody;
+        $timestamp  = (string) time();
+        $token      = $this->getM2mToken();
 
         $headers = [
             'Accept'       => 'application/json',
@@ -94,8 +95,8 @@ class DocstoreClient
         }
 
         if (!empty($this->hmacSecret)) {
-            $payloadToSign = $timestamp . '.' . $rawBody;
-            $signature = hash_hmac('sha256', $payloadToSign, $this->hmacSecret);
+            $payloadToSign = $timestamp . '.' . $rawBodyStr;
+            $signature     = hash_hmac('sha256', $payloadToSign, $this->hmacSecret);
             $headers['X-Payload-Signature'] = $signature;
         }
 

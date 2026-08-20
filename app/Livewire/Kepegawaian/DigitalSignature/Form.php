@@ -282,7 +282,7 @@ class Form extends Component
                 'file_size'         => $fileSize,
                 'byte_counter_hash' => $stampedByteHash,
                 'signature_hash'    => $signatureHash,
-                'status'            => 'signed',
+                'status'            => 'approved',
                 'keterangan'        => json_encode($stampMetaPayload),
             ]);
 

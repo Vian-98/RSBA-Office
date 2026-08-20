@@ -30,7 +30,7 @@
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
                                     <x-tabler-check class="size-3" /> DISETUJUI MANUAL
                                 </span>
-                            @elseif (strtolower($doc['status'] ?? '') === 'approved')
+                            @elseif (in_array(strtolower($doc['status'] ?? ''), ['approved', 'signed', 'disetujui']))
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                                     <x-tabler-lock class="size-3" /> DISETUJUI
                                 </span>
