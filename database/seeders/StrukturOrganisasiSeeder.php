@@ -166,8 +166,8 @@ class StrukturOrganisasiSeeder extends Seeder
 
         // Ensure parent_id is nullable
         try {
-            if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite') {
-                \Illuminate\Support\Facades\DB::statement("ALTER TABLE sdm_jabatan MODIFY COLUMN parent_id BIGINT UNSIGNED NULL");
+            if (DB::getDriverName() !== 'sqlite') {
+                DB::statement("ALTER TABLE sdm_jabatan MODIFY COLUMN parent_id BIGINT UNSIGNED NULL");
             }
         } catch (\Throwable $e) {}
 

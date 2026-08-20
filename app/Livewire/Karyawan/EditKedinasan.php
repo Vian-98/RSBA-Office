@@ -10,8 +10,12 @@ use App\Models\Sdm\Karyawan;
 use App\Models\Sdm\KaryawanDocument;
 use App\Enums\StatusKaryawan;
 use App\Enums\KategoriKerja;
+use App\Enums\TingkatPendidikan;
 use App\Livewire\Forms\Karyawan\EditKedinasanForm;
 use App\Models\Sdm\KaryawanJabatan;
+use App\Models\Sdm\KaryawanRuangan;
+use App\Models\Sdm\RuanganKoordinator;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Lazy;
 use Livewire\Attributes\On;
 use Illuminate\Validation\Rule;
@@ -100,7 +104,7 @@ class EditKedinasan extends Component
         $this->status_init = $karyawan->status instanceof StatusKaryawan ? $karyawan->status->value : (string) ($karyawan->status ?? '');
 
         $this->kategori_options = KategoriKerja::options();
-        $this->kategori_init = $karyawan->kategori_kerja instanceof KategoriKerja ? $karyawan->kategori_kerja->value : (string) ($karyawan->kategori_kerja?->value ?? 'shift');
+        $this->kategori_init = $karyawan->kategori_kerja instanceof KategoriKerja ? $karyawan->kategori_kerja->value : (string) ($karyawan->kategori_kerja ?? 'shift');
 
         $this->jabatan_options = Jabatan::all();
         $this->bagian_options = Bagian::query()->where('is_active', true)->orderBy('nama')->get();
@@ -111,7 +115,7 @@ class EditKedinasan extends Component
         $this->loadDocumentOptions($id);
 
         // Load education options from matrix groups & current auto default
-        $groups = \Illuminate\Support\Facades\DB::table('sdm_payroll_golongan_matrix')
+        $groups = DB::table('sdm_payroll_golongan_matrix')
             ->orderBy('urutan_kelompok', 'asc')
             ->get()
             ->pluck('kelompok_pendidikan')
@@ -125,7 +129,7 @@ class EditKedinasan extends Component
         }
         $this->pendidikan_options = $options;
 
-        $allPendidikan = \Illuminate\Support\Facades\DB::table('sdm_kary_pendidikan')
+        $allPendidikan = DB::table('sdm_kary_pendidikan')
             ->where('karyawan_id', $id)
             ->get();
 
@@ -146,7 +150,7 @@ class EditKedinasan extends Component
             }
         }
 
-        $this->auto_pendidikan_label = \App\Enums\TingkatPendidikan::tryFrom($tingkat)?->nama() ?? 'SMA';
+        $this->auto_pendidikan_label = TingkatPendidikan::tryFrom($tingkat)?->nama() ?? 'SMA';
     }
 
     public function loadDocumentOptions($karyawanId): void
@@ -287,7 +291,7 @@ class EditKedinasan extends Component
         $karyawan = $this->form->karyawan;
 
         try {
-            \Illuminate\Support\Facades\DB::beginTransaction();
+            DB::beginTransaction();
 
             // Tutup SEMUA jabatan aktif (tgl_berakhir IS NULL) agar tidak ada duplikat pejabat aktif
             KaryawanJabatan::where('karyawan_id', $this->form->karyawan->id)
@@ -319,7 +323,7 @@ class EditKedinasan extends Component
             // dan karyawan memiliki penugasan koordinator aktif
             $newJabatan = Jabatan::find($this->form->jabatan);
             if ($newJabatan && $newJabatan->tingkat_id <= 3) {
-                $hasActiveKoor = \App\Models\Sdm\RuanganKoordinator::where('karyawan_id', $this->form->karyawan->id)
+                $hasActiveKoor = RuanganKoordinator::where('karyawan_id', $this->form->karyawan->id)
                     ->where('aktif', true)
                     ->exists();
 
@@ -330,7 +334,7 @@ class EditKedinasan extends Component
                 }
             }
 
-            \Illuminate\Support\Facades\DB::commit();
+            DB::commit();
 
             $this->jabatan_init = $this->form->jabatan;
             $this->bagian_init = $this->form->bagian;
@@ -344,7 +348,7 @@ class EditKedinasan extends Component
                 ->success('Berhasil', 'Jabatan baru berhasil disimpan.')
                 ->send();
         } catch (Throwable $th) {
-            \Illuminate\Support\Facades\DB::rollBack();
+            DB::rollBack();
             $this->toast()
                 ->error('Failed', 'Error : ' . $th->getMessage())
                 ->send();
@@ -365,12 +369,12 @@ class EditKedinasan extends Component
             $documentId = empty($documentId) ? null : (int) $documentId;
 
             // Update tgl_berakhir penugasan ruangan aktif terdahulu
-            \App\Models\Sdm\KaryawanRuangan::where('karyawan_id', $karyawan->id)
+            KaryawanRuangan::where('karyawan_id', $karyawan->id)
                 ->whereNull('tgl_berakhir')
                 ->update(['tgl_berakhir' => $tglRuangan]);
 
             // Insert penugasan ruangan baru ke sdm_kary_ruangan
-            \App\Models\Sdm\KaryawanRuangan::create([
+            KaryawanRuangan::create([
                 'karyawan_id' => $karyawan->id,
                 'ruangan_id'  => $newRuanganId,
                 'tgl_mulai'   => $tglRuangan,
