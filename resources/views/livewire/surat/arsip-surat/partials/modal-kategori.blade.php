@@ -1,5 +1,5 @@
 {{-- MODAL TAMBAH JENIS ARSIP BARU --}}
-<x-ts:modal wire="modalKategori" title="Tambah Jenis / Kategori Arsip Surat" blur>
+<x-ts:modal wire="modalKategori" title="Tambah Jenis / Kategori Arsip Surat" center blur>
     <form wire:submit.prevent="simpanKategori" class="space-y-4 text-xs">
         <div>
             <label class="block font-bold text-slate-700 mb-1">Nama Jenis / Kategori Surat <span class="text-rose-500">*</span></label>

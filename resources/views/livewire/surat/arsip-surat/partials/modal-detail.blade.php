@@ -1,5 +1,5 @@
 {{-- DRAWER / MODAL DETAIL DOKUMEN DOCSTORE --}}
-<x-ts:modal wire="modalDetail" title="Detail Arsip Bank Surat (Docstore Vault)" size="2xl" blur>
+<x-ts:modal wire="modalDetail" size="2xl" center blur>
     @if($loadingDetail)
         <div class="p-8 text-center text-slate-500">
             <x-tabler-loader-2 class="size-8 animate-spin mx-auto mb-2 text-indigo-600" />
