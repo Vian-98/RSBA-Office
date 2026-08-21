@@ -43,8 +43,55 @@ class Form extends Component
     public $fileSizeFormatted = null;
     public $fileHashSHA256 = null;
 
+    // Revision properties
+    public ?int $revises_document_id = null;
+    public ?string $revised_from_number = null;
+    public ?string $catatan_revisi = null;
+    public ?DigitalSignatureDocument $originalDocument = null;
+
     // Popup Password Modal State
     public $showPasswordModal = false;
+
+    protected $listeners = ['init-revision' => 'loadRevision'];
+
+    public function loadRevision(int $rejectedDocId): void
+    {
+        $rejectedDoc = DigitalSignatureDocument::with(['approvals.user', 'user'])->find($rejectedDocId);
+        if (!$rejectedDoc || $rejectedDoc->status !== 'rejected') {
+            $this->toast()->error('Dokumen Tidak Valid', 'Dokumen tidak ditemukan atau belum berstatus ditolak.')->send();
+            return;
+        }
+
+        $this->originalDocument = $rejectedDoc;
+        $this->revises_document_id = $rejectedDoc->id;
+        $this->revised_from_number = $rejectedDoc->document_number;
+        $this->title = (str_starts_with($rejectedDoc->title, 'Revisi:') ? '' : 'Revisi: ') . $rejectedDoc->title;
+        $this->document_type = $rejectedDoc->document_type;
+        
+        // Mandatory new document number
+        $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1000, 9999));
+
+        // Pre-fill signers from original document
+        if ($rejectedDoc->approvals->isNotEmpty()) {
+            $this->signer_ids = $rejectedDoc->approvals->pluck('user_id')->toArray();
+        } else {
+            $this->signer_ids = [$rejectedDoc->user_id];
+        }
+
+        // Pre-fill rejection feedback note
+        $rejAppr = $rejectedDoc->approvals->where('status', 'rejected')->first();
+        if ($rejAppr && $rejAppr->rejection_reason) {
+            $this->catatan_revisi = 'Memperbaiki penolakan: ' . $rejAppr->rejection_reason;
+        }
+
+        $this->toast()->info('Mode Revisi Dimuat', 'Nomor surat baru (' . $this->document_number . ') dibuat. Silakan unggah berkas PDF revisi baru.')->send();
+    }
+
+    public function cancelRevision(): void
+    {
+        $this->reset(['revises_document_id', 'revised_from_number', 'catatan_revisi', 'originalDocument']);
+        $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1000, 9999));
+    }
 
     protected $rules = [
         'pdf_file'        => 'required|file|mimes:pdf|max:10240', // Max 10MB PDF
@@ -63,7 +110,7 @@ class Form extends Component
         'document_type.required'   => 'Jenis / kategori arsip surat wajib dipilih.',
     ];
 
-    public function mount()
+    public function mount($rejectedDocId = null)
     {
         $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
         if (auth()->check() && empty($this->signer_ids)) {
@@ -73,6 +120,10 @@ class Form extends Component
         $firstCategory = SuratKategoriArsip::where('is_active', true)->orderBy('is_system', 'desc')->first();
         if ($firstCategory) {
             $this->document_type = $firstCategory->kode;
+        }
+
+        if ($rejectedDocId) {
+            $this->loadRevision((int) $rejectedDocId);
         }
     }
 
@@ -341,16 +392,19 @@ class Form extends Component
 
             // 4. Save metadata record to local DB office
             $doc = DigitalSignatureDocument::create([
-                'user_id'           => $user->id,
-                'title'             => $this->title,
-                'document_number'   => $this->document_number,
-                'document_type'     => $this->document_type,
-                'file_name'         => $fileName,
-                'file_size'         => $fileSize,
-                'byte_counter_hash' => $stampedByteHash,
-                'signature_hash'    => $signatureHash,
-                'status'            => $docStatus,
-                'keterangan'        => json_encode($stampMetaPayload),
+                'user_id'              => $user->id,
+                'title'                => $this->title,
+                'document_number'      => $this->document_number,
+                'document_type'        => $this->document_type,
+                'file_name'            => $fileName,
+                'file_size'            => $fileSize,
+                'byte_counter_hash'    => $stampedByteHash,
+                'signature_hash'       => $signatureHash,
+                'status'               => $docStatus,
+                'keterangan'           => json_encode($stampMetaPayload),
+                'revises_document_id' => $this->revises_document_id,
+                'revised_from_number' => $this->revised_from_number,
+                'catatan_revisi'      => $this->catatan_revisi,
             ]);
 
             // Save multi-tier approval steps
@@ -382,7 +436,7 @@ class Form extends Component
 
             // Close modal & reset form
             $this->showPasswordModal = false;
-            $this->reset(['pdf_file', 'title', 'keterangan', 'account_password', 'fileSizeFormatted', 'fileHashSHA256']);
+            $this->reset(['pdf_file', 'title', 'keterangan', 'account_password', 'fileSizeFormatted', 'fileHashSHA256', 'revises_document_id', 'revised_from_number', 'catatan_revisi', 'originalDocument']);
             $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
 
             // Dispatch event to parent component to switch to list tab and notify

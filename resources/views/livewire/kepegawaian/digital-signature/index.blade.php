@@ -31,7 +31,7 @@
     {{-- Tab Contents --}}
     <div class="w-full">
         @if ($activeTab === 'create')
-            <livewire:kepegawaian.digital-signature.form />
+            <livewire:kepegawaian.digital-signature.form :key="'form-'.($revisionDocId ?? 'new')" :rejectedDocId="$revisionDocId" />
         @elseif ($activeTab === 'my_submissions')
             <livewire:kepegawaian.digital-signature.my-submissions-table />
         @elseif ($activeTab === 'pending_approvals')

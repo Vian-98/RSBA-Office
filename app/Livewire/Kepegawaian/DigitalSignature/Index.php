@@ -13,8 +13,22 @@ class Index extends Component
     use Interactions;
 
     public string $activeTab = 'create'; // 'create', 'my_submissions', 'pending_approvals'
+    public ?int $revisionDocId = null;
 
     public function setTab(string $tab): void
+    {
+        $this->activeTab = $tab;
+    }
+
+    #[On('init-revision')]
+    public function handleInitRevision(int $rejectedDocId): void
+    {
+        $this->revisionDocId = $rejectedDocId;
+        $this->activeTab = 'create';
+    }
+
+    #[On('switch-tab')]
+    public function handleSwitchTab(string $tab): void
     {
         $this->activeTab = $tab;
     }
@@ -22,6 +36,7 @@ class Index extends Component
     #[On('document-signed')]
     public function handleDocumentSigned($docstoreKey = null, $synced = true)
     {
+        $this->revisionDocId = null;
         $msg = $synced 
             ? 'Dokumen PDF berhasil di-sign & terkirim ke Docstore dengan ID: ' . $docstoreKey 
             : 'Dokumen PDF berhasil di-sign secara lokal, namun belum tersinkron ke Docstore.';

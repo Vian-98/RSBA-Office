@@ -20,6 +20,16 @@ class DigitalSignatureDocument extends Model
         return $this->hasMany(DigitalSignatureApproval::class, 'digital_signature_document_id', 'id')->orderBy('step_order', 'asc');
     }
 
+    public function revisesDocument(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'revises_document_id', 'id');
+    }
+
+    public function revisions()
+    {
+        return $this->hasMany(self::class, 'revises_document_id', 'id');
+    }
+
     public function scopeMySubmissions($query, $userId)
     {
         return $query->where('user_id', $userId);

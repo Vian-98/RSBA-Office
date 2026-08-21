@@ -90,6 +90,14 @@
                     <div class="text-xs text-emerald-800 mt-2">
                         Anda akan menyetujui dan membubuhi Tanda Tangan Digital pada tingkat <strong>Tier {{ $selectedApproval?->step_order }}</strong>.
                     </div>
+                    @if ($selectedDocument->revised_from_number)
+                        <div class="mt-2.5 text-xs bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-amber-900">
+                            <div><strong>Surat Hasil Revisi</strong> (Revisi dari No: <span class="font-mono font-bold">{{ $selectedDocument->revised_from_number }}</span>)</div>
+                            @if ($selectedDocument->catatan_revisi)
+                                <div class="mt-1 font-mono text-[11px] text-amber-800">"{{ $selectedDocument->catatan_revisi }}"</div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
                 <div>

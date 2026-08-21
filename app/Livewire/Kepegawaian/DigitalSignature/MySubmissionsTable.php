@@ -29,10 +29,22 @@ class MySubmissionsTable extends Component
 
     public function viewDetail(int $documentId): void
     {
-        $this->selectedDocument = DigitalSignatureDocument::with(['approvals.user.karyawan.jabatan', 'user'])->find($documentId);
+        $this->selectedDocument = DigitalSignatureDocument::with(['approvals.user.karyawan.jabatan', 'user', 'revisesDocument'])->find($documentId);
         if ($this->selectedDocument) {
             $this->showDetailModal = true;
         }
+    }
+
+    public function reviseDocument(int $documentId): void
+    {
+        $doc = DigitalSignatureDocument::find($documentId);
+        if (!$doc || $doc->status !== 'rejected') {
+            $this->toast()->error('Dokumen Tidak Valid', 'Dokumen tidak ditemukan atau belum berstatus ditolak.')->send();
+            return;
+        }
+
+        $this->dispatch('init-revision', rejectedDocId: $documentId);
+        $this->dispatch('switch-tab', tab: 'create');
     }
 
     public function render()

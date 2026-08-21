@@ -21,6 +21,30 @@
         </div>
     </div>
 
+    {{-- Revision Banner (If revising a rejected document) --}}
+    @if ($revises_document_id && $revised_from_number)
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl space-y-2 text-xs">
+            <div class="flex items-center justify-between">
+                <span class="font-bold text-amber-900 flex items-center gap-1.5">
+                    Mode Revisi Surat Ditolak
+                </span>
+                <button type="button" wire:click="cancelRevision" class="text-[11px] text-amber-700 hover:text-amber-900 font-bold underline">
+                    Batal Revisi
+                </button>
+            </div>
+            <div class="text-amber-800 space-y-1">
+                <div><strong>Revisi dari Surat No:</strong> <span class="font-mono font-bold">{{ $revised_from_number }}</span></div>
+                <div><strong>Nomor Surat Baru:</strong> <span class="font-mono font-bold text-indigo-700">{{ $document_number }}</span> <span class="text-[10px] text-amber-700">(Nomor baru wajib beda dari awal)</span></div>
+                @if ($originalDocument && $originalDocument->approvals->where('status', 'rejected')->first())
+                    <div class="bg-amber-100/80 p-2 rounded-lg text-amber-900 font-mono text-[11px] mt-1">
+                        <strong>Alasan Penolakan Sebelumnya:</strong><br>
+                        "{{ $originalDocument->approvals->where('status', 'rejected')->first()?->rejection_reason }}"
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
     {{-- Judul Surat --}}
     <div>
         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Judul / Nama Surat</label>
@@ -30,7 +54,12 @@
 
     {{-- Nomor Surat --}}
     <div>
-        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Nomor Surat</label>
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Nomor Surat 
+            @if ($revises_document_id)
+                <span class="text-[10px] font-normal text-indigo-600">(Nomor Surat Baru)</span>
+            @endif
+        </label>
         <input type="text" wire:model="document_number" placeholder="Nomor Surat..." class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono text-slate-800 bg-white" />
         @error('document_number') <span class="text-xs text-rose-500 mt-1 block font-medium">{{ $message }}</span> @enderror
     </div>
@@ -63,6 +92,17 @@
         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Keterangan / Perihal (Opsional)</label>
         <textarea wire:model="keterangan" rows="2" placeholder="Catatan perihal surat..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-slate-800 bg-white"></textarea>
     </div>
+
+    {{-- Catatan Revisi / Perbaikan --}}
+    @if ($revises_document_id)
+        <div>
+            <label class="block text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1.5">
+                Catatan Revisi / Perbaikan <span class="text-rose-500">*</span>
+            </label>
+            <textarea wire:model="catatan_revisi" rows="2" placeholder="Jelaskan perbaikan yang dilakukan pada berkas revisi ini..." class="w-full px-4 py-2.5 rounded-xl border border-indigo-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-slate-800 bg-indigo-50/30"></textarea>
+            <span class="text-[11px] text-slate-400 mt-1 block">Catatan ini dapat dilihat oleh pejabat penandatangan saat meninjau revisi.</span>
+        </div>
+    @endif
 
     {{-- Assign Penandatangan Bertingkat (Multi-Tier Signing Chain) --}}
     <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">

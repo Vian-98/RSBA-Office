@@ -50,6 +50,13 @@
                             <td class="px-4 py-3.5">
                                 <div class="font-semibold text-slate-800">{{ $doc->title }}</div>
                                 <div class="text-xs font-mono text-indigo-600 mt-0.5">{{ $doc->document_number }}</div>
+                                @if ($doc->revised_from_number)
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                            Revisi dari No: {{ $doc->revised_from_number }}
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">
                                 {{ $doc->created_at ? $doc->created_at->translatedFormat('d M Y, H:i') : '-' }}
@@ -93,16 +100,25 @@
                                 @else
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
                                         <svg class="w-3.5 h-3.5 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        MENUNGGU PERSERUJUAN
+                                        MENUNGGU PERSETUJUAN
                                     </span>
                                 @endif
                             </td>
                             <td class="px-4 py-3.5 text-center whitespace-nowrap">
-                                <button wire:click="viewDetail({{ $doc->id }})" 
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors">
-                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    Detail Rantai
-                                </button>
+                                <div class="flex flex-col items-center justify-center gap-1.5 py-0.5">
+                                    @if ($doc->status === 'rejected')
+                                        <button wire:click="reviseDocument({{ $doc->id }})" 
+                                                class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-300 rounded-lg hover:bg-amber-200 transition-colors shadow-2xs cursor-pointer w-full max-w-[135px]">
+                                            <svg class="w-3.5 h-3.5 mr-1.5 text-amber-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                            Revisi Surat Ini
+                                        </button>
+                                    @endif
+                                    <button wire:click="viewDetail({{ $doc->id }})" 
+                                            class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer w-full max-w-[135px]">
+                                        <svg class="w-3.5 h-3.5 mr-1.5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        Detail Rantai
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -128,41 +144,81 @@
     {{-- Modal Detail Approval Chain & Rejection Feedback --}}
     <x-ts:modal title="Detail Rantai Persetujuan Surat" wire="showDetailModal" center size="2xl">
         @if ($selectedDocument)
-            <div class="space-y-5">
+            <div class="space-y-4">
+                {{-- Header Card Metadata --}}
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <div class="font-bold text-slate-800 text-base">{{ $selectedDocument->title }}</div>
-                    <div class="text-xs font-mono text-indigo-600 mt-1">Nomor Surat: {{ $selectedDocument->document_number }}</div>
-                    <div class="text-xs text-slate-500 mt-1">Pengirim: <span class="font-medium text-slate-700">{{ $selectedDocument->user?->name }}</span></div>
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <div class="font-bold text-slate-800 text-base leading-snug">{{ $selectedDocument->title }}</div>
+                            <div class="text-xs font-mono text-indigo-600 mt-1 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
+                                Nomor Surat: {{ $selectedDocument->document_number }}
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider shrink-0
+                            @if($selectedDocument->status === 'approved') bg-emerald-100 text-emerald-800 border border-emerald-200
+                            @elseif($selectedDocument->status === 'rejected') bg-rose-100 text-rose-800 border border-rose-200
+                            @else bg-amber-100 text-amber-800 border border-amber-200 @endif">
+                            {{ $selectedDocument->status }}
+                        </span>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+                        <div>Pengirim: <span class="font-semibold text-slate-700">{{ $selectedDocument->user?->name }}</span></div>
+                        <div>Tgl Pengajuan: <span class="font-medium text-slate-700">{{ $selectedDocument->created_at ? $selectedDocument->created_at->translatedFormat('d M Y, H:i') : '-' }}</span></div>
+                    </div>
                 </div>
+
+                {{-- Information Box jika Surat Hasil Revisi --}}
+                @if ($selectedDocument->revised_from_number)
+                    <div class="bg-amber-50/90 border-l-4 border-amber-500 p-4 rounded-r-xl text-xs space-y-1.5">
+                        <div class="font-bold text-amber-900 flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Dokumen Hasil Revisi
+                        </div>
+                        <div class="text-amber-800">
+                            <strong>Revisi dari Surat No:</strong> <span class="font-mono font-bold text-amber-950">{{ $selectedDocument->revised_from_number }}</span>
+                        </div>
+                        @if ($selectedDocument->catatan_revisi)
+                            <div class="mt-1 bg-white/90 p-3 rounded-lg border border-amber-200 font-mono text-amber-900 text-[11px] leading-relaxed">
+                                <strong>Catatan Revisi Pengaju:</strong><br>
+                                "{{ $selectedDocument->catatan_revisi }}"
+                            </div>
+                        @endif
+                    </div>
+                @endif
 
                 {{-- Section Status Global & Feedback --}}
                 @if ($selectedDocument->status === 'rejected')
                     @php
                         $rej = $selectedDocument->approvals->where('status', 'rejected')->first();
                     @endphp
-                    <div class="bg-rose-50 border-l-4 border-rose-500 p-4 rounded-r-xl">
+                    <div class="bg-rose-50/90 border-l-4 border-rose-500 p-4 rounded-r-xl">
                         <div class="flex items-center text-rose-800 font-bold text-sm">
-                            <svg class="w-5 h-5 mr-2 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <svg class="w-5 h-5 mr-2 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                             Pengajuan Ditolak oleh {{ $rej?->user?->name ?? 'Penandatangan' }}
                         </div>
-                        <div class="mt-2 text-xs text-rose-700 bg-white/80 p-3 rounded-lg border border-rose-200 font-mono">
+                        <div class="mt-2 text-xs text-rose-700 bg-white/90 p-3 rounded-lg border border-rose-200 font-mono leading-relaxed">
                             <strong>Catatan Feedback Penolakan:</strong><br>
                             "{{ $rej?->rejection_reason ?? 'Tidak ada catatan feedback.' }}"
                         </div>
                     </div>
                 @endif
 
-                {{-- List Approval Steps --}}
+                {{-- List Approval Steps (Rantai Penandatangan Bertingkat) --}}
                 <div>
-                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Rantai Penandatangan Bertingkat:</h4>
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        Rantai Penandatangan Bertingkat (Multi-Tier):
+                    </h4>
                     <div class="space-y-3">
                         @foreach ($selectedDocument->approvals as $appr)
-                            <div class="flex items-start justify-between p-3.5 rounded-xl border transition-all
+                            <div class="flex items-start justify-between p-3.5 rounded-xl border transition-all shadow-2xs
                                 @if($appr->status === 'approved') bg-emerald-50/50 border-emerald-200
                                 @elseif($appr->status === 'rejected') bg-rose-50/50 border-rose-200
                                 @else bg-amber-50/50 border-amber-200 @endif">
                                 <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-xs
                                         @if($appr->status === 'approved') bg-emerald-500 text-white
                                         @elseif($appr->status === 'rejected') bg-rose-500 text-white
                                         @else bg-amber-500 text-white @endif">
@@ -172,16 +228,19 @@
                                         <div class="font-semibold text-slate-800 text-sm">{{ $appr->user?->name }}</div>
                                         <div class="text-xs text-slate-500">{{ $appr->user?->karyawan?->jabatan?->first()?->nama ?? 'Penandatangan' }}</div>
                                         @if($appr->status === 'approved' && $appr->signed_at)
-                                            <div class="text-[11px] text-emerald-600 mt-1">✓ Disetujui pada: {{ $appr->signed_at->translatedFormat('d M Y, H:i') }}</div>
+                                            <div class="text-[11px] text-emerald-600 mt-1 flex items-center gap-1 font-medium">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                Disetujui pada: {{ $appr->signed_at->translatedFormat('d M Y, H:i') }}
+                                            </div>
                                         @elseif($appr->status === 'rejected')
-                                            <div class="text-[11px] text-rose-600 mt-1">✕ Ditolak: "{{ $appr->rejection_reason }}"</div>
+                                            <div class="text-[11px] text-rose-600 mt-1 font-medium">✕ Ditolak: "{{ $appr->rejection_reason }}"</div>
                                         @endif
                                     </div>
                                 </div>
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                    @if($appr->status === 'approved') bg-emerald-100 text-emerald-800
-                                    @elseif($appr->status === 'rejected') bg-rose-100 text-rose-800
-                                    @else bg-amber-100 text-amber-800 @endif">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider shrink-0
+                                    @if($appr->status === 'approved') bg-emerald-100 text-emerald-800 border border-emerald-200
+                                    @elseif($appr->status === 'rejected') bg-rose-100 text-rose-800 border border-rose-200
+                                    @else bg-amber-100 text-amber-800 border border-amber-200 @endif">
                                     {{ $appr->status }}
                                 </span>
                             </div>
@@ -193,7 +252,7 @@
                     <div class="pt-3 border-t border-slate-200 flex justify-end">
                         <a href="{{ rtrim(env('VERIFY_APP_URL', 'http://localhost:5173'), '/') }}/?key={{ $selectedDocument->docstore_key }}" 
                            target="_blank" 
-                           class="inline-flex items-center px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                           class="inline-flex items-center px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-xs">
                             Buka Portal Verifikasi Publik
                             <svg class="w-3.5 h-3.5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                         </a>
