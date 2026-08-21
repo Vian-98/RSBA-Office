@@ -11,7 +11,7 @@ class JadwalKerjaPolicy
 {
     public function generate(User $user): bool
     {
-        if ($user->can('add-kepegawaian-jadwal-kerja')) {
+        if ($user->isSuperAdmin() || $user->can('add-kepegawaian-jadwal-kerja')) {
             return true;
         }
 
@@ -25,6 +25,10 @@ class JadwalKerjaPolicy
 
     public function kelola(User $user, JadwalKerja $jadwalKerja): bool
     {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         if (!$user->can('edit-kepegawaian-jadwal-kerja')) {
             return false;
         }
@@ -47,6 +51,10 @@ class JadwalKerjaPolicy
 
     public function ajukanKabid(User $user, JadwalKerja $jadwalKerja): bool
     {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         if (!in_array($jadwalKerja->status, [StatusJadwalKerja::DRAFT, StatusJadwalKerja::DITOLAK])) {
             return false;
         }
@@ -56,6 +64,10 @@ class JadwalKerjaPolicy
 
     public function ajukanWadirLangsung(User $user, JadwalKerja $jadwalKerja): bool
     {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         if (!in_array($jadwalKerja->status, [StatusJadwalKerja::DRAFT, StatusJadwalKerja::DITOLAK])) {
             return false;
         }
@@ -65,6 +77,10 @@ class JadwalKerjaPolicy
 
     public function konfirmasiKabid(User $user, JadwalKerja $jadwalKerja): bool
     {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         if ($jadwalKerja->status !== StatusJadwalKerja::MENUNGGU_KABID) {
             return false;
         }
@@ -74,6 +90,10 @@ class JadwalKerjaPolicy
 
     public function setujuiWadir(User $user, JadwalKerja $jadwalKerja): bool
     {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         if ($jadwalKerja->status !== StatusJadwalKerja::MENUNGGU_WADIR) {
             return false;
         }
@@ -83,6 +103,10 @@ class JadwalKerjaPolicy
 
     public function kembalikanDraft(User $user, JadwalKerja $jadwalKerja): bool
     {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         if ($jadwalKerja->status === StatusJadwalKerja::MENUNGGU_KABID) {
             return $this->konfirmasiKabid($user, $jadwalKerja);
         }
@@ -96,11 +120,19 @@ class JadwalKerjaPolicy
 
     public function publish(User $user, JadwalKerja $jadwalKerja): bool
     {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         return $this->setujuiWadir($user, $jadwalKerja);
     }
 
     public function approveTukar(User $user, JadwalTukar $jadwalTukar): bool
     {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         if (!$user->can('edit-kepegawaian-jadwal-kerja')) {
             return false;
         }

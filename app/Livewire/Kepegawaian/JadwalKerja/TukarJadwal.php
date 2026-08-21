@@ -39,8 +39,8 @@ class TukarJadwal extends Component
     public function mount()
     {
         $user = Auth::user();
-        if (!$user || !$user->isDokterOrApprover()) {
-            abort(403, 'Akses ditolak. Halaman Tukar Shift Dokter hanya dapat diakses oleh Dokter atau Manajemen.');
+        if (!$user || (!$user->isSuperAdmin() && !$user->isDokterOrApprover())) {
+            abort(403, 'Akses Ditolak: Halaman Tukar Shift Dokter memerlukan prasyarat akun terdaftar sebagai Dokter aktif atau Pejabat Struktural Medis/SDM.');
         }
 
         if ($user->karyawan_id) {
@@ -48,7 +48,7 @@ class TukarJadwal extends Component
         }
 
         // Auto tab selection based on permission / pending items
-        if ($user->can('approve-jadwal-wadir')) {
+        if ($user->isSuperAdmin() || $user->can('approve-jadwal-wadir')) {
             $this->activeTab = 'wadir';
         }
     }
@@ -66,11 +66,11 @@ class TukarJadwal extends Component
     public function submitPengajuan(TukarJadwalDokterService $service)
     {
         $user = Auth::user();
-        if (!$user || !$user->isDokterOrApprover()) {
-            abort(403, 'Akses ditolak. Halaman Tukar Shift Dokter hanya dapat diakses oleh Dokter atau Manajemen Medis/SDM.');
+        if (!$user || (!$user->isSuperAdmin() && !$user->isDokterOrApprover())) {
+            abort(403, 'Akses Ditolak: Pengajuan tukar shift dokter hanya dapat dilakukan oleh Dokter atau Manajemen Medis/SDM.');
         }
 
-        $canSelectDokterA = $user?->can('edit-kepegawaian-jadwal-kerja') || $user?->can('approve-jadwal-wadir') || $user?->can('approve-jadwal-kabid') || $user?->isKoordinatorDokter();
+        $canSelectDokterA = $user?->isSuperAdmin() || $user?->can('edit-kepegawaian-jadwal-kerja') || $user?->can('approve-jadwal-wadir') || $user?->can('approve-jadwal-kabid') || $user?->isKoordinatorDokter();
 
         // Jika dokter biasa, kunci pengaju ke dirinya sendiri
         if (!$canSelectDokterA && $user?->karyawan_id) {
@@ -246,7 +246,7 @@ class TukarJadwal extends Component
 
         // Data list per tab
         $listKonfirmasiSaya = TukarJadwalDokter::query()
-            ->when($myKaryawanId, fn($q) => $q->where('dokter_pengganti_id', $myKaryawanId))
+            ->when(!$user?->isSuperAdmin() && $myKaryawanId, fn($q) => $q->where('dokter_pengganti_id', $myKaryawanId))
             ->where('status', StatusTukarJadwal::MENUNGGU_KONFIRMASI_DOKTER)
             ->with(['dokterPengaju', 'dokterPengganti', 'jadwalDetailPengaju.shift', 'jadwalDetailPengganti.shift'])
             ->latest()
@@ -263,8 +263,8 @@ class TukarJadwal extends Component
             ->latest()
             ->paginate(15);
 
-        $isWadir          = $user?->can('approve-jadwal-wadir');
-        $canSelectDokterA = $user?->can('edit-kepegawaian-jadwal-kerja') || $user?->can('approve-jadwal-wadir') || $user?->can('approve-jadwal-kabid') || $user?->isKoordinatorDokter();
+        $isWadir          = $user?->isSuperAdmin() || $user?->can('approve-jadwal-wadir');
+        $canSelectDokterA = $user?->isSuperAdmin() || $user?->can('edit-kepegawaian-jadwal-kerja') || $user?->can('approve-jadwal-wadir') || $user?->can('approve-jadwal-kabid') || $user?->isKoordinatorDokter();
 
         return view('livewire.kepegawaian.jadwal-kerja.tukar-jadwal', [
             'dokters'              => $dokters,

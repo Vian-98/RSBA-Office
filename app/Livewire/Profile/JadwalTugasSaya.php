@@ -56,10 +56,18 @@ class JadwalTugasSaya extends Component
             'label' => (string) $y
         ])->toArray();
 
+        $user = Auth::user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $hasKaryawan = !empty($user?->karyawan_id);
+        $hasRuangan = !empty($user?->karyawan?->ruangan_id);
+
         return view('livewire.profile.jadwal-tugas-saya', [
             'details' => $details,
             'bulanOptions' => $bulanOptions,
             'tahunOptions' => $tahunOptions,
+            'isSuperAdmin' => $isSuperAdmin,
+            'hasKaryawan' => $hasKaryawan,
+            'hasRuangan' => $hasRuangan,
         ]);
     }
 }
