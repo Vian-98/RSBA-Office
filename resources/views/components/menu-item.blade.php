@@ -11,14 +11,14 @@
     $submenuActive = false;
     if (!empty($menu['submenus'])) {
         foreach ($menu['submenus'] as $submenu) {
-            if (request()->routeIs($submenu['route'])) {
+            if (!empty($submenu['route']) && request()->routeIs($submenu['route'])) {
                 $submenuActive = true;
                 break;
             }
 
             if (!empty($submenu['submenus'])) {
                 foreach ($submenu['submenus'] as $subsubmenu) {
-                    if (request()->routeIs($subsubmenu['route'])) {
+                    if (!empty($subsubmenu['route']) && request()->routeIs($subsubmenu['route'])) {
                         $submenuActive = true;
                         break;
                     }
@@ -26,6 +26,10 @@
             }
         }
     }
+
+    $menuHref = (!empty($menu['route']) && \Illuminate\Support\Facades\Route::has($menu['route'])) 
+        ? route($menu['route']) 
+        : '#';
 @endphp
 
 {{-- @can('view-' . $menu['id']) --}}
@@ -50,7 +54,7 @@
         </svg>
     </div>
 @else
-    <a href="{{ !empty($menu['route']) ? route($menu['route']) : '' }}" {{ $attributes->merge(['class' => $class]) }} wire:navigate>
+    <a href="{{ $menuHref }}" {{ $attributes->merge(['class' => $class]) }} @if($menuHref !== '#') wire:navigate @endif>
 
         <div class="flex items-center gap-2">
             {{-- icons --}}
