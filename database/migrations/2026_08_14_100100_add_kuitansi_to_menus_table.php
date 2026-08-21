@@ -19,8 +19,8 @@ return new class extends Migration
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        $rootMenu = DB::table('menus')->where('parent_id', null)->orWhere('id', 1)->first();
-        $parentId = $rootMenu ? $rootMenu->id : 1;
+        $rootMenu = DB::table('menus')->whereNull('parent_id')->orWhere('id', 1)->first();
+        $parentId = $rootMenu ? $rootMenu->id : null;
 
         if (!DB::table('menus')->where('route', 'keuangan.kuitansi.index')->exists()) {
             DB::table('menus')->insert([

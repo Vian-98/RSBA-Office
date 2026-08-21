@@ -23,22 +23,18 @@ return new class extends Migration
         });
 
         // Clean up duplicate/empty data
-        if (DB::getDriverName() === 'mysql') {
-            DB::statement("UPDATE signature_logs SET data_hash = MD5(CONCAT(id, RAND())) WHERE data_hash = '' OR data_hash IS NULL");
-        } else {
-            DB::table('signature_logs')
-                ->whereNull('data_hash')
-                ->orWhere('data_hash', '')
-                ->chunkById(100, function ($rows) {
-                    foreach ($rows as $row) {
-                        DB::table('signature_logs')
-                            ->where('id', $row->id)
-                            ->update([
-                                'data_hash' => md5($row->id . '_' . mt_rand())
-                            ]);
-                    }
-                });
-        }
+        DB::table('signature_logs')
+            ->whereNull('data_hash')
+            ->orWhere('data_hash', '')
+            ->chunkById(100, function ($rows) {
+                foreach ($rows as $row) {
+                    DB::table('signature_logs')
+                        ->where('id', $row->id)
+                        ->update([
+                            'data_hash' => md5($row->id . '_' . mt_rand())
+                        ]);
+                }
+            });
 
         // Now add unique constraint
         Schema::table('signature_logs', function (Blueprint $table) {

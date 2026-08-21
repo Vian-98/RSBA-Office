@@ -191,7 +191,22 @@ class Rekap extends Component
     public function render()
     {
         $user = auth()->user();
-        $allowedRuanganIds = $user ? $user->getRuanganKoordinatorIds() : [];
+        $allowedRuanganIds = ($user?->isSuperAdmin() || $user?->can('view-kepegawaian-laporan')) ? null : $user?->getRuanganKoordinatorIds();
+
+        // Query dropdown options
+        $ruanganQuery = Ruangan::where('is_active', true)->orderBy('nama');
+        if ($allowedRuanganIds !== null) {
+            $ruanganQuery->whereIn('id', $allowedRuanganIds);
+        }
+        $ruangans = $ruanganQuery->get();
+
+        $karyawanListQuery = Karyawan::whereNull('resign_at')->orderBy('nama');
+        if ($this->ruangan_id) {
+            $karyawanListQuery->where('ruangan_id', $this->ruangan_id);
+        } elseif ($allowedRuanganIds !== null) {
+            $karyawanListQuery->whereIn('ruangan_id', $allowedRuanganIds);
+        }
+        $karyawans = $karyawanListQuery->get();
 
         // 1. Build Base Detail Query
         $baseQuery = JadwalKerjaDetail::query();
@@ -223,7 +238,7 @@ class Rekap extends Component
         }
 
         // 2. Fetch the paginated Karyawan list
-        $karyawanQuery = Karyawan::query();
+        $karyawanQuery = Karyawan::whereNull('resign_at');
         if ($this->karyawan_id) {
             $karyawanQuery->where('id', $this->karyawan_id);
         }
@@ -475,6 +490,8 @@ class Rekap extends Component
             'paginatedKaryawans' => $paginatedKaryawans,
             'records' => $records,
             'globalHistoryLogs' => $globalHistoryLogs,
+            'ruangans' => $ruangans,
+            'karyawans' => $karyawans,
         ]);
     }
 }

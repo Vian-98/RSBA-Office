@@ -82,6 +82,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Cek apakah user memiliki role Super-Admin
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('Super-Admin');
+    }
+
+    /**
      * Cek apakah user ini merupakan koordinator di ruangan manapun
      */
     public function isKoordinator(): bool

@@ -28,6 +28,35 @@
                 <div>
                     <x-ts:select.styled 
                         wire:key="filter-bulan-select"
+                        label="Bulan"
+                        wire:model.live="bulan"
+                        :options="[
+                            ['label' => 'Januari', 'value' => 1],
+                            ['label' => 'Februari', 'value' => 2],
+                            ['label' => 'Maret', 'value' => 3],
+                            ['label' => 'April', 'value' => 4],
+                            ['label' => 'Mei', 'value' => 5],
+                            ['label' => 'Juni', 'value' => 6],
+                            ['label' => 'Juli', 'value' => 7],
+                            ['label' => 'Agustus', 'value' => 8],
+                            ['label' => 'September', 'value' => 9],
+                            ['label' => 'Oktober', 'value' => 10],
+                            ['label' => 'November', 'value' => 11],
+                            ['label' => 'Desember', 'value' => 12],
+                        ]"
+                        select="label:label|value:value"
+                    />
+                </div>
+                <div>
+                    <x-ts:select.styled 
+                        wire:key="filter-tahun-select"
+                        label="Tahun"
+                        wire:model.live="tahun"
+                        :options="[
+                            ['label' => (string) (date('Y') - 1), 'value' => (int) (date('Y') - 1)],
+                            ['label' => (string) date('Y'), 'value' => (int) date('Y')],
+                            ['label' => (string) (date('Y') + 1), 'value' => (int) (date('Y') + 1)],
+                        ]"
                         select="label:label|value:value"
                     />
                 </div>
@@ -40,9 +69,21 @@
             <div>
                 <x-ts:select.styled 
                     wire:key="filter-ruangan-select"
+                    label="Ruangan" 
+                    wire:model.live="ruangan_id" 
+                    :options="$ruangans->map(fn($r) => ['label' => $r->nama, 'value' => $r->id])->toArray()"
+                    select="label:label|value:value"
+                    placeholder="Semua Ruangan"
+                    searchable
+                />
+            </div>
+
+            <div>
+                <x-ts:select.styled 
+                    wire:key="filter-karyawan-select"
                     label="Karyawan" 
                     wire:model.live="karyawan_id" 
-                    :options="$karyawans->map(fn($k) => ['label' => $k->full_nama, 'value' => $k->id])->toArray()"
+                    :options="$karyawans->map(fn($k) => ['label' => $k->full_nama ?? $k->nama, 'value' => $k->id])->toArray()"
                     select="label:label|value:value"
                     placeholder="Semua Karyawan"
                     searchable
