@@ -502,8 +502,8 @@
                                              {{ \Carbon\Carbon::parse($r->tanggal)->translatedFormat('d M Y') }}
                                          </td>
                                          <td class="px-5 py-3.5">
-                                             <div class="font-semibold text-slate-800 text-xs capitalize">{{ ucwords(strtolower($r->karyawan->nama ?? '-')) }}</div>
-                                             <div class="text-[10px] text-slate-400">PIN: {{ $r->karyawan->pin_absen ?? '-' }}</div>
+                                             <div class="font-semibold text-slate-800 text-xs capitalize">{{ ucwords(strtolower($r->karyawan?->nama ?? '-')) }}</div>
+                                             <div class="text-[10px] text-slate-400">PIN: {{ $r->karyawan?->pin_absen ?? '-' }}</div>
                                          </td>
                                      <td class="px-6 py-4 text-center">
                                          @if($r->shift)
@@ -840,7 +840,7 @@
                                         {{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d M Y H:i') }}
                                     </td>
                                     <td class="px-4 py-3 font-semibold text-slate-800">
-                                        {{ ucwords(strtolower($log->karyawan->full_nama ?? $log->karyawan->nama ?? '-')) }}
+                                        {{ ucwords(strtolower($log->karyawan?->full_nama ?? $log->karyawan?->nama ?? '-')) }}
                                     </td>
                                     <td class="px-3.5 py-3 whitespace-nowrap text-slate-600">
                                         {{ \Carbon\Carbon::parse($log->tanggal)->translatedFormat('d M Y') }}

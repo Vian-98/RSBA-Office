@@ -162,7 +162,7 @@
                                     @endif
                                 </div>
                                 <div class="text-[11px] text-gray-400 mt-0.5">
-                                    {{ $karyawan->ruangan->nama ?? 'Tanpa Ruangan' }}
+                                    {{ $karyawan->ruangan?->nama ?? 'Tanpa Ruangan' }}
                                     <span class="mx-1">·</span>PIN: {{ $karyawan->pin_absen ?? '-' }}
                                 </div>
                             </div>
@@ -310,10 +310,10 @@
                 {{-- Karyawan Info --}}
                 <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 mb-2">
                     <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700 text-sm">
-                        {{ strtoupper(substr($rec->karyawan->nama ?? '-', 0, 1)) }}
+                        {{ strtoupper(substr($rec->karyawan?->nama ?? '-', 0, 1)) }}
                     </div>
                     <div>
-                        <div class="font-semibold text-gray-800 text-sm">{{ $rec->karyawan->nama ?? '-' }}</div>
+                        <div class="font-semibold text-gray-800 text-sm">{{ $rec->karyawan?->nama ?? '-' }}</div>
                         <div class="text-xs text-gray-500">
                             {{ \Carbon\Carbon::parse($rec->tanggal)->translatedFormat('l, d F Y') }}
                             @if($rec->shift)
