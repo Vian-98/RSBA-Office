@@ -180,9 +180,9 @@ class Rekap extends Component
     public function mount()
     {
         abort_unless(
-            auth()->user()?->can('view-kepegawaian-absensi'),
+            auth()->user()?->isSuperAdmin() || auth()->user()?->can('view-kepegawaian-absensi'),
             403,
-            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Rekap Absensi.'
+            'Akses Ditolak: Anda belum memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Rekap Absensi. Silakan hubungi bagian SDM/Kepegawaian.'
         );
         $this->bulan = $this->bulan ?: (int) date('m');
         $this->tahun = $this->tahun ?: (int) date('Y');
@@ -191,7 +191,10 @@ class Rekap extends Component
     public function render()
     {
         $user = auth()->user();
-        $allowedRuanganIds = ($user?->isSuperAdmin() || $user?->can('view-kepegawaian-laporan')) ? null : $user?->getRuanganKoordinatorIds();
+        $allowedRuanganIds = null;
+        if ($user && !$user->isSuperAdmin() && !$user->can('view-kepegawaian-laporan')) {
+            $allowedRuanganIds = $user->getRuanganKoordinatorIds() ?? [];
+        }
 
         // Query dropdown options
         $ruanganQuery = Ruangan::where('is_active', true)->orderBy('nama');

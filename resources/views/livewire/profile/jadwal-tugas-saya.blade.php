@@ -130,12 +130,54 @@
             @endforeach
         </div>
     @else
-        <div class="rounded-xl bg-white p-12 text-center shadow-2xs border border-slate-100">
-            <x-ts:icon name="tabler.calendar-x" class="mx-auto h-12 w-12 text-slate-300" />
-            <h3 class="mt-3 text-sm font-bold text-slate-800">Tidak Ada Jadwal</h3>
-            <p class="mt-1 text-xs text-slate-500">
-                Belum ada jadwal kerja yang dipublikasikan untuk Anda pada periode ini.
-            </p>
+        <div class="rounded-xl bg-white p-10 text-center shadow-2xs border border-slate-100 space-y-4">
+            @if($isSuperAdmin)
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+                    <x-tabler-shield-check class="h-8 w-8" />
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">Mode Super-Admin</h3>
+                    <p class="mt-1.5 max-w-md mx-auto text-xs text-slate-500 leading-relaxed">
+                        Akun ini memiliki wewenang penuh untuk memantau, menyusun, dan menyetujui jadwal seluruh unit di RSBA. Jadwal shift personal Anda saat ini kosong.
+                    </p>
+                </div>
+                <div class="pt-2">
+                    <a href="{{ route('kepegawaian.jadwal-kerja.index') }}" wire:navigate class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all">
+                        <x-tabler-calendar-event class="h-4 w-4" />
+                        <span>Buka Manajemen Jadwal Kerja</span>
+                    </a>
+                </div>
+            @elseif(!$hasKaryawan)
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
+                    <x-tabler-user-off class="h-8 w-8" />
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">Profil Pegawai Belum Ditautkan</h3>
+                    <p class="mt-1.5 max-w-md mx-auto text-xs text-slate-500 leading-relaxed">
+                        Akun login Anda belum terhubung ke data Master Pegawai/Karyawan RSBA. Silakan hubungi bagian SDM/Kepegawaian untuk penautan profil akun.
+                    </p>
+                </div>
+            @elseif(!$hasRuangan)
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 border border-sky-100">
+                    <x-tabler-building-hospital class="h-8 w-8" />
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">Penugasan Ruangan Belum Ditetapkan</h3>
+                    <p class="mt-1.5 max-w-md mx-auto text-xs text-slate-500 leading-relaxed">
+                        Data pegawai Anda belum ditempatkan pada Ruangan / Unit Kerja aktif. Penjadwalan shift memerlukan penugasan ruangan oleh Koordinator atau Bagian SDM.
+                    </p>
+                </div>
+            @else
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 border border-slate-200/60">
+                    <x-tabler-calendar-x class="h-8 w-8" />
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">Belum Ada Jadwal Terbit</h3>
+                    <p class="mt-1.5 max-w-md mx-auto text-xs text-slate-500 leading-relaxed">
+                        Belum ada jadwal kerja yang dipublikasikan untuk Anda pada bulan {{ date('F', mktime(0, 0, 0, $bulan, 1)) }} {{ $tahun }}. Silakan hubungi Koordinator Ruangan Anda.
+                    </p>
+                </div>
+            @endif
         </div>
     @endif
 </div>
