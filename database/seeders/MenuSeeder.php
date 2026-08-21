@@ -457,7 +457,7 @@ class MenuSeeder extends Seeder
             [
                 'id' => 52,
                 'nama' => 'Pasien',
-                'route' => 'administrasi.pasien.index',
+                'route' => null,
                 'icon' => 'users',
                 'permission' => ['view-administrasi-pasien-index', 'add-administrasi-pasien-index', 'edit-administrasi-pasien-index', 'delete-administrasi-pasien-index'],
                 'parent_id' => 1,
@@ -484,7 +484,7 @@ class MenuSeeder extends Seeder
             [
                 'id' => 54,
                 'nama' => 'Pendaftaran',
-                'route' => 'administrasi.registrasi.index',
+                'route' => null,
                 'icon' => 'notes',
                 'permission' => ['view-administrasi-registrasi-index', 'add-administrasi-registrasi-index', 'edit-administrasi-registrasi-index', 'delete-administrasi-registrasi-index'],
                 'parent_id' => 1,

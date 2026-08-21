@@ -603,7 +603,7 @@ class StrukturOrganisasiSeeder extends Seeder
             ],
         ];
 
-        // 3. Loop through nodes to seed Spatie Role, Jabatan, Karyawan & User
+        // 3. Loop through nodes to seed Spatie Role, Permissions & Master Jabatan
         foreach ($nodes as $node) {
             // A. Create or Find Spatie Role
             $role = Role::firstOrCreate(['name' => $node['role']]);
@@ -628,62 +628,6 @@ class StrukturOrganisasiSeeder extends Seeder
                     ]
                 );
             }
-
-            // C. Create or Find Karyawan
-            $karyawan = Karyawan::firstOrCreate(
-                ['nip' => $node['nip']],
-                [
-                    'nik' => '330100' . rand(100000, 999999),
-                    'nama' => $node['nama'],
-                    'jk' => rand(0, 1) ? 'L' : 'P',
-                    'tempat_lahir' => 'Bandar Lampung',
-                    'tgl_lahir' => '1985-05-15',
-                    'hp' => '0812' . rand(10000000, 99999999),
-                    'status_pernikahan' => 'menikah',
-                    'prov' => 'Lampung',
-                    'kab' => 'Bandar Lampung',
-                    'kec' => 'Tanjung Karang',
-                    'desa' => 'Kedaton',
-                    'alamat' => 'Jl. RSBA No. 1, Bandar Lampung',
-                    'agama' => 'islam',
-                    'status' => 'tetap',
-                    'tgl_masuk' => '2020-01-01',
-                    'kategori_kerja' => 'reguler',
-                    'pendidikan_setara' => 'SI/Profesi',
-                    'pin_absen' => (string) rand(1000, 9999),
-                ]
-            );
-
-            // Link KaryawanJabatan
-            KaryawanJabatan::firstOrCreate([
-                'karyawan_id' => $karyawan->id,
-                'jabatan_id' => $jabatan->id,
-            ], [
-                'bagian_id' => $jabatan->bagian_id,
-                'tgl_mulai' => '2020-01-01',
-            ]);
-
-            // D. Create or Find User Account safely
-            $user = User::where('email', $node['email'])->first();
-            if (!$user) {
-                // Check if user already exists for this karyawan_id
-                $userByKaryawan = User::where('karyawan_id', $karyawan->id)->first();
-                if ($userByKaryawan) {
-                    $user = $userByKaryawan;
-                    $user->update(['email' => $node['email']]);
-                } else {
-                    $user = User::create([
-                        'email' => $node['email'],
-                        'password' => Hash::make('password'),
-                        'karyawan_id' => $karyawan->id,
-                    ]);
-                }
-            } else {
-                $user->update(['karyawan_id' => $karyawan->id]);
-            }
-
-            // Assign Spatie Role
-            $user->syncRoles([$role->name]);
         }
 
 

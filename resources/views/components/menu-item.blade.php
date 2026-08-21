@@ -47,7 +47,7 @@
         </svg>
     </div>
 @else
-    <a href="{{ !empty($menu['route']) ? route($menu['route']) : '' }}" {{ $attributes->merge(['class' => $class]) }} wire:navigate>
+    <a href="{{ !empty($menu['route']) && \Illuminate\Support\Facades\Route::has($menu['route']) ? route($menu['route']) : '#' }}" {{ $attributes->merge(['class' => $class]) }} wire:navigate>
 
         <div class="flex items-center gap-2">
             {{-- icons --}}
