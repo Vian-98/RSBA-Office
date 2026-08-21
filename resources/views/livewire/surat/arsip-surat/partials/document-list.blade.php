@@ -47,14 +47,16 @@
 
                         {{-- Meta Sub-info --}}
                         <div class="text-xs text-slate-500 space-y-0.5">
-                            @if(!empty($docContent['tujuan_universitas']))
+                            @if(!empty($docContent['title']))
+                                <div><strong>Judul Surat:</strong> {{ $docContent['title'] }}</div>
+                            @elseif(!empty($docContent['perihal']))
+                                <div><strong>Perihal:</strong> {{ $docContent['perihal'] }}</div>
+                            @elseif(!empty($docContent['tujuan_universitas']))
                                 <div><strong>Kampus/Tujuan:</strong> Universitas {{ $docContent['tujuan_universitas'] }}</div>
                             @elseif(!empty($docContent['karyawan_name']))
                                 <div><strong>Karyawan:</strong> {{ $docContent['karyawan_name'] }} ({{ $docContent['jenis_cuti'] ?? 'Cuti' }})</div>
                             @elseif(!empty($docContent['rekanan']))
                                 <div><strong>Rekanan:</strong> {{ $docContent['rekanan'] }}</div>
-                            @elseif(!empty($docContent['perihal']))
-                                <div><strong>Perihal:</strong> {{ $docContent['perihal'] }}</div>
                             @endif
 
                             <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">

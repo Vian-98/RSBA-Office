@@ -69,6 +69,11 @@ class Form extends Component
         if (auth()->check() && empty($this->signer_ids)) {
             $this->signer_ids[] = auth()->id();
         }
+
+        $firstCategory = SuratKategoriArsip::where('is_active', true)->orderBy('is_system', 'desc')->first();
+        if ($firstCategory) {
+            $this->document_type = $firstCategory->kode;
+        }
     }
 
     public function addSignerUser(): void
