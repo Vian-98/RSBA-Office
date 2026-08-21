@@ -40,10 +40,21 @@ class KaryawanForm extends Form
     public $dom_kec;
     public $dom_desa;
     public $dom_alamat;
+    public $ihs_number;
+    public $no_str;
+    public $jenis_str;
+    public $str_terbit;
+    public $str_berakhir;
+    public $jenis_profesi;
+    public $kompetensi;
+    public $no_sip;
+    public $sip_berakhir;
 
     public $jabatan;
     public $bagian;
     public $tgl_jabatan;
+    public $no_sk_jabatan;
+    public $document_id_jabatan;
     public $dinas;
     public $tgl_dinas;
     public $ket_dinas;
@@ -52,6 +63,8 @@ class KaryawanForm extends Form
 
     public $ruangan;
     public $tgl_ruangan;
+    public $no_sk_ruangan;
+    public $document_id_ruangan;
     public $kategori_kerja = 'shift';
     public $pendidikan_setara;
 
@@ -93,6 +106,15 @@ class KaryawanForm extends Form
             'dom_kec' => 'nullable|string|max:50',
             'dom_desa' => 'nullable|string|max:50',
             'dom_alamat' => 'nullable|string|max:255',
+            'ihs_number' => 'nullable|string|max:30',
+            'no_str' => 'nullable|string|max:60',
+            'jenis_str' => 'nullable|string|max:50',
+            'str_terbit' => 'nullable|date',
+            'str_berakhir' => 'nullable|date',
+            'jenis_profesi' => 'nullable|string|max:100',
+            'kompetensi' => 'nullable|string|max:150',
+            'no_sip' => 'nullable|string|max:60',
+            'sip_berakhir' => 'nullable|date',
         ];
     }
 
@@ -128,18 +150,31 @@ class KaryawanForm extends Form
         $this->dom_kec = $karyawan->dom_kec;
         $this->dom_desa = $karyawan->dom_desa;
         $this->dom_alamat = $karyawan->dom_alamat;
+        $this->ihs_number = $karyawan->ihs_number;
+        $this->no_str = $karyawan->no_str;
+        $this->jenis_str = $karyawan->jenis_str;
+        $this->str_terbit = $karyawan->str_terbit;
+        $this->str_berakhir = $karyawan->str_berakhir;
+        $this->jenis_profesi = $karyawan->jenis_profesi;
+        $this->kompetensi = $karyawan->kompetensi;
+        $this->no_sip = $karyawan->no_sip;
+        $this->sip_berakhir = $karyawan->sip_berakhir;
     }
 
     // set using different compoenent
     function setKedinasan(Karyawan $karyawan)
     {
-        $this->status = $karyawan->status;
+        $this->status = $karyawan->status instanceof \App\Enums\StatusKaryawan
+            ? $karyawan->status->value
+            : (string) ($karyawan->status ?? '');
         $jabatan = $karyawan->jabatan->first();
         $this->jabatan = $jabatan?->id ?? '';
         $this->bagian = $jabatan?->pivot?->bagian_id ?? $jabatan?->bagian_id ?? '';
         $this->ruangan = $karyawan->ruangan_id ?? '';
         $this->dinas = $karyawan->resign ?? '';
-        $this->kategori_kerja = $karyawan->kategori_kerja?->value ?? 'shift';
+        $this->kategori_kerja = $karyawan->kategori_kerja instanceof \App\Enums\KategoriKerja
+            ? $karyawan->kategori_kerja->value
+            : (string) ($karyawan->kategori_kerja?->value ?? 'shift');
         $this->pendidikan_setara = $karyawan->pendidikan_setara ?? '';
     }
 
@@ -180,6 +215,15 @@ class KaryawanForm extends Form
             "agama" => $this->agama,
             "suku" => $this->suku,
             "npwp" => $this->npwp,
+            "ihs_number" => $this->ihs_number,
+            "no_str" => $this->no_str,
+            "jenis_str" => $this->jenis_str,
+            "str_terbit" => $this->str_terbit ?: null,
+            "str_berakhir" => $this->str_berakhir ?: null,
+            "jenis_profesi" => $this->jenis_profesi,
+            "kompetensi" => $this->kompetensi,
+            "no_sip" => $this->no_sip,
+            "sip_berakhir" => $this->sip_berakhir ?: null,
             "cuti" => 0
 
         ];
@@ -230,7 +274,16 @@ class KaryawanForm extends Form
             'dom_kab' => $this->dom_kab,
             'dom_kec' => $this->dom_kec,
             'dom_desa' => $this->dom_desa,
-            'dom_alamat' => $this->dom_alamat
+            'dom_alamat' => $this->dom_alamat,
+            'ihs_number' => $this->ihs_number,
+            'no_str' => $this->no_str,
+            'jenis_str' => $this->jenis_str,
+            'str_terbit' => $this->str_terbit ?: null,
+            'str_berakhir' => $this->str_berakhir ?: null,
+            'jenis_profesi' => $this->jenis_profesi,
+            'kompetensi' => $this->kompetensi,
+            'no_sip' => $this->no_sip,
+            'sip_berakhir' => $this->sip_berakhir ?: null,
         ];
 
         $this->karyawan->update($data);

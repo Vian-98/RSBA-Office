@@ -44,6 +44,16 @@ class SetPermission  extends Component
         $this->searchPermissions = $term;
     }
 
+    public function selectAll()
+    {
+        $this->permission = Permission::pluck('name')->toArray();
+    }
+
+    public function deselectAll()
+    {
+        $this->permission = [];
+    }
+
     function submit()
     {
         $this->validate();

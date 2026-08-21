@@ -161,17 +161,17 @@ class JadwalKerja extends Model
                 ->first();
 
             if ($jabatanKabidBagian) {
-                return $jabatanKabidBagian->nama . ' (Belum ada pejabat)';
+                return $jabatanKabidBagian->nama . ' (Belum ada yang menjabat)';
             }
 
             $namaBagian = Bagian::find($bagianId)?->nama;
-            return 'Kepala Bidang ' . ($namaBagian ?? '') . ' (Belum ada pejabat)';
+            return 'Kepala Bidang ' . ($namaBagian ?? '') . ' (Belum ada yang menjabat)';
         }
 
-        // Fallback pencarian role
         if ($targetTingkatId === 2) {
             try {
-                $wadirUser = \App\Models\User::role(['Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum'])->first();
+                $wadirUser = \App\Models\User::permission('approve-jadwal-wadir')->first()
+                    ?? \App\Models\User::role(['Wakil-Direktur', 'Wadir-Medis-Keperawatan', 'Wadir-SDM-Umum'])->first();
                 return $wadirUser?->karyawan?->full_nama ?? $wadirUser?->name ?? 'Wakil Direktur';
             } catch (\Throwable $e) {
                 return 'Wakil Direktur';
@@ -179,7 +179,8 @@ class JadwalKerja extends Model
         }
 
         try {
-            $kabidUser = \App\Models\User::role('Kepala-Bidang')->first();
+            $kabidUser = \App\Models\User::permission('approve-jadwal-kabid')->first()
+                ?? \App\Models\User::role('Kepala-Bidang')->first();
             return $kabidUser?->karyawan?->full_nama ?? $kabidUser?->name ?? 'Kepala Dept';
         } catch (\Throwable $e) {
             return 'Kepala Dept';

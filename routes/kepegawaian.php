@@ -18,6 +18,7 @@ Route::prefix('jadwal-kerja')
         Route::get('/', App\Livewire\Kepegawaian\JadwalKerja\Index::class)->name('index');
         Route::get('/tukar-dokter', App\Livewire\Kepegawaian\JadwalKerja\TukarJadwal::class)->name('tukar-dokter');
         Route::get('/kelola/{id}', App\Livewire\Kepegawaian\JadwalKerja\Kelola::class)->name('kelola');
+        Route::get('/export-pdf/{id}', [App\Http\Controllers\Kepegawaian\JadwalKerjaPdfController::class, 'exportPdf'])->name('export-pdf');
     });
 
 // Absensi

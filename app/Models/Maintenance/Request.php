@@ -147,7 +147,7 @@ class Request extends Model
     {
         return $query->whereIn('status', ['pending', 'approved'])
             ->whereDoesntHave('jadwal.work', function ($q) {
-                $q->where('status', 'done');
+                $q->where('status', 'done')->orWhereNotNull('selesai');
             })
             ->orderBy('created_at', 'desc');
     }

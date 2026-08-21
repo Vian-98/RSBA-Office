@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (DB::getDriverName() !== 'sqlite') {
+        if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE sdm_kary_document MODIFY COLUMN jenis ENUM('ijazah', 'sertifikat', 'str', 'sip', 'pribadi', 'lain') NOT NULL");
         }
     }
@@ -21,9 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (DB::getDriverName() !== 'sqlite') {
+        if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE sdm_kary_document MODIFY COLUMN jenis ENUM('ijazah', 'sertifikat', 'sip', 'pribadi', 'lain') NOT NULL");
         }
     }
 };
-

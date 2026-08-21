@@ -66,7 +66,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
         if ($user->can('view-kepegawaian-jadwal-kerja') || $user->isKoordinator() || $user->isKepalaDept() || $user->isWadir()) {
             return false;
         }
-        return $user->hasRole('Guest');
+        return true;
     }
 
     public function autoGenerateRegulerSchedules()

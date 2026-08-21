@@ -24,7 +24,9 @@ class Add extends Component
     public $jenisDocsOpt = [
         ['value' => 'ijazah', 'label' => 'Ijazah'],
         ['value' => 'sertifikat', 'label' => 'Sertifikat'],
-        ['value' => 'sip', 'label' => 'SIP'],
+        ['value' => 'str', 'label' => 'STR (Surat Tanda Registrasi)'],
+        ['value' => 'sip', 'label' => 'SIP (Surat Izin Praktik)'],
+        ['value' => 'sk', 'label' => 'SK (Surat Keputusan)'],
         ['value' => 'pribadi', 'label' => 'Pribadi'],
         ['value' => 'lain', 'label' => 'Lain-Lain']
     ];
@@ -59,7 +61,10 @@ class Add extends Component
 
             KaryawanDocument::create($data);
             DB::commit();
+
+            $this->reset(['fileTmp', 'nama', 'jenis']);
             $this->dispatch('document-karyawan-created');
+            $this->dispatch('close-modal', id: 'add-document-karyawan');
 
             $this->toast()
                 ->success('Berhasil', 'Document karyawan berhasil disimpan.')

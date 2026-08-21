@@ -55,7 +55,7 @@ class Notif extends Component
 
         // 2. Cuti (Leave Requests) Notifications
         try {
-            if ($user->hasRole('Super-Admin') || $user->hasRole('Staff-SDM')) {
+            if ($user->can('approve-kepegawaian-cuti')) {
                 // Pending cuti needing approval
                 $pendingCutis = SuratCuti::with('karyawan')
                     ->whereIn('status', [StatusApproval::PENDING, StatusApproval::WAITING])
@@ -103,7 +103,7 @@ class Notif extends Component
 
         // 3. Maintenance (Jadwal) Notifications
         try {
-            if ($user->hasRole('Super-Admin') || $user->hasRole('Bagian-Umum')) {
+            if ($user->can('view-umum-maintenance')) {
                 $maintenance = Jadwal::with('asset')
                     ->latest()
                     ->take(5)
@@ -130,9 +130,9 @@ class Notif extends Component
             $aturanService = app(\App\Services\AturanJadwalService::class);
             $query = \App\Models\Sdm\JadwalKerja::with(['ruangan']);
 
-            if (!$user->hasRole(['Super-Admin', 'Staff-SDM'])) {
+            $ruanganIds = $user->getRuanganKoordinatorIds();
+            if ($ruanganIds !== null) {
                 // Jika koordinator ruangan biasa, hanya ambil ruangan yang dikoordinasikan
-                $ruanganIds = $user->getRuanganKoordinatorIds();
                 if (!empty($ruanganIds)) {
                     $query->whereIn('ruangan_id', $ruanganIds);
                 } else {
@@ -157,12 +157,12 @@ class Notif extends Component
                     $items[] = [
                         'id' => 'jadwal-violation-' . $sched->id . '-' . $totalViolations,
                         'type' => 'danger',
-                        'icon' => 'tabler.exclamation-circle',
-                        'title' => 'Pelanggaran Aturan Jadwal: ' . ($sched->ruangan->nama ?? 'Ruangan'),
-                        'message' => "Ada {$totalViolations} pelanggaran pada jadwal " . \Carbon\Carbon::create($sched->tahun, $sched->bulan, 1)->translatedFormat('F Y') . ". Contoh: {$sample}",
+                        'icon' => 'tabler.alert-triangle',
+                        'title' => 'Peringatan Jadwal: ' . ($sched->ruangan->nama ?? 'Ruangan'),
+                        'message' => "Ditemukan {$totalViolations} potensi pelanggaran aturan jadwal. Contoh: \"{$sample}\"",
                         'time' => $sched->updated_at->diffForHumans(),
                         'route' => 'kepegawaian.jadwal-kerja.kelola',
-                        'route_params' => ['id' => $sched->id]
+                        'route_params' => ['id' => $sched->id],
                     ];
                 }
             }
@@ -254,9 +254,9 @@ class Notif extends Component
             report($e);
         }
 
-        // 6. Golongan Matrix & Tunjangan Changes (For Super-Admin & Staff-SDM)
+        // 6. Golongan Matrix & Tunjangan Changes (For SDM & Management)
         try {
-            if ($user->hasRole('Super-Admin') || $user->hasRole('Staff-SDM')) {
+            if ($user->can('view-kepegawaian-gaji')) {
                 $logs = \Illuminate\Support\Facades\DB::table('sdm_payroll_golongan_logs')
                     ->join('users', 'sdm_payroll_golongan_logs.user_id', '=', 'users.id')
                     ->join('sdm_karyawan', 'users.karyawan_id', '=', 'sdm_karyawan.id')

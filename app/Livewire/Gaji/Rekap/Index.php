@@ -47,8 +47,8 @@ class Index extends Component
         $lockStatus = $periodService->getLockStatus($this->periode);
 
         $user = auth()->user();
-        $isOnlyPajak = $user && $user->hasRole('Pajak') && !$user->hasRole('Staff-SDM') && !$user->hasRole('Super-Admin');
-        $isSDM = $user && ($user->hasRole('Staff-SDM') || $user->hasRole('Super-Admin') || !$isOnlyPajak);
+        $isOnlyPajak = $user && $user->can('approve-kepegawaian-gaji-pajak') && !$user->can('approve-kepegawaian-gaji');
+        $isSDM = $user && $user->can('approve-kepegawaian-gaji');
 
         return view('livewire.gaji.rekap.index', [
             'totalPotongan' => $summary['totalPotongan'],

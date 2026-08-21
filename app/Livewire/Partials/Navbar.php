@@ -121,7 +121,7 @@ class Navbar extends Component
 
         // 2. Cuti approvals
         try {
-            if ($user->hasRole('Super-Admin') || $user->hasRole('Staff-SDM')) {
+            if ($user->can('approve-kepegawaian-cuti')) {
                 // Pending cuti needing approval
                 $pendingCutis = \App\Models\Surat\SuratCuti::whereIn('status', [\App\Enums\StatusApproval::PENDING, \App\Enums\StatusApproval::WAITING])
                     ->latest()
@@ -155,7 +155,7 @@ class Navbar extends Component
 
         // 3. Maintenance
         try {
-            if ($user->hasRole('Super-Admin') || $user->hasRole('Bagian-Umum')) {
+            if ($user->can('view-umum-maintenance')) {
                 $maintenance = \App\Models\Maintenance\Jadwal::latest()
                     ->take(5)
                     ->pluck('id')
@@ -171,9 +171,9 @@ class Navbar extends Component
             }
         } catch (Throwable $e) {}
 
-        // 4. Golongan changes (For Super-Admin & Staff-SDM)
+        // 4. Golongan changes (For SDM & Management)
         try {
-            if ($user->hasRole('Super-Admin') || $user->hasRole('Staff-SDM')) {
+            if ($user->can('view-kepegawaian-gaji')) {
                 $logs = \Illuminate\Support\Facades\DB::table('sdm_payroll_golongan_logs')
                     ->latest()
                     ->take(5)

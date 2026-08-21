@@ -71,6 +71,109 @@
             </div>
         </div>
 
+        {{-- SATUSEHAT & LISENSI MEDIS --}}
+        <div class="space-y-2 pt-2">
+            <hr class="text-gray-200">
+            <div class="flex items-center justify-between cursor-pointer select-none" wire:click="toggleLisensiSection">
+                <span class="text-primary-500 flex items-center gap-1 font-semibold">
+                    <x-ts:icon name="tabler.shield-bolt" class="h-5 w-5" />
+                    Lisensi & Identitas Profesional (SATUSEHAT)
+                </span>
+                <span class="text-xs text-gray-500 hover:text-primary-600 font-medium flex items-center gap-1">
+                    {{ $showLisensiSection ? 'Sembunyikan' : 'Tampilkan' }}
+                    <x-ts:icon name="{{ $showLisensiSection ? 'tabler.chevron-up' : 'tabler.chevron-down' }}" class="h-4 w-4" />
+                </span>
+            </div>
+        </div>
+
+        @if($showLisensiSection)
+            <div class="space-y-3 bg-gray-50/60 p-3 rounded-lg border border-gray-100">
+                <div class="flex flex-col gap-2 lg:flex-row">
+                    <div class="w-full lg:w-1/2">
+                        <x-ts:input wire:model.lazy='form.ihs_number' placeholder="IHS Number (Kemenkes)" hint="Practitioner IHS Number dari Master Nakes Index Kemenkes RI" />
+                    </div>
+                </div>
+
+                {{-- Data STR (Sesuai Format SDMK / Konsil Kemenkes) --}}
+                <div class="border-t border-gray-200 pt-2 space-y-2">
+                    <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider block">Data STR (Konsil / SDMK)</span>
+                    <div class="flex flex-col gap-2 lg:flex-row">
+                        <div class="w-full lg:w-1/2">
+                            <x-ts:input wire:model.lazy='form.no_str' placeholder="Nomor STR" />
+                        </div>
+                        <div class="w-full lg:w-1/2">
+                            <x-ts:input wire:model.lazy='form.jenis_str' placeholder="Jenis STR (e.g. STR Seumur Hidup, STR Berjangka)" />
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2 lg:flex-row">
+                        <div class="w-full lg:w-1/4">
+                            <x-ts:date wire:model.lazy='form.str_terbit' placeholder="Tgl. Terbit STR" />
+                        </div>
+                        <div class="w-full lg:w-1/4">
+                            <x-ts:date wire:model.lazy='form.str_berakhir' placeholder="Tgl. Berakhir STR" />
+                        </div>
+                        <div class="w-full lg:w-1/4">
+                            <x-ts:input wire:model.lazy='form.jenis_profesi' placeholder="Jenis Profesi (e.g. Dokter, Perawat)" />
+                        </div>
+                        <div class="w-full lg:w-1/4">
+                            <x-ts:input wire:model.lazy='form.kompetensi' placeholder="Kompetensi / Spesialisasi" />
+                        </div>
+                    </div>
+
+                    {{-- Upload Softcopy STR --}}
+                    <div class="rounded-lg bg-white p-3 border border-gray-200 space-y-2 mt-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                                <x-ts:icon name="tabler.file-certificate" class="h-4 w-4 text-primary-600" />
+                                Softcopy Dokumen STR (PDF / JPG / PNG, Max 5MB)
+                            </span>
+                            @if($current_str_doc)
+                                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                    <x-ts:icon name="tabler.circle-check" class="h-3.5 w-3.5" /> File Ter-upload
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                    <x-ts:icon name="tabler.alert-circle" class="h-3.5 w-3.5" /> Belum ada file
+                                </span>
+                            @endif
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center gap-3">
+                            <div class="w-full flex-1">
+                                <input type="file" wire:model="file_str" accept=".pdf,.png,.jpg,.jpeg" class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer" />
+                                @error('file_str') <span class="text-xs text-rose-500 font-semibold mt-0.5 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            @if($current_str_doc)
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <a href="{{ asset('storage/' . $current_str_doc->filename) }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded-md border border-blue-200 hover:bg-blue-100 transition-colors">
+                                        <x-ts:icon name="tabler.eye" class="h-3.5 w-3.5" /> Lihat File
+                                    </a>
+                                    <button type="button" wire:click="deleteStrDoc" wire:confirm="Yakin ingin menghapus softcopy dokumen STR ini?" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-rose-700 bg-rose-50 rounded-md border border-rose-200 hover:bg-rose-100 transition-colors">
+                                        <x-ts:icon name="tabler.trash" class="h-3.5 w-3.5" /> Hapus
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Data SIP --}}
+                <div class="border-t border-gray-200 pt-2 space-y-2">
+                    <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider block">Data SIP</span>
+                    <div class="flex flex-col gap-2 lg:flex-row">
+                        <div class="w-full lg:w-1/2">
+                            <x-ts:input wire:model.lazy='form.no_sip' placeholder="Nomor SIP (Surat Izin Praktik)" />
+                        </div>
+                        <div class="w-full lg:w-1/4">
+                            <x-ts:date wire:model.lazy='form.sip_berakhir' placeholder="Tgl. Kadaluarsa SIP" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- KONTAK --}}
         <div class="space-y-2 pt-2">
             <hr class="text-gray-200">

@@ -26,7 +26,7 @@ class DisplayTabAuditLogs extends Component
         if (!$user) {
             return false;
         }
-        return $user->hasRole(['Super-Admin', 'SuperAdmin', 'superadmin']) || ($user->is_superadmin ?? false);
+        return $user->can('super-admin-bypass') || $user->hasRole('Super-Admin');
     }
 
     public function loadData(DmsMiddlewareClient $client): void

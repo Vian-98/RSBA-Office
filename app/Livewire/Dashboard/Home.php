@@ -51,13 +51,13 @@ class Home extends Component
             }
 
             try {
-                if ($user->hasRole('Super-Admin')) {
+                if ($user->can('super-admin-bypass') || $user->hasRole('Super-Admin')) {
                     $this->loadSuperAdminData();
-                } elseif ($user->hasRole('Staff-SDM')) {
+                } elseif ($user->isKabagSDM()) {
                     $this->loadSdmData();
-                } elseif ($user->hasRole('Bagian-Umum')) {
+                } elseif ($user->isKabagUmum()) {
                     $this->loadUmumData();
-                } elseif ($user->hasRole('Keuangan')) {
+                } elseif ($user->isKabagKeuangan()) {
                     $this->loadKeuanganData();
                 } elseif ($user->isKoordinator()) {
                     $this->loadKoordinatorData();

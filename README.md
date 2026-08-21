@@ -4,7 +4,15 @@
   Aplikasi perkantoran (SIM-SDM & Internal Office) pada <b>Rumah Sakit Bintang Amin Lampung</b>.
 </p>
 
-## Fitur Utama & Pembaruan
+- **Integrasi SATUSEHAT Practitioner (IHS Number, STR, SIP & Upload Softcopy STR)**:
+  - Pencatatan Practitioner IHS Number dari Kemenkes RI, Nomor STR, Jenis STR, Tanggal Terbit & Kadaluarsa STR, Jenis Profesi, serta Spesialisasi/Kompetensi pada data identitas karyawan.
+  - Fitur unggah berkas softcopy STR (PDF/Gambar) terintegrasi langsung di form identitas & lisensi medis yang otomatis tersinkronisasi ke repositori dokumen pegawai (`sdm_kary_document`).
+  - Tampilan kolom IHS Number, Nomor STR, dan badge status STR Expired (Aktif, Warning ≤90 hari, Expired) pada tabel daftar Dokter & Pegawai Medis.
+- **Export PDF Jadwal Kerja Dinamis dengan Header Logo RSBA**:
+  - Fitur ekspor jadwal kerja ruangan ke format PDF (*Landscape A4*) dengan tampilan presisi mengacu pada format standar dokumen fisik rumah sakit.
+  - Dilengkapi **Header Logo Resmi RSBA** (Base64 Data URI) dan Nama Perusahaan.
+  - Sinkronisasi dinamis 100% dengan tampilan web UI: pencetakan kode shift singkat (`REG`, `PAGI`, `SIANG`, `MALAM`), skema warna sel (*background & font contrast*), serta tabel legenda shift otomatis sesuai konfigurasi shift ruangan aktif.
+  - Tabel Kontak Nomor Telepon Petugas bertugas 4-kolom berpasangan dan blok tanda tangan resmi 2-kolom (Koordinator & Wadir Medis & Keperawatan).
 - **Collapsible Sidebar**: Menu navigasi sidebar modern yang dapat dilipat (*collapsible*) melalui tombol hamburger di navbar desktop/mobile dengan scroll terpisah dan auto-scroll prevention.
 - **Dynamic Header & 2-Tier Card Layout**: Layout header dua tingkat yang responsif untuk judul halaman, breadcrumb, serta tombol aksi (*action buttons*) agar tampilan rapi tanpa overflow. Sinkronisasi dinamis judul tab browser dengan nama instansi **RS Bintang Amin**.
 - **Engine Kalkulasi Otomatis PPh 21 (TER & Pasal 17)**:

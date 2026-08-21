@@ -25,7 +25,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(JadwalKerja::class, JadwalKerjaPolicy::class);
 
         Gate::before(function ($user, $ability) {
-            if ($user->hasRole('Super-Admin')) {
+            if ($user->hasRole('Super-Admin') || $user->hasPermissionTo('super-admin-bypass')) {
                 return true;
             }
 
@@ -36,12 +36,14 @@ class AuthServiceProvider extends ServiceProvider
                     'edit-kepegawaian-jadwal-kerja',
                     'delete-kepegawaian-jadwal-kerja',
                     'view-kepegawaian-absensi',
+                    'view-kepegawaian-konfigurasi-jadwal',
+                    'view-kepegawaian-surat-cuti',
+                    'view-kepegawaian-surat-sp3',
                 ];
                 if (in_array($ability, $allowedAbilities)) {
                     return true;
                 }
             }
-
 
             if ($ability === 'view-kepegawaian-jadwal-kerja') {
                 if (
