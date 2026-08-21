@@ -8,26 +8,43 @@ use App\Models\DigitalSignatureDocument;
 use App\Models\DigitalSignatureApproval;
 use App\Services\DocstoreSyncService;
 use Illuminate\Support\Facades\Hash;
-
 use TallStackUi\Traits\Interactions;
 
 class PendingApprovalsTable extends Component
 {
     use WithPagination, Interactions;
 
+    public string $subTab = 'pending'; // 'pending' (Perlu Tindakan Saya) or 'history' (History / Semua Assign Ke Saya)
     public string $search = '';
+    
     public ?DigitalSignatureDocument $selectedDocument = null;
     public ?DigitalSignatureApproval $selectedApproval = null;
     
     public bool $showSignModal = false;
     public bool $showRejectModal = false;
+    public bool $showDetailModal = false;
     
     public string $accountPassword = '';
     public string $rejectionReason = '';
 
+    public function setSubTab(string $tab): void
+    {
+        $this->subTab = $tab;
+        $this->resetPage();
+    }
+
     public function updatingSearch(): void
     {
         $this->resetPage();
+    }
+
+    public function viewDetail(int $documentId): void
+    {
+        $doc = DigitalSignatureDocument::with(['approvals.user.karyawan.jabatan', 'user'])->find($documentId);
+        if ($doc) {
+            $this->selectedDocument = $doc;
+            $this->showDetailModal = true;
+        }
     }
 
     public function openSignModal(int $documentId): void
@@ -36,7 +53,7 @@ class PendingApprovalsTable extends Component
         $doc = DigitalSignatureDocument::with(['approvals.user', 'user'])->find($documentId);
 
         if (!$doc || !$doc->isPendingForUser($userId)) {
-            $this->toast()->error('Akses Ditolak', 'Dokumen tidak dalam giliran persetujuan Anda.')->send();
+            $this->toast()->error('Akses Ditolak', 'Dokumen belum dalam giliran persetujuan Anda.')->send();
             return;
         }
 
@@ -102,7 +119,7 @@ class PendingApprovalsTable extends Component
         $doc = DigitalSignatureDocument::with(['approvals.user', 'user'])->find($documentId);
 
         if (!$doc || !$doc->isPendingForUser($userId)) {
-            $this->toast()->error('Akses Ditolak', 'Dokumen tidak dalam giliran persetujuan Anda.')->send();
+            $this->toast()->error('Akses Ditolak', 'Dokumen belum dalam giliran persetujuan Anda.')->send();
             return;
         }
 
@@ -154,22 +171,65 @@ class PendingApprovalsTable extends Component
     {
         $userId = auth()->id();
 
-        // Get documents where user is an active reviewer
-        $allDocs = DigitalSignatureDocument::with(['approvals.user', 'user'])
-            ->where('status', '!=', 'rejected')
+        // Base query: documents where current user is assigned as a signer
+        $baseQuery = DigitalSignatureDocument::with(['approvals.user.karyawan.jabatan', 'user'])
+            ->whereHas('approvals', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            });
+
+        // Search filter (Title, Document Number, or Applicant Name via karyawan or email)
+        if (!empty(trim($this->search))) {
+            $searchTerm = trim($this->search);
+            $baseQuery->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('document_number', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('user', function ($qu) use ($searchTerm) {
+                      $qu->where('email', 'like', "%{$searchTerm}%")
+                        ->orWhereHas('karyawan', function ($qk) use ($searchTerm) {
+                            $qk->where('nama', 'like', "%{$searchTerm}%");
+                        });
+                  });
+            });
+        }
+
+        // Count pending action items (where it is currently this user's turn)
+        $pendingActionCount = DigitalSignatureDocument::where('status', '!=', 'rejected')
             ->whereHas('approvals', function ($q) use ($userId) {
                 $q->where('user_id', $userId)->where('status', 'pending');
             })
-            ->latest()
-            ->get();
+            ->get()
+            ->filter(fn($doc) => $doc->isPendingForUser($userId))
+            ->count();
 
-        // Filter to only those pending for this user's turn
-        $pendingDocs = $allDocs->filter(function ($doc) use ($userId) {
-            return $doc->isPendingForUser($userId);
-        });
+        // Total count of all assigned documents to this user
+        $totalAssignedCount = DigitalSignatureDocument::whereHas('approvals', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })->count();
+
+        if ($this->subTab === 'pending') {
+            // Get pending documents where user is an active reviewer
+            $allDocs = (clone $baseQuery)
+                ->where('status', '!=', 'rejected')
+                ->whereHas('approvals', function ($q) use ($userId) {
+                    $q->where('user_id', $userId)->where('status', 'pending');
+                })
+                ->latest()
+                ->get();
+
+            // Filter to only those where it's currently this user's turn
+            $documents = $allDocs->filter(fn($doc) => $doc->isPendingForUser($userId));
+            $paginatedDocs = null;
+        } else {
+            // SubTab 'history' (History / Semua Assign Ke Saya: includes pending turn, waiting turn, approved, rejected)
+            $documents = null;
+            $paginatedDocs = (clone $baseQuery)->latest()->paginate(10);
+        }
 
         return view('livewire.kepegawaian.digital-signature.partials.pending-approvals-table', [
-            'pendingDocs' => $pendingDocs,
+            'documents'          => $documents,
+            'paginatedDocs'      => $paginatedDocs,
+            'pendingActionCount' => $pendingActionCount,
+            'totalAssignedCount' => $totalAssignedCount,
         ]);
     }
 }
