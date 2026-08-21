@@ -131,15 +131,16 @@ class DocstoreSyncService
             $approvals = $doc->approvals()->with(['user.karyawan.jabatan'])->get();
             foreach ($approvals as $appr) {
                 $u = $appr->user;
+                $apprHash = $appr->signature_hash ?: hash('sha256', 'DS_APP_' . $doc->id . '_' . $appr->user_id . '_' . $appr->step_order);
                 $signaturesList[] = [
-                    'signature'      => !empty($appr->signature_hash) ? ('SIG_' . $appr->signature_hash) : ('SIG_' . ($doc->signature_hash ?: time())),
+                    'signature'      => !empty($appr->signature_hash) ? ('SIG_' . $appr->signature_hash) : ('SIG_' . $apprHash),
                     'original_data'  => !empty($appr->rejection_reason) ? $appr->rejection_reason : ($doc->byte_counter_hash ?: 'N/A'),
                     'public_key'     => 'RSA_PUB_KEY_' . ($u?->id ?? 1),
                     'signer_name'    => $u?->name ?? 'Penandatangan Digital',
                     'signer_role'    => $u?->karyawan?->jabatan?->first()?->nama ?? 'Pejabat Otorisasi',
-                    'status'         => $appr->status ?? 'approved',
-                    'signed_at'      => $appr->signed_at ? $appr->signed_at->toIso8601String() : now()->toIso8601String(),
-                    'signature_hash' => $appr->signature_hash ?: hash('sha256', ($doc->document_number ?? 'DS') . $appr->id . time()),
+                    'status'         => $appr->status ?? 'pending',
+                    'signed_at'      => $appr->signed_at ? $appr->signed_at->toIso8601String() : null,
+                    'signature_hash' => $apprHash,
                 ];
             }
         }

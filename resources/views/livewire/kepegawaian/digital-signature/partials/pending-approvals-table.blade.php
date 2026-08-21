@@ -81,7 +81,7 @@
     </div>
 
     {{-- Modal Confirm Approval & Sign --}}
-    <x-ts:modal title="Konfirmasi Persetujuan & Tanda Tangan" wire:model="showSignModal" center size="md">
+    <x-ts:modal title="Konfirmasi Persetujuan & Tanda Tangan" wire="showSignModal" center size="md">
         @if ($selectedDocument)
             <div class="space-y-4">
                 <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl">
@@ -117,7 +117,7 @@
     </x-ts:modal>
 
     {{-- Modal Reject with Mandatory Feedback --}}
-    <x-ts:modal title="Penolakan Pengajuan Dokumen" wire:model="showRejectModal" center size="lg">
+    <x-ts:modal title="Penolakan Pengajuan Dokumen" wire="showRejectModal" center size="lg">
         @if ($selectedDocument)
             <div class="space-y-4">
                 <div class="bg-rose-50 border border-rose-200 p-3.5 rounded-xl">

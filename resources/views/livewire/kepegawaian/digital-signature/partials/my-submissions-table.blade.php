@@ -126,7 +126,7 @@
     </div>
 
     {{-- Modal Detail Approval Chain & Rejection Feedback --}}
-    <x-ts:modal title="Detail Rantai Persetujuan Surat" wire:model="showDetailModal" center size="2xl">
+    <x-ts:modal title="Detail Rantai Persetujuan Surat" wire="showDetailModal" center size="2xl">
         @if ($selectedDocument)
             <div class="space-y-5">
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">

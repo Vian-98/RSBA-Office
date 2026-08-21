@@ -351,13 +351,17 @@ class Form extends Component
             // Save multi-tier approval steps
             $step = 1;
             foreach ($this->signer_ids as $sId) {
+                $apprHash = ($sId == $user->id)
+                    ? $signatureHash
+                    : hash('sha256', 'DS_APP_' . $doc->id . '_' . $sId . '_' . $step);
+
                 DigitalSignatureApproval::create([
                     'digital_signature_document_id' => $doc->id,
                     'user_id'                       => $sId,
                     'step_order'                    => $step++,
                     'status'                        => ($sId == $user->id ? 'approved' : 'pending'),
                     'signed_at'                     => ($sId == $user->id ? now() : null),
-                    'signature_hash'                => ($sId == $user->id ? $signatureHash : null),
+                    'signature_hash'                => $apprHash,
                 ]);
             }
 

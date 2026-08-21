@@ -76,20 +76,19 @@ class PendingApprovalsTable extends Component
         // Check if all approval steps are now completed
         $remainingCount = $this->selectedDocument->approvals()->where('status', '!=', 'approved')->count();
 
+        $signatureData = [
+            'signature' => 'SIG_' . $sigHash,
+            'original_data' => $this->selectedDocument->byte_counter_hash,
+            'public_key' => 'RSA_PUB_KEY_' . $user->id,
+        ];
+
         if ($remainingCount === 0) {
             // All tiers approved! Mark document as fully approved
             $this->selectedDocument->update(['status' => 'approved']);
-
-            // Sync to docstore
-            $signatureData = [
-                'signature' => 'SIG_' . $sigHash,
-                'original_data' => $this->selectedDocument->byte_counter_hash,
-                'public_key' => 'RSA_PUB_KEY_' . $user->id,
-            ];
             $docstoreSyncService->syncDigitalSignatureDoc($this->selectedDocument, '', $signatureData);
-
             $this->toast()->success('Dokumen Disetujui Sepenuhnya', 'Seluruh tingkat penandatangan telah menyetujui dokumen ini.')->send();
         } else {
+            $docstoreSyncService->syncDigitalSignatureDoc($this->selectedDocument, '', $signatureData);
             $this->toast()->success('Persetujuan Berhasil', 'Tingkat persetujuan Anda berhasil dicatat. Dokumen berlanjut ke penandatangan berikutnya.')->send();
         }
 
