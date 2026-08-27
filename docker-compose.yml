@@ -1,0 +1,63 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rsba_office_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "2023:80"
+    environment:
+      - APP_ENV=local
+    networks:
+      - rsba_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  mysql:
+    image: mysql:8.0
+    container_name: rsba_office_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: rsbadev
+      MYSQL_USER: rsba_user
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "3307:3306"
+    volumes:
+      - rsba_office_db_data:/var/lib/mysql
+    networks:
+      - rsba_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootsecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:alpine
+    container_name: rsba_office_redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - rsba_office_redis_data:/data
+    networks:
+      - rsba_network
+
+networks:
+  rsba_network:
+    driver: bridge
+
+volumes:
+  rsba_office_db_data:
+    driver: local
+  rsba_office_redis_data:
+    driver: local

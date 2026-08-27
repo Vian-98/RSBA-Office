@@ -11,31 +11,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Core / Master Seeders (Essential System, Super-Admin, Menus, Roles, & Reference Data)
+        // ── Production Master & Essential Seeders ──────────────────────────
         $mainSeeders = [
-            MenuSeeder::class,                     // System Navigation Menus
-            SpecialPermissionSeeder::class,        // Special Permissions
-            PermissionSeeder::class,               // Spatie Permissions
-            RoleSeeder::class,                     // System Roles
-            UserSeeder::class,                     // Super-Admin Account
-            SuperAdminSignatureSeeder::class,      // Super-Admin Digital Signature Certificate
-            PerusahaanSeeder::class,               // Profil RS Bintang Amin
-            WilayahSeeder::class,                  // Master Wilayah Indonesia (Provinsi, Kab, Kec, Desa)
-            CutiJenisSeeder::class,                // Master Jenis Cuti
-            CutiBersamaSeeder::class,              // Master Cuti Bersama Nasional
-            SuratKategoriArsipSeeder::class,       // Master Kategori Arsip Surat
-            UmDataSeeder::class,                   // Master Logistik, Kategori & Satuan Barang
-            UmumSeeder::class,                     // Master Data Umum
-            JadwalSeeder::class,                   // Master Shift Dasar & Aturan Jadwal
-            PayrollSeeder::class,                  // Master Komponen Tunjangan Dasar
-            SdmPayrollGolonganMatrixSeeder::class, // Matriks Golongan Resmi
-            PayrollPph21ReferenceSeeder::class,    // Master Aturan Pajak PPh 21 (TER & PTKP)
-            StrukturOrganisasiSeeder::class,       // Master Bagan Jabatan & Bagian RSBA
-            KaryawanExcelSeeder::class,
-            DummyPayrollSlipSeeder::class,
-            JadwalDummyJuniSeeder::class,
-            SkenarioTriRahayuSeeder::class,
-            JadwalDuaTahunSeeder::class,
+            MenuSeeder::class,                     // 1. System Navigation Menus
+            PermissionSeeder::class,               // 2. Spatie CRUD Permissions
+            SpecialPermissionSeeder::class,        // 3. Special & Functional Permissions
+            UserSeeder::class,                     // 4. Super-Admin User & Role
+            SuperAdminSignatureSeeder::class,      // 5. Super-Admin Digital Signature Certificate
+            PerusahaanSeeder::class,               // 6. RS Bintang Amin Profile & Identity
+            WilayahSeeder::class,                  // 7. Master Wilayah Indonesia (Provinsi, Kab, Kec, Desa)
+            CutiJenisSeeder::class,                // 8. Master 4 Jenis Cuti Resmi
+            SuratKategoriArsipSeeder::class,       // 9. Master Kategori Arsip Surat Dinas
+            JadwalSeeder::class,                   // 10. Master 4 Shift Kerja & Aturan Dasar
         ];
 
         foreach ($mainSeeders as $seeder) {
