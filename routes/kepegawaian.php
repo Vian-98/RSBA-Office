@@ -207,23 +207,23 @@ Route::prefix('akreditasi')
                 ->group(function () {
                     // Single file download
                     Route::get('/file/{document}', [App\Http\Controllers\AkreDownloadDocsController::class, 'downloadFile'])
-                        ->name('download.file');
+                        ->name('file');
 
                     // Element download
                     Route::get('/element/{element}', [App\Http\Controllers\AkreDownloadDocsController::class, 'downloadElement'])
-                        ->name('download.element');
+                        ->name('element');
 
                     // Sub Bab download
                     Route::get('/sub-bab/{subBab}', [App\Http\Controllers\AkreDownloadDocsController::class, 'downloadSubBab'])
-                        ->name('download.subbab');
+                        ->name('subbab');
 
                     // Bab download
                     Route::get('/bab/{bab}', [App\Http\Controllers\AkreDownloadDocsController::class, 'downloadBab'])
-                        ->name('download.bab');
+                        ->name('bab');
 
                     // Chapter download
                     Route::get('/chapter/{chapter}', [App\Http\Controllers\AkreDownloadDocsController::class, 'downloadChapter'])
-                        ->name('download.chapter');
+                        ->name('chapter');
                 });
         }
 

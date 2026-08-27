@@ -69,9 +69,9 @@ class CutiSynchronizer implements DocumentSynchronizerInterface
                 'karyawan_jabatan'   => optional($karyawan)->jabatan_nama,
                 'karyawan_hp'        => optional($karyawan)->no_hp ?? optional($karyawan)->phone,
                 'no_surat'           => $model->no_surat,
-                'tgl_surat'          => $model->tgl_surat ? $model->tgl_surat->format('Y-m-d') : null,
-                'tgl_mulai'          => $model->tgl_mulai ? $model->tgl_mulai->format('Y-m-d') : null,
-                'tgl_akhir'          => $model->tgl_akhir ? $model->tgl_akhir->format('Y-m-d') : null,
+                'tgl_surat'          => $model->tgl_surat ? \Carbon\Carbon::parse($model->tgl_surat)->format('Y-m-d') : null,
+                'tgl_mulai'          => $model->tgl_mulai ? \Carbon\Carbon::parse($model->tgl_mulai)->format('Y-m-d') : null,
+                'tgl_akhir'          => $model->tgl_akhir ? \Carbon\Carbon::parse($model->tgl_akhir)->format('Y-m-d') : null,
                 'lama_cuti'          => $model->lama_cuti,
                 'jenis_cuti_id'      => $model->jenis_cuti_id,
                 'jenis_cuti'         => optional($jenis)->nama,
@@ -99,26 +99,27 @@ class CutiSynchronizer implements DocumentSynchronizerInterface
                     $q->where('sign_type', 'cuti')
                       ->orWhere('sign_type', 'surat_cuti');
                 })
-                ->latest('id')
+                ->latest()
                 ->first();
 
             $cert = SignatureCerts::where('user_id', $approval->user_id)
-                ->where('is_active', 1)
+                ->where('is_revoked', false)
+                ->latest()
                 ->first();
 
-            $statusText = 'PENDING';
-            if ($approval->status === 'approved' || $approval->status === 'manual') {
-                $statusText = 'SIGNED';
-            } elseif ($approval->status === 'rejected') {
-                $statusText = 'REJECTED';
-            }
+            $statusText = match ($approval->status) {
+                'approved' => 'signed',
+                'rejected' => 'rejected',
+                'manual'   => 'manual',
+                default    => 'pending',
+            };
 
             $signatures[] = [
                 'signer_name'    => $approval->user_name ?? optional($user)->name ?? 'Pejabat Approval',
                 'signer_role'    => $approval->jabatan ?? $approval->role ?? 'Pejabat Penyetuju',
                 'signer_order'   => (int) ($approval->order ?? 1),
                 'status'         => $statusText,
-                'signed_at'      => $approval->approved_at ? $approval->approved_at->toIso8601String() : null,
+                'signed_at'      => $approval->approved_at ? \Carbon\Carbon::parse($approval->approved_at)->toIso8601String() : null,
                 'signature_hash' => $approval->qr_verification_hash ?: ($sigLog->data_hash ?? null),
                 'signature'      => $sigLog->signature ?? '',
                 'signature_data' => $sigLog->signature ?? '',

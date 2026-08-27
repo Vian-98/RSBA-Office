@@ -16,6 +16,11 @@ class SuratCuti extends Model
         'status' => StatusApproval::class,
         'is_penyesuaian_melahirkan' => 'boolean',
         'docstore_synced_at' => 'datetime',
+        'tgl_surat' => 'date',
+        'tgl_mulai' => 'date',
+        'tgl_akhir' => 'date',
+        'tgl_melahirkan_aktual' => 'date',
+        'signed_at' => 'datetime',
     ];
 
     public function karyawan()
