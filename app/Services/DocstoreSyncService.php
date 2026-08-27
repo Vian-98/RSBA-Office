@@ -124,6 +124,71 @@ class DocstoreSyncService
     }
 
     /**
+     * Sync dokumen Tanda Tangan Digital (PDF) ke docstore (bank surat).
+     */
+    public function syncDigitalSignatureDoc(
+        \App\Models\DigitalSignatureDocument $doc,
+        string $pdfBase64,
+        array $signatureData = []
+    ): bool {
+        // Extract stamp metadata if JSON encoded
+        $stampMeta = json_decode($doc->keterangan ?? '', true) ?: [];
+
+        $content = [
+            'title'                        => $doc->title,
+            'document_number'              => $doc->document_number,
+            'file_name'                    => $doc->file_name,
+            'file_size_bytes'              => $doc->file_size,
+            'byte_counter_hash'            => $doc->byte_counter_hash,
+            'original_byte_counter_hash'   => $signatureData['original_byte_counter_hash'] ?? $signatureData['original_data'] ?? null,
+            'keterangan'                   => $doc->keterangan,
+            'uploader_name'                => optional($doc->user)->name ?? 'User',
+            'stamp_x'                      => $signatureData['stamp_x'] ?? ($stampMeta['stamp_x'] ?? 70),
+            'stamp_y'                      => $signatureData['stamp_y'] ?? ($stampMeta['stamp_y'] ?? 75),
+            'stamp_scale'                  => $signatureData['stamp_scale'] ?? ($stampMeta['stamp_scale'] ?? 100),
+            'stamp_position'               => $signatureData['stamp_position'] ?? ($stampMeta['stamp_position'] ?? 'c_right'),
+            'pdf_base64'                   => $pdfBase64,
+        ];
+
+        $signatures = [
+            [
+                'signature_hash' => $doc->signature_hash,
+                'original_data'  => $signatureData['original_data'] ?? $doc->byte_counter_hash,
+                'signature'      => $signatureData['signature'] ?? 'MOCK_SIGNATURE',
+                'data_hash'      => $signatureData['data_hash'] ?? $doc->byte_counter_hash,
+                'algorithm'      => 'sha256',
+                'public_key'     => $signatureData['public_key'] ?? 'MOCK_PUBLIC_KEY',
+                'signer_name'    => optional($doc->user)->name ?? 'Signer',
+                'signer_role'    => 'Penandatangan Digital',
+                'status'         => 'APPROVED',
+                'signed_at'      => now()->toIso8601String(),
+            ]
+        ];
+
+        $payload = [
+            'document_type'   => 'digital_signature',
+            'document_id'     => $doc->id,
+            'document_number' => $doc->document_number,
+            'status'          => 'APPROVED',
+            'content'         => $content,
+            'signatures'      => $signatures,
+        ];
+
+        $result = $this->sendToDocstore($payload);
+
+        if ($result['success'] && !empty($result['docstore_key'])) {
+            $doc->update([
+                'docstore_key' => $result['docstore_key'],
+                'status'       => 'synced',
+            ]);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /**
      * Ambil data surat dari docstore berdasarkan docstore_key.
      * Digunakan oleh PrintCuti dan PrintSp3 untuk menarik data cetak dari bank surat.
      * Data di-cache selama 5 menit untuk mengurangi beban request ke docstore.
@@ -387,4 +452,81 @@ class DocstoreSyncService
         }
         return $signatures;
     }
+
+    /**
+     * Helper sentral untuk memanggil endpoint Vault API di docstore
+     */
+    public function callVaultApi(string $method, string $endpointPath, array $payload = []): array
+    {
+        $token = $this->getM2mToken();
+        if (!$token) {
+            return ['status' => false, 'message' => 'Gagal mendapatkan OAuth2 M2M Token dari Docstore'];
+        }
+
+        try {
+            $jsonPayload = json_encode($payload);
+            $timestamp = time();
+
+            $headers = [
+                'Content-Type' => 'application/json',
+                'X-Timestamp'  => (string)$timestamp,
+            ];
+
+            if (!empty($this->hmacSecret)) {
+                $payloadToSign = $timestamp . '.' . $jsonPayload;
+                $headers['X-Payload-Signature'] = hash_hmac('sha256', $payloadToSign, $this->hmacSecret);
+            }
+
+            $url = rtrim($this->apiUrl, '/') . '/' . ltrim($endpointPath, '/');
+            $request = Http::withOptions(['verify' => $this->verifySsl])
+                ->withToken($token)
+                ->withHeaders($headers)
+                ->timeout(10);
+
+            if (strtoupper($method) === 'GET') {
+                $response = $request->get($url, $payload);
+            } else {
+                $response = $request->withBody($jsonPayload, 'application/json')->post($url);
+            }
+
+            if ($response->status() === 401) {
+                Cache::forget('docstore_m2m_token_' . md5($this->clientId));
+                $newToken = $this->getM2mToken();
+
+                if ($newToken) {
+                    $request = Http::withOptions(['verify' => $this->verifySsl])
+                        ->withToken($newToken)
+                        ->withHeaders($headers)
+                        ->timeout(10);
+                    if (strtoupper($method) === 'GET') {
+                        $response = $request->get($url, $payload);
+                    } else {
+                        $response = $request->withBody($jsonPayload, 'application/json')->post($url);
+                    }
+                }
+            }
+
+            return $response->json() ?? ['status' => false, 'message' => 'Response kosong dari Docstore'];
+        } catch (\Throwable $e) {
+            Log::error("Error callVaultApi ({$endpointPath}): " . $e->getMessage());
+            return ['status' => false, 'message' => 'Koneksi ke Vault Docstore gagal: ' . $e->getMessage()];
+        }
+    }
+
+    public function generateVaultCertificate(array $payload): array
+    {
+        return $this->callVaultApi('POST', 'vault/certificates/generate', $payload);
+    }
+
+    public function getActiveVaultCertificate(int $userId): ?array
+    {
+        $res = $this->callVaultApi('GET', "vault/certificates/{$userId}/active");
+        return ($res['status'] ?? false) ? ($res['certificate'] ?? null) : null;
+    }
+
+    public function signVaultData(array $payload): array
+    {
+        return $this->callVaultApi('POST', 'vault/signatures/sign', $payload);
+    }
 }
+

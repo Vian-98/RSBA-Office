@@ -35,7 +35,10 @@
                 </div>
             </div>
 
-            <x-menus :menus="$menus" class="flex" />
+            {{-- menu list --}}
+            <div class="px-3">
+                <x-menus :menus="$menus" class="flex" />
+            </div>
         </div>
 
         {{-- Profile Footer --}}
