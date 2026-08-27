@@ -101,8 +101,10 @@ class PrintSp3 extends Component
         return $this->suratSp3->approvals->map(function ($item): array {
             $isManual = $item->status === \App\Enums\StatusApproval::MANUAL
                 || str_contains(strtolower($item->keterangan ?? ''), 'manual');
+            $tahapLabel = is_object($item->tahap) ? $item->tahap->nama() : ($item->tahap === 'verifikasi_keuangan' ? 'Verifikasi Keuangan' : 'Tanda Tangan Atasan');
             return [
-                'status'      => $isManual ? 'Manual' : $item->status->nama(),
+                'tahap'       => $tahapLabel,
+                'status'      => $isManual ? 'Manual' : (is_object($item->status) ? $item->status->nama() : ucfirst($item->status)),
                 'nama'        => $item->users->karyawan->full_nama ?? $item->users->nama,
                 'jabatan'     => $item->users->karyawan?->jabatan ?? null,
                 'approved_at' => $item->approved_at,
@@ -137,16 +139,39 @@ class PrintSp3 extends Component
     }
 
     #[Computed]
-    public function generateBarcode()
+    public function ttdAtasan(): ?array
     {
         $sigs = $this->approvals();
-        if (empty($sigs) || empty($sigs[0]['signature'])) {
-            return $this->generateHeaderQrCode();
+        $atasanSig = collect($sigs)->first(function ($s) {
+            $tahap = strtolower($s['tahap'] ?? '');
+            return str_contains($tahap, 'atasan') || str_contains($tahap, 'direktur') || empty($tahap);
+        });
+
+        if (!$atasanSig && !empty($sigs)) {
+            $first = $sigs[0];
+            if (!str_contains(strtolower($first['tahap'] ?? ''), 'keuangan')) {
+                $atasanSig = $first;
+            }
+        }
+
+        return $atasanSig;
+    }
+
+    #[Computed]
+    public function generateBarcode()
+    {
+        $ttd = $this->ttdAtasan();
+        $ttdSig = $ttd['signature'] ?? null;
+
+        if (empty($ttdSig) || $ttdSig === 'PENDING_APPROVAL' || str_starts_with($ttdSig, 'pending_') || str_starts_with($ttdSig, 'REJECTED_')) {
+            return '';
         }
 
         $barcode = new DNS2D();
-        return $barcode->getBarcodePNG($sigs[0]['signature'], 'QRCODE');
+        return $barcode->getBarcodePNG($ttdSig, 'QRCODE');
     }
+
+
 
     /**
      * Apakah print dapat dilakukan.

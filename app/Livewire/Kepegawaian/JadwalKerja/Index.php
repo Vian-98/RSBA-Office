@@ -230,9 +230,12 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
         $user = Auth::user();
         if ($user) {
-            $isGlobalApprover = $user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir') || $user->can('view-kepegawaian-laporan');
+            $isSuperAdmin = $user->isSuperAdmin();
+            $isGlobalApprover = $isSuperAdmin || $user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir') || $user->can('view-kepegawaian-laporan');
 
-            if ($this->isRestrictedGuest($user)) {
+            if ($isGlobalApprover) {
+                // Super-Admin, SDM, Wadir, dan Direktur dapat melihat seluruh daftar jadwal seluruh ruangan/bagian
+            } elseif ($this->isRestrictedGuest($user)) {
                 $ownRuanganIds = $user->getOwnRuanganIds();
 
                 if (empty($ownRuanganIds)) {
@@ -242,8 +245,6 @@ class Index extends Component implements HasForms, HasTable, HasActions
                         ->where('tipe', $user->isDokter() ? 'dokter' : 'karyawan')
                         ->whereIn('status', ['published', 'locked']);
                 }
-            } elseif ($isGlobalApprover) {
-                // Super-Admin, SDM, Wadir, dan Direktur dapat melihat seluruh daftar jadwal ruangan
             } elseif ($user->can('approve-jadwal-kabid') || $user->isKepalaDept()) {
                 $bagianIds = $user->getActiveBagianIds();
                 $legacyBagianRuanganIds = $user->getBagianScopedRuanganIds() ?? [];
@@ -331,6 +332,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
             ->recordActions([
                 Action::make('kelola')
                     ->label(fn (JadwalKerja $record): string => 
+                        Auth::user()?->isSuperAdmin() ||
                         Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
                         Auth::user()?->can('approve-jadwal-wadir') || 
                         Auth::user()?->can('approve-jadwal-kabid') || 
@@ -340,6 +342,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     )
                     ->iconButton()
                     ->icon(fn (JadwalKerja $record): string => 
+                        Auth::user()?->isSuperAdmin() ||
                         Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
                         Auth::user()?->can('approve-jadwal-wadir') || 
                         Auth::user()?->can('approve-jadwal-kabid') || 
@@ -359,7 +362,8 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     ->successNotificationTitle('Jadwal berhasil dihapus')
                     ->visible(fn (JadwalKerja $record): bool => 
                         in_array($record->status, [\App\Enums\StatusJadwalKerja::DRAFT, \App\Enums\StatusJadwalKerja::DITOLAK]) && 
-                        (Auth::user()?->can('delete-kepegawaian-jadwal-kerja') || 
+                        (Auth::user()?->isSuperAdmin() ||
+                         Auth::user()?->can('delete-kepegawaian-jadwal-kerja') || 
                          Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
                          (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? [])))
                     ),
@@ -369,18 +373,22 @@ class Index extends Component implements HasForms, HasTable, HasActions
     public function render()
     {
         $user = Auth::user();
-        $canAccessJadwal = $user && $this->isRestrictedGuest($user)
+        $canAccessJadwal = $user && ($user->isSuperAdmin() || ($this->isRestrictedGuest($user)
             ? !empty($user->getOwnRuanganIds())
-            : ($user && (
+            : (
                 $user->can('view-kepegawaian-jadwal-kerja')
                 || $user->isDokter()
                 || $user->isKoordinator()
                 || $user->isKepalaDept()
                 || $user->isWadir()
                 || !empty($user->karyawan?->ruangan_id)
-            ));
+            )));
 
-        abort_unless($canAccessJadwal, 403, 'Anda tidak memiliki akses ke Jadwal Kerja.');
+        abort_unless(
+            $canAccessJadwal, 
+            403, 
+            'Akses Ditolak: Anda belum terdaftar dalam penugasan Ruangan/Unit Kerja aktif atau belum memiliki izin akses Jadwal Kerja. Silakan hubungi bagian SDM/Kepegawaian.'
+        );
 
         return view('livewire.kepegawaian.jadwal-kerja.index');
     }

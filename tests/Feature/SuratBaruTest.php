@@ -1,0 +1,331 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\StatusApproval;
+use App\Models\Sdm\Jabatan;
+use App\Models\Sdm\Karyawan;
+use App\Models\Surat\SuratBalasanPenelitian;
+use App\Models\Surat\SuratBalasanPenelitianBiaya;
+use App\Models\Surat\SuratBalasanPenelitianMahasiswa;
+use App\Models\Surat\SuratBalasanPkl;
+use App\Models\Surat\SuratBalasanPklMahasiswa;
+use App\Models\Surat\SuratPerintahTugas;
+use App\Models\Surat\SuratPerintahTugasKaryawan;
+use App\Models\Surat\SuratTarifPkl;
+use App\Models\Surat\SuratTemplateNomor;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class SuratBaruTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected User $user;
+    protected Karyawan $direkturKaryawan;
+    protected Jabatan $direkturJabatan;
+
+    private function createKaryawan(string $nip, string $nama): Karyawan
+    {
+        return Karyawan::forceCreate([
+            'nip'         => $nip,
+            'nik'         => '1234567890' . substr($nip, -4),
+            'nama'        => $nama,
+            'tgl_lahir'   => '1990-01-01',
+            'hp'          => '08123456789',
+            'prov'        => 'Lampung',
+            'kab'         => 'Bandar Lampung',
+            'kec'         => 'Kedaton',
+            'desa'        => 'Penengahan',
+            'alamat'      => 'Jl. Test',
+            'agama'       => 'islam',
+            'tgl_masuk'   => '2020-01-01',
+        ]);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $pembuatKaryawan = $this->createKaryawan('10001', 'Test Pembuat');
+
+        $this->user = User::forceCreate([
+            'email'       => 'testuser_' . uniqid() . '@rsba.test',
+            'password'    => bcrypt('password'),
+            'karyawan_id' => $pembuatKaryawan->id,
+        ]);
+
+        $this->direkturJabatan = Jabatan::firstOrCreate(
+            ['nama' => 'Direktur'],
+            ['tingkat_id' => 1, 'kode_surat' => 'DIR']
+        );
+
+        $this->direkturKaryawan = $this->createKaryawan('24170002', 'dr. Rachmawati, MPH');
+    }
+
+
+    public function test_surat_balasan_pkl_creation_and_snapshot_tariff()
+    {
+        $this->actingAs($this->user);
+
+        // Pastikan ada tarif aktif
+        $tarif = SuratTarifPkl::getAktif();
+
+        $surat = SuratBalasanPkl::create([
+            'no'                   => '1/S4/B-PKL/PBA-DIR/14.08.2026',
+            'tahun'                => 2026,
+            'tgl'                  => '2026-08-14',
+            'tujuan_universitas'   => 'Universitas Malahayati',
+            'prodi'                => 'Ilmu Keperawatan',
+            'jumlah_mahasiswa'     => 2,
+            'lama_praktik_bulan'   => 3,
+            'tgl_mulai'            => '2026-09-01',
+            'tgl_selesai'          => '2026-11-30',
+            'snap_biaya_praktik'   => $tarif->biaya_praktik_per_bulan,
+            'snap_biaya_orientasi' => $tarif->biaya_orientasi_per_orang,
+            'snap_nomor_sk'        => $tarif->nomor_sk,
+            'jabatan_id'           => $this->direkturJabatan->id,
+            'disetujui_oleh'       => $this->direkturKaryawan->id,
+            'status'               => StatusApproval::PENDING,
+            'created_by'           => $this->user->id,
+        ]);
+
+        SuratBalasanPklMahasiswa::create([
+            'surat_balasan_pkl_id' => $surat->id,
+            'nama'                 => 'Ahmad Fadhil',
+            'npm'                  => '202601001',
+        ]);
+
+        SuratBalasanPklMahasiswa::create([
+            'surat_balasan_pkl_id' => $surat->id,
+            'nama'                 => 'Siti Rahma',
+            'npm'                  => '202601002',
+        ]);
+
+        $this->assertDatabaseHas('surat_balasan_pkl', [
+            'id' => $surat->id,
+            'tujuan_universitas' => 'Universitas Malahayati',
+            'status' => 'pending',
+        ]);
+
+        $this->assertEquals(2, $surat->mahasiswa()->count());
+
+        // Hitung total biaya: (150.000 x 2 mhs x 3 bln) + (50.000 x 2 mhs) = 900.000 + 100.000 = 1.000.000
+        $expectedTotal = ($tarif->biaya_praktik_per_bulan * 2 * 3) + ($tarif->biaya_orientasi_per_orang * 2);
+        $this->assertEquals($expectedTotal, $surat->grand_total_biaya);
+    }
+
+    public function test_surat_balasan_penelitian_creation_with_cost_items()
+    {
+        $this->actingAs($this->user);
+
+        $surat = SuratBalasanPenelitian::create([
+            'no'                  => '1/S4/B-PNL/PBA-DIR/14.08.2026',
+            'tahun'               => 2026,
+            'tgl'                 => '2026-08-14',
+            'tujuan_fakultas'     => 'Fakultas Kedokteran',
+            'tujuan_universitas'  => 'Universitas Lampung',
+            'perihal_surat_masuk' => 'Izin Penelitian Skripsi',
+            'jabatan_id'          => $this->direkturJabatan->id,
+            'disetujui_oleh'      => $this->direkturKaryawan->id,
+            'status'              => StatusApproval::PENDING,
+            'created_by'          => $this->user->id,
+        ]);
+
+        SuratBalasanPenelitianMahasiswa::create([
+            'surat_balasan_penelitian_id' => $surat->id,
+            'nama'                        => 'Rian Pratama',
+            'npm'                         => '2217001',
+            'fakultas_pt'                 => 'FK Unila',
+            'judul_penelitian'            => 'Analisis Efektivitas Pelayanan Farmasi RSBA',
+        ]);
+
+        SuratBalasanPenelitianBiaya::create([
+            'surat_balasan_penelitian_id' => $surat->id,
+            'keterangan'                  => 'Penelitian Skripsi',
+            'jumlah_orang'                => 1,
+            'jasa_sarana'                 => 100000,
+            'jasa_pelayanan'              => 150000,
+        ]);
+
+        $this->assertDatabaseHas('surat_balasan_penelitian', [
+            'id' => $surat->id,
+            'tujuan_fakultas' => 'Fakultas Kedokteran',
+        ]);
+
+        $this->assertEquals(250000, $surat->total_biaya);
+    }
+
+    public function test_surat_perintah_tugas_creation_with_multi_karyawan()
+    {
+        $this->actingAs($this->user);
+
+        $karyawan1 = $this->createKaryawan('90001', 'Staff Medis 1');
+        $karyawan2 = $this->createKaryawan('90002', 'Staff Medis 2');
+
+        $surat = SuratPerintahTugas::create([
+            'no'             => '1/S4/SPT/PBA-DIR/14.08.2026',
+            'tahun'          => 2026,
+            'tgl'            => '2026-08-14',
+            'perihal'        => 'Mengikuti Pelatihan Workshop Penanganan Pasien Kritis',
+            'hari_tanggal'   => 'Senin / 18 Agustus 2026',
+            'waktu'          => '08:00 WIB s.d Selesai',
+            'tempat'         => 'Aula Utama RSBA',
+            'jabatan_id'     => $this->direkturJabatan->id,
+            'disetujui_oleh' => $this->direkturKaryawan->id,
+            'status'         => StatusApproval::PENDING,
+            'created_by'     => $this->user->id,
+        ]);
+
+        SuratPerintahTugasKaryawan::create([
+            'surat_perintah_tugas_id' => $surat->id,
+            'karyawan_id'             => $karyawan1->id,
+        ]);
+
+        SuratPerintahTugasKaryawan::create([
+            'surat_perintah_tugas_id' => $surat->id,
+            'karyawan_id'             => $karyawan2->id,
+        ]);
+
+        $this->assertDatabaseHas('surat_perintah_tugas', [
+            'id' => $surat->id,
+            'tempat' => 'Aula Utama RSBA',
+        ]);
+
+        $this->assertEquals(2, $surat->karyawanTugas()->count());
+    }
+
+    public function test_dynamic_numbering_template_generation()
+    {
+        $nomorPkl = SuratTemplateNomor::generateNomor(
+            'balasan_pkl',
+            $this->direkturJabatan->id,
+            '2026-08-14',
+            5
+        );
+        $this->assertEquals('5/S4/B-PKL/PBA-DIR/14.08.2026', $nomorPkl);
+
+        $nomorPnl = SuratTemplateNomor::generateNomor(
+            'balasan_penelitian',
+            $this->direkturJabatan->id,
+            '2026-08-14',
+            12
+        );
+        $this->assertEquals('12/S4/B-PNL/PBA-DIR/14.08.2026', $nomorPnl);
+
+        $nomorSpt = SuratTemplateNomor::generateNomor(
+            'perintah_tugas',
+            $this->direkturJabatan->id,
+            '2026-08-14',
+            8
+        );
+        $this->assertEquals('8/S4/SPT/PBA-DIR/14.08.2026', $nomorSpt);
+    }
+
+    public function test_balasan_pkl_auto_month_calculation_and_override()
+    {
+        $this->actingAs($this->user);
+
+        // 1. Kasus 17/08/2026 s.d 03/09/2026 (Agustus s.d September) -> Dihitung 2 bulan kalender
+        \Livewire\Livewire::test(\App\Livewire\Surat\BalasanPkl\Add::class)
+            ->set('tgl_mulai', '2026-08-17')
+            ->set('tgl_selesai', '2026-09-03')
+            ->assertSet('lama_praktik_bulan', 2)
+            // Kasus 17/08/2026 s.d 22/10/2026 (Agustus, September, Oktober) -> Dihitung 3 bulan
+            ->set('tgl_selesai', '2026-10-22')
+            ->assertSet('lama_praktik_bulan', 3)
+            // Kasus 17/08/2026 s.d 31/08/2026 (dalam bulan yang sama) -> Dihitung 1 bulan
+            ->set('tgl_selesai', '2026-08-31')
+            ->assertSet('lama_praktik_bulan', 1)
+            // 2. Override manual: aktifkan toggle gembok manual lalu isi angka 6
+            ->call('toggleManualBulan')
+            ->assertSet('is_manual_bulan', true)
+            ->set('lama_praktik_bulan', 6)
+            // Ganti tanggal tidak boleh mengubah angka 6 saat mode manual
+            ->set('tgl_selesai', '2026-11-22')
+            ->assertSet('lama_praktik_bulan', 6)
+            // 3. Kembalikan ke otomatis (gembok terkunci) -> Otomatis hitung ulang kalender (Agustus s.d November = 4 bulan)
+            ->call('toggleManualBulan')
+            ->assertSet('is_manual_bulan', false)
+            ->assertSet('lama_praktik_bulan', 4);
+    }
+
+    public function test_balasan_pkl_universitas_accessors_and_clean_no()
+    {
+        $surat1 = new SuratBalasanPkl(['tujuan_universitas' => 'Universitas Malahayati', 'no' => '1/S4/B-PKL/PBA-DIR/18.08.2026']);
+        $this->assertEquals('Universitas Malahayati', $surat1->display_universitas);
+        $this->assertEquals('Malahayati', $surat1->formatted_universitas);
+        $this->assertEquals('1-S4-B-PKL-PBA-DIR-18.08.2026', $surat1->no_clean);
+
+        $surat2 = new SuratBalasanPkl(['tujuan_universitas' => 'Poltekkes Tanjung Karang']);
+        $this->assertEquals('Poltekkes Tanjung Karang', $surat2->display_universitas);
+
+        $surat3 = new SuratBalasanPkl(['tujuan_universitas' => 'Malahayati']);
+        $this->assertEquals('Universitas Malahayati', $surat3->display_universitas);
+    }
+
+    public function test_balasan_pkl_pdf_download_and_stream()
+    {
+        $this->actingAs($this->user);
+
+        $surat = SuratBalasanPkl::create([
+            'no'                   => '1/S4/B-PKL/PBA-DIR/18.08.2026',
+            'tahun'                => 2026,
+            'tgl'                  => '2026-08-18',
+            'tujuan_universitas'   => 'Universitas Malahayati',
+            'prodi'                => 'Ilmu Keperawatan',
+            'jumlah_mahasiswa'     => 2,
+            'lama_praktik_bulan'   => 1,
+            'tgl_mulai'            => '2026-09-01',
+            'tgl_selesai'          => '2026-09-30',
+            'snap_biaya_praktik'   => 150000,
+            'snap_biaya_orientasi' => 50000,
+            'snap_nomor_sk'        => '023/Kpts-S4/PBA-A10/10.01.22',
+            'jabatan_id'           => $this->direkturJabatan->id,
+            'disetujui_oleh'       => $this->direkturKaryawan->id,
+            'status'               => StatusApproval::APPROVED,
+            'created_by'           => $this->user->id,
+        ]);
+
+        $responsePdf = $this->get(route('kepegawaian.surat.balasan-pkl.pdf', $surat->id));
+        $responsePdf->assertStatus(200);
+        $responsePdf->assertHeader('content-type', 'application/pdf');
+
+        $responsePreview = $this->get(route('kepegawaian.surat.balasan-pkl.preview-pdf', $surat->id));
+        $responsePreview->assertStatus(200);
+        $responsePreview->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_balasan_pkl_print_blade_rendering()
+    {
+        $this->actingAs($this->user);
+
+        $surat = SuratBalasanPkl::create([
+            'no'                   => '2/S4/B-PKL/PBA-DIR/18.08.2026',
+            'tahun'                => 2026,
+            'tgl'                  => '2026-08-18',
+            'tujuan_universitas'   => 'Universitas Malahayati',
+            'prodi'                => 'Farmasi',
+            'jumlah_mahasiswa'     => 3,
+            'lama_praktik_bulan'   => 2,
+            'tgl_mulai'            => '2026-09-01',
+            'tgl_selesai'          => '2026-10-31',
+            'snap_biaya_praktik'   => 150000,
+            'snap_biaya_orientasi' => 50000,
+            'snap_nomor_sk'        => '023/Kpts-S4/PBA-A10/10.01.22',
+            'jabatan_id'           => $this->direkturJabatan->id,
+            'disetujui_oleh'       => $this->direkturKaryawan->id,
+            'status'               => StatusApproval::APPROVED,
+            'created_by'           => $this->user->id,
+        ]);
+
+        \Livewire\Livewire::test(\App\Livewire\Surat\BalasanPkl\PrintBalasanPkl::class, ['suratBalasanPkl' => $surat])
+            ->assertSee('RS BINTANG AMIN')
+            ->assertSee('Universitas Malahayati')
+            ->assertDontSee('Universitas Universitas Malahayati')
+            ->assertSee('555 00 888 12')
+            ->assertSee('Rincian Biaya Praktik di Rumah Sakit Bintang Amin – Lampung')
+            ->assertSee('Jl. Pramuka No. 27, Kemiling');
+    }
+}

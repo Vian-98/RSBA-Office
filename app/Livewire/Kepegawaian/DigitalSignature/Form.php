@@ -5,41 +5,99 @@ namespace App\Livewire\Kepegawaian\DigitalSignature;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Lazy;
+use TallStackUi\Traits\Interactions;
 use App\Models\DigitalSignatureDocument;
+use App\Models\DigitalSignatureApproval;
 use App\Services\DigitalSignatureService;
 use App\Services\DocstoreSyncService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
+use App\Models\Surat\SuratKategoriArsip;
+
 #[Lazy]
 class Form extends Component
 {
     use WithFileUploads;
+    use Interactions;
 
     // Form inputs
     public $pdf_file;
     public $title = '';
     public $document_number = '';
+    public $document_type = 'file_text';
     public $keterangan = '';
     public $account_password = '';
 
-    // Mekari Sign Customization
-    public $stamp_position = 'top_right';
-    public $stamp_x = 70; // percentage from left (0 to 100)
-    public $stamp_y = 75; // percentage from top (0 to 100)
-    public $stamp_scale = 100; // percentage scale (50% to 180%)
+    // Digital Signature & QR Stamp Customization
+    public string $stamp_position = 'bottom_right';
+    public float $stamp_x = 70.0;
+    public float $stamp_y = 75.0;
+    public int $stamp_scale = 100;
+
+    // Multi-tier signing properties
+    public array $signer_ids = [];
+    public int $selected_add_user_id = 0;
     public $signature_type = 'qr_seal'; // 'qr_seal', 'digital_stamp'
     public $fileSizeFormatted = null;
     public $fileHashSHA256 = null;
 
+    // Revision properties
+    public ?int $revises_document_id = null;
+    public ?string $revised_from_number = null;
+    public ?string $catatan_revisi = null;
+    public ?DigitalSignatureDocument $originalDocument = null;
+
     // Popup Password Modal State
     public $showPasswordModal = false;
+
+    protected $listeners = ['init-revision' => 'loadRevision'];
+
+    public function loadRevision(int $rejectedDocId): void
+    {
+        $rejectedDoc = DigitalSignatureDocument::with(['approvals.user', 'user'])->find($rejectedDocId);
+        if (!$rejectedDoc || $rejectedDoc->status !== 'rejected') {
+            $this->toast()->error('Dokumen Tidak Valid', 'Dokumen tidak ditemukan atau belum berstatus ditolak.')->send();
+            return;
+        }
+
+        $this->originalDocument = $rejectedDoc;
+        $this->revises_document_id = $rejectedDoc->id;
+        $this->revised_from_number = $rejectedDoc->document_number;
+        $this->title = (str_starts_with($rejectedDoc->title, 'Revisi:') ? '' : 'Revisi: ') . $rejectedDoc->title;
+        $this->document_type = $rejectedDoc->document_type;
+        
+        // Mandatory new document number
+        $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1000, 9999));
+
+        // Pre-fill signers from original document
+        if ($rejectedDoc->approvals->isNotEmpty()) {
+            $this->signer_ids = $rejectedDoc->approvals->pluck('user_id')->toArray();
+        } else {
+            $this->signer_ids = [$rejectedDoc->user_id];
+        }
+
+        // Pre-fill rejection feedback note
+        $rejAppr = $rejectedDoc->approvals->where('status', 'rejected')->first();
+        if ($rejAppr && $rejAppr->rejection_reason) {
+            $this->catatan_revisi = 'Memperbaiki penolakan: ' . $rejAppr->rejection_reason;
+        }
+
+        $this->toast()->info('Mode Revisi Dimuat', 'Nomor surat baru (' . $this->document_number . ') dibuat. Silakan unggah berkas PDF revisi baru.')->send();
+    }
+
+    public function cancelRevision(): void
+    {
+        $this->reset(['revises_document_id', 'revised_from_number', 'catatan_revisi', 'originalDocument']);
+        $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1000, 9999));
+    }
 
     protected $rules = [
         'pdf_file'        => 'required|file|mimes:pdf|max:10240', // Max 10MB PDF
         'title'           => 'required|string|max:255',
         'document_number' => 'required|string|max:100',
+        'document_type'   => 'required|string|max:50',
         'keterangan'      => 'nullable|string|max:500',
     ];
 
@@ -49,11 +107,72 @@ class Form extends Component
         'pdf_file.max'             => 'Ukuran berkas PDF maksimal 10 MB.',
         'title.required'           => 'Judul / nama surat wajib diisi.',
         'document_number.required' => 'Nomor surat wajib diisi.',
+        'document_type.required'   => 'Jenis / kategori arsip surat wajib dipilih.',
     ];
 
-    public function mount()
+    public function mount($rejectedDocId = null)
     {
         $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
+        if (auth()->check() && empty($this->signer_ids)) {
+            $this->signer_ids[] = auth()->id();
+        }
+
+        $firstCategory = SuratKategoriArsip::where('is_active', true)->orderBy('is_system', 'desc')->first();
+        if ($firstCategory) {
+            $this->document_type = $firstCategory->kode;
+        }
+
+        if ($rejectedDocId) {
+            $this->loadRevision((int) $rejectedDocId);
+        }
+    }
+
+    public function addSignerUser(): void
+    {
+        if ($this->selected_add_user_id > 0 && !in_array($this->selected_add_user_id, $this->signer_ids)) {
+            $this->signer_ids[] = (int) $this->selected_add_user_id;
+            $this->selected_add_user_id = 0;
+            $this->toast()->success('Penandatangan Ditambahkan', 'Tingkat persetujuan baru berhasil ditambahkan.')->send();
+        }
+    }
+
+    public function removeSignerUser(int $index): void
+    {
+        if (isset($this->signer_ids[$index])) {
+            array_splice($this->signer_ids, $index, 1);
+        }
+    }
+
+    public function resolveHighestRankUser(array $userIds)
+    {
+        if (empty($userIds)) return auth()->user();
+
+        $users = \App\Models\User::with(['karyawan.jabatan.tingkat'])->whereIn('id', $userIds)->get();
+        $bestUser = null;
+        $bestUrutan = 99999;
+
+        foreach ($users as $u) {
+            $urutan = 999;
+            $karyawan = $u->karyawan;
+            if ($karyawan) {
+                $jabatan = $karyawan->jabatan()->with('tingkat')->first();
+                if ($jabatan && $jabatan->tingkat) {
+                    $urutan = (int) ($jabatan->tingkat->urutan ?? 999);
+                }
+            }
+            if ($urutan < $bestUrutan) {
+                $bestUrutan = $urutan;
+                $bestUser = $u;
+            }
+        }
+
+        return $bestUser ?: $users->first();
+    }
+
+    public function getHighestRankSignerNameProperty(): string
+    {
+        $user = $this->resolveHighestRankUser($this->signer_ids);
+        return $user ? $user->name : (auth()->user()?->name ?? 'Penandatangan Digital');
     }
 
     public function setPresetPosition($preset)
@@ -87,6 +206,20 @@ class Form extends Component
         } catch (\Throwable $e) {
             $realPath = $this->pdf_file->getRealPath();
             return 'data:application/pdf;base64,' . base64_encode(file_get_contents($realPath));
+        }
+    }
+
+    public function getPreviewQrCodeProperty()
+    {
+        if (!$this->fileHashSHA256) {
+            return null;
+        }
+        try {
+            $qrService = app(\App\Services\QrGeneratorService::class);
+            $verifyUrl = $qrService->getVerificationUrl($this->fileHashSHA256);
+            return $qrService->generateQrPngBase64($verifyUrl, 3, 3);
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 
@@ -129,7 +262,7 @@ class Form extends Component
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p class="text-sm font-bold text-slate-700 mt-4">Memuat Studio Mekari Sign (Lazyload)...</p>
+            <p class="text-sm font-bold text-slate-700 mt-4">Memuat Studio Tanda Tangan Digital (Lazyload)...</p>
             <p class="text-xs text-slate-400 mt-1">Menyiapkan engine RSA, Canvas Drag-and-Drop & ByteCounter</p>
         </div>
         HTML;
@@ -153,6 +286,7 @@ class Form extends Component
         // Verifikasi Password Akun Pengirim
         if (!Hash::check($this->account_password, $user->password)) {
             $this->addError('account_password', 'Password akun yang Anda masukkan salah. Silakan coba lagi.');
+            $this->toast()->error('Password Salah', 'Password akun yang Anda masukkan salah. Silakan coba lagi.')->send();
             return;
         }
 
@@ -193,12 +327,12 @@ class Form extends Component
                     ];
                     $signatureHash = hash('sha256', $signResult['signature']);
                 } else {
+                    $this->toast()->error('Gagal Sign', 'Gagal tanda tangan digital: ' . $signResult['message'])->send();
                     session()->flash('error', 'Gagal tanda tangan digital: ' . $signResult['message']);
                     $this->closePasswordModal();
                     return;
                 }
             } else {
-
                 // Generasi hash tanda tangan standar jika belum ada p12 sertifikat
                 $signatureHash = hash('sha256', 'DS_SIG_' . $byteCounterHash . '_' . time());
                 $signatureData = [
@@ -214,18 +348,24 @@ class Form extends Component
                 ];
             }
 
-            // 3. Hard-stamp Mekari Vault Seal directly into PDF Binary stream
+            // 3. Hard-stamp RSBA QR Code Digital Signature directly into PDF Binary stream
+            $highestRankUser = $this->resolveHighestRankUser($this->signer_ids) ?: $user;
+
+            $qrService = app(\App\Services\QrGeneratorService::class);
+            $verifyUrl = $qrService->getVerificationUrl($byteCounterHash);
+
             $pdfStamperService = app(\App\Services\PdfStamperService::class);
             $stampedPdfBytes = $pdfStamperService->stampPdf(
                 pdfPathOrBytes: $realPath,
                 pctX: (float) $this->stamp_x,
                 pctY: (float) $this->stamp_y,
                 scalePercent: (float) $this->stamp_scale,
-                signerName: $user->name,
+                signerName: $highestRankUser->name,
                 signedAtDate: date('d M Y H:i') . ' WIB',
                 shaHash: $byteCounterHash,
                 documentNumber: $this->document_number,
-                title: $this->title
+                title: $this->title,
+                verifyUrl: $verifyUrl
             );
 
             $stampedByteHash = hash('sha256', $stampedPdfBytes);
@@ -244,20 +384,45 @@ class Form extends Component
                 'stamp_y'        => $this->stamp_y,
                 'stamp_scale'    => $this->stamp_scale,
                 'user_note'      => $this->keterangan,
+                'signer_ids'     => $this->signer_ids,
             ];
+
+            $isMultiTier = count($this->signer_ids) > 1 || (count($this->signer_ids) === 1 && $this->signer_ids[0] != $user->id);
+            $docStatus = $isMultiTier ? 'pending_approval' : 'approved';
 
             // 4. Save metadata record to local DB office
             $doc = DigitalSignatureDocument::create([
-                'user_id'           => $user->id,
-                'title'             => $this->title,
-                'document_number'   => $this->document_number,
-                'file_name'         => $fileName,
-                'file_size'         => $fileSize,
-                'byte_counter_hash' => $stampedByteHash,
-                'signature_hash'    => $signatureHash,
-                'status'            => 'signed',
-                'keterangan'        => json_encode($stampMetaPayload),
+                'user_id'              => $user->id,
+                'title'                => $this->title,
+                'document_number'      => $this->document_number,
+                'document_type'        => $this->document_type,
+                'file_name'            => $fileName,
+                'file_size'            => $fileSize,
+                'byte_counter_hash'    => $stampedByteHash,
+                'signature_hash'       => $signatureHash,
+                'status'               => $docStatus,
+                'keterangan'           => json_encode($stampMetaPayload),
+                'revises_document_id' => $this->revises_document_id,
+                'revised_from_number' => $this->revised_from_number,
+                'catatan_revisi'      => $this->catatan_revisi,
             ]);
+
+            // Save multi-tier approval steps
+            $step = 1;
+            foreach ($this->signer_ids as $sId) {
+                $apprHash = ($sId == $user->id)
+                    ? $signatureHash
+                    : hash('sha256', 'DS_APP_' . $doc->id . '_' . $sId . '_' . $step);
+
+                DigitalSignatureApproval::create([
+                    'digital_signature_document_id' => $doc->id,
+                    'user_id'                       => $sId,
+                    'step_order'                    => $step++,
+                    'status'                        => ($sId == $user->id ? 'approved' : 'pending'),
+                    'signed_at'                     => ($sId == $user->id ? now() : null),
+                    'signature_hash'                => $apprHash,
+                ]);
+            }
 
             // 5. Send to docstore (Bank Surat & Cryptographic Vault)
             $synced = $docstoreSyncService->syncDigitalSignatureDoc($doc, $pdfBase64, $signatureData);
@@ -267,17 +432,21 @@ class Form extends Component
                 @unlink($realPath);
             }
 
+            $docstoreKey = $doc->fresh()->docstore_key;
+
             // Close modal & reset form
             $this->showPasswordModal = false;
-            $this->reset(['pdf_file', 'title', 'keterangan', 'account_password', 'fileSizeFormatted', 'fileHashSHA256']);
+            $this->reset(['pdf_file', 'title', 'keterangan', 'account_password', 'fileSizeFormatted', 'fileHashSHA256', 'revises_document_id', 'revised_from_number', 'catatan_revisi', 'originalDocument']);
             $this->document_number = 'DS/' . date('Y/m/') . sprintf('%04d', rand(1, 9999));
 
             // Dispatch event to parent component to switch to list tab and notify
-            $this->dispatch('document-signed', docstoreKey: $doc->fresh()->docstore_key, synced: $synced);
+            $this->dispatch('document-signed', docstoreKey: $docstoreKey, synced: $synced);
 
             if ($synced) {
-                session()->flash('success', 'Dokumen PDF berhasil di-sign & terkirim ke Docstore dengan ID: ' . $doc->fresh()->docstore_key);
+                $this->toast()->success('Tanda Tangan Berhasil', 'Dokumen berhasil di-sign & terkirim ke Docstore (ID: ' . $docstoreKey . ')')->send();
+                session()->flash('success', 'Dokumen PDF berhasil di-sign & terkirim ke Docstore dengan ID: ' . $docstoreKey);
             } else {
+                $this->toast()->warning('Tanda Tangan Lokal', 'Dokumen berhasil di-sign secara lokal.')->send();
                 session()->flash('warning', 'Dokumen PDF berhasil di-sign secara lokal, namun gagal sinkronisasi otomatis ke Docstore.');
             }
 
@@ -285,6 +454,7 @@ class Form extends Component
             Log::error('Error signing digital signature document: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
+            $this->toast()->error('Terjadi Kesalahan', $e->getMessage())->send();
             session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
             $this->closePasswordModal();
         }
@@ -292,6 +462,15 @@ class Form extends Component
 
     public function render()
     {
-        return view('livewire.kepegawaian.digital-signature.form');
+        $kategoriList = SuratKategoriArsip::where('is_active', true)
+            ->orderBy('is_system', 'desc')
+            ->get();
+
+        $allUsers = \App\Models\User::with(['karyawan.jabatan.tingkat'])->get();
+
+        return view('livewire.kepegawaian.digital-signature.form', [
+            'kategoriList' => $kategoriList,
+            'allUsers'     => $allUsers,
+        ]);
     }
 }

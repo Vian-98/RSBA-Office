@@ -41,3 +41,11 @@ Route::prefix('master')
     ->group(function () {
         Route::get('rekanan', App\Livewire\Master\Supplier\Index::class)->name('rekanan');
     });
+
+Route::prefix('kuitansi')
+    ->name('kuitansi.')
+    ->group(function () {
+        Route::get('/', App\Livewire\Kuitansi\Index::class)->name('index');
+        Route::get('/{id}/pdf', [App\Http\Controllers\Keuangan\KuitansiPdfController::class, 'exportPdf'])->name('pdf');
+    });
+

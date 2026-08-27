@@ -96,9 +96,15 @@ class UmumSeeder extends Seeder
         $supplier = DB::table('um_supplier')->first();
         if (!$supplier) {
             $supplierId = DB::table('um_supplier')->insertGetId([
-                'nama' => 'PT Supplier Utama',
-                'alamat' => 'Jl. Merdeka No. 123',
+                'nama' => 'PT Sumber Medika Abadi',
+                'alamat' => 'Jl. Kesehatan Raya No. 45, Jakarta Pusat',
                 'telp' => '021-5551234',
+                'email' => 'supplier@sumbermedika.com',
+                'npwp' => '01.234.567.8-901.000',
+                'bank' => 'BCA',
+                'norek' => '1234567890',
+                'an' => 'PT Sumber Medika Abadi',
+                'status' => '1',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -82,12 +82,17 @@ class Approval extends Component
     {
         $this->validate();
 
+        if ($this->suratSp3->status !== \App\Enums\StatusApproval::WAITING) {
+            $this->toast()->error('Belum Diverifikasi', 'Surat SP3 ini belum diverifikasi oleh Bagian Keuangan.')->send();
+            return;
+        }
+
         $data = [
             'surat_sp3_id' => $this->suratSp3->id,
-            'disetujui' => $this->disetujui ?? auth()->user()->id,
-            'status' => $this->status,
-            'keterangan' => $this->keterangan ?? null,
-            'approved_at' => now()->toIso8601String(),
+            'disetujui'    => $this->disetujui ?? auth()->user()->id,
+            'status'       => $this->status,
+            'keterangan'   => $this->keterangan ?? null,
+            'approved_at'  => now()->toIso8601String(),
         ];
 
         DB::beginTransaction();
@@ -112,6 +117,26 @@ class Approval extends Component
                 'status' => $finalStatus
             ]);
 
+            // Log history ACC Direktur / Atasan
+            $aksiLabel = match ($this->status) {
+                'approved' => 'ACC Direktur / Atasan - Disetujui',
+                'rejected' => 'ACC Direktur / Atasan - Ditolak',
+                'manual'   => 'ACC Direktur / Atasan - Manual (TTD Basah)',
+                default    => 'Persetujuan Atasan - ' . ucfirst($this->status),
+            };
+
+            \App\Models\Surat\SuratSp3Log::create([
+                'surat_sp3_id'   => $this->suratSp3->id,
+                'user_id'        => $user->id,
+                'karyawan_id'    => $user->karyawan_id,
+                'nama_pelaku'    => $user->karyawan?->full_nama ?? $user->name,
+                'jabatan_pelaku' => optional($this->suratSp3->jabatans)->nama ?? optional($user->karyawan?->jabatan?->first())->nama ?? 'Atasan / Direktur',
+                'aksi'           => $aksiLabel,
+                'status'         => $this->status,
+                'catatan'        => $this->keterangan ?: ($this->status === 'approved' ? 'Surat SP3 disetujui (ACC).' : null),
+                'signature_hash' => $data['signature_hash'] ?? null,
+            ]);
+
             // Update status pembayaran PO jika SP3 disetujui
             if (in_array($finalStatus, ['approved', 'disetujui'])) {
                 \App\Models\Gudang\Pembelian::where('sp3_id', $this->suratSp3->id)
@@ -130,6 +155,7 @@ class Approval extends Component
             app(\App\Services\DocumentSignatureService::class)->checkAndGenerateHeaderQr($this->suratSp3->fresh());
 
             DB::commit();
+
             $this->dispatch('update-approval');
 
             $this->toast()

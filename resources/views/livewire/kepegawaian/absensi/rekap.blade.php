@@ -1,189 +1,156 @@
 <div>
     <x-ts:card>
         <x-slot:header>
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="flex items-center space-x-2.5">
-                    <div class="p-2 bg-indigo-50 rounded-lg text-primary-600 border border-indigo-100">
-                        <x-ts:icon name="tabler.report-analytics" class="w-5 h-5" />
-                    </div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-800">Rekap Absensi</h3>
-                        <p class="text-xs text-slate-500">Monitoring kehadiran, keterlambatan, dan jam lembur/overtime</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <x-ts:button 
-                        wire:click="openGlobalHistoryModal" 
-                        color="indigo" 
-                        variant="outline" 
-                        class="text-xs font-semibold !py-1.5 flex items-center gap-1.5 shadow-xs"
-                    >
-                        <x-ts:icon name="tabler.history" class="w-4 h-4 text-indigo-600" />
-                        <span>Riwayat Audit Log</span>
-                    </x-ts:button>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <x-ts:icon name="tabler.report-analytics" class="w-6 h-6 text-primary-500" />
+                    <h3 class="text-lg font-semibold text-gray-800">Rekap Absensi</h3>
                 </div>
             </div>
         </x-slot:header>
 
-        <!-- Filters Bar -->
-        <div class="p-4 bg-slate-50/70 rounded-xl border border-slate-200 mb-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 items-end">
+        <!-- Filters -->
+        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-6">
+            <div>
+                <x-ts:select.styled 
+                    wire:key="filter-mode-select"
+                    label="Mode Rekap" 
+                    wire:model.live="mode" 
+                    :options="[
+                        ['label' => 'Bulanan', 'value' => 'bulanan'],
+                        ['label' => 'Harian / Tanggal Spesifik', 'value' => 'harian'],
+                    ]"
+                    select="label:label|value:value"
+                />
+            </div>
+
+            @if($mode === 'bulanan')
                 <div>
                     <x-ts:select.styled 
-                        wire:key="filter-mode-select"
-                        label="Mode Rekap" 
-                        wire:model.live="mode" 
+                        wire:key="filter-bulan-select"
+                        label="Bulan"
+                        wire:model.live="bulan"
                         :options="[
-                            ['label' => 'Bulanan', 'value' => 'bulanan'],
-                            ['label' => 'Harian / Spesifik', 'value' => 'harian'],
+                            ['label' => 'Januari', 'value' => 1],
+                            ['label' => 'Februari', 'value' => 2],
+                            ['label' => 'Maret', 'value' => 3],
+                            ['label' => 'April', 'value' => 4],
+                            ['label' => 'Mei', 'value' => 5],
+                            ['label' => 'Juni', 'value' => 6],
+                            ['label' => 'Juli', 'value' => 7],
+                            ['label' => 'Agustus', 'value' => 8],
+                            ['label' => 'September', 'value' => 9],
+                            ['label' => 'Oktober', 'value' => 10],
+                            ['label' => 'November', 'value' => 11],
+                            ['label' => 'Desember', 'value' => 12],
                         ]"
                         select="label:label|value:value"
                     />
                 </div>
-
-                @if($mode === 'bulanan')
-                    <div>
-                        <x-ts:select.styled 
-                            wire:key="filter-bulan-select"
-                            label="Bulan" 
-                            wire:model.live="bulan" 
-                            :options="[
-                                ['label' => 'Januari', 'value' => 1],
-                                ['label' => 'Februari', 'value' => 2],
-                                ['label' => 'Maret', 'value' => 3],
-                                ['label' => 'April', 'value' => 4],
-                                ['label' => 'Mei', 'value' => 5],
-                                ['label' => 'Juni', 'value' => 6],
-                                ['label' => 'Juli', 'value' => 7],
-                                ['label' => 'Agustus', 'value' => 8],
-                                ['label' => 'September', 'value' => 9],
-                                ['label' => 'Oktober', 'value' => 10],
-                                ['label' => 'November', 'value' => 11],
-                                ['label' => 'Desember', 'value' => 12],
-                            ]"
-                            select="label:label|value:value"
-                        />
-                    </div>
-                    <div>
-                        <x-ts:select.styled 
-                            wire:key="filter-tahun-select"
-                            label="Tahun" 
-                            wire:model.live="tahun" 
-                            :options="[
-                                ['label' => '2024', 'value' => 2024],
-                                ['label' => '2025', 'value' => 2025],
-                                ['label' => '2026', 'value' => 2026],
-                                ['label' => '2027', 'value' => 2027],
-                            ]"
-                            select="label:label|value:value"
-                        />
-                    </div>
-                @else
-                    <div class="sm:col-span-2">
-                        <x-ts:input type="date" label="Tanggal Spesifik" wire:model.live="tanggal_spesifik" />
-                    </div>
-                @endif
-
                 <div>
                     <x-ts:select.styled 
-                        wire:key="filter-ruangan-select"
-                        label="Ruangan (Bagian)" 
-                        wire:model.live="ruangan_id" 
-                        :options="$ruangans->map(fn($r) => ['label' => $r->nama, 'value' => $r->id])->toArray()"
-                        select="label:label|value:value"
-                        placeholder="Semua Ruangan"
-                        searchable
-                    />
-                </div>
-
-                <div>
-                    <x-ts:select.styled 
-                        wire:key="filter-karyawan-select"
-                        label="Karyawan" 
-                        wire:model.live="karyawan_id" 
-                        :options="$karyawans->map(fn($k) => ['label' => $k->full_nama ?? $k->nama, 'value' => $k->id])->toArray()"
-                        select="label:label|value:value"
-                        placeholder="Semua Karyawan"
-                        searchable
-                    />
-                </div>
-
-                <div>
-                    <x-ts:select.styled 
-                        wire:key="filter-status-select"
-                        label="Status Kehadiran" 
-                        wire:model.live="statusFilter" 
+                        wire:key="filter-tahun-select"
+                        label="Tahun"
+                        wire:model.live="tahun"
                         :options="[
-                            ['label' => 'Semua Status', 'value' => ''],
-                            ['label' => 'Belum Dicek / LIBUR', 'value' => 'belum_dicek'],
-                            ['label' => 'Hadir', 'value' => 'hadir'],
-                            ['label' => 'Terlambat', 'value' => 'terlambat'],
-                            ['label' => 'Pulang Cepat', 'value' => 'pulang_cepat'],
-                            ['label' => 'Tidak Hadir', 'value' => 'tidak_hadir'],
-                            ['label' => 'Cuti', 'value' => 'cuti'],
-                            ['label' => 'Izin', 'value' => 'izin'],
-                            ['label' => 'Perlu Verifikasi', 'value' => 'perlu_verifikasi']
+                            ['label' => (string) (date('Y') - 1), 'value' => (int) (date('Y') - 1)],
+                            ['label' => (string) date('Y'), 'value' => (int) date('Y')],
+                            ['label' => (string) (date('Y') + 1), 'value' => (int) (date('Y') + 1)],
                         ]"
                         select="label:label|value:value"
-                        placeholder="Semua Status"
                     />
                 </div>
+            @else
+                <div class="md:col-span-2">
+                    <x-ts:input type="date" label="Tanggal Spesifik" wire:model.live="tanggal_spesifik" />
+                </div>
+            @endif
+
+            <div>
+                <x-ts:select.styled 
+                    wire:key="filter-ruangan-select"
+                    label="Ruangan" 
+                    wire:model.live="ruangan_id" 
+                    :options="$ruangans->map(fn($r) => ['label' => $r->nama, 'value' => $r->id])->toArray()"
+                    select="label:label|value:value"
+                    placeholder="Semua Ruangan"
+                    searchable
+                />
+            </div>
+
+            <div>
+                <x-ts:select.styled 
+                    wire:key="filter-karyawan-select"
+                    label="Karyawan" 
+                    wire:model.live="karyawan_id" 
+                    :options="$karyawans->map(fn($k) => ['label' => $k->full_nama ?? $k->nama, 'value' => $k->id])->toArray()"
+                    select="label:label|value:value"
+                    placeholder="Semua Karyawan"
+                    searchable
+                />
+            </div>
+
+            <div>
+                <x-ts:select.styled 
+                    wire:key="filter-status-select"
+                    label="Status" 
+                    wire:model.live="statusFilter" 
+                    :options="[
+                        ['label' => 'Semua Status', 'value' => ''],
+                        ['label' => 'Belum Dicek / LIBUR', 'value' => 'belum_dicek'],
+                        ['label' => 'Hadir', 'value' => 'hadir'],
+                        ['label' => 'Terlambat', 'value' => 'terlambat'],
+                        ['label' => 'Pulang Cepat', 'value' => 'pulang_cepat'],
+                        ['label' => 'Tidak Hadir', 'value' => 'tidak_hadir'],
+                        ['label' => 'Cuti', 'value' => 'cuti'],
+                        ['label' => 'Izin', 'value' => 'izin'],
+                        ['label' => 'Perlu Verifikasi', 'value' => 'perlu_verifikasi']
+                    ]"
+                    select="label:label|value:value"
+                    placeholder="Semua Status"
+                />
             </div>
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
-            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'hadir' ? '' : 'hadir' }}')" 
-                 class="p-3.5 text-center rounded-xl bg-emerald-50/60 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'hadir' ? 'border-emerald-500 ring-2 ring-emerald-200 bg-emerald-50' : 'border-emerald-200/60' }}">
-                <div class="text-xs font-semibold text-emerald-600 select-none uppercase tracking-wide">Hadir</div>
-                <div class="text-2xl font-extrabold text-emerald-700 select-none my-1">{{ $summary['hadir'] }}</div>
-                <div class="text-[10px] text-emerald-600/70 select-none font-medium">Tepat Waktu</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'hadir' ? '' : 'hadir' }}')" class="p-4 text-center rounded-lg bg-green-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'hadir' ? 'border-green-500 ring-2 ring-green-200' : 'border-green-100' }}">
+                <div class="text-sm text-green-600 font-medium select-none">Hadir</div>
+                <div class="text-2xl font-bold text-green-700 select-none">{{ $summary['hadir'] }}</div>
             </div>
-
-            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'terlambat' ? '' : 'terlambat' }}')" 
-                 class="p-3.5 text-center rounded-xl bg-amber-50/60 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'terlambat' ? 'border-amber-500 ring-2 ring-amber-200 bg-amber-50' : 'border-amber-200/60' }}">
-                <div class="text-xs font-semibold text-amber-600 select-none uppercase tracking-wide">Terlambat</div>
-                <div class="text-2xl font-extrabold text-amber-700 select-none my-1">{{ $summary['terlambat'] }}</div>
-                <div class="text-[10px] text-amber-600 font-semibold select-none">
-                    {{ $summary['menit_terlambat'] > 0 ? "({$summary['menit_terlambat']} mnt)" : '-' }}
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'terlambat' ? '' : 'terlambat' }}')" class="p-4 text-center rounded-lg bg-yellow-50 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'terlambat' ? 'border-yellow-500 ring-2 ring-yellow-200' : 'border-yellow-100' }}">
+                <div>
+                    <div class="text-sm text-yellow-600 font-medium select-none">Terlambat</div>
+                    <div class="text-2xl font-bold text-yellow-700 select-none">{{ $summary['terlambat'] }}</div>
                 </div>
+                @if($summary['menit_terlambat'] > 0)
+                    <div class="text-xs text-yellow-600 font-semibold mt-1 select-none">({{ $summary['menit_terlambat'] }} mnt)</div>
+                @endif
             </div>
-
-            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'pulang_cepat' ? '' : 'pulang_cepat' }}')" 
-                 class="p-3.5 text-center rounded-xl bg-orange-50/60 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'pulang_cepat' ? 'border-orange-500 ring-2 ring-orange-200 bg-orange-50' : 'border-orange-200/60' }}">
-                <div class="text-xs font-semibold text-orange-600 select-none uppercase tracking-wide">Pulang Cepat</div>
-                <div class="text-2xl font-extrabold text-orange-700 select-none my-1">{{ $summary['pulang_cepat'] }}</div>
-                <div class="text-[10px] text-orange-600 font-semibold select-none">
-                    {{ $summary['menit_pulang_cepat'] > 0 ? "({$summary['menit_pulang_cepat']} mnt)" : '-' }}
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'pulang_cepat' ? '' : 'pulang_cepat' }}')" class="p-4 text-center rounded-lg bg-orange-50 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'pulang_cepat' ? 'border-orange-500 ring-2 ring-orange-200' : 'border-orange-100' }}">
+                <div>
+                    <div class="text-sm text-orange-600 font-medium select-none">Pulang Cepat</div>
+                    <div class="text-2xl font-bold text-orange-700 select-none">{{ $summary['pulang_cepat'] }}</div>
                 </div>
+                @if($summary['menit_pulang_cepat'] > 0)
+                    <div class="text-xs text-orange-600 font-semibold mt-1 select-none">({{ $summary['menit_pulang_cepat'] }} mnt)</div>
+                @endif
             </div>
-
-            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'tidak_hadir' ? '' : 'tidak_hadir' }}')" 
-                 class="p-3.5 text-center rounded-xl bg-rose-50/60 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'tidak_hadir' ? 'border-rose-500 ring-2 ring-rose-200 bg-rose-50' : 'border-rose-200/60' }}">
-                <div class="text-xs font-semibold text-rose-600 select-none uppercase tracking-wide">Tidak Hadir</div>
-                <div class="text-2xl font-extrabold text-rose-700 select-none my-1">{{ $summary['tidak_hadir'] }}</div>
-                <div class="text-[10px] text-rose-600/70 select-none font-medium">Alpa / Mangkir</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'tidak_hadir' ? '' : 'tidak_hadir' }}')" class="p-4 text-center rounded-lg bg-red-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'tidak_hadir' ? 'border-red-500 ring-2 ring-red-200' : 'border-red-100' }}">
+                <div class="text-sm text-red-600 font-medium select-none">Tidak Hadir</div>
+                <div class="text-2xl font-bold text-red-700 select-none">{{ $summary['tidak_hadir'] }}</div>
             </div>
-
-            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'cuti' ? '' : 'cuti' }}')" 
-                 class="p-3.5 text-center rounded-xl bg-blue-50/60 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'cuti' ? 'border-blue-500 ring-2 ring-blue-200 bg-blue-50' : 'border-blue-200/60' }}">
-                <div class="text-xs font-semibold text-blue-600 select-none uppercase tracking-wide">Cuti</div>
-                <div class="text-2xl font-extrabold text-blue-700 select-none my-1">{{ $summary['cuti'] }}</div>
-                <div class="text-[10px] text-blue-600/70 select-none font-medium">Izin Resmi Cuti</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'cuti' ? '' : 'cuti' }}')" class="p-4 text-center rounded-lg bg-blue-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'cuti' ? 'border-blue-500 ring-2 ring-blue-200' : 'border-blue-100' }}">
+                <div class="text-sm text-blue-600 font-medium select-none">Cuti</div>
+                <div class="text-2xl font-bold text-blue-700 select-none">{{ $summary['cuti'] }}</div>
             </div>
-
-            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'izin' ? '' : 'izin' }}')" 
-                 class="p-3.5 text-center rounded-xl bg-cyan-50/60 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'izin' ? 'border-cyan-500 ring-2 ring-cyan-200 bg-cyan-50' : 'border-cyan-200/60' }}">
-                <div class="text-xs font-semibold text-cyan-600 select-none uppercase tracking-wide">Izin / Sakit</div>
-                <div class="text-2xl font-extrabold text-cyan-700 select-none my-1">{{ $summary['izin'] }}</div>
-                <div class="text-[10px] text-cyan-600/70 select-none font-medium">Surat Izin / Sakit</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'izin' ? '' : 'izin' }}')" class="p-4 text-center rounded-lg bg-cyan-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'izin' ? 'border-cyan-500 ring-2 ring-cyan-200' : 'border-cyan-100' }}">
+                <div class="text-sm text-cyan-600 font-medium select-none">Izin</div>
+                <div class="text-2xl font-bold text-cyan-700 select-none">{{ $summary['izin'] }}</div>
             </div>
-
-            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'perlu_verifikasi' ? '' : 'perlu_verifikasi' }}')" 
-                 class="p-3.5 text-center rounded-xl bg-slate-100/70 border cursor-pointer hover:shadow-sm transition-all flex flex-col justify-between {{ $statusFilter === 'perlu_verifikasi' ? 'border-slate-500 ring-2 ring-slate-300 bg-slate-100' : 'border-slate-200' }}">
-                <div class="text-xs font-semibold text-slate-600 select-none uppercase tracking-wide">Verifikasi</div>
-                <div class="text-2xl font-extrabold text-slate-700 select-none my-1">{{ $summary['perlu_verifikasi'] }}</div>
-                <div class="text-[10px] text-slate-500 select-none font-medium">Perlu Cek SDM</div>
+            <div wire:click="$set('statusFilter', '{{ $statusFilter === 'perlu_verifikasi' ? '' : 'perlu_verifikasi' }}')" class="p-4 text-center rounded-lg bg-gray-50 border cursor-pointer hover:shadow-sm transition-all {{ $statusFilter === 'perlu_verifikasi' ? 'border-gray-500 ring-2 ring-gray-300' : 'border-gray-200' }}">
+                <div class="text-sm text-gray-600 font-medium select-none">Perlu Verifikasi</div>
+                <div class="text-2xl font-bold text-gray-700 select-none">{{ $summary['perlu_verifikasi'] }}</div>
             </div>
         </div>
 
@@ -535,8 +502,8 @@
                                              {{ \Carbon\Carbon::parse($r->tanggal)->translatedFormat('d M Y') }}
                                          </td>
                                          <td class="px-5 py-3.5">
-                                             <div class="font-semibold text-slate-800 text-xs capitalize">{{ ucwords(strtolower($r->karyawan->nama ?? '-')) }}</div>
-                                             <div class="text-[10px] text-slate-400">PIN: {{ $r->karyawan->pin_absen ?? '-' }}</div>
+                                             <div class="font-semibold text-slate-800 text-xs capitalize">{{ ucwords(strtolower($r->karyawan?->nama ?? '-')) }}</div>
+                                             <div class="text-[10px] text-slate-400">PIN: {{ $r->karyawan?->pin_absen ?? '-' }}</div>
                                          </td>
                                      <td class="px-6 py-4 text-center">
                                          @if($r->shift)
@@ -873,7 +840,7 @@
                                         {{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d M Y H:i') }}
                                     </td>
                                     <td class="px-4 py-3 font-semibold text-slate-800">
-                                        {{ ucwords(strtolower($log->karyawan->full_nama ?? $log->karyawan->nama ?? '-')) }}
+                                        {{ ucwords(strtolower($log->karyawan?->full_nama ?? $log->karyawan?->nama ?? '-')) }}
                                     </td>
                                     <td class="px-3.5 py-3 whitespace-nowrap text-slate-600">
                                         {{ \Carbon\Carbon::parse($log->tanggal)->translatedFormat('d M Y') }}

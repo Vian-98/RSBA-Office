@@ -34,13 +34,9 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-    ];    public function getNameAttribute()
-    {
-        return $this->karyawan?->nama ?? $this->email;
-    }
+    ];
 
     /**
-
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -78,11 +74,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Cek apakah user ini memiliki hak akses Super-Admin
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('Super-Admin') || $this->can('super-admin-bypass');
+    }
+
+    /**
      * Cek apakah user ini merupakan koordinator di ruangan manapun
      */
     public function isKoordinator(): bool
     {
-        if ($this->can('edit-kepegawaian-jadwal-kerja')) {
+        if ($this->isSuperAdmin() || $this->can('edit-kepegawaian-jadwal-kerja')) {
             return true;
         }
 
@@ -112,7 +116,7 @@ class User extends Authenticatable
      */
     public function isKepalaDept(): bool
     {
-        if ($this->can('approve-jadwal-kabid')) {
+        if ($this->isSuperAdmin() || $this->can('approve-jadwal-kabid')) {
             return true;
         }
 
@@ -133,7 +137,7 @@ class User extends Authenticatable
      */
     public function isWadir(): bool
     {
-        if ($this->can('approve-jadwal-wadir')) {
+        if ($this->isSuperAdmin() || $this->can('approve-jadwal-wadir')) {
             return true;
         }
 
@@ -234,7 +238,7 @@ class User extends Authenticatable
      */
     public function getBagianScopedRuanganIds(): ?array
     {
-        if ($this->isWadir() || $this->can('view-kepegawaian-karyawan')) {
+        if ($this->isSuperAdmin() || $this->isWadir() || $this->can('view-kepegawaian-karyawan')) {
             return null; // null = akses semua ruangan
         }
 
@@ -300,7 +304,7 @@ class User extends Authenticatable
      */
     public function getRuanganKoordinatorIds(): ?array
     {
-        if ($this->isWadir() || $this->can('view-kepegawaian-karyawan')) {
+        if ($this->isSuperAdmin() || $this->isWadir() || $this->can('view-kepegawaian-karyawan') || $this->can('edit-kepegawaian-jadwal-kerja')) {
             return null; // null = akses semua ruangan
         }
 
@@ -332,7 +336,7 @@ class User extends Authenticatable
      */
     public function isDokterOrApprover(): bool
     {
-        if ($this->isDokter() || $this->isWadir() || $this->can('view-kepegawaian-jadwal-kerja')) {
+        if ($this->isSuperAdmin() || $this->isDokter() || $this->isWadir() || $this->can('view-kepegawaian-jadwal-kerja')) {
             return true;
         }
 

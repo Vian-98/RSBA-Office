@@ -34,8 +34,10 @@ class Add extends Component
     public $mengetahuiOptions;
     public $tgl;
     public ?string $rekanan = null, $keterangan = '', $method_bayar = null;
-    public ?int $mengetahui = null, $jabatan = null, $rekananId = null, $userApprove = null;
+    public ?int $mengetahui = null, $jabatan = null, $rekananId = null, $userApprove = null, $verifikator_keuangan_id = null;
+    public string $createTerm = '';
     public $listSp3 = [];
+
 
     protected $rules = [
         'tgl' => 'required',
@@ -43,6 +45,7 @@ class Add extends Component
         'method_bayar' => 'required',
         'keterangan' => 'required',
         'jabatan' => 'required',
+        'verifikator_keuangan_id' => 'required',
         'listSp3' => 'required|array|min:1'
     ];
 
@@ -50,7 +53,8 @@ class Add extends Component
     {
         return [
             'listSp3.required' => 'Rincikan item pembayarannya.',
-            'listSp3.min' => 'Silahkan rincikan item pembayarannya.'
+            'listSp3.min' => 'Silahkan rincikan item pembayarannya.',
+            'verifikator_keuangan_id.required' => 'Pilih verifikator keuangan yang bertugas.',
         ];
     }
 
@@ -64,18 +68,14 @@ class Add extends Component
     public function mount()
     {
         $this->tgl = date('Y-m-d');
-        $this->mengetahuiOptions = Jabatan::with('bagian')
-            ->whereHas('bagian', function ($query) {
-                $query->where('group', 'manajemen');
-            })
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'label' => $item->nama,
-                    'value' => $item->id
-                ];
-            });
+        $data = Jabatan::getMengetahuiOptionsForUser(auth()->user());
+        $this->mengetahuiOptions = $data['options'];
+        if (!empty($data['atasanLangsungId'])) {
+            $this->jabatan = $data['atasanLangsungId'];
+            $this->updatedJabatan($this->jabatan);
+        }
     }
+
 
     public function updatedRekananId($value)
     {
@@ -136,7 +136,9 @@ class Add extends Component
             'bayar' => $this->method_bayar,
             'keterangan' => $this->keterangan,
             'jabatan_id' => $this->jabatan,
+            'verifikator_keuangan_id' => $this->verifikator_keuangan_id,
             'created_by' => auth()->user()->id,
+            'status' => 'pending',
         ];
 
         DB::beginTransaction();
@@ -159,19 +161,28 @@ class Add extends Component
             // insert into database
             SuratSp3Detail::insert($itemsDetail);
 
-            // Manual dan printout
-            if (!$send) {
-                $this->signManual($suratSp3);
-            }
+            // Log history pembuatan SP3
+            \App\Models\Surat\SuratSp3Log::create([
+                'surat_sp3_id'   => $suratSp3->id,
+                'user_id'        => auth()->id(),
+                'karyawan_id'    => auth()->user()?->karyawan_id,
+                'nama_pelaku'    => auth()->user()?->karyawan?->full_nama ?? auth()->user()?->name ?? 'Pembuat SP3',
+                'jabatan_pelaku' => optional(auth()->user()?->karyawan?->jabatan?->first())->nama ?? 'Staf',
+                'aksi'           => 'Dibuat',
+                'status'         => 'pending',
+                'catatan'        => 'Surat SP3 dibuat dan diteruskan ke Bagian Keuangan.',
+            ]);
 
             // Sync immediately to docstore
             app(\App\Services\DocstoreSyncService::class)->syncSp3($suratSp3);
 
+
             DB::commit();
             $this->dispatch('created-sp3');
             $this->toast()
-                ->success('Berhasil', 'SP3 berhasil disimpan.')
+                ->success('Berhasil', 'SP3 berhasil disimpan dan diteruskan ke bagian Keuangan untuk verifikasi.')
                 ->send();
+
 
             // If Manual , Direct to Printou
             if (!$send) {

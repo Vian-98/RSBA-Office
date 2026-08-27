@@ -79,19 +79,15 @@ class AddSp3Pembelian extends Component
             $this->generateListSp3();
 
             $this->tgl = date('Y-m-d');
-            $this->mengetahuiOptions = Jabatan::with(['bagian'])
-                ->whereHas('bagian', function ($q) {
-                    $q->where('group', 'manajemen');
-                })
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'label' => $item->nama,
-                        'value' => $item->id
-                    ];
-                });
+            $data = Jabatan::getMengetahuiOptionsForUser(auth()->user());
+            $this->mengetahuiOptions = $data['options'];
+            if (!empty($data['atasanLangsungId'])) {
+                $this->jabatan = $data['atasanLangsungId'];
+                $this->updatedJabatan($this->jabatan);
+            }
         }
     }
+
 
 
     #[Computed]
@@ -207,7 +203,20 @@ class AddSp3Pembelian extends Component
             // insert into database
             SuratSp3Detail::insert($itemsDetail);
 
+            // Log history pembuatan SP3 Pembelian
+            \App\Models\Surat\SuratSp3Log::create([
+                'surat_sp3_id'   => $suratSp3->id,
+                'user_id'        => auth()->id(),
+                'karyawan_id'    => auth()->user()?->karyawan_id,
+                'nama_pelaku'    => auth()->user()?->karyawan?->full_nama ?? auth()->user()?->name ?? 'Pembuat SP3',
+                'jabatan_pelaku' => optional(auth()->user()?->karyawan?->jabatan?->first())->nama ?? 'Gudang/Pembelian',
+                'aksi'           => 'Dibuat',
+                'status'         => 'pending',
+                'catatan'        => 'Surat SP3 Pembelian dibuat dan diteruskan ke Bagian Keuangan.',
+            ]);
+
             // update sp3_id on pembelian
+
             $this->pembelian->sp3_id = $suratSp3->id;
             $this->pembelian->save();
 

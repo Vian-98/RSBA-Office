@@ -137,4 +137,142 @@ class Jabatan extends Model
         // 7. Staf / Pelaksana Operasional Biasa
         return 'Guest';
     }
+
+    /**
+     * Mengambil daftar opsi atasan (Mengetahui) secara dinamis berdasarkan hierarki jabatan user login
+     */
+    public static function getMengetahuiOptionsForUser(?\App\Models\User $user = null): array
+    {
+        $user = $user ?? auth()->user();
+        $karyawan = $user?->karyawan;
+        $myJabatan = $karyawan?->jabatan?->first();
+
+        $options = collect();
+        $atasanLangsungId = null;
+
+        if ($myJabatan) {
+            // 1. Jalur hierarki atasan struktural ke atas
+            $curr = $myJabatan;
+            $visited = [];
+            $isFirst = true;
+
+            while ($curr && $curr->parent_id && !in_array($curr->parent_id, $visited)) {
+                $visited[] = $curr->parent_id;
+                $atasan = self::find($curr->parent_id);
+                if ($atasan) {
+                    if ($isFirst) {
+                        $atasanLangsungId = $atasan->id;
+                        $isFirst = false;
+                    }
+                    $options->push([
+                        'label'      => $atasan->nama . ($atasan->id === $atasanLangsungId ? ' (Atasan Langsung)' : ''),
+                        'value'      => $atasan->id,
+                        'tingkat_id' => $atasan->tingkat_id,
+                        'is_direct'  => ($atasan->id === $atasanLangsungId),
+                    ]);
+                    $curr = $atasan;
+                } else {
+                    break;
+                }
+            }
+
+            // 2. Tambahkan jajaran Direksi (Tingkat 1 & 2) yang belum ada di rantai
+            $direksi = self::whereIn('tingkat_id', [1, 2])
+                ->whereNotIn('id', $options->pluck('value'))
+                ->orderBy('tingkat_id')
+                ->get();
+
+            foreach ($direksi as $dir) {
+                $options->push([
+                    'label'      => $dir->nama,
+                    'value'      => $dir->id,
+                    'tingkat_id' => $dir->tingkat_id,
+                    'is_direct'  => false,
+                ]);
+            }
+        } else {
+            // Super-Admin atau user tanpa mapping jabatan: tampilkan seluruh pejabat struktural (Tingkat 1 - 4)
+            $all = self::where('tingkat_id', '<=', 4)
+                ->orderBy('tingkat_id')
+                ->get();
+
+            foreach ($all as $item) {
+                $options->push([
+                    'label'      => $item->nama,
+                    'value'      => $item->id,
+                    'tingkat_id' => $item->tingkat_id,
+                    'is_direct'  => false,
+                ]);
+            }
+        }
+
+        // Fallback jika kosong: ambil semua jabatan
+        if ($options->isEmpty()) {
+            $all = self::all();
+            foreach ($all as $item) {
+                $options->push([
+                    'label' => $item->nama,
+                    'value' => $item->id,
+                ]);
+            }
+        }
+
+        return [
+            'options'          => $options->values()->toArray(),
+            'atasanLangsungId' => $atasanLangsungId ?? $options->first()['value'] ?? null,
+        ];
+    }
+
+    /**
+     * Ambil daftar pejabat Direktur aktif untuk penandatangan surat
+     */
+    public static function getDirekturList(): array
+    {
+        $jabatans = static::where(function ($q) {
+            $q->where('tingkat_id', 1)
+              ->orWhere('nama', 'LIKE', '%direktur utama%')
+              ->orWhere('nama', 'LIKE', '%direktur%');
+        })
+        ->where('nama', 'NOT LIKE', '%wakil%')
+        ->where('nama', 'NOT LIKE', '%wadir%')
+        ->with(['jabatans' => function ($q) {
+            $q->whereNull('tgl_berakhir')->orderBy('id', 'desc')->with('karyawan');
+        }])
+        ->get();
+
+        $list = [];
+        foreach ($jabatans as $j) {
+            $kj = $j->jabatans->first();
+            if ($kj && $kj->karyawan) {
+                $list[] = [
+                    'jabatan_id'   => $j->id,
+                    'jabatan_nama' => $j->nama,
+                    'karyawan_id'  => $kj->karyawan->id,
+                    'nama'         => $kj->karyawan->full_nama ?: $kj->karyawan->nama,
+                    'nip'          => $kj->karyawan->nip ?: '-',
+                    'label'        => ($kj->karyawan->full_nama ?: $kj->karyawan->nama) . " ({$j->nama})",
+                ];
+            }
+        }
+
+        // Fallback jika tidak ada record aktif di sdm_karyawan_jabatan
+        if (empty($list)) {
+            $dirJabatan = static::where('tingkat_id', 1)->first() ?? static::where('nama', 'LIKE', '%direktur%')->first();
+            $dirKaryawan = \App\Models\Sdm\Karyawan::where('nama', 'LIKE', '%rachmawati%')->first()
+                ?? \App\Models\Sdm\Karyawan::first();
+
+            $list[] = [
+                'jabatan_id'   => $dirJabatan?->id ?? 1,
+                'jabatan_nama' => $dirJabatan?->nama ?? 'Direktur',
+                'karyawan_id'  => $dirKaryawan?->id ?? 1,
+                'nama'         => $dirKaryawan?->full_nama ?? $dirKaryawan?->nama ?? 'dr. Rachmawati, MPH',
+                'nip'          => $dirKaryawan?->nip ?? '24170002',
+                'label'        => ($dirKaryawan?->full_nama ?? 'dr. Rachmawati, MPH') . ' (Direktur)',
+            ];
+        }
+
+        return $list;
+    }
 }
+
+

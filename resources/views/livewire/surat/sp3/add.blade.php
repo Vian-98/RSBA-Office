@@ -10,7 +10,7 @@
                 </div>
 
                 <div x-show="isRekanan" class="w-full items-center">
-                    <x-ts:select.styled wire:model.live.debounce='rekananId' placeholder="Rekanan" :request="route('api.supplier')" select="label:nama|value:id" is>
+                    <x-ts:select.styled wire:model.live.debounce='rekananId' placeholder="Rekanan" :request="route('api.supplier')" select="label:nama|value:id">
 
                         {{-- button add --}}
                         <x-slot:after>
@@ -30,9 +30,10 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-3 gap-2">
             <x-ts:select.styled wire:model.defer='method_bayar' searchable :options="$caraBayarOptions" select="label:label|value:value" placeholder="Metode Bayar" />
-            <x-ts:select.styled wire:model.live.debounce.300='jabatan' searchable :options="$mengetahuiOptions" select="label:label|value:value" placeholder="Mengetahui" />
+            <x-ts:select.styled wire:model.live.debounce.300='jabatan' searchable :options="$mengetahuiOptions" select="label:label|value:value" placeholder="Mengetahui (Atasan TTD)" />
+            <x-ts:select.styled wire:model.defer='verifikator_keuangan_id' searchable placeholder="Verifikator Keuangan" :request="route('api.karyawan.verifikator.keuangan')" select="label:label|value:id" />
         </div>
         <div>
             <x-ts:textarea wire:model.defer='keterangan' placeholder="Subject / Berita / Keterangan" />
@@ -42,6 +43,10 @@
         <div class="flex flex-row items-center text-sm text-red-500">
             @error('listSp3')
                 <x-tabler-info-circle class="size-4" />
+                <span> {{ $message }}</span>
+            @enderror
+            @error('verifikator_keuangan_id')
+                <x-tabler-info-circle class="size-4 ms-2" />
                 <span> {{ $message }}</span>
             @enderror
         </div>
@@ -72,49 +77,28 @@
 
             <div class="mt-2 flex w-full flex-col rounded-md bg-indigo-200/25 px-4 py-2">
                 <span class="text-xs italic text-gray-500">Total Pembayaran</span>
-                <span class="text-xl font-bold text-indigo-500" x-text="`Rp. ${totalPembayaran.toLocaleString()}`"></span>
+                <span class="text-xl font-bold text-indigo-500" x-text="`Rp${totalPembayaran.toLocaleString('id-ID')}`"></span>
 
             </div>
         </div>
 
 
-        <div x-data="{ popUpConfirmSubmit: false }" class="ml-auto flex justify-end gap-2">
+        <div class="ml-auto flex justify-end gap-2 pt-2">
             <x-ts:button outline sm x-on:click="$dispatch('close-modal',{id:'modal-add-sp3'})">Tutup</x-ts:button>
-            <x-ts:button x-on:click="popUpConfirmSubmit = true" x-ref="simpanSp3" sm icon="tabler.checks">Simpan</x-ts:button>
-
-
-            <div x-show="popUpConfirmSubmit" x-transition x-trap.noscroll="popUpConfirmSubmit" x-on:click.away="popUpConfirmSubmit = false" x-on:keydown.escape.window="popUpConfirmSubmit = false"
-                x-anchor.bottom-end="$refs.simpanSp3" class="absolute z-50 mt-2 w-max max-w-sm rounded-lg border border-gray-300 bg-white p-4 shadow-lg">
-
-
-                <div class="flex items-center justify-between">
-                    <span class="flex flex-row items-center gap-2 whitespace-nowrap text-sm font-medium text-indigo-500">
-                        <x-ts:icon name="tabler.alert-circle" class="h-5 w-5" />
-                        Simpan Surat SP3 ?
-                    </span>
-                </div>
-
-                <div class="flex items-center justify-between gap-4">
-                    <span class="ms-4 flex flex-row items-center gap-2 whitespace-nowrap text-wrap text-xs font-light text-gray-500">
-                        Pilih kirim untuk tanda tangan secara digital, atau manual untuk untuk printout.
-                    </span>
-                </div>
-                <!-- Actions -->
-                <div class="mt-2 flex justify-end gap-2">
-                    <x-ts:button outline xs color="indigo" icon="tabler.send" loading="submit" x-on:click="$wire.submit(true)">
-                        Kirim
-                    </x-ts:button>
-
-                    {{-- button action validasi --}}
-                    <x-ts:button xs loading="submitManual" icon="tabler.file" outline sm color="gray" x-on:click="$wire.submit(false)">
-                        Manual, Cetak
-                    </x-ts:button>
-                </div>
-
-            </div>
+            <x-ts:button type="submit" color="primary" sm icon="tabler.send" loading="submit">
+                Simpan & Teruskan ke Keuangan
+            </x-ts:button>
         </div>
+
 
     </form>
+
+    <x-filament::modal id="modal-new-supplier" :close-by-clicking-away="false" :autofocus="false" width="lg">
+        <x-slot name="heading">
+            Tambah Rekanan / Supplier Baru
+        </x-slot>
+        <livewire:Master.Supplier.Add :nama="$createTerm" :key="Str::random()" @new-supplier-created="$refresh" />
+    </x-filament::modal>
 
 
     <div id="print-sp3" class="hidden" x-on:print-out-sp3.window="$nextTick(() => printArea('print-sp3'))">
@@ -124,6 +108,7 @@
     </div>
 
 </div>
+
 
 @script
     <script>

@@ -34,8 +34,8 @@ class SkenarioTriRahayuSeeder extends Seeder
             ->whereYear('tgl_mulai', 2026)
             ->delete();
 
-        $cutiTahunanId = \Illuminate\Support\Facades\DB::table('surat_cuti_jenis')->where('nama', 'Cuti Tahunan')->value('id') ?: 1;
-        $cutiAlasanPentingId = \Illuminate\Support\Facades\DB::table('surat_cuti_jenis')->where('nama', 'Cuti Alasan Penting')->value('id') ?: 4;
+        $cutiTahunanId = \Illuminate\Support\Facades\DB::table('surat_cuti_jenis')->where('nama', 'like', '%Tahunan%')->value('id') ?? 1;
+        $cutiIzinId = \Illuminate\Support\Facades\DB::table('surat_cuti_jenis')->where('nama', 'like', '%Izin%')->orWhere('nama', 'like', '%Sakit%')->value('id') ?? 2;
 
         // 2. Buat Surat Cuti Tahunan (10 - 12 Juni 2026)
         $cuti = SuratCuti::create([
@@ -56,7 +56,7 @@ class SkenarioTriRahayuSeeder extends Seeder
         $izin = SuratCuti::create([
             'karyawan_id' => $karyawanId,
             'no_surat' => 'I-002',
-            'urgensi_id' => $cutiAlasanPentingId,
+            'urgensi_id' => $cutiIzinId,
             'tgl_surat' => '2026-06-15',
             'tgl_mulai' => '2026-06-18',
             'tgl_akhir' => '2026-06-19',

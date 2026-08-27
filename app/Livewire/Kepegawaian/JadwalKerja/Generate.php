@@ -54,9 +54,9 @@ class Generate extends Component
 
         $this->authorize('generate', JadwalKerja::class);
 
-        $karyawanId = Auth::user()->karyawan_id;
-
         $user = Auth::user();
+        $karyawanId = $user?->karyawan_id ?? $user?->id ?? 1;
+
         $isKoorDokter = $user?->isKoordinatorDokter() ?? false;
         $isKoorKaryawan = $user?->isKoordinatorKaryawan() ?? false;
         $tipeJadwal = $isKoorDokter ? 'dokter' : 'karyawan';
@@ -69,7 +69,7 @@ class Generate extends Component
             ->exists();
 
         if ($exists) {
-            $this->toast()->error('Gagal', 'Jadwal kerja untuk ruangan, periode, dan kelompok ini sudah pernah dibuat.')->send();
+            $this->toast()->error('Gagal Generate', 'Jadwal kerja untuk ruangan, periode, dan kelompok ini sudah pernah dibuat.')->send();
             return;
         }
 
@@ -83,6 +83,11 @@ class Generate extends Component
         }
 
         $karyawans = $karyawansQuery->get();
+
+        if ($karyawans->isEmpty()) {
+            $this->toast()->error('Gagal Generate Jadwal', 'Tidak ditemukan data pegawai aktif pada ruangan ini. Pastikan pegawai telah ditempatkan ke ruangan ini pada menu Karyawan.')->send();
+            return;
+        }
 
         $resolvedBagianId = JadwalKerja::resolveBagianIdForKaryawanIds(
             $karyawans->pluck('id'),
@@ -105,7 +110,7 @@ class Generate extends Component
         }
 
         if (!$resolvedBagianId) {
-            $this->toast()->error('Gagal', 'Jadwal belum memiliki Bagian. Lengkapi penugasan pegawai atau mapping legacy ruangan terlebih dahulu.')->send();
+            $this->toast()->error('Gagal', 'Jadwal belum memiliki Bagian. Lengkapi penugasan pegawai atau mapping bagian ruangan terlebih dahulu.')->send();
             return;
         }
 
@@ -241,7 +246,7 @@ class Generate extends Component
         $user = Auth::user();
         $ruanganQuery = \App\Models\Ruangan::where('is_active', true);
         
-        if ($user && !$user->can('add-kepegawaian-jadwal-kerja') && !$user->can('edit-kepegawaian-jadwal-kerja')) {
+        if ($user && !$user->isSuperAdmin() && !$user->can('add-kepegawaian-jadwal-kerja') && !$user->can('edit-kepegawaian-jadwal-kerja')) {
             $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
             if ($user->karyawan?->ruangan_id) {
                 $ruanganIds[] = $user->karyawan->ruangan_id;

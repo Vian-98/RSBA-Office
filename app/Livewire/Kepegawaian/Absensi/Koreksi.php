@@ -41,9 +41,9 @@ class Koreksi extends Component
     public function mount()
     {
         abort_unless(
-            auth()->user()?->can('view-kepegawaian-absensi'),
+            auth()->user()?->isSuperAdmin() || auth()->user()?->can('view-kepegawaian-absensi'),
             403,
-            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Koreksi Absensi.'
+            'Akses Ditolak: Anda belum memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Koreksi Absensi. Silakan hubungi bagian SDM/Kepegawaian.'
         );
         $this->bulan = (int) date('m');
         $this->tahun = (int) date('Y');
@@ -170,7 +170,7 @@ class Koreksi extends Component
     public function render()
     {
         $user = auth()->user();
-        $allowedRuanganIds = $user?->getRuanganKoordinatorIds(); // null = semua, [] = tidak ada
+        $allowedRuanganIds = ($user?->isSuperAdmin() || $user?->can('view-kepegawaian-laporan')) ? null : $user?->getRuanganKoordinatorIds(); // null = semua, [] = tidak ada
 
         // Filter dropdown berdasarkan akses koordinator
         $ruangans  = $allowedRuanganIds !== null

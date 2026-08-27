@@ -132,11 +132,24 @@ Route::prefix('surat')
         Route::redirect('/', '/kepegawaian/cuti-bersama');
         Route::get('cuti', App\Livewire\Surat\Cuti\Index::class)->name('cuti');
         Route::get('sp3', App\Livewire\Surat\Sp3\Index::class)->name('sp3');
+        Route::get('balasan-pkl', App\Livewire\Surat\BalasanPkl\Index::class)->name('balasan-pkl');
+        Route::get('balasan-pkl/{id}/pdf', [App\Http\Controllers\Surat\SuratBalasanPklPdfController::class, 'download'])->name('balasan-pkl.pdf');
+        Route::get('balasan-pkl/{id}/preview-pdf', [App\Http\Controllers\Surat\SuratBalasanPklPdfController::class, 'stream'])->name('balasan-pkl.preview-pdf');
+
+        Route::get('balasan-penelitian', App\Livewire\Surat\BalasanPenelitian\Index::class)->name('balasan-penelitian');
+        Route::get('balasan-penelitian/{id}/pdf', [App\Http\Controllers\Surat\SuratBalasanPenelitianPdfController::class, 'download'])->name('balasan-penelitian.pdf');
+        Route::get('balasan-penelitian/{id}/preview-pdf', [App\Http\Controllers\Surat\SuratBalasanPenelitianPdfController::class, 'stream'])->name('balasan-penelitian.preview-pdf');
+
+        Route::get('perintah-tugas', App\Livewire\Surat\PerintahTugas\Index::class)->name('perintah-tugas');
+        Route::get('perintah-tugas/{id}/pdf', [App\Http\Controllers\Surat\SuratPerintahTugasPdfController::class, 'download'])->name('perintah-tugas.pdf');
+        Route::get('perintah-tugas/{id}/preview-pdf', [App\Http\Controllers\Surat\SuratPerintahTugasPdfController::class, 'stream'])->name('perintah-tugas.preview-pdf');
+
+        Route::get('arsip', App\Livewire\Surat\ArsipSurat\Index::class)->name('arsip');
         // Audit Bank Surat — laporan keaslian surat dari docstore (source of truth)
         Route::get('audit-bank-surat', App\Livewire\Surat\AuditBankSurat::class)->name('audit-bank-surat');
     });
 
-// Tanda Tangan Digital (Privy / Mekari style)
+// Tanda Tangan Digital (RSBA E-Signature & QR Code Verification)
 Route::get('digital-signature', App\Livewire\Kepegawaian\DigitalSignature\Index::class)->name('digital-signature.index');
 
 

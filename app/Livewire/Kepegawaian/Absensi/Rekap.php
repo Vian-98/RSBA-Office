@@ -50,14 +50,6 @@ class Rekap extends Component
     public $statusFilter = '';
     public $perPage = 15;
 
-    // Properties for Manual Correction
-    public $editingRecordId = null;
-    public $editStatus = '';
-    public $editAbsenMasuk = '';
-    public $editAbsenKeluar = '';
-    public $editCatatan = '';
-    public $showEditModal = false;
-
     // Properties for Overtime Detail Modal
     public $showOtModal = false;
     public $selectedOtKaryawan = '';
@@ -69,111 +61,26 @@ class Rekap extends Component
     public $historyLogs = [];
     public $historyRecordInfo = '';
 
+    // Properties for Edit/Correction Modal
+    public $showEditModal = false;
+    public $editingRecordId = null;
+    public $editStatus = '';
+    public $editAbsenMasuk = '';
+    public $editAbsenKeluar = '';
+    public $editCatatan = '';
+
     // Properties for Global Audit Log Modal
     public $showGlobalHistoryModal = false;
     public $historySearch = '';
 
-    public function updatedRuanganId() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedKaryawanId() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedTanggalSpesifik() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedMode() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedBulan() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedTahun() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedStatusFilter() { $this->resetPage('dailyPage'); $this->resetPage('rekapKaryawanPage'); $this->resetPage('historyLogPage'); }
-    public function updatedPerPage() { $this->resetPage('rekapKaryawanPage'); }
-    public function updatedHistorySearch() { $this->resetPage('historyLogPage'); }
-
     public function openGlobalHistoryModal()
     {
-        $this->historySearch = '';
-        $this->resetPage('historyLogPage');
         $this->showGlobalHistoryModal = true;
     }
 
-    public function openHistoryModal($detailId)
+    public function closeGlobalHistoryModal()
     {
-        $detail = JadwalKerjaDetail::with(['karyawan', 'shift'])->find($detailId);
-        if ($detail) {
-            $karyawanNama = $detail->karyawan?->nama ?? '-';
-            $shiftNama = $detail->shift?->nama ?? '-';
-            $tgl = Carbon::parse($detail->tanggal)->translatedFormat('d F Y');
-            $this->historyRecordInfo = "{$karyawanNama} ({$tgl} - Shift: {$shiftNama})";
-            $this->historyLogs = \App\Models\Sdm\AbsensiKoreksiLog::with('user.karyawan')
-                ->where('detail_id', $detailId)
-                ->orderBy('created_at', 'desc')
-                ->get();
-            $this->showHistoryModal = true;
-        }
-    }
-
-    public function openOtModal($karyawanId)
-    {
-        $karyawan = Karyawan::find($karyawanId);
-        if (!$karyawan) return;
-
-        $this->selectedOtKaryawan = ucwords(strtolower($karyawan->full_nama ?? $karyawan->nama ?? 'Karyawan'));
-        
-        $query = JadwalKerjaDetail::query()
-            ->where('karyawan_id', $karyawanId)
-            ->whereNotNull('status_kehadiran');
-
-        if ($this->mode === 'bulanan') {
-            $query->whereMonth('tanggal', $this->bulan)
-                  ->whereYear('tanggal', $this->tahun);
-        } else {
-            if ($this->tanggal_spesifik) {
-                $query->whereDate('tanggal', $this->tanggal_spesifik);
-            } else {
-                $query->whereDate('tanggal', date('Y-m-d'));
-            }
-        }
-
-        $records = $query->with('shift')
-            ->whereNotNull('absen_masuk_at')
-            ->whereNotNull('absen_keluar_at')
-            ->get();
-
-        $details = [];
-        $totalMinutes = 0;
-
-        foreach ($records as $r) {
-            $overtimeMenit = 0;
-            $overtimeKeterangan = '';
-            $tanggalObj = Carbon::parse($r->tanggal);
-
-            $masuk = Carbon::parse($r->absen_masuk_at);
-            $keluar = Carbon::parse($r->absen_keluar_at);
-
-            if ($r->shift && $r->shift->jam_keluar) {
-                $jamKeluar = Carbon::parse($r->shift->jam_keluar);
-                $targetCheckout = Carbon::parse($tanggalObj->format('Y-m-d') . ' ' . $jamKeluar->format('H:i:s'));
-                if ($r->shift->lintas_hari || $jamKeluar->lt(Carbon::parse($r->shift->jam_masuk))) {
-                    $targetCheckout->addDay();
-                }
-                if ($keluar->gt($targetCheckout)) {
-                    $overtimeMenit = abs($keluar->diffInMinutes($targetCheckout));
-                    $overtimeKeterangan = "Pulang terlambat";
-                }
-            } else {
-                $overtimeMenit = abs($keluar->diffInMinutes($masuk));
-                $overtimeKeterangan = "Tugas hari Libur/OFF";
-            }
-
-            if ($overtimeMenit > 0) {
-                $totalMinutes += $overtimeMenit;
-                $details[] = [
-                    'tanggal' => $tanggalObj->translatedFormat('d M Y'),
-                    'menit' => $overtimeMenit,
-                    'keterangan' => $overtimeKeterangan
-                ];
-            }
-        }
-
-        $h = floor($totalMinutes / 60);
-        $m = $totalMinutes % 60;
-        $this->selectedOtFormatted = $h > 0 ? "{$h}j {$m}m" : "{$m}m";
-        $this->selectedOtDetails = $details;
-        $this->showOtModal = true;
+        $this->showGlobalHistoryModal = false;
     }
 
     public function editRecord($id)
@@ -273,9 +180,9 @@ class Rekap extends Component
     public function mount()
     {
         abort_unless(
-            auth()->user()?->can('view-kepegawaian-absensi'),
+            auth()->user()?->isSuperAdmin() || auth()->user()?->can('view-kepegawaian-absensi'),
             403,
-            'Anda tidak memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Rekap Absensi.'
+            'Akses Ditolak: Anda belum memiliki izin (view-kepegawaian-absensi) untuk mengakses Halaman Rekap Absensi. Silakan hubungi bagian SDM/Kepegawaian.'
         );
         $this->bulan = $this->bulan ?: (int) date('m');
         $this->tahun = $this->tahun ?: (int) date('Y');
@@ -285,26 +192,27 @@ class Rekap extends Component
     {
         $user = auth()->user();
         $allowedRuanganIds = null;
-        if ($user && !$user->can('view-kepegawaian-laporan')) {
+        if ($user && !$user->isSuperAdmin() && !$user->can('view-kepegawaian-laporan')) {
             $allowedRuanganIds = $user->getRuanganKoordinatorIds() ?? [];
         }
 
-        $ruanganQuery = Ruangan::orderBy('nama');
+        // Query dropdown options
+        $ruanganQuery = Ruangan::where('is_active', true)->orderBy('nama');
         if ($allowedRuanganIds !== null) {
             $ruanganQuery->whereIn('id', $allowedRuanganIds);
         }
         $ruangans = $ruanganQuery->get();
 
-        $karyawanListQuery = Karyawan::orderBy('nama');
-        if ($allowedRuanganIds !== null) {
+        $karyawanListQuery = Karyawan::whereNull('resign_at')->orderBy('nama');
+        if ($this->ruangan_id) {
+            $karyawanListQuery->where('ruangan_id', $this->ruangan_id);
+        } elseif ($allowedRuanganIds !== null) {
             $karyawanListQuery->whereIn('ruangan_id', $allowedRuanganIds);
         }
         $karyawans = $karyawanListQuery->get();
 
-        // 1. Base Query for JadwalKerjaDetail
-        $baseQuery = JadwalKerjaDetail::query()
-            ->whereNotNull('status_kehadiran');
-
+        // 1. Build Base Detail Query
+        $baseQuery = JadwalKerjaDetail::query();
         if ($allowedRuanganIds !== null) {
             $baseQuery->whereHas('jadwalKerja', function ($q) use ($allowedRuanganIds) {
                 $q->whereIn('ruangan_id', $allowedRuanganIds);
@@ -333,7 +241,7 @@ class Rekap extends Component
         }
 
         // 2. Fetch the paginated Karyawan list
-        $karyawanQuery = Karyawan::query();
+        $karyawanQuery = Karyawan::whereNull('resign_at');
         if ($this->karyawan_id) {
             $karyawanQuery->where('id', $this->karyawan_id);
         }
@@ -580,13 +488,13 @@ class Rekap extends Component
         }
 
         return view('livewire.kepegawaian.absensi.rekap', [
+            'rekapKaryawan' => $rekapKaryawan,
+            'summary' => $summary,
+            'paginatedKaryawans' => $paginatedKaryawans,
+            'records' => $records,
+            'globalHistoryLogs' => $globalHistoryLogs,
             'ruangans' => $ruangans,
             'karyawans' => $karyawans,
-            'records' => $records,
-            'summary' => $summary,
-            'rekapKaryawan' => $rekapKaryawan,
-            'paginatedKaryawans' => $paginatedKaryawans,
-            'globalHistoryLogs' => $globalHistoryLogs,
         ]);
     }
 }

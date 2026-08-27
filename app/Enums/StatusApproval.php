@@ -9,6 +9,7 @@ enum StatusApproval: string
     case APPROVED = 'approved';
     case REJECTED = 'rejected';
     case MANUAL = 'manual';
+    case CANCELLED = 'cancelled';
 
     public function nama(): string
     {
@@ -18,6 +19,7 @@ enum StatusApproval: string
             self::APPROVED => 'Disetujui',
             self::REJECTED => 'Tidak Disetujui',
             self::MANUAL => 'Disetujui Manual',
+            self::CANCELLED => 'Dibatalkan',
         };
     }
 
@@ -28,7 +30,8 @@ enum StatusApproval: string
             self::WAITING => 'info',
             self::APPROVED => 'success',
             self::REJECTED => 'danger',
-            self::MANUAL => 'warning'
+            self::MANUAL => 'warning',
+            self::CANCELLED => 'danger',
         };
     }
 
@@ -40,6 +43,7 @@ enum StatusApproval: string
             self::APPROVED => '#22c55e', // success - green
             self::REJECTED => '#ef4444', // danger - red
             self::MANUAL   => '#6366f1', // primary - indigo
+            self::CANCELLED => '#6b7280', // secondary - gray
         };
     }
 

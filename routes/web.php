@@ -38,11 +38,21 @@ Route::middleware('auth')
     ->group(function () {
 
         Route::get('/dashboard', App\Livewire\Dashboard\Home::class)->name('dashboard');
-        Route::get('/kepegawaian/digital-signature/print/{id}', [App\Http\Controllers\DigitalSignaturePrintController::class, 'print'])->name('digital-signature.print');
-        Route::get('/kepegawaian/digital-signature/download/{id}', [App\Http\Controllers\DigitalSignaturePrintController::class, 'download'])->name('digital-signature.download');
     });
 
 Route::get('surat/verification', App\Livewire\Surat\Verifikasi\Index::class)->name('surat.verification');
 
 // Public Document Verification Portal
 Route::get('/verifikasi-surat/{hash?}', App\Livewire\Public\VerifyDocument::class)->name('surat.verifikasi.publik');
+
+// Explicit PDF & Download Routes Fallback for Herd/Valet
+Route::middleware(['auth', 'web'])->group(function () {
+    Route::get('/kepegawaian/surat/balasan-pkl/{id}/pdf', [App\Http\Controllers\Surat\SuratBalasanPklPdfController::class, 'download'])->name('kepegawaian.surat.balasan-pkl.pdf');
+    Route::get('/kepegawaian/surat/balasan-pkl/{id}/preview-pdf', [App\Http\Controllers\Surat\SuratBalasanPklPdfController::class, 'stream'])->name('kepegawaian.surat.balasan-pkl.preview-pdf');
+
+    Route::get('/kepegawaian/surat/balasan-penelitian/{id}/pdf', [App\Http\Controllers\Surat\SuratBalasanPenelitianPdfController::class, 'download'])->name('kepegawaian.surat.balasan-penelitian.pdf');
+    Route::get('/kepegawaian/surat/balasan-penelitian/{id}/preview-pdf', [App\Http\Controllers\Surat\SuratBalasanPenelitianPdfController::class, 'stream'])->name('kepegawaian.surat.balasan-penelitian.preview-pdf');
+
+    Route::get('/kepegawaian/surat/perintah-tugas/{id}/pdf', [App\Http\Controllers\Surat\SuratPerintahTugasPdfController::class, 'download'])->name('kepegawaian.surat.perintah-tugas.pdf');
+    Route::get('/kepegawaian/surat/perintah-tugas/{id}/preview-pdf', [App\Http\Controllers\Surat\SuratPerintahTugasPdfController::class, 'stream'])->name('kepegawaian.surat.perintah-tugas.preview-pdf');
+});

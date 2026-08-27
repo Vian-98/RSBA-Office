@@ -177,6 +177,17 @@ class PermissionSeeder extends Seeder
             'delete-kepegawaian-master-bagian-koordinator',
             'view-dashboard-poli',
             'edit-tgl-masuk-karyawan',
+            'view-kepegawaian-surat-balasan-pkl',
+            'view-kepegawaian-surat-balasan-penelitian',
+            'view-kepegawaian-surat-perintah-tugas',
+            'view-kepegawaian-surat-arsip',
+            'view-keuangan-kuitansi',
+            'print-keuangan-kuitansi',
+            'add-keuangan-kuitansi',
+            'edit-keuangan-kuitansi',
+            'delete-keuangan-kuitansi',
+            'approval-keuangan-kuitansi',
+
             // ── Hak Akses Eksekutif & Otorisasi Global ──
             'super-admin-bypass',
             'approve-kepegawaian-cuti',

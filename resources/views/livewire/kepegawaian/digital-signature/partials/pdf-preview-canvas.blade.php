@@ -21,31 +21,50 @@
         {{-- PDF.js Canvas Rendering (100% Exact Edge-to-Edge PDF Page 1) --}}
         <canvas 
             x-ref="pdfCanvas" 
+            wire:ignore
             style="width: 100%; height: 100%; display: block; border-radius: 18px; background: white;"
         ></canvas>
 
-        {{-- Manual Draggable & Resizable Mekari Vault Seal Stamp Overlay --}}
+        {{-- Manual Draggable & Resizable RSBA QR Code Digital Signature Stamp Overlay --}}
         <div 
             x-ref="stampBadge"
             @mousedown.prevent="startDrag($event)"
-            :style="`left: ${posX}%; top: ${posY}%; transform: scale(${(scale / 100) * (editorWidth / 850)}); transform-origin: top left; width: 190px;`"
+            :style="`left: ${posX}%; top: ${posY}%; transform: scale(${(scale / 100) * (editorWidth / 850)}); transform-origin: top left; width: 230px;`"
             class="absolute z-30 cursor-grab active:cursor-grabbing select-none transition-transform duration-75"
         >
-            <div style="background: rgba(255, 255, 255, 0.96); padding: 10px 12px; border-radius: 12px; border: 2px solid #10b981; box-shadow: 0 10px 25px rgba(0,0,0,0.15), 0 0 0 3px rgba(16, 185, 129, 0.15);" class="text-left w-full select-none">
+            <div style="background: rgba(255, 255, 255, 0.98); padding: 10px 12px; border-radius: 12px; border: 2px solid #059669; box-shadow: 0 10px 25px rgba(0,0,0,0.18), 0 0 0 3px rgba(16, 185, 129, 0.2);" class="text-left w-full select-none">
                 {{-- Stamp Header --}}
-                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #d1fae5; padding-bottom: 4px; margin-bottom: 4px;">
-                    <div style="display: flex; align-items: center; gap: 4px;" class="pointer-events-none">
-                        <div style="width: 14px; height: 14px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: 900;" class="shrink-0">
+                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #d1fae5; padding-bottom: 5px; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 5px;" class="pointer-events-none">
+                        <div style="width: 15px; height: 15px; background: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: 900;" class="shrink-0">
                             ✓
                         </div>
-                        <span style="font-size: 8.5px; font-weight: 900; text-transform: uppercase; color: #065f46; letter-spacing: 0.05em;">SIGNED BY MEKARI VAULT</span>
+                        <span style="font-size: 8.5px; font-weight: 900; text-transform: uppercase; color: #065f46; letter-spacing: 0.04em;">E-SIGNATURE & VERIFIKASI RSBA</span>
                     </div>
                 </div>
 
-                <div style="font-size: 11px; font-weight: 700; color: #1e293b;" class="pointer-events-none truncate">{{ Auth::user()->name }}</div>
-                <div style="font-size: 8.5px; color: #64748b; font-family: monospace; margin-top: 2px;" class="pointer-events-none">{{ date('d M Y H:i') }} WIB</div>
-                <div style="font-size: 8px; font-family: monospace; color: #4338ca; margin-top: 3px; background: #eef2ff; padding: 2px 5px; border-radius: 4px;" class="pointer-events-none truncate">
-                    SHA: {{ substr($fileHashSHA256, 0, 14) }}...
+                {{-- Stamp Body: QR Code + Signer Information --}}
+                <div style="display: flex; align-items: center; gap: 8px;" class="pointer-events-none">
+                    {{-- QR Code Column --}}
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center;" class="shrink-0">
+                        @if ($this->previewQrCode)
+                            <img src="data:image/png;base64,{{ $this->previewQrCode }}" alt="QR Code Verifikasi" style="width: 58px; height: 58px; display: block;">
+                        @else
+                            <div style="width: 58px; height: 58px; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #64748b; text-align: center; border-radius: 4px;">
+                                QR CODE
+                            </div>
+                        @endif
+                        <span style="font-size: 6.5px; color: #64748b; font-weight: 600; margin-top: 2px;">Scan Verifikasi</span>
+                    </div>
+
+                    {{-- Metadata Column --}}
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+                        <div style="font-size: 11px; font-weight: 800; color: #0f172a; line-height: 1.2;" class="truncate">{{ $this->highestRankSignerName }}</div>
+                        <div style="font-size: 8.5px; color: #64748b; font-family: monospace;">{{ date('d M Y H:i') }} WIB</div>
+                        <div style="font-size: 7px; color: #059669; font-weight: 700; margin-top: 1px;">
+                            Dokumen Sah Terdaftar
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

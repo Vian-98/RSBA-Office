@@ -28,6 +28,7 @@
 - **Komponen Tunjangan & Potongan Penggajian**:
   - Pengelolaan Master Tunjangan Jabatan, Tunjangan Lain-Lain, Denda Keterlambatan Flat, dan Rekening Bank Karyawan.
   - Fitur Ekspor & Impor Excel untuk slip gaji bulanan serta rincian modal potongan/tunjangan.
+  
   - Matriks Golongan dinamis dan pencatatan Log Edit Payroll (*Audit Trail*) untuk transparansi perubahan nilai gaji.
 - **Audit Log Koreksi Absensi**: Pencatatan riwayat perubahan/koreksi absensi karyawan (`sdm_absensi_koreksi_log`) yang dilengkapi modal audit log interaktif dengan pencarian dan paginasi pada tampilan Rekap Absensi.
 - **Backfill & Optimasi Kinerja Absensi**: Perintah CLI `app:backfill-absensi-metrics` dan pembuatan indeks tabel database untuk mempercepat kalkulasi rekapitulasi absensi dan performa kueri.

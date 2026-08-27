@@ -98,6 +98,9 @@
                     <option value="all">Semua Jenis</option>
                     <option value="cuti">Surat Cuti</option>
                     <option value="sp3">SP3 (Pembayaran)</option>
+                    <option value="balasan_pkl">Balasan PKL</option>
+                    <option value="balasan_penelitian">Balasan Penelitian</option>
+                    <option value="perintah_tugas">Perintah Tugas</option>
                 </select>
             </div>
 
@@ -180,9 +183,27 @@
 
                                 {{-- Jenis Surat --}}
                                 <td class="px-4 py-3">
-                                    <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium
-                                        {{ $doc['document_type'] === 'cuti' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700' }}">
-                                        {{ strtoupper($doc['document_type']) }}
+                                    @php
+                                        $typeStyles = [
+                                            'cuti' => 'bg-blue-50 text-blue-700',
+                                            'sp3' => 'bg-purple-50 text-purple-700',
+                                            'balasan_pkl' => 'bg-amber-50 text-amber-700',
+                                            'balasan_penelitian' => 'bg-teal-50 text-teal-700',
+                                            'perintah_tugas' => 'bg-indigo-50 text-indigo-700',
+                                        ];
+                                        $typeLabels = [
+                                            'cuti' => 'CUTI',
+                                            'sp3' => 'SP3',
+                                            'balasan_pkl' => 'PKL',
+                                            'balasan_penelitian' => 'PENELITIAN',
+                                            'perintah_tugas' => 'TUGAS',
+                                        ];
+                                        $typeKey = $doc['document_type'] ?? '';
+                                        $styleClass = $typeStyles[$typeKey] ?? 'bg-slate-50 text-slate-700';
+                                        $labelText = $typeLabels[$typeKey] ?? strtoupper($typeKey);
+                                    @endphp
+                                    <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium {{ $styleClass }}">
+                                        {{ $labelText }}
                                     </span>
                                 </td>
 

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 class PdfStamperService
 {
     /**
-     * Hard-stamp the Mekari Vault Seal Badge image directly into page 1 of the PDF binary stream.
+     * Hard-stamp the RSBA QR Code Digital Signature Stamp Badge directly into page 1 of the PDF binary stream.
      */
     public function stampPdf(
         string $pdfPathOrBytes,
@@ -19,9 +19,10 @@ class PdfStamperService
         string $signedAtDate,
         string $shaHash,
         string $documentNumber = '',
-        string $title = ''
+        string $title = '',
+        string $verifyUrl = ''
     ): string {
-        $stampImgPath = $this->generateSealImage($signerName, $signedAtDate, $shaHash);
+        $stampImgPath = $this->generateSealImage($signerName, $signedAtDate, $shaHash, $verifyUrl);
 
         try {
             $pdf = new Fpdi();
@@ -55,9 +56,9 @@ class PdfStamperService
                     $pageWidthMm = $size['width'];
                     $pageHeightMm = $size['height'];
 
-                    // Base stamp badge dimensions (190px width @ 850px page = 46.9mm width)
-                    $baseStampWidthMm = 46.9 * ($scalePercent / 100);
-                    $baseStampHeightMm = 21.8 * ($scalePercent / 100);
+                    // Base stamp badge dimensions (230px width @ 850px page = ~56mm width, ~23mm height)
+                    $baseStampWidthMm = 56.0 * ($scalePercent / 100);
+                    $baseStampHeightMm = 23.0 * ($scalePercent / 100);
 
                     $posXmm = ($pctX / 100) * $pageWidthMm;
                     $posYmm = ($pctY / 100) * $pageHeightMm;
@@ -88,12 +89,16 @@ class PdfStamperService
     }
 
     /**
-     * Generate high-resolution PNG image of Mekari Vault Seal Stamp using PHP GD.
+     * Generate high-resolution PNG image of QR Code Digital Signature Stamp using PHP GD and DNS2D.
      */
-    protected function generateSealImage(string $signerName, string $signedAtDate, string $shaHash): string
-    {
-        $w = 380; // High resolution 2x scale
-        $h = 176;
+    protected function generateSealImage(
+        string $signerName,
+        string $signedAtDate,
+        string $shaHash,
+        string $verifyUrl = ''
+    ): string {
+        $w = 460; // High resolution 2x scale
+        $h = 190;
 
         $img = imagecreatetruecolor($w, $h);
         imagealphablending($img, false);
@@ -106,40 +111,67 @@ class PdfStamperService
 
         // Colors
         $white = imagecolorallocate($img, 255, 255, 255);
-        $emeraldBorder = imagecolorallocate($img, 16, 185, 129); // #10b981
+        $emeraldBorder = imagecolorallocate($img, 5, 150, 105); // #059669
         $emeraldText = imagecolorallocate($img, 6, 95, 70); // #065f46
         $emeraldBg = imagecolorallocate($img, 209, 250, 229); // #d1fae5
-        $darkText = imagecolorallocate($img, 30, 41, 59); // #1e293b
+        $darkText = imagecolorallocate($img, 15, 23, 42); // #0f172a
         $mutedText = imagecolorallocate($img, 100, 116, 139); // #64748b
         $hashBg = imagecolorallocate($img, 238, 242, 255); // #eef2ff
         $hashText = imagecolorallocate($img, 67, 56, 202); // #4338ca
+        $qrBg = imagecolorallocate($img, 248, 250, 252); // #f8fafc
+        $qrBorder = imagecolorallocate($img, 226, 232, 240); // #e2e8f0
 
         // White card background with rounded rectangle
         $this->imagefilledroundedrect($img, 0, 0, $w - 1, $h - 1, 20, $white);
         $this->imageroundedrect($img, 0, 0, $w - 1, $h - 1, 20, $emeraldBorder, 4);
 
-        // Top Header Divider Line
-        imageline($img, 20, 52, $w - 20, 52, $emeraldBg);
+        // 1. Generate & Draw QR Code on Left Side
+        $qrService = app(QrGeneratorService::class);
+        $targetUrl = !empty($verifyUrl) ? $verifyUrl : $qrService->getVerificationUrl($shaHash);
+        
+        try {
+            $qrPngBase64 = $qrService->generateQrPngBase64($targetUrl, 4, 4);
+            $qrImg = imagecreatefromstring(base64_decode($qrPngBase64));
+            
+            if ($qrImg) {
+                // QR Box Background
+                $this->imagefilledroundedrect($img, 16, 16, 156, 172, 12, $qrBg);
+                $this->imageroundedrect($img, 16, 16, 156, 172, 12, $qrBorder, 2);
+
+                $qrW = imagesx($qrImg);
+                $qrH = imagesy($qrImg);
+                // Copy resized QR code
+                imagecopyresampled($img, $qrImg, 24, 22, 0, 0, 124, 124, $qrW, $qrH);
+                imagedestroy($qrImg);
+
+                // Text under QR
+                imagestring($img, 2, 34, 150, 'Scan Verifikasi', $mutedText);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('QR generation in stamp failed: ' . $e->getMessage());
+        }
+
+        // 2. Right Side: Header & Metadata
+        $rightX = 172;
 
         // Checkmark Icon Circle
-        imagefilledellipse($img, 34, 30, 24, 24, $emeraldBorder);
-        $this->drawCheckmark($img, 34, 30, $white);
+        imagefilledellipse($img, $rightX + 14, 30, 22, 22, $emeraldBorder);
+        $this->drawCheckmark($img, $rightX + 14, 30, $white);
 
-        // Text: SIGNED BY MEKARI VAULT
-        imagestring($img, 4, 56, 22, 'SIGNED BY MEKARI VAULT', $emeraldText);
+        // Header Text: E-SIGNATURE & VERIFIKASI RSBA
+        imagestring($img, 4, $rightX + 32, 22, 'RS BINTANG AMIN', $emeraldText);
 
-        // Text: Signer Name
+        // Divider Line
+        imageline($img, $rightX, 50, $w - 20, 50, $emeraldBg);
+
+        // Signer Name
         $signerTrunc = strlen($signerName) > 22 ? substr($signerName, 0, 20) . '..' : $signerName;
-        imagestring($img, 5, 20, 62, $signerTrunc, $darkText);
+        imagestring($img, 5, $rightX, 64, $signerTrunc, $darkText);
 
-        // Text: Date WIB
+        // Date WIB
         $dateStr = str_contains($signedAtDate, 'WIB') ? $signedAtDate : $signedAtDate . ' WIB';
-        imagestring($img, 3, 20, 94, $dateStr, $mutedText);
+        imagestring($img, 3, $rightX, 98, $dateStr, $mutedText);
 
-        // SHA Hash pill background
-        $shaTrunc = 'SHA: ' . substr($shaHash, 0, 14) . '...';
-        $this->imagefilledroundedrect($img, 16, 126, $w - 16, 162, 8, $hashBg);
-        imagestring($img, 3, 24, 134, $shaTrunc, $hashText);
 
         $tempPath = tempnam(sys_get_temp_dir(), 'stamp_img_') . '.png';
         imagepng($img, $tempPath);
@@ -180,3 +212,4 @@ class PdfStamperService
         imagesetthickness($img, 1);
     }
 }
+

@@ -152,34 +152,31 @@
                     terima kasih.</b></td>
         </tr>
 
-        @if ($isManualSp3 || $docStatus !== 'approved')
         <tr>
-            @forelse ($this->approvals as $item)
-                <td colspan="6" align="right">
-                    <table style="font-size:11px; width:33%; text-align: center;">
-                        <tr>
-                            <td>{{ ($item['status'] == 'Manual' || !empty($item['is_manual'])) ? 'Mengetahui' : $item['status'] . ' Oleh' }},</td>
-                        </tr>
-                        <tr>
-                            <td style="text-align: center;">
-                                <span style="display:block; height:60px; width:auto;"></span>
-                                <span style="font-weight: bold; display:block; margin: 0 auto;">{{ $item['nama'] }}</span>
-                                <span style="font-size:10px;">({{ is_array($item['jabatan'] ?? null) ? ($item['jabatan'][0]['nama'] ?? ' ') : ($item['jabatan'] ?? ' ') }})</span>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            @empty
-                <td colspan="6" align="right">
-                    <table style="font-size:11px; font-style:italic;">
-                        <tr>
-                            <td>Menunggu Persetujuan TTD Basah</td>
-                        </tr>
-                    </table>
-                </td>
-            @endforelse
+            <td colspan="6" align="right">
+                <table style="font-size:11px; width:35%; text-align: center;">
+                    <tr>
+                        <td>Mengetahui,</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; padding: 4px 0;">
+                            @if ($isManualSp3 || empty($this->generateBarcode))
+                                <span style="display:block; height:55px; width:auto;"></span>
+                            @else
+                                <img src="data:image/png;base64,{{ $this->generateBarcode }}" alt="QR Tanda Tangan" style="height: 55px; width: 55px; display: inline-block; margin: 4px auto;">
+                            @endif
+                            <span style="font-weight: bold; display:block; margin: 0 auto; text-decoration: underline;">
+                                {{ $this->ttdAtasan['nama'] ?? ($this->approvals[0]['nama'] ?? optional($suratSp3->jabatans)->nama) }}
+                            </span>
+                            <span style="font-size:10px;">
+                                ({{ optional($suratSp3->jabatans)->nama ?? 'Direktur' }})
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </td>
         </tr>
-        @endif
+
 
         <tr>
             <td colspan="6">

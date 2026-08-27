@@ -27,11 +27,13 @@ class DocumentSignatureService
         try {
             $systemUser = $this->systemCertificateService->getOrCreateSystemUser();
 
+            $tglSurat = $surat->tgl_surat ?? $surat->tgl ?? ($surat->tanggal instanceof \DateTimeInterface ? $surat->tanggal->format('Y-m-d') : ($surat->tanggal ?? date('Y-m-d')));
+
             $payloadData = [
                 'document_type' => get_class($surat),
                 'document_id'   => $surat->id,
-                'no_surat'      => $surat->no_surat ?? $surat->no ?? $surat->id,
-                'tgl_surat'     => $surat->tgl_surat ?? $surat->tgl ?? date('Y-m-d'),
+                'no_surat'      => $surat->no_surat ?? $surat->no ?? $surat->nomor ?? $surat->id,
+                'tgl_surat'     => $tglSurat,
                 'signed_by_system_p12' => true,
                 'timestamp'     => now()->toIso8601String(),
             ];
@@ -81,7 +83,7 @@ class DocumentSignatureService
      * Trigger sync ke docstore setiap kali ada perubahan pada surat.
      *
      * Dipanggil dari:
-     * - Approval::submit() (Cuti & SP3) — setiap ada approval baru
+     * - Approval::submit() (Cuti, SP3, Kuitansi) — setiap ada approval baru
      * - checkAndGenerateHeaderQr() — setelah status final tercapai
      *
      * Sync bersifat fire-and-forget: gagal sync tidak menghalangi proses approval.
@@ -97,6 +99,14 @@ class DocumentSignatureService
                 $syncService->syncCuti($surat->fresh());
             } elseif (str_contains($modelClass, 'SuratSp3')) {
                 $syncService->syncSp3($surat->fresh());
+            } elseif (str_contains($modelClass, 'SuratBalasanPkl')) {
+                $syncService->syncBalasanPkl($surat->fresh());
+            } elseif (str_contains($modelClass, 'SuratBalasanPenelitian')) {
+                $syncService->syncBalasanPenelitian($surat->fresh());
+            } elseif (str_contains($modelClass, 'SuratPerintahTugas')) {
+                $syncService->syncPerintahTugas($surat->fresh());
+            } elseif (str_contains($modelClass, 'Kuitansi')) {
+                $syncService->syncKuitansi($surat->fresh());
             } else {
                 Log::warning('triggerDocstoreSync: model tidak dikenal', ['class' => $modelClass]);
             }
@@ -118,14 +128,39 @@ class DocumentSignatureService
      */
     public function checkAndGenerateHeaderQr(Model $surat): bool
     {
+        if (!method_exists($surat, 'approvals')) {
+            // Untuk model single approval (Balasan PKL, Balasan Penelitian, Perintah Tugas)
+            $rawStatus = $surat->status;
+            $statusStr = is_object($rawStatus) && isset($rawStatus->value) ? $rawStatus->value : (string) $rawStatus;
+            if (in_array(strtolower($statusStr), ['approved', 'disetujui', 'signed'])) {
+                $this->triggerDocstoreSync($surat);
+                return true;
+            }
+            return false;
+        }
+
         if (!$surat->relationLoaded('approvals')) {
             $surat->load('approvals');
         }
 
         $approvals = $surat->approvals;
 
-        if ($approvals->isEmpty()) {
+        if (!$approvals || $approvals->isEmpty()) {
             return false;
+        }
+
+        $modelClass = get_class($surat);
+
+        // Khusus SuratSp3: harus memiliki 2 tahap wajib (verifikasi_keuangan & ttd_atasan)
+        if (str_contains($modelClass, 'SuratSp3')) {
+            $tahapWajib = ['verifikasi_keuangan', 'ttd_atasan'];
+            $tahapAda = $approvals->map(function ($a) {
+                return is_object($a->tahap) ? $a->tahap->value : (string)($a->tahap ?? 'ttd_atasan');
+            })->unique()->toArray();
+
+            if (count(array_intersect($tahapWajib, $tahapAda)) < count($tahapWajib)) {
+                return false; // Belum lengkap 2 tahap
+            }
         }
 
         $allApproved = $approvals->every(function ($a) {
@@ -165,3 +200,4 @@ class DocumentSignatureService
         return true;
     }
 }
+
