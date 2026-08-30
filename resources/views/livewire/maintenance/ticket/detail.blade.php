@@ -67,15 +67,18 @@
                         {{ $pLabels[$request->priority] ?? $request->priority }}
                     </span>
                 </div>
-                <h1 class="text-xl font-bold text-gray-800">{{ $request->asset->barang->nama }}</h1>
+                <h1 class="text-xl font-bold text-gray-800">{{ $request->item_nama }}</h1>
                 <p class="text-sm text-gray-400">
                     <x-ts:icon name="tabler.map-pin" class="inline h-4 w-4" />
-                    {{ $request->asset->ruangan?->nama ?? '-' }} &mdash;
-                    Kode: <span class="font-mono font-semibold text-gray-600">{{ $request->asset->kode ?? 'Belum didaftarkan' }}</span>
+                    {{ $request->lokasi_nama }} &mdash;
+                    Kode: <span class="font-mono font-semibold text-gray-600">{{ $request->asset?->kode ?? 'Umum / Non-Aset' }}</span>
                 </p>
             </div>
             <div class="text-right text-xs text-gray-400">
                 <div>Diajukan oleh <span class="font-semibold text-gray-600">{{ $request->user_request ?? '-' }}</span></div>
+                @if ($request->pelapor_kontak)
+                    <div>Kontak: <span class="font-mono font-semibold text-gray-600">{{ $request->pelapor_kontak }}</span></div>
+                @endif
                 <div>{{ $request->created_at?->format('d M Y, H:i') }}</div>
             </div>
         </div>

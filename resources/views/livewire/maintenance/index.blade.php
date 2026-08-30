@@ -34,6 +34,11 @@
             <x-ts:tab.items tab="Tiket Saya">
                 <livewire:Maintenance.Ticket.MyTickets />
             </x-ts:tab.items>
+
+            {{-- Tab Semua Tiket & Log Riwayat --}}
+            <x-ts:tab.items tab="Semua Tiket & Log">
+                <livewire:Maintenance.Ticket.AllTickets :key="'all-tickets-log'" />
+            </x-ts:tab.items>
         </x-ts:tab>
 
         {{-- Modal Direct Ticket Creation --}}

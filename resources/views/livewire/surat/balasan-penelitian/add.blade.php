@@ -70,7 +70,7 @@
 
     {{-- Baris 6: Rincian Biaya Penelitian & Pendidikan (Lampiran) --}}
     <div class="rounded-xl border border-teal-200 bg-teal-50/40 p-3.5">
-        <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-bold uppercase tracking-wider text-teal-900 flex items-center gap-1.5">
                 <x-tabler-file-dollar class="size-4 text-teal-600" />
                 Rincian Biaya Penelitian & Pendidikan (Lampiran Surat)
@@ -80,30 +80,54 @@
             </x-ts:button>
         </div>
 
-        <div class="space-y-2">
+        <div class="space-y-3">
             @foreach($biayaList as $bIndex => $biaya)
-                <div class="grid grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-lg border border-teal-100 shadow-2xs">
-                    <div class="col-span-12 sm:col-span-4">
-                        <x-ts:input placeholder="Nama Biaya / Keterangan *" wire:model="biayaList.{{ $bIndex }}.keterangan" />
-                    </div>
-                    <div class="col-span-4 sm:col-span-2">
-                        <x-ts:input type="number" min="1" placeholder="Jml Org" wire:model.live="biayaList.{{ $bIndex }}.jumlah_orang" prefix="Org" />
-                    </div>
-                    <div class="col-span-4 sm:col-span-3">
-                        <x-ts:input type="number" min="0" placeholder="Jasa Sarana" wire:model.live="biayaList.{{ $bIndex }}.jasa_sarana" prefix="Sarana" />
-                    </div>
-                    <div class="col-span-3 sm:col-span-2">
-                        <x-ts:input type="number" min="0" placeholder="Jasa Pelayanan" wire:model.live="biayaList.{{ $bIndex }}.jasa_pelayanan" prefix="Pelayanan" />
-                    </div>
-                    <div class="col-span-1 text-center">
+                @php
+                    $jmlOrg = (int)($biaya['jumlah_orang'] ?? 1);
+                    $sarana = (double)($biaya['jasa_sarana'] ?? 0);
+                    $pelayanan = (double)($biaya['jasa_pelayanan'] ?? 0);
+                    $subtotal = ($sarana + $pelayanan) * $jmlOrg;
+                @endphp
+                <div class="bg-white p-3 rounded-lg border border-teal-100 shadow-2xs space-y-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-bold text-teal-800 flex items-center gap-1">
+                            Item Biaya #{{ $bIndex + 1 }}
+                        </span>
                         @if(count($biayaList) > 1)
-                            <button type="button" wire:click="removeBiaya({{ $bIndex }})" class="p-1 text-rose-500 hover:bg-rose-50 rounded">
+                            <button type="button" wire:click="removeBiaya({{ $bIndex }})" class="p-1 text-rose-500 hover:bg-rose-50 rounded" title="Hapus Item Biaya">
                                 <x-tabler-trash class="size-4" />
                             </button>
                         @endif
                     </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div class="md:col-span-5">
+                            <x-ts:input label="Keterangan / Nama Biaya *" placeholder="contoh: Penelitian Skripsi / Tugas Akhir" wire:model="biayaList.{{ $bIndex }}.keterangan" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <x-ts:input label="Jml Peneliti *" type="number" min="1" wire:model.live="biayaList.{{ $bIndex }}.jumlah_orang" suffix="Org" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <x-ts:input label="Jasa Sarana (Rp)" type="number" min="0" wire:model.live="biayaList.{{ $bIndex }}.jasa_sarana" prefix="Rp" />
+                        </div>
+                        <div class="md:col-span-3">
+                            <x-ts:input label="Jasa Pelayanan (Rp)" type="number" min="0" wire:model.live="biayaList.{{ $bIndex }}.jasa_pelayanan" prefix="Rp" />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1 text-xs text-slate-500 border-t border-slate-100">
+                        <span>Subtotal ({{ $jmlOrg }} Orang x Rp {{ number_format($sarana + $pelayanan, 0, ',', '.') }}):</span>
+                        <span class="font-bold text-teal-700 font-mono">Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+                    </div>
                 </div>
             @endforeach
+        </div>
+
+        <div class="mt-3 pt-2.5 border-t border-teal-200/80 flex items-center justify-between text-xs font-bold text-teal-900">
+            <span>Total Estimasi Biaya Penelitian:</span>
+            <span class="text-teal-800 text-sm font-mono font-bold">
+                Rp {{ number_format($this->totalEstimasi, 0, ',', '.') }}
+            </span>
         </div>
     </div>
 

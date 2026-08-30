@@ -43,10 +43,25 @@ class SuratCutiForm extends Form
         ];
     }
 
+    public function validationAttributes()
+    {
+        return [
+            'jenis_cuti' => 'Jenis Cuti',
+            'tgl_cuti' => 'Tanggal Cuti',
+            'lama_cuti' => 'Lama Cuti',
+            'atasan' => 'Persetujuan Atasan',
+        ];
+    }
+
     public function messages()
     {
         return [
-            'lama_cuti.max' => 'Lama cuti tidak dapat lebih dari sisa cuti.',
+            'jenis_cuti.required' => 'Jenis cuti wajib dipilih.',
+            'tgl_cuti.required'   => 'Tanggal cuti wajib dipilih minimal 1 hari.',
+            'lama_cuti.required'  => 'Lama cuti wajib diisi.',
+            'lama_cuti.max'       => 'Lama cuti tidak dapat lebih dari sisa cuti.',
+            'atasan.required'     => 'Persetujuan Atasan wajib dipilih minimal 1 orang pejabat penyetuju.',
+            'atasan.min'          => 'Persetujuan Atasan wajib dipilih minimal 1 orang pejabat penyetuju.',
         ];
     }
 

@@ -18,6 +18,24 @@
         x-ref="canvasBox"
         style="position: relative; width: 100%; aspect-ratio: 1 / 1.414; background-color: #cbd5e1; padding: 0; border-radius: 20px; border: 2px solid #94a3b8; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden; user-select: none;"
     >
+        {{-- Processing / Uploading Overlay on Preview Canvas --}}
+        <div 
+            wire:loading.flex 
+            wire:target="pdf_file" 
+            class="absolute inset-0 z-40 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-center text-white space-y-3 p-6 text-center"
+        >
+            <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+                <svg class="animate-spin w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-bold tracking-wide">Merender Pratinjau Dokumen...</p>
+                <p class="text-xs text-slate-300 mt-0.5">Membaca tata letak halaman PDF</p>
+            </div>
+        </div>
+
         {{-- PDF.js Canvas Rendering (100% Exact Edge-to-Edge PDF Page 1) --}}
         <canvas 
             x-ref="pdfCanvas" 
@@ -32,7 +50,7 @@
             :style="`left: ${posX}%; top: ${posY}%; transform: scale(${(scale / 100) * (editorWidth / 850)}); transform-origin: top left; width: 230px;`"
             class="absolute z-30 cursor-grab active:cursor-grabbing select-none transition-transform duration-75"
         >
-            <div style="background: rgba(255, 255, 255, 0.98); padding: 10px 12px; border-radius: 12px; border: 2px solid #059669; box-shadow: 0 10px 25px rgba(0,0,0,0.18), 0 0 0 3px rgba(16, 185, 129, 0.2);" class="text-left w-full select-none">
+            <div :style="`background: rgba(255, 255, 255, ${(opacity ?? 100) / 100}); backdrop-filter: blur(${((100 - (opacity ?? 100)) / 100) * 4}px); padding: 10px 12px; border-radius: 12px; border: 2px solid rgba(5, 150, 105, ${Math.min(1, ((opacity ?? 100) + 20) / 100)}); box-shadow: 0 10px 25px rgba(0,0,0,${0.18 * ((opacity ?? 100) / 100)}), 0 0 0 3px rgba(16, 185, 129, ${0.2 * ((opacity ?? 100) / 100)});`" class="text-left w-full select-none">
                 {{-- Stamp Header --}}
                 <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #d1fae5; padding-bottom: 5px; margin-bottom: 6px;">
                     <div style="display: flex; align-items: center; gap: 5px;" class="pointer-events-none">
@@ -46,9 +64,9 @@
                 {{-- Stamp Body: QR Code + Signer Information --}}
                 <div style="display: flex; align-items: center; gap: 8px;" class="pointer-events-none">
                     {{-- QR Code Column --}}
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center;" class="shrink-0">
+                    <div :style="`background: rgba(255, 255, 255, ${(opacity ?? 100) / 100}); border: 1px solid rgba(226, 232, 240, ${(opacity ?? 100) / 100}); border-radius: 8px; padding: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center;`" class="shrink-0">
                         @if ($this->previewQrCode)
-                            <img src="data:image/png;base64,{{ $this->previewQrCode }}" alt="QR Code Verifikasi" style="width: 58px; height: 58px; display: block;">
+                            <img src="data:image/png;base64,{{ $this->previewQrCode }}" alt="QR Code Verifikasi" :style="`width: 58px; height: 58px; display: block; opacity: ${Math.max(0.4, (opacity ?? 100) / 100)};`">
                         @else
                             <div style="width: 58px; height: 58px; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #64748b; text-align: center; border-radius: 4px;">
                                 QR CODE

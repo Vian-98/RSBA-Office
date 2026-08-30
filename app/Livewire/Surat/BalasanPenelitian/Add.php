@@ -3,6 +3,7 @@
 namespace App\Livewire\Surat\BalasanPenelitian;
 
 use App\Models\Sdm\Jabatan;
+use App\Models\Sdm\Karyawan;
 use App\Models\Surat\SuratBalasanPenelitian;
 use App\Models\Surat\SuratBalasanPenelitianBiaya;
 use App\Models\Surat\SuratBalasanPenelitianMahasiswa;
@@ -24,7 +25,7 @@ class Add extends Component
     public $tujuan_alamat = '';
     public $nomor_surat_masuk = '';
     public $tgl_surat_masuk;
-    public $perihal_surat_masuk = 'Izin Penelitian / Presurvey';
+    public $perihal_surat_masuk = '';
 
     // Direktur Signatory
     public array $direkturOptions = [];
@@ -32,25 +33,27 @@ class Add extends Component
     public ?int $jabatan_id = null;
     public ?int $disetujui_oleh = null;
 
-    // Daftar Mahasiswa Peneliti
+    // Daftar Mahasiswa
     public array $mahasiswaList = [
         ['nama' => '', 'npm' => '', 'fakultas_pt' => '', 'judul_penelitian' => '']
     ];
 
-    // Rincian Biaya Penelitian & Pendidikan
-    public array $biayaList = [
-        ['keterangan' => 'Penelitian & Pendidikan', 'jumlah_orang' => 1, 'jasa_sarana' => 100000, 'jasa_pelayanan' => 150000]
-    ];
+    // Rincian Biaya
+    public array $biayaList = [];
 
     protected $rules = [
         'tgl'                => 'required|date',
-        'tujuan_fakultas'    => 'required|string|max:150',
         'tujuan_universitas' => 'required|string|max:150',
-        'perihal_surat_masuk'=> 'required|string|max:255',
         'mahasiswaList'      => 'required|array|min:1',
         'mahasiswaList.*.nama' => 'required|string|max:150',
         'biayaList'          => 'required|array|min:1',
         'biayaList.*.keterangan' => 'required|string|max:150',
+    ];
+
+    protected $messages = [
+        'tujuan_universitas.required' => 'Nama universitas / instansi wajib diisi.',
+        'mahasiswaList.*.nama.required' => 'Nama peneliti / mahasiswa wajib diisi.',
+        'biayaList.*.keterangan.required' => 'Keterangan biaya wajib diisi.',
     ];
 
     public function mount()
@@ -82,8 +85,8 @@ class Add extends Component
     {
         $this->selectedDirekturIndex = $index;
         if (isset($this->direkturOptions[$index])) {
-            $this->jabatan_id     = $this->direkturOptions[$index]['jabatan_id'];
-            $this->disetujui_oleh = $this->direkturOptions[$index]['karyawan_id'];
+            $this->jabatan_id     = $this->direkturOptions[$index]['jabatan_id'] ?? null;
+            $this->disetujui_oleh = $this->direkturOptions[$index]['karyawan_id'] ?? null;
         }
     }
 
@@ -108,18 +111,10 @@ class Add extends Component
         }
     }
 
-    public function syncJumlahOrangBiaya()
-    {
-        $count = count($this->mahasiswaList);
-        foreach ($this->biayaList as $idx => $b) {
-            $this->biayaList[$idx]['jumlah_orang'] = $count;
-        }
-    }
-
     public function addBiaya()
     {
         $this->biayaList[] = [
-            'keterangan'     => 'Biaya Tambahan',
+            'keterangan'     => '',
             'jumlah_orang'   => count($this->mahasiswaList),
             'jasa_sarana'    => 0,
             'jasa_pelayanan' => 0,
@@ -134,6 +129,18 @@ class Add extends Component
         }
     }
 
+    public function getTotalEstimasiProperty(): float
+    {
+        $total = 0;
+        foreach ($this->biayaList as $b) {
+            $jml = (int) ($b['jumlah_orang'] ?? 1);
+            $sarana = (double) ($b['jasa_sarana'] ?? 0);
+            $pelayanan = (double) ($b['jasa_pelayanan'] ?? 0);
+            $total += ($sarana + $pelayanan) * $jml;
+        }
+        return $total;
+    }
+
     public function submit()
     {
         $this->validate();
@@ -145,9 +152,12 @@ class Add extends Component
             $nextNo = ((int) $matches[1]) + 1;
         }
 
+        $jabatanId = ($this->jabatan_id && Jabatan::where('id', $this->jabatan_id)->exists()) ? $this->jabatan_id : null;
+        $disetujuiOleh = ($this->disetujui_oleh && Karyawan::where('id', $this->disetujui_oleh)->exists()) ? $this->disetujui_oleh : null;
+
         $formattedNo = SuratTemplateNomor::generateNomor(
             'balasan_penelitian',
-            $this->jabatan_id,
+            $jabatanId,
             $this->tgl,
             $nextNo
         );
@@ -165,8 +175,8 @@ class Add extends Component
                 'nomor_surat_masuk'   => $this->nomor_surat_masuk,
                 'tgl_surat_masuk'     => $this->tgl_surat_masuk,
                 'perihal_surat_masuk' => $this->perihal_surat_masuk,
-                'jabatan_id'          => $this->jabatan_id,
-                'disetujui_oleh'      => $this->disetujui_oleh,
+                'jabatan_id'          => $jabatanId,
+                'disetujui_oleh'      => $disetujuiOleh,
                 'status'              => 'pending',
                 'created_by'          => auth()->id(),
             ]);

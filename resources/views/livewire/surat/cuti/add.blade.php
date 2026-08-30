@@ -57,6 +57,9 @@
             <div wire:key="{{ $karyawan?->id }}">
                 <x-ts:select.styled wire:key="atasan-select" multiple :limit="2" searchable grouped wire:model.defer="form.atasan" placeholder="Persetujuan Atasan" :request="route('api.karyawan.atasan.approver', [$karyawan?->jabatan?->first()?->id, 'karyawan_id' => $karyawan?->id])"
                     select="label:label|value:id" lazy="10" />
+                @error('form.atasan')
+                    <span class="text-xs text-rose-600 mt-1 block">{{ $message }}</span>
+                @enderror
             </div>
 
         </div>

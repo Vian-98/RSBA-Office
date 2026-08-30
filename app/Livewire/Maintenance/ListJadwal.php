@@ -66,13 +66,16 @@ class ListJadwal extends Component implements HasTable, HasForms, HasActions
 
                 TextColumn::make('asset.kode')
                     ->label('Kode Asset')
+                    ->getStateUsing(fn($record) => $record->asset?->kode ?? 'NON-ASET')
                     ->searchable(),
 
                 TextColumn::make('asset.barang.nama')
-                    ->label('Asset Item'),
+                    ->label('Item / Pekerjaan')
+                    ->getStateUsing(fn($record) => $record->asset?->barang?->nama ?? ($record->request?->note ? \Illuminate\Support\Str::limit($record->request->note, 30) : 'Pengaduan Non-Aset')),
 
                 TextColumn::make('asset.ruangan.nama')
-                    ->label('Lokasi'),
+                    ->label('Lokasi')
+                    ->getStateUsing(fn($record) => $record->asset?->ruangan?->nama ?? ($record->request?->ruangan?->nama ?? '-')),
 
                 TextColumn::make('tanggal')
                     ->label('Jadwal')

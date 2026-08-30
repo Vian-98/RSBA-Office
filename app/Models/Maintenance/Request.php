@@ -41,13 +41,35 @@ class Request extends Model
         return $this->belongsTo(AssetBarang::class, 'asset_id', 'id');
     }
 
+    public function ruangan(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Ruangan::class, 'ruangan_id', 'id');
+    }
+
     public function getUserRequestAttribute(): ?string
     {
+        if (!empty($this->pelapor_nama)) {
+            return $this->pelapor_nama;
+        }
+
         if ($this->relationLoaded('user_req') && $this->user_req?->relationLoaded('karyawan')) {
             return $this->user_req?->karyawan?->nama ?? '-';
         }
 
-        return optional(optional($this->user_req)?->karyawan)?->nama;
+        return optional(optional($this->user_req)?->karyawan)?->nama ?? '-';
+    }
+
+    public function getItemNamaAttribute(): string
+    {
+        return $this->asset?->barang?->nama
+            ?? ($this->note ? \Illuminate\Support\Str::limit($this->note, 45) : 'Pengaduan Pemeliharaan / Kerusakan');
+    }
+
+    public function getLokasiNamaAttribute(): string
+    {
+        return $this->asset?->ruangan?->nama
+            ?? $this->ruangan?->nama
+            ?? '-';
     }
 
     public function getUserVerifyAttribute(): ?string

@@ -212,9 +212,15 @@
                         <td style="padding-top:5px;">
                             {{-- QR Code — embed docstore_key agar scan langsung ke bank surat --}}
                             <img src="data:image/png;base64,{{ $this->generateHeaderQrCode }}" alt="QR Verifikasi Bank Surat" style="height:80px; width:80px; display:block;">
-                            <span style="font-size:7px; color:#555; display:block; margin-top:2px;">
-                                Scan untuk verifikasi keaslian surat
-                            </span>
+                            @if ($docStatus !== 'approved' && !$isManualCuti)
+                                <span style="font-size:7pt; font-weight:bold; color:#b45309; display:block; margin-top:2px;">
+                                    [ DRAF / MENUNGGU PERSETUJUAN ]
+                                </span>
+                            @else
+                                <span style="font-size:7px; color:#555; display:block; margin-top:2px;">
+                                    Scan untuk verifikasi keaslian surat
+                                </span>
+                            @endif
                         </td>
                     </tr>
                 </table>

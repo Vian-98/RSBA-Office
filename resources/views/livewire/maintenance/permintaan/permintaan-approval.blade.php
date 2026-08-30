@@ -18,7 +18,7 @@
         <div>
             <span class="text-gray-500">#{{ $maintenanceRequest->id }}</span>
             <span>
-                {{ $maintenanceRequest->asset->kode }} - {{ $maintenanceRequest->asset->barang->nama }}
+                {{ $maintenanceRequest->asset?->kode ?? 'NON-ASET' }} - {{ $maintenanceRequest->item_nama }}
             </span>
         </div>
 
@@ -28,8 +28,8 @@
         <span class="text-sm italic text-gray-500">Detail</span>
         <div class="grid grid-cols-2 items-center gap-2">
             <div class="flex flex-col gap-1">
-                <span>Item : {{ $maintenanceRequest->asset->barang->nama }}</span>
-                <span>Lokasi : {{ $maintenanceRequest->asset->ruangan->nama }}</span>
+                <span>Item : {{ $maintenanceRequest->item_nama }}</span>
+                <span>Lokasi : {{ $maintenanceRequest->lokasi_nama }}</span>
                 <span>Pengaju : {{ $maintenanceRequest->user_request }}</span>
 
             </div>

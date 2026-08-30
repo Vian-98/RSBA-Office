@@ -24,6 +24,7 @@ class Rekonsiliasi extends Component
     public $sortDirection = 'asc';
 
     // Modal Edit/Revisi
+    public $showEditModal = false;
     public $editingStagingId = null;
     public $editNamaMentah = '';
     public $editTanggal = '';
@@ -82,7 +83,7 @@ class Rekonsiliasi extends Component
         $this->editKaryawanId    = $staging->karyawan_id;
         $this->editCatatan       = $staging->catatan_mesin ?? '';
 
-        $this->dispatch('open-modal', id: 'modal-revisi-absensi');
+        $this->showEditModal = true;
     }
 
     public function simpanRevisi()
@@ -91,7 +92,8 @@ class Rekonsiliasi extends Component
 
         $staging = AbsensiStaging::find($this->editingStagingId);
         if ($staging) {
-            $statusMatching = $this->editKaryawanId ? 'matched' : $staging->status_matching;
+            $karyawanId = !empty($this->editKaryawanId) ? (int) $this->editKaryawanId : null;
+            $statusMatching = $karyawanId ? 'matched' : ($staging->status_matching === 'matched' ? 'unmatched' : $staging->status_matching);
 
             $clockIn  = !empty($this->editClockIn) ? trim($this->editClockIn) : null;
             $clockOut = !empty($this->editClockOut) ? trim($this->editClockOut) : null;
@@ -104,25 +106,26 @@ class Rekonsiliasi extends Component
             $staging->update([
                 'clock_in_aktual'  => $clockIn,
                 'clock_out_aktual' => $clockOut,
-                'karyawan_id'      => $this->editKaryawanId,
+                'karyawan_id'      => $karyawanId,
                 'status_matching'  => $statusMatching,
                 'catatan_mesin'    => $catatanBaru,
             ]);
 
             $this->updateLogCounters();
-            $this->dispatch('close-modal', id: 'modal-revisi-absensi');
+            $this->showEditModal = false;
             $this->toast()->success('Sukses', 'Data absensi berhasil direvisi.')->send();
         }
     }
 
     public function tautkanManual($stagingId, $karyawanId)
     {
-        if (!$karyawanId) return;
+        $kId = !empty($karyawanId) ? (int) $karyawanId : null;
+        if (!$kId) return;
 
         $staging = AbsensiStaging::find($stagingId);
         if ($staging) {
             $staging->update([
-                'karyawan_id' => $karyawanId,
+                'karyawan_id' => $kId,
                 'status_matching' => 'matched'
             ]);
 

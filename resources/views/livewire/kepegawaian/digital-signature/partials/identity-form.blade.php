@@ -5,19 +5,47 @@
         <p class="text-xs text-slate-400">Lengkapi metadata sebelum penandatanganan</p>
     </div>
 
-    {{-- Stamp Resizer Quick Controller in Sidebar --}}
-    <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100 space-y-2.5">
-        <div class="flex items-center justify-between text-xs font-bold text-indigo-900 uppercase tracking-wider">
-            <span>Ukuran Stempel QR Code (Scale)</span>
-            <span class="font-mono text-indigo-700 font-bold" x-text="scale + '%'"></span>
+    {{-- Stamp Resizer & Opacity Controller in Sidebar --}}
+    <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100 space-y-4">
+        {{-- Scale Slider --}}
+        <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold text-indigo-900 uppercase tracking-wider">
+                <span>Ukuran Stempel (Scale)</span>
+                <span class="font-mono text-indigo-700 font-bold" x-text="scale + '%'"></span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <input type="range" min="50" max="180" step="5" x-model="scale" class="w-full accent-indigo-600 h-2 bg-indigo-200/80 rounded-lg cursor-pointer" />
+            </div>
+            <div class="flex justify-between gap-1 text-[11px]">
+                <button type="button" @click="scale = 65" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Kecil (65%)</button>
+                <button type="button" @click="scale = 100" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Normal (100%)</button>
+                <button type="button" @click="scale = 135" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Besar (135%)</button>
+            </div>
         </div>
-        <div class="flex items-center space-x-3">
-            <input type="range" min="50" max="180" step="5" x-model="scale" class="w-full accent-indigo-600 h-2 bg-indigo-200/80 rounded-lg cursor-pointer" />
-        </div>
-        <div class="flex justify-between gap-1 text-[11px]">
-            <button type="button" @click="scale = 65" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Kecil (65%)</button>
-            <button type="button" @click="scale = 100" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Normal (100%)</button>
-            <button type="button" @click="scale = 135" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Besar (135%)</button>
+
+        {{-- Transparency / Opacity Slider --}}
+        <div class="space-y-2 pt-3 border-t border-indigo-200/60">
+            <div class="flex items-center justify-between text-xs font-bold text-indigo-900 uppercase tracking-wider">
+                <span class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Transparansi Stempel
+                </span>
+                <span class="font-mono text-indigo-700 font-bold" x-text="opacity + '%'"></span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <input type="range" min="20" max="100" step="5" x-model="opacity" class="w-full accent-indigo-600 h-2 bg-indigo-200/80 rounded-lg cursor-pointer" />
+            </div>
+            <div class="flex justify-between gap-1 text-[11px]">
+                <button type="button" @click="opacity = 50" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Transparan (50%)</button>
+                <button type="button" @click="opacity = 80" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Semi (80%)</button>
+                <button type="button" @click="opacity = 100" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Solid (100%)</button>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1 italic">
+                💡 Turunkan transparansi jika stempel menutupi teks/tabel pada lembar surat agar tulisan di bawahnya tetap terbaca.
+            </p>
         </div>
     </div>
 

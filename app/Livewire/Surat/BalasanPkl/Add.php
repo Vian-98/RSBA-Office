@@ -3,6 +3,7 @@
 namespace App\Livewire\Surat\BalasanPkl;
 
 use App\Models\Sdm\Jabatan;
+use App\Models\Sdm\Karyawan;
 use App\Models\Surat\SuratBalasanPkl;
 use App\Models\Surat\SuratBalasanPklMahasiswa;
 use App\Models\Surat\SuratTarifPkl;
@@ -45,6 +46,8 @@ class Add extends Component
         ['nama' => '', 'npm' => '']
     ];
 
+    public int $total_hari = 30;
+
     protected $rules = [
         'tgl'                => 'required|date',
         'tujuan_universitas' => 'required|string|max:150',
@@ -69,7 +72,7 @@ class Add extends Component
         $this->tgl = date('Y-m-d');
         $this->tgl_surat_masuk = date('Y-m-d');
         $this->tgl_mulai = date('Y-m-d');
-        $this->tgl_selesai = date('Y-m-d', strtotime('+1 month'));
+        $this->tgl_selesai = date('Y-m-d', strtotime('+29 days'));
 
         $this->recalculateBulan();
 
@@ -100,6 +103,15 @@ class Add extends Component
         }
     }
 
+    public function setPresetBulan(int $bulan)
+    {
+        $start = $this->tgl_mulai ? \Carbon\Carbon::parse($this->tgl_mulai) : now();
+        $days = ($bulan * 30) - 1;
+        $this->tgl_selesai = $start->copy()->addDays($days)->format('Y-m-d');
+        $this->is_manual_bulan = false;
+        $this->recalculateBulan();
+    }
+
     public function toggleManualBulan()
     {
         $this->is_manual_bulan = !$this->is_manual_bulan;
@@ -111,6 +123,7 @@ class Add extends Component
     public function recalculateBulan()
     {
         if (!$this->tgl_mulai || !$this->tgl_selesai) {
+            $this->total_hari = 30;
             $this->lama_praktik_bulan = 1;
             return;
         }
@@ -120,18 +133,19 @@ class Add extends Component
             $end = \Carbon\Carbon::parse($this->tgl_selesai)->startOfDay();
 
             if ($end->lt($start)) {
+                $this->total_hari = 1;
                 $this->lama_praktik_bulan = 1;
                 return;
             }
 
-            // Perhitungan berbasis Bulan Kalender (tgl 1 setiap bulan):
-            // Setiap bulan kalender yang tersentuh (walaupun hanya 1 hari) dihitung 1 bulan penuh
-            $diffYears = $end->year - $start->year;
-            $diffMonths = $end->month - $start->month;
-            $totalCalendarMonths = ($diffYears * 12) + $diffMonths + 1;
+            // Hitung total hari inklusif (tanggal mulai & tanggal selesai keduanya dihitung)
+            $this->total_hari = (int) ($start->diffInDays($end) + 1);
 
-            $this->lama_praktik_bulan = max(1, $totalCalendarMonths);
+            // Rumus kelipatan 30 hari:
+            // <= 30 hari = 1 bulan, 31-60 hari = 2 bulan, 61-90 hari = 3 bulan, dst.
+            $this->lama_praktik_bulan = (int) max(1, ceil($this->total_hari / 30));
         } catch (\Throwable $e) {
+            $this->total_hari = 30;
             $this->lama_praktik_bulan = 1;
         }
     }
@@ -140,8 +154,8 @@ class Add extends Component
     {
         $this->selectedDirekturIndex = $index;
         if (isset($this->direkturOptions[$index])) {
-            $this->jabatan_id     = $this->direkturOptions[$index]['jabatan_id'];
-            $this->disetujui_oleh = $this->direkturOptions[$index]['karyawan_id'];
+            $this->jabatan_id     = $this->direkturOptions[$index]['jabatan_id'] ?? null;
+            $this->disetujui_oleh = $this->direkturOptions[$index]['karyawan_id'] ?? null;
         }
     }
 
@@ -177,9 +191,12 @@ class Add extends Component
             $nextNo = ((int) $matches[1]) + 1;
         }
 
+        $jabatanId = ($this->jabatan_id && Jabatan::where('id', $this->jabatan_id)->exists()) ? $this->jabatan_id : null;
+        $disetujuiOleh = ($this->disetujui_oleh && Karyawan::where('id', $this->disetujui_oleh)->exists()) ? $this->disetujui_oleh : null;
+
         $formattedNo = SuratTemplateNomor::generateNomor(
             'balasan_pkl',
-            $this->jabatan_id,
+            $jabatanId,
             $this->tgl,
             $nextNo
         );
@@ -203,8 +220,8 @@ class Add extends Component
                 'snap_biaya_praktik'   => $this->snap_biaya_praktik,
                 'snap_biaya_orientasi' => $this->snap_biaya_orientasi,
                 'snap_nomor_sk'        => $this->snap_nomor_sk,
-                'jabatan_id'           => $this->jabatan_id,
-                'disetujui_oleh'       => $this->disetujui_oleh,
+                'jabatan_id'           => $jabatanId,
+                'disetujui_oleh'       => $disetujuiOleh,
                 'status'               => 'pending',
                 'created_by'           => auth()->id(),
             ]);

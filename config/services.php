@@ -42,11 +42,12 @@ return [
     ],
 
     'docstore' => [
-        'base_url'     => env('DOCSTORE_BASE_URL', 'http://localhost:8000'),
-        'api_url'      => env('DOCSTORE_API_URL', 'http://localhost:8000/api'),
-        'client_id'    => env('DOCSTORE_OAUTH_CLIENT_ID', ''),
-        'client_secret'=> env('DOCSTORE_OAUTH_CLIENT_SECRET', ''),
-        'hmac_secret'  => env('DOCSTORE_HMAC_SECRET', ''),
-        'verify_ssl'   => env('DOCSTORE_VERIFY_SSL', false),
+        'base_url'       => env('DOCSTORE_BASE_URL', 'http://localhost:8000'),
+        'api_url'        => env('DOCSTORE_API_URL', 'http://localhost:8000/api'),
+        'verify_app_url' => env('VERIFY_APP_URL', 'https://verify.makroboi.site'),
+        'client_id'      => env('DOCSTORE_OAUTH_CLIENT_ID', ''),
+        'client_secret'  => env('DOCSTORE_OAUTH_CLIENT_SECRET', ''),
+        'hmac_secret'    => env('DOCSTORE_HMAC_SECRET', ''),
+        'verify_ssl'     => env('DOCSTORE_VERIFY_SSL', false),
     ],
 ];

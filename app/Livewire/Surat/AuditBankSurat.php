@@ -186,7 +186,7 @@ class AuditBankSurat extends Component
 
     public function getVerifyUrl(string $docstoreKey): string
     {
-        $verifyBaseUrl = env('VERIFY_APP_URL', 'http://localhost:5173');
+        $verifyBaseUrl = config('services.docstore.verify_app_url', env('VERIFY_APP_URL', 'https://verify.makroboi.site'));
         return rtrim($verifyBaseUrl, '/') . '/?key=' . $docstoreKey;
     }
 

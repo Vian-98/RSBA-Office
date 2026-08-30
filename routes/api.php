@@ -48,7 +48,12 @@ Route::get('desa/{id?}', [WilayahController::class, 'desa'])->name('api.desa');
 // Master Data
 Route::get('ruangan', [RuanganController::class, 'list'])->name('api.ruangan');
 Route::get('supplier', [SupplierController::class, 'list'])->name('api.supplier');
-// Route::get('ruangan', [RuanganController::class, 'list'])->name('api.ruangan');
+
+// Public Ticketing & Pengaduan Fasilitas Portal
+Route::prefix('public/tickets')->name('api.public.tickets.')->group(function () {
+    Route::post('/', [\App\Http\Controllers\Api\PublicTicketController::class, 'store'])->name('store');
+    Route::get('/{trackingCode}', [\App\Http\Controllers\Api\PublicTicketController::class, 'show'])->name('show');
+});
 
 Route::prefix('barang')
     ->name('api.barang.')

@@ -137,6 +137,18 @@ class TableBalasanPkl extends Component implements HasTable, HasForms, HasAction
                             'status' => StatusApproval::CANCELLED,
                             'catatan_approval' => trim(($record->catatan_approval ? $record->catatan_approval . "\n" : '') . '[Dibatalkan]: ' . $data['alasan_batal']),
                         ]);
+
+                        if (class_exists(\App\Services\DocstoreSyncService::class)) {
+                            try {
+                                $sync = app(\App\Services\DocstoreSyncService::class);
+                                $sync->syncDocument($record);
+                                if ($record->docstore_key) {
+                                    $sync->invalidateCache($record->docstore_key);
+                                }
+                            } catch (\Throwable $e) {
+                                \Illuminate\Support\Facades\Log::warning('Docstore cancellation sync failed: ' . $e->getMessage());
+                            }
+                        }
                     })
                     ->visible(function (SuratBalasanPkl $record) use ($userLogin) {
                         $canCancel = $record->status !== StatusApproval::CANCELLED;

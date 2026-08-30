@@ -122,6 +122,18 @@ class TablePerintahTugas extends Component implements HasTable, HasForms, HasAct
                         $record->update([
                             'status' => StatusApproval::CANCELLED,
                         ]);
+
+                        if (class_exists(\App\Services\DocstoreSyncService::class)) {
+                            try {
+                                $sync = app(\App\Services\DocstoreSyncService::class);
+                                $sync->syncDocument($record);
+                                if ($record->docstore_key) {
+                                    $sync->invalidateCache($record->docstore_key);
+                                }
+                            } catch (\Throwable $e) {
+                                \Illuminate\Support\Facades\Log::warning('Docstore cancellation sync failed: ' . $e->getMessage());
+                            }
+                        }
                     })
                     ->visible(function (SuratPerintahTugas $record) use ($userLogin) {
                         return $record->status === StatusApproval::PENDING && $userLogin->hasRole('Super-Admin');

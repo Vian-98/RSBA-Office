@@ -20,9 +20,10 @@ class PdfStamperService
         string $shaHash,
         string $documentNumber = '',
         string $title = '',
-        string $verifyUrl = ''
+        string $verifyUrl = '',
+        float $opacityPercent = 100.0
     ): string {
-        $stampImgPath = $this->generateSealImage($signerName, $signedAtDate, $shaHash, $verifyUrl);
+        $stampImgPath = $this->generateSealImage($signerName, $signedAtDate, $shaHash, $verifyUrl, $opacityPercent);
 
         try {
             $pdf = new Fpdi();
@@ -95,7 +96,8 @@ class PdfStamperService
         string $signerName,
         string $signedAtDate,
         string $shaHash,
-        string $verifyUrl = ''
+        string $verifyUrl = '',
+        float $opacityPercent = 100.0
     ): string {
         $w = 460; // High resolution 2x scale
         $h = 190;
@@ -109,17 +111,21 @@ class PdfStamperService
         imagefill($img, 0, 0, $transparent);
         imagealphablending($img, true);
 
-        // Colors
-        $white = imagecolorallocate($img, 255, 255, 255);
-        $emeraldBorder = imagecolorallocate($img, 5, 150, 105); // #059669
-        $emeraldText = imagecolorallocate($img, 6, 95, 70); // #065f46
-        $emeraldBg = imagecolorallocate($img, 209, 250, 229); // #d1fae5
-        $darkText = imagecolorallocate($img, 15, 23, 42); // #0f172a
-        $mutedText = imagecolorallocate($img, 100, 116, 139); // #64748b
-        $hashBg = imagecolorallocate($img, 238, 242, 255); // #eef2ff
-        $hashText = imagecolorallocate($img, 67, 56, 202); // #4338ca
-        $qrBg = imagecolorallocate($img, 248, 250, 252); // #f8fafc
-        $qrBorder = imagecolorallocate($img, 226, 232, 240); // #e2e8f0
+        // Calculate alpha (0 = solid, 127 = fully transparent)
+        $opacityClamped = max(10.0, min(100.0, $opacityPercent));
+        $bgAlpha = (int) round((100.0 - $opacityClamped) * 1.27);
+        $borderAlpha = (int) round((100.0 - min(100.0, $opacityClamped + 20.0)) * 1.27);
+        $textAlpha = (int) round((100.0 - min(100.0, $opacityClamped + 30.0)) * 1.27);
+
+        // Colors with alpha transparency
+        $white = imagecolorallocatealpha($img, 255, 255, 255, $bgAlpha);
+        $emeraldBorder = imagecolorallocatealpha($img, 5, 150, 105, $borderAlpha); // #059669
+        $emeraldText = imagecolorallocatealpha($img, 6, 95, 70, $textAlpha); // #065f46
+        $emeraldBg = imagecolorallocatealpha($img, 209, 250, 229, $bgAlpha); // #d1fae5
+        $darkText = imagecolorallocatealpha($img, 15, 23, 42, $textAlpha); // #0f172a
+        $mutedText = imagecolorallocatealpha($img, 100, 116, 139, $textAlpha); // #64748b
+        $qrBg = imagecolorallocatealpha($img, 248, 250, 252, $bgAlpha); // #f8fafc
+        $qrBorder = imagecolorallocatealpha($img, 226, 232, 240, $borderAlpha); // #e2e8f0
 
         // White card background with rounded rectangle
         $this->imagefilledroundedrect($img, 0, 0, $w - 1, $h - 1, 20, $white);

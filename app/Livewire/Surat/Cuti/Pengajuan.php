@@ -18,7 +18,7 @@ class Pengajuan extends Component
     public SuratCutiForm $form;
 
     #[Locked]
-    public ?Karyawan $karyawan;
+    public ?Karyawan $karyawan = null;
 
     // public $options_urgensi;
 

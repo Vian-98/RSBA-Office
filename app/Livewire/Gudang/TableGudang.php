@@ -43,7 +43,6 @@ class TableGudang extends Component implements HasTable, HasForms, HasActions
                     ->label('Stoks')
                     ->color('gray')
                     ->icon('tabler-file-excel')
-                    ->tooltip('Stok Tersedia')
                     ->action(
                         fn() => $this->downloadStok()
                     ),
@@ -169,7 +168,10 @@ class TableGudang extends Component implements HasTable, HasForms, HasActions
 
     public function downloadStok()
     {
-        // TODO
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\StokGudangExport, 
+            'Data_Stok_Gudang_' . date('Y-m-d_H-i') . '.xlsx'
+        );
     }
 
     public function modalForm($modal, $id)

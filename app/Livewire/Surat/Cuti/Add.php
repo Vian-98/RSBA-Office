@@ -17,10 +17,11 @@ class Add extends Component
     public SuratCutiForm $form;
 
     #[Locked]
-    public ?Karyawan $karyawan;
+    public ?Karyawan $karyawan = null;
 
     public function mount()
     {
+        $this->karyawan = null;
         $this->form->initOptionsUrgensi();
     }
 

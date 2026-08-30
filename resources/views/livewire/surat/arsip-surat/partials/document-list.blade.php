@@ -78,7 +78,7 @@
                     </button>
 
                     <a 
-                        href="{{ rtrim(env('VERIFY_APP_URL', 'http://localhost:5173'), '/') }}/?key={{ $doc['docstore_key'] }}" 
+                        href="{{ rtrim(config('services.docstore.verify_app_url', env('VERIFY_APP_URL', 'https://verify.makroboi.site')), '/') }}/?key={{ $doc['docstore_key'] }}" 
                         target="_blank" 
                         class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
                         title="Buka Portal Verifikasi Publik"

@@ -95,10 +95,15 @@ class KaryawanController extends Controller
             $isSameBagian = ($pemohonBagian && $bagianId == $pemohonBagian)
                 || ($pemohonRuangan && $k->ruangan_id == $pemohonRuangan);
 
+            $desc = null;
+            if ($jab?->nama) {
+                $desc = $jab->nama . ($namaBagian ? ' · ' . $namaBagian : '');
+            }
+
             return [
                 'id'          => $k->id,
                 'label'       => $k->full_nama,
-                'description' => ($jab?->nama ?? '-') . ($namaBagian ? ' · ' . $namaBagian : ''),
+                'description' => $desc,
                 'tingkat'     => $tingkat,
                 'same_bagian' => $isSameBagian,
             ];
@@ -122,6 +127,43 @@ class KaryawanController extends Controller
                 'label' => 'Lainnya',
                 'value' => $lainnya->toArray(),
             ];
+        }
+
+        // Fallback jika belum ada pejabat dengan jabatan terstruktur yang terdaftar di sdm_kary_jabatan
+        if (empty($result)) {
+            $fallbackQuery = Karyawan::with(['jabatan.bagian', 'ruangans'])
+                ->select('sdm_karyawan.id', 'sdm_karyawan.nama', 'sdm_karyawan.gelar_depan', 'sdm_karyawan.gelar_belakang', 'sdm_karyawan.ruangan_id')
+                ->whereHas('user')
+                ->when($search, fn($q) => $q->where('sdm_karyawan.nama', 'like', "%{$search}%"))
+                ->orderBy('sdm_karyawan.nama')
+                ->get();
+
+            if ($fallbackQuery->isEmpty()) {
+                $fallbackQuery = Karyawan::when($search, fn($q) => $q->where('nama', 'like', "%{$search}%"))
+                    ->orderBy('nama')
+                    ->get();
+            }
+
+            $fallbackItems = $fallbackQuery->map(function ($k) {
+                $jab = $k->jabatan?->first();
+                $namaBagian = $jab?->bagian?->nama;
+                $desc = $jab?->nama ? ($jab->nama . ($namaBagian ? ' · ' . $namaBagian : '')) : null;
+
+                return [
+                    'id'          => $k->id,
+                    'label'       => $k->full_nama,
+                    'description' => $desc,
+                    'tingkat'     => 99,
+                    'same_bagian' => false,
+                ];
+            })->values();
+
+            if ($fallbackItems->isNotEmpty()) {
+                $result[] = [
+                    'label' => 'Pilihan Pejabat Penyetuju (ACC)',
+                    'value' => $fallbackItems->toArray(),
+                ];
+            }
         }
 
         return response()->json($result);

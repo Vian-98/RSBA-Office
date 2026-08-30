@@ -226,6 +226,19 @@ class DigitalSignatureService
         return [];
     }
 
+    public function getPathP12(int $userId, ?string $filename = null): string
+    {
+        if ($filename && str_starts_with($filename, 'vault://')) {
+            return $filename;
+        }
+
+        if ($filename && \Illuminate\Support\Facades\Storage::disk('certs')->exists($filename)) {
+            return \Illuminate\Support\Facades\Storage::disk('certs')->path($filename);
+        }
+
+        return 'vault://' . $userId;
+    }
+
     public function validatePassword(): bool
     {
         return true;

@@ -318,7 +318,7 @@
     </x-ts:card>
 
     <!-- Modal Revisi Jam / Tautan SDM -->
-    <x-ts:modal id="modal-revisi-absensi" title="Revisi Data Absensi Karyawan" size="md">
+    <x-ts:modal wire="showEditModal" title="Revisi Data Absensi Karyawan" size="md">
         <form wire:submit.prevent="simpanRevisi">
             <div class="space-y-4">
                 <div class="bg-gray-50 p-3 rounded-lg border text-xs">
@@ -359,7 +359,7 @@
             </div>
 
             <div class="mt-6 flex justify-end gap-2 border-t pt-4">
-                <x-ts:button outline color="gray" sm type="button" x-on:click="$dispatch('close-modal', {id: 'modal-revisi-absensi'})">Batal</x-ts:button>
+                <x-ts:button outline color="gray" sm type="button" wire:click="$set('showEditModal', false)">Batal</x-ts:button>
                 <x-ts:button color="primary" sm type="submit" loading="simpanRevisi">Simpan Revisi</x-ts:button>
             </div>
         </form>

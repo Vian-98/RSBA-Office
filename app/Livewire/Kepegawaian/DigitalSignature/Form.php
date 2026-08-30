@@ -35,6 +35,7 @@ class Form extends Component
     public float $stamp_x = 70.0;
     public float $stamp_y = 75.0;
     public int $stamp_scale = 100;
+    public int $stamp_opacity = 90;
 
     // Multi-tier signing properties
     public array $signer_ids = [];
@@ -172,7 +173,10 @@ class Form extends Component
     public function getHighestRankSignerNameProperty(): string
     {
         $user = $this->resolveHighestRankUser($this->signer_ids);
-        return $user ? $user->name : (auth()->user()?->name ?? 'Penandatangan Digital');
+        if ($user) {
+            return $user->karyawan?->nama ?? $user->karyawan?->full_nama ?? $user->name ?? 'Penandatangan Digital';
+        }
+        return auth()->user()?->karyawan?->nama ?? auth()->user()?->name ?? 'Penandatangan Digital';
     }
 
     public function setPresetPosition($preset)
@@ -360,12 +364,13 @@ class Form extends Component
                 pctX: (float) $this->stamp_x,
                 pctY: (float) $this->stamp_y,
                 scalePercent: (float) $this->stamp_scale,
-                signerName: $highestRankUser->name,
+                signerName: $highestRankUser->karyawan?->nama ?? $highestRankUser->name ?? 'Penandatangan Digital',
                 signedAtDate: date('d M Y H:i') . ' WIB',
                 shaHash: $byteCounterHash,
                 documentNumber: $this->document_number,
                 title: $this->title,
-                verifyUrl: $verifyUrl
+                verifyUrl: $verifyUrl,
+                opacityPercent: (float) ($this->stamp_opacity ?? 90)
             );
 
             $stampedByteHash = hash('sha256', $stampedPdfBytes);
@@ -383,6 +388,7 @@ class Form extends Component
                 'stamp_x'        => $this->stamp_x,
                 'stamp_y'        => $this->stamp_y,
                 'stamp_scale'    => $this->stamp_scale,
+                'stamp_opacity'  => $this->stamp_opacity,
                 'user_note'      => $this->keterangan,
                 'signer_ids'     => $this->signer_ids,
             ];

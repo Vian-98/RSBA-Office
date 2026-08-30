@@ -250,7 +250,7 @@
 
                 @if ($selectedDocument->docstore_key)
                     <div class="pt-3 border-t border-slate-200 flex justify-end">
-                        <a href="{{ rtrim(env('VERIFY_APP_URL', 'http://localhost:5173'), '/') }}/?key={{ $selectedDocument->docstore_key }}" 
+                        <a href="{{ rtrim(config('services.docstore.verify_app_url', env('VERIFY_APP_URL', 'https://verify.makroboi.site')), '/') }}/?key={{ $selectedDocument->docstore_key }}" 
                            target="_blank" 
                            class="inline-flex items-center px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-xs">
                             Buka Portal Verifikasi Publik

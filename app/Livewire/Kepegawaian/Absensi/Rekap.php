@@ -83,6 +83,93 @@ class Rekap extends Component
         $this->showGlobalHistoryModal = false;
     }
 
+    public function openOtModal($karyawanId)
+    {
+        $karyawan = Karyawan::find($karyawanId);
+        if (!$karyawan) return;
+
+        $this->selectedOtKaryawan = $karyawan->nama;
+
+        $query = JadwalKerjaDetail::where('karyawan_id', $karyawanId)
+            ->leftJoin('sdm_jadwal_shift', 'sdm_jadwal_kerja_detail.shift_id', '=', 'sdm_jadwal_shift.id')
+            ->select([
+                'sdm_jadwal_kerja_detail.id',
+                'sdm_jadwal_kerja_detail.tanggal',
+                'sdm_jadwal_kerja_detail.absen_masuk_at',
+                'sdm_jadwal_kerja_detail.absen_keluar_at',
+                'sdm_jadwal_kerja_detail.menit_overtime',
+                'sdm_jadwal_kerja_detail.shift_id',
+                'sdm_jadwal_shift.jam_masuk as shift_jam_masuk',
+                'sdm_jadwal_shift.jam_keluar as shift_jam_keluar',
+                'sdm_jadwal_shift.lintas_hari as shift_lintas_hari',
+            ]);
+
+        if ($this->mode === 'bulanan') {
+            $query->whereMonth('tanggal', $this->bulan)
+                  ->whereYear('tanggal', $this->tahun);
+        } else {
+            if ($this->tanggal_spesifik) {
+                $query->whereDate('tanggal', $this->tanggal_spesifik);
+            } else {
+                $query->whereDate('tanggal', date('Y-m-d'));
+            }
+        }
+
+        $records = $query->orderBy('tanggal', 'asc')->get();
+
+        $details = [];
+        $totalMenit = 0;
+
+        foreach ($records as $row) {
+            $tanggalObj = Carbon::parse($row->tanggal);
+            $overtimeMenit = 0;
+            $overtimeKeterangan = '';
+
+            if ($row->menit_overtime > 0) {
+                $overtimeMenit = (int) $row->menit_overtime;
+                $overtimeKeterangan = $row->shift_id ? "Pulang terlambat" : "Tugas hari Libur/OFF";
+            } elseif ($row->absen_masuk_at && $row->absen_keluar_at) {
+                $masuk = Carbon::parse($row->absen_masuk_at);
+                $keluar = Carbon::parse($row->absen_keluar_at);
+
+                if ($row->shift_id && $row->shift_jam_keluar) {
+                    $jamKeluar = Carbon::parse($row->shift_jam_keluar);
+                    $targetCheckout = Carbon::parse($tanggalObj->format('Y-m-d') . ' ' . $jamKeluar->format('H:i:s'));
+                    if ($row->shift_lintas_hari || $jamKeluar->lt(Carbon::parse($row->shift_jam_masuk))) {
+                        $targetCheckout->addDay();
+                    }
+                    if ($keluar->gt($targetCheckout)) {
+                        $overtimeMenit = abs($keluar->diffInMinutes($targetCheckout));
+                        $overtimeKeterangan = "Pulang terlambat";
+                    }
+                } else {
+                    $overtimeMenit = abs($keluar->diffInMinutes($masuk));
+                    $overtimeKeterangan = "Tugas hari Libur/OFF";
+                }
+            }
+
+            if ($overtimeMenit > 0) {
+                $totalMenit += $overtimeMenit;
+                $details[] = [
+                    'tanggal' => $tanggalObj->translatedFormat('d M Y'),
+                    'menit' => $overtimeMenit,
+                    'keterangan' => $overtimeKeterangan,
+                ];
+            }
+        }
+
+        $this->selectedOtDetails = $details;
+        $h = floor($totalMenit / 60);
+        $m = $totalMenit % 60;
+        $this->selectedOtFormatted = $h > 0 ? "Total: {$h}j {$m}m" : "Total: {$m}m";
+        $this->showOtModal = true;
+    }
+
+    public function closeOtModal()
+    {
+        $this->showOtModal = false;
+    }
+
     public function editRecord($id)
     {
         $record = JadwalKerjaDetail::findOrFail($id);

@@ -42,37 +42,49 @@ class TableCuti extends Component implements HasTable, HasForms, HasActions
                     ->label('No Surat')
                     ->searchable()
                     ->sortable()
+                    ->weight('bold')
                     ->copyable(),
+
                 TextColumn::make('karyawan.nama')
                     ->label('Nama Karyawan')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap(),
 
                 TextColumn::make('jenis.nama')
-                    ->label('Urgensi'),
+                    ->label('Jenis Cuti')
+                    ->badge()
+                    ->color('info')
+                    ->sortable(),
 
                 TextColumn::make('lama_cuti')
                     ->label('Lama Cuti')
-                    ->formatStateUsing(fn($record) => $record->lama_cuti . " Hari")
+                    ->formatStateUsing(fn($record) => "{$record->lama_cuti} Hari")
                     ->action(
                         fn($record, $livewire) => $livewire->modal(
                             modal: 'detil-surat-cuti',
                             id: $record->getKey()
                         )
                     ),
+
                 TextColumn::make('tgl_mulai')
-                    ->label('Tgl Mulai'),
+                    ->label('Tgl Mulai')
+                    ->date('d M Y')
+                    ->sortable(),
 
                 TextColumn::make('tgl_akhir')
-                    ->label('Tgl Akhir'),
+                    ->label('Tgl Akhir')
+                    ->date('d M Y')
+                    ->sortable(),
 
                 TextColumn::make('status')
                     ->label('Status')
                     ->formatStateUsing(
-                        fn($state) => $state->nama()
+                        fn(StatusApproval $state) => $state->nama()
                     )
                     ->badge()
-                    ->color(fn($state) => $state->color())
+                    ->color(fn(StatusApproval $state) => $state->color())
+                    ->sortable()
                     ->action(
                         fn($record, $livewire) => $livewire->modal(
                             modal: 'modal-status-cuti',

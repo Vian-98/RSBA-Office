@@ -20,9 +20,14 @@ class DatabaseSeeder extends Seeder
             SuperAdminSignatureSeeder::class,      // 5. Super-Admin Digital Signature Certificate
             PerusahaanSeeder::class,               // 6. RS Bintang Amin Profile & Identity
             WilayahSeeder::class,                  // 7. Master Wilayah Indonesia (Provinsi, Kab, Kec, Desa)
-            CutiJenisSeeder::class,                // 8. Master 4 Jenis Cuti Resmi
+            CutiJenisSeeder::class,                // 8. Master 3 Jenis Cuti Resmi
             SuratKategoriArsipSeeder::class,       // 9. Master Kategori Arsip Surat Dinas
             JadwalSeeder::class,                   // 10. Master 4 Shift Kerja & Aturan Dasar
+            UmDataSeeder::class,                   // 11. Master Kategori & Satuan Barang Umum
+            UmumSeeder::class,                     // 12. Master Barang & Transaksi Umum
+            PayrollSeeder::class,                  // 13. Master Tunjangan Golongan & Config Gaji
+            SdmPayrollGolonganMatrixSeeder::class, // 14. Matrix Penentuan Golongan (Pendidikan x Masa Kerja)
+            PayrollPph21ReferenceSeeder::class,    // 15. Master Aturan Pajak PPh 21 (PTKP, TER, Pasal 17)
         ];
 
         foreach ($mainSeeders as $seeder) {

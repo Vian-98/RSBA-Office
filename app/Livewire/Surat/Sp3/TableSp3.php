@@ -38,13 +38,8 @@ class TableSp3 extends Component implements HasTable, HasForms, HasActions
 
         return $table
             ->query(
-<<<<<<< HEAD
                 SuratSp3::withSum('details', 'nominal')->with(['approvals', 'createdBy', 'verifikasiKeuangan', 'ttdAtasan'])
-                    ->when(!$userLogin->hasRole('Super-Admin'), function ($query) use ($userLogin) {
-=======
-                SuratSp3::withSum('details', 'nominal')->with(['approvals', 'createdBy'])
-                    ->when(!$userLogin->can('approve-kepegawaian-sp3'), function ($query) use ($userLogin) {
->>>>>>> upstream/staging-master
+                    ->when(!($userLogin->hasRole('Super-Admin') || $userLogin->can('approve-kepegawaian-sp3')), function ($query) use ($userLogin) {
                         $jabatanId = $userLogin->karyawan?->jabatan?->first()?->id;
                         $karyawanId = $userLogin->karyawan_id;
                         $userId = $userLogin->id;

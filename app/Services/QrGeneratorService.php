@@ -36,15 +36,16 @@ class QrGeneratorService
      */
     public function getDocstoreVerifyUrl(string $docstoreKey): string
     {
-        $verifyBaseUrl = env('VERIFY_APP_URL', 'http://localhost:5173');
+        $verifyBaseUrl = config('services.docstore.verify_app_url', env('VERIFY_APP_URL', 'https://verify.makroboi.site'));
         return rtrim($verifyBaseUrl, '/') . '/?key=' . $docstoreKey;
     }
 
     /**
-     * Build public verification URL untuk signature hash (legacy — backward compatible).
+     * Build public verification URL untuk signature hash (legacy & direct scan).
      */
     public function getVerificationUrl(string $qrHash): string
     {
-        return url('/verifikasi-surat/' . $qrHash);
+        $verifyBaseUrl = config('services.docstore.verify_app_url', env('VERIFY_APP_URL', 'https://verify.makroboi.site'));
+        return rtrim($verifyBaseUrl, '/') . '/?key=' . $qrHash;
     }
 }

@@ -190,6 +190,11 @@
             {{-- 1 ENTER --}}
             <div style="height: 14px;"></div>
 
+            @php
+                $statusSurat = $suratBalasanPkl->status?->value ?? (string)$suratBalasanPkl->status;
+                $isApproved = ($statusSurat === 'approved');
+            @endphp
+
             {{-- Kolom TTD Direktur --}}
             <div style="text-align: left; font-size: 11pt; line-height: 1.35; margin: 0;">
                 <div style="font-weight: bold;">RS. Bintang Amin</div>
@@ -197,11 +202,17 @@
                 @if($qrCode)
                     <div style="padding: 4px 0;">
                         <img src="data:image/png;base64,{{ $qrCode }}" style="width: 58px; height: 58px; display: block;" alt="QR Code Verifikasi">
+                        @if(!$isApproved)
+                            <div style="font-size: 7.5pt; font-weight: bold; color: #b45309; padding-top: 2px; letter-spacing: 0.02em;">[ DRAF / MENUNGGU PERSETUJUAN ]</div>
+                        @endif
                     </div>
                 @else
                     <div style="height: 55px;"></div>
                 @endif
                 <div style="font-weight: bold;">{{ $namaDirektur }}</div>
+                @if(!$isApproved)
+                    <div style="font-size: 8pt; color: #64748b; font-style: italic;">(Menunggu Otorisasi)</div>
+                @endif
             </div>
         </div>
 

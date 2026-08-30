@@ -261,14 +261,16 @@ class Jabatan extends Model
             $dirKaryawan = \App\Models\Sdm\Karyawan::where('nama', 'LIKE', '%rachmawati%')->first()
                 ?? \App\Models\Sdm\Karyawan::first();
 
-            $list[] = [
-                'jabatan_id'   => $dirJabatan?->id ?? 1,
-                'jabatan_nama' => $dirJabatan?->nama ?? 'Direktur',
-                'karyawan_id'  => $dirKaryawan?->id ?? 1,
-                'nama'         => $dirKaryawan?->full_nama ?? $dirKaryawan?->nama ?? 'dr. Rachmawati, MPH',
-                'nip'          => $dirKaryawan?->nip ?? '24170002',
-                'label'        => ($dirKaryawan?->full_nama ?? 'dr. Rachmawati, MPH') . ' (Direktur)',
-            ];
+            if ($dirJabatan || $dirKaryawan) {
+                $list[] = [
+                    'jabatan_id'   => $dirJabatan?->id,
+                    'jabatan_nama' => $dirJabatan?->nama ?? 'Direktur',
+                    'karyawan_id'  => $dirKaryawan?->id,
+                    'nama'         => $dirKaryawan?->full_nama ?? $dirKaryawan?->nama ?? 'dr. Rachmawati, MPH',
+                    'nip'          => $dirKaryawan?->nip ?? '-',
+                    'label'        => ($dirKaryawan?->full_nama ?? $dirKaryawan?->nama ?? 'dr. Rachmawati, MPH') . ' (' . ($dirJabatan?->nama ?? 'Direktur') . ')',
+                ];
+            }
         }
 
         return $list;

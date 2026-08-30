@@ -79,8 +79,8 @@ class Add extends Component
     {
         $this->selectedDirekturIndex = $index;
         if (isset($this->direkturOptions[$index])) {
-            $this->jabatan_id     = $this->direkturOptions[$index]['jabatan_id'];
-            $this->disetujui_oleh = $this->direkturOptions[$index]['karyawan_id'];
+            $this->jabatan_id     = $this->direkturOptions[$index]['jabatan_id'] ?? null;
+            $this->disetujui_oleh = $this->direkturOptions[$index]['karyawan_id'] ?? null;
         }
     }
 
@@ -109,9 +109,12 @@ class Add extends Component
             $nextNo = ((int) $matches[1]) + 1;
         }
 
+        $jabatanId = ($this->jabatan_id && Jabatan::where('id', $this->jabatan_id)->exists()) ? $this->jabatan_id : null;
+        $disetujuiOleh = ($this->disetujui_oleh && Karyawan::where('id', $this->disetujui_oleh)->exists()) ? $this->disetujui_oleh : null;
+
         $formattedNo = SuratTemplateNomor::generateNomor(
             'perintah_tugas',
-            $this->jabatan_id,
+            $jabatanId,
             $this->tgl,
             $nextNo
         );
@@ -126,8 +129,8 @@ class Add extends Component
                 'hari_tanggal'   => $this->hari_tanggal,
                 'waktu'          => $this->waktu,
                 'tempat'         => $this->tempat,
-                'jabatan_id'     => $this->jabatan_id,
-                'disetujui_oleh' => $this->disetujui_oleh,
+                'jabatan_id'     => $jabatanId,
+                'disetujui_oleh' => $disetujuiOleh,
                 'status'         => 'pending',
                 'created_by'     => auth()->id(),
             ]);

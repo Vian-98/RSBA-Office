@@ -157,6 +157,11 @@
                 Atas perhatian serta kerjasamanya kami ucapkan terimakasih.
             </div>
 
+            @php
+                $statusSurat = $suratPerintahTugas->status?->value ?? (string)$suratPerintahTugas->status;
+                $isApproved = ($statusSurat === 'approved');
+            @endphp
+
             {{-- Kolom Tanda Tangan Direktur --}}
             <div style="text-align: left; font-size: 11pt; line-height: 1.35; margin-top: 10px;">
                 <table style="font-size: 11pt; margin: 0 0 4px 0; border-collapse: collapse; line-height: 1.25;">
@@ -176,6 +181,9 @@
                 @if ($qrCode)
                     <div style="padding: 4px 0;">
                         <img src="data:image/png;base64,{{ $qrCode }}" alt="QR Verifikasi Bank Surat" style="height: 58px; width: 58px; display: block;">
+                        @if(!$isApproved)
+                            <div style="font-size: 7.5pt; font-weight: bold; color: #b45309; padding-top: 2px; letter-spacing: 0.02em;">[ DRAF / MENUNGGU PERSETUJUAN ]</div>
+                        @endif
                     </div>
                 @else
                     <div style="height: 55px;"></div>
@@ -183,6 +191,9 @@
 
                 <div style="font-weight: bold;">{{ $namaDirektur }}</div>
                 <div>{{ $nipDirektur }}</div>
+                @if(!$isApproved)
+                    <div style="font-size: 8pt; color: #64748b; font-style: italic;">(Menunggu Otorisasi)</div>
+                @endif
             </div>
         </div>
 

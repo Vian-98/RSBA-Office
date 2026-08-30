@@ -50,6 +50,13 @@ class User extends Authenticatable
         ];
     }
 
+    public function getNameAttribute(): string
+    {
+        return $this->karyawan?->nama
+            ?? $this->karyawan?->full_nama
+            ?? ($this->email ? explode('@', $this->email)[0] : 'User');
+    }
+
     function karyawan()
     {
         return $this->belongsTo(Karyawan::class, 'karyawan_id');

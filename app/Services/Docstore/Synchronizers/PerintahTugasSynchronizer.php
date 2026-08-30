@@ -103,7 +103,7 @@ class PerintahTugasSynchronizer implements DocumentSynchronizerInterface
         $cert = $userId ? SignatureCerts::where('user_id', $userId)->where('is_active', 1)->first() : null;
 
         $statusVal = $this->mapDocumentStatus($model);
-        $statusText = $statusVal === 'approved' ? 'SIGNED' : ($statusVal === 'rejected' ? 'REJECTED' : 'PENDING');
+        $statusText = $statusVal === 'approved' ? 'SIGNED' : ($statusVal === 'cancelled' ? 'CANCELLED' : ($statusVal === 'rejected' ? 'REJECTED' : 'PENDING'));
 
         $signatures[] = [
             'signer_name'    => optional($model->direktur)->full_nama ?? optional($user)->name ?? 'dr. Rachmawati, MPH',
@@ -129,6 +129,9 @@ class PerintahTugasSynchronizer implements DocumentSynchronizerInterface
         $statusStr = is_object($rawStatus) && isset($rawStatus->value) ? $rawStatus->value : (string) $rawStatus;
         $statusLower = strtolower($statusStr);
 
+        if (in_array($statusLower, ['cancelled', 'dibatalkan', 'batal'])) {
+            return 'cancelled';
+        }
         if (in_array($statusLower, ['rejected', 'ditolak'])) {
             return 'rejected';
         }

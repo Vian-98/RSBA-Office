@@ -13,6 +13,7 @@
                     posX: @entangle('stamp_x'),
                     posY: @entangle('stamp_y'),
                     scale: @entangle('stamp_scale'),
+                    opacity: @entangle('stamp_opacity'),
                     isDragging: false,
                     grabOffsetX: 0,
                     grabOffsetY: 0,

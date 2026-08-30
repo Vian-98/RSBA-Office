@@ -23,6 +23,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (str_starts_with(config('app.url') ?? '', 'https://') || request()->header('X-Forwarded-Proto') === 'https') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // Fix Windows permission issue for compiled views directory
         if (PHP_OS_FAMILY === 'Windows') {
             $viewsDir = config('view.compiled', storage_path('framework/views'));

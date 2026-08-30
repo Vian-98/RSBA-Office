@@ -20,14 +20,16 @@
                 <div class="{{ $border }} mt-2 flex flex-col rounded-md border p-4">
                     <span class="{{ $text }} font-bold"> SN : {{ '.... ' . Str::substr($this->getCertificate['cert_info']->serialNumberHex, -25) }}</span>
                     <span class="{{ $text }} text-sm font-semibold uppercase">Issuer : </span>
-                    @foreach ($this->getCertificate['cert_info']->issuer as $issuer)
-                        <span class="ms-2 text-sm">{{ $issuer }}</span>
-                    @endforeach
-                    <span class="text-sm">
+                    @if (is_iterable($this->getCertificate['cert_info']->issuer))
+                        @foreach ($this->getCertificate['cert_info']->issuer as $issuer)
+                            <span class="ms-2 text-sm">{{ is_string($issuer) ? $issuer : json_encode($issuer) }}</span>
+                        @endforeach
+                    @else
+                        <span class="ms-2 text-sm">{{ $this->getCertificate['cert_info']->issuer ?? 'RS Bintang Amin Authority' }}</span>
+                    @endif
+                    <span class="text-sm mt-2 block">
                         <span> Dibuat : </span>{{ $this->getCertificate['created'] }} <br>
                         <span> Valid Sampai : </span>{{ $this->getCertificate['expired'] }} <br>
-                        <span class="italic text-gray-400">Certificate valid
-                            {{ Carbon\Carbon::parse($this->getCertificate['expired'])->diffForHumans(now(), Carbon\CarbonInterface::DIFF_RELATIVE_AUTO, true, 3) }}.</span>
                     </span>
                 </div>
             </div>

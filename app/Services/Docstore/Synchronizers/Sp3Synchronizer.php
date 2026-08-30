@@ -96,9 +96,9 @@ class Sp3Synchronizer implements DocumentSynchronizerInterface
                 ->latest('id')
                 ->first();
 
-            $cert = SignatureCerts::where('user_id', $approval->user_id)
+            $cert = $approval->user_id ? SignatureCerts::where('user_id', $approval->user_id)
                 ->where('is_active', 1)
-                ->first();
+                ->first() : null;
 
             $statusText = 'PENDING';
             if ($approval->status === 'approved' || $approval->status === 'manual') {
@@ -128,9 +128,20 @@ class Sp3Synchronizer implements DocumentSynchronizerInterface
 
     protected function mapDocumentStatus(SuratSp3 $model): string
     {
+        $rawStatus = $model->status ?? '';
+        $statusStr = is_object($rawStatus) && isset($rawStatus->value) ? $rawStatus->value : (string) $rawStatus;
+        if (in_array(strtolower($statusStr), ['cancelled', 'dibatalkan', 'batal'])) {
+            return 'cancelled';
+        }
+
         $approvals = $model->approvals;
         if ($approvals->isEmpty()) {
             return 'pending';
+        }
+
+        $anyCancelled = $approvals->contains(fn($a) => in_array($a->status, ['cancelled', 'dibatalkan', 'batal']));
+        if ($anyCancelled) {
+            return 'cancelled';
         }
 
         $allApproved = $approvals->every(fn($a) => in_array($a->status, ['approved', 'manual']));
