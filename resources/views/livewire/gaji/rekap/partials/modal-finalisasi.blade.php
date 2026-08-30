@@ -52,6 +52,18 @@
                 </select>
             </div>
             <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Verifikator Keuangan (Tahap 1)</label>
+                <select wire:model.defer="formSp3VerifikatorKeuanganId" class="w-full rounded-lg border-gray-300 text-sm shadow-2xs focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">-- Pilih Verifikator Keuangan --</option>
+                    @foreach($verifikatorKeuanganOptions as $vOpt)
+                        <option value="{{ $vOpt['value'] }}">{{ $vOpt['label'] }}</option>
+                    @endforeach
+                </select>
+                @error('formSp3VerifikatorKeuanganId')
+                    <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span>
+                @enderror
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">Pejabat Menyetujui (Approval SP3)</label>
                 <select wire:model.defer="formSp3JabatanId" class="w-full rounded-lg border-gray-300 text-sm shadow-2xs focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">-- Pilih Pejabat --</option>
@@ -59,6 +71,9 @@
                         <option value="{{ $opt['value'] }}">{{ $opt['label'] }}</option>
                     @endforeach
                 </select>
+                @error('formSp3JabatanId')
+                    <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span>
+                @enderror
             </div>
         </div>
 
