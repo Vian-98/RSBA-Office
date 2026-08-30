@@ -57,10 +57,10 @@
                                 @endif
                             </td>
                             <td class="py-4 px-4 text-right space-x-2">
-                                <x-ts:button wire:click="openModalParaf({{ $item->id }})" size="xs" color="indigo" icon="check-badge">
+                                <x-ts:button wire:click="openModalParaf({{ $item->id }})" x-on:click="$tsui.open('modal-paraf')" size="xs" color="indigo" icon="check-badge">
                                     Tindak Lanjut & Paraf
                                 </x-ts:button>
-                                <x-ts:button href="{{ route('kepegawaian.surat.disposisi.show', $item->disposisi_id) }}" size="xs" color="slate" outline icon="eye">
+                                <x-ts:button href="{{ route('kepegawaian.surat.disposisi.show', $item->surat_disposisi_id) }}" size="xs" color="slate" outline icon="eye">
                                     Detail
                                 </x-ts:button>
                             </td>
@@ -81,7 +81,7 @@
     </div>
 
     <!-- Modal Tindak Lanjut & Paraf -->
-    <x-ts:modal wire:model="modalParaf" title="Tindak Lanjut & Paraf Disposisi">
+    <x-ts:modal wire="modalParaf" id="modal-paraf" title="Tindak Lanjut & Paraf Disposisi">
         @if($selectedDetail)
             <div class="space-y-4">
                 <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl text-xs space-y-1">
@@ -94,7 +94,7 @@
             </div>
         @endif
         <x-slot name="footer">
-            <x-ts:button wire:click="$set('modalParaf', false)" color="slate" outline>Batal</x-ts:button>
+            <x-ts:button wire:click="$set('modalParaf', false)" x-on:click="$tsui.close('modal-paraf')" color="slate" outline>Batal</x-ts:button>
             <x-ts:button wire:click="submitParaf" color="emerald" icon="check-badge">Simpan & Paraf Digital</x-ts:button>
         </x-slot>
     </x-ts:modal>
