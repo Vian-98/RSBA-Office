@@ -18,14 +18,21 @@
                     Certifacate Digital {{ $this->getCertificate['is_expired'] ? 'Kadaluarsa' : 'Valid' }}
                 </span>
                 <div class="{{ $border }} mt-2 flex flex-col rounded-md border p-4">
-                    <span class="{{ $text }} font-bold"> SN : {{ '.... ' . Str::substr($this->getCertificate['cert_info']->serialNumberHex, -25) }}</span>
-                    <span class="{{ $text }} text-sm font-semibold uppercase">Issuer : </span>
-                    @if (is_iterable($this->getCertificate['cert_info']->issuer))
-                        @foreach ($this->getCertificate['cert_info']->issuer as $issuer)
-                            <span class="ms-2 text-sm">{{ is_string($issuer) ? $issuer : json_encode($issuer) }}</span>
-                        @endforeach
+                    <span class="{{ $text }} font-bold"> SN : {{ '.... ' . Str::substr($this->getCertificate['cert_info']->serialNumberHex ?? ($this->getCertificate['cert_info']->serialNumber ?? 'SN-UNKNOWN'), -25) }}</span>
+                    <span class="{{ $text }} text-sm font-semibold uppercase mt-1">Issuer : </span>
+                    @php
+                        $issuer = $this->getCertificate['cert_info']->issuer ?? null;
+                    @endphp
+                    @if (is_object($issuer) || is_array($issuer))
+                        <div class="ms-2 flex flex-col gap-0.5 text-xs text-slate-700">
+                            @foreach ((array) $issuer as $key => $val)
+                                <span><strong>{{ is_string($key) ? $key . ': ' : '' }}</strong>{{ is_string($val) ? $val : json_encode($val) }}</span>
+                            @endforeach
+                        </div>
+                    @elseif (is_string($issuer))
+                        <span class="ms-2 text-sm">{{ $issuer }}</span>
                     @else
-                        <span class="ms-2 text-sm">{{ $this->getCertificate['cert_info']->issuer ?? 'RS Bintang Amin Authority' }}</span>
+                        <span class="ms-2 text-sm">RS Bintang Amin Authority</span>
                     @endif
                     <span class="text-sm mt-2 block">
                         <span> Dibuat : </span>{{ $this->getCertificate['created'] }} <br>

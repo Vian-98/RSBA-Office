@@ -23,20 +23,49 @@ trait HasPayrollFinalisasiModal
 
     public function mountHasPayrollFinalisasiModal(): void
     {
-        // Load management Jabatans for SP3
-        $this->mengetahuiOptions = Jabatan::whereHas('bagian', function ($query) {
-            $query->where('group', 'manajemen');
-        })->get()->map(function ($item) {
-            return [
-                'label' => $item->nama,
-                'value' => $item->id
-            ];
-        })->toArray();
+        $this->loadMengetahuiOptions();
+    }
+
+    public function loadMengetahuiOptions(): void
+    {
+        $this->mengetahuiOptions = Jabatan::with(['jabatans.karyawan', 'bagian'])
+            ->where(function ($query) {
+                $query->whereIn('tingkat_id', [1, 2, 3])
+                    ->orWhereNull('bagian_id')
+                    ->orWhere('nama', 'like', '%direktur%')
+                    ->orWhere('nama', 'like', '%wadir%')
+                    ->orWhere('nama', 'like', '%kepala%')
+                    ->orWhere('nama', 'like', '%kabag%')
+                    ->orWhere('nama', 'like', '%kabid%');
+            })
+            ->get()
+            ->map(function ($item) {
+                $pejabatName = $item->jabatans->pluck('karyawan.nama')->filter()->first();
+                $label = $item->nama . ($pejabatName ? " ({$pejabatName})" : '');
+                return [
+                    'label' => $label,
+                    'value' => $item->id
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        // Fallback jika tidak ada filter yang cocok, ambil seluruh jabatan yang ada
+        if (empty($this->mengetahuiOptions)) {
+            $this->mengetahuiOptions = Jabatan::all()->map(function ($item) {
+                return [
+                    'label' => $item->nama,
+                    'value' => $item->id
+                ];
+            })->toArray();
+        }
     }
 
     #[On('trigger-open-finalisasi-modal')]
     public function openFinalisasiModal(string $periode, int $count, float $potongan, float $gajiBersih): void
     {
+        $this->loadMengetahuiOptions();
+
         $this->finalisasiPeriode = $periode;
         $this->finalisasiKaryawanCount = $count;
         $this->finalisasiTotalPotongan = $potongan;
@@ -48,7 +77,9 @@ trait HasPayrollFinalisasiModal
         $this->formSp3JabatanId = null;
         if (!empty($this->mengetahuiOptions)) {
             $dirOpt = collect($this->mengetahuiOptions)->first(function ($opt) {
-                return str_contains(strtolower($opt['label']), 'direktur utama');
+                return str_contains(strtolower($opt['label']), 'wadir sdm') 
+                    || str_contains(strtolower($opt['label']), 'wadir')
+                    || str_contains(strtolower($opt['label']), 'direktur');
             });
             if ($dirOpt) {
                 $this->formSp3JabatanId = $dirOpt['value'];

@@ -65,19 +65,20 @@ class RoleSeeder extends Seeder
         $wadirMedis = Role::firstOrCreate(['name' => 'Wadir-Medis-Keperawatan']);
         $wadirSdm   = Role::firstOrCreate(['name' => 'Wadir-SDM-Umum']);
         $wadirKeu   = Role::firstOrCreate(['name' => 'Wadir-Keuangan']);
+        $wadirAlias = Role::firstOrCreate(['name' => 'Wadir']);
         $direktur   = Role::firstOrCreate(['name' => 'Direktur']);
 
         $safeSync($kabid, $executivePermissions);
         $safeSync($wadir, $executivePermissions);
+        $safeSync($wadirAlias, $executivePermissions);
         $safeSync($wadirMedis, $executivePermissions);
         $safeSync($wadirSdm, $executivePermissions);
         $safeSync($wadirKeu, $executivePermissions);
         $safeSync($direktur, $executivePermissions);
 
-
-
         $safeSync($kabid, array_unique(array_merge($executivePermissions, ['approve-jadwal-kabid'])));
         $safeSync($wadir, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir'])));
+        $safeSync($wadirAlias, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir'])));
 
         // 1. SDM permissions
         $sdmKeywords = ['kepegawaian', 'karyawan', 'dokter', 'cuti', 'sp3', 'jasmed', 'akreditasi', 'verifikasi', 'tanda-tangan-digital', 'export-karyawan', 'bagian', 'jabatan', 'ruangan', 'spesialis', 'surat', 'gaji', 'view-master'];
@@ -93,6 +94,9 @@ class RoleSeeder extends Seeder
             ->toArray();
         $safeSync($staffSdm, $sdmSyncedPermissions);
 
+        $kaSdm = Role::firstOrCreate(['name' => 'Ka. SDM']);
+        $safeSync($kaSdm, $sdmSyncedPermissions);
+
         // 2. Umum permissions
         $umumKeywords = ['umum', 'supplier', 'kategori', 'satuan', 'penyimpanan', 'barang', 'pembelian', 'distribusi', 'gudang', 'asset', 'opname', 'maintenance', 'pengajuan', 'laporang'];
         $umumPermissions = array_filter($allPermissions, function ($permission) use ($umumKeywords) {
@@ -104,6 +108,12 @@ class RoleSeeder extends Seeder
             return false;
         });
         $safeSync($bagianUmum, array_unique(array_merge($umumPermissions, $commonPermissions)));
+
+        $kaUmum = Role::firstOrCreate(['name' => 'Ka. Umum']);
+        $safeSync($kaUmum, array_unique(array_merge($umumPermissions, $commonPermissions)));
+
+        $teknisi = Role::firstOrCreate(['name' => 'Teknisi']);
+        $safeSync($teknisi, array_unique(array_merge($umumPermissions, $commonPermissions)));
 
         // 3. Keuangan permissions
         $keuanganKeywords = ['keuangan', 'kas', 'rekening', 'transaksi', 'jurnal', 'coa', 'piutang', 'hutang', 'rekanan', 'akuntansi'];

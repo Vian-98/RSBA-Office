@@ -121,6 +121,17 @@ class AturanJadwalService
     }
 
     /**
+     * Alias checkViolations untuk notifikasi dan sistem audit.
+     */
+    public function checkViolations(JadwalKerja $jadwal): array
+    {
+        $rawViolations = $this->validasiJadwal($jadwal);
+        return array_map(function ($msg) {
+            return is_array($msg) ? $msg : ['message' => $msg];
+        }, $rawViolations);
+    }
+
+    /**
      * Kembalikan daftar shift yang valid untuk ruangan dan Bagian jadwal.
      *
      * Shift tanpa mapping Bagian berlaku umum. Jika sebuah shift memiliki
