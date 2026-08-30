@@ -143,7 +143,9 @@ class AturanJadwalService
         $eligibleShiftIds = JadwalShift::query()
             ->where('aktif', true)
             ->where(function ($query) use ($bagianId) {
-                $query->whereDoesntHave('bagians');
+                $query->whereDoesntHave('bagians')
+                      ->orWhere('kode', 'OFF')
+                      ->orWhere('jam_masuk', '00:00:00');
 
                 if ($bagianId) {
                     $query->orWhereHas('bagians', fn ($bagianQuery) =>

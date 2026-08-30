@@ -6,6 +6,7 @@ use App\Enums\StatusJadwalKerja;
 use App\Models\Sdm\JadwalApprovalLog;
 use App\Models\Sdm\JadwalKerja;
 use App\Models\Sdm\JadwalKerjaDetail;
+use App\Models\Sdm\JadwalShift;
 use App\Services\AturanJadwalService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -339,6 +340,19 @@ class Kelola extends Component
             ->map(fn ($id) => (int) $id)
             ->all();
 
+        // Sertakan shift global aktif / shift OFF universal
+        $universalShiftIds = JadwalShift::where('aktif', true)
+            ->where(function ($q) {
+                $q->whereDoesntHave('bagians')
+                  ->orWhere('kode', 'OFF')
+                  ->orWhere('jam_masuk', '00:00:00');
+            })
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $allowedShiftIds = array_values(array_unique(array_merge($allowedShiftIds, $universalShiftIds)));
+
         foreach ($this->state as $shiftId) {
             if ($shiftId !== null && $shiftId !== '' && !in_array((int) $shiftId, $allowedShiftIds, true)) {
                 $this->toast()->error(
@@ -355,6 +369,9 @@ class Kelola extends Component
 
             foreach ($this->state as $detailId => $shiftId) {
                 $detail = JadwalKerjaDetail::find($detailId);
+                if (!$detail) {
+                    continue;
+                }
 
                 $dateStr = $detail->tanggal->format('Y-m-d');
                 $isCuti = isset($this->cutiDates["{$detail->karyawan_id}-{$dateStr}"]);
