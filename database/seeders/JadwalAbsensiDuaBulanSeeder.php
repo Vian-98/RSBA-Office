@@ -223,8 +223,8 @@ class JadwalAbsensiDuaBulanSeeder extends Seeder
 
         // A1. WADIR MEDIS
         [$wadirMedisKary, $wadirMedisUser] = $createPerson(
-            ['nip' => 'DOK-WADIR-001', 'pin_absen' => '2001', 'nama' => 'Dr. Eng. I Muhammad Faisal S.T., M.T.', 'kategori_kerja' => KategoriKerja::REGULER],
-            ['name' => 'Dr. Eng. I Muhammad Faisal S.T., M.T.', 'email' => 'zkii0110011@gmail.com'],
+            ['nip' => '0000000002', 'pin_absen' => 'ADMIN02', 'nama' => 'Muhammad Faisal', 'kategori_kerja' => KategoriKerja::REGULER],
+            ['name' => 'Muhammad Faisal', 'email' => 'faisal@rsba.com'],
             $jabWadirMedis,
             null,
             'Wadir-Medis-Keperawatan'
