@@ -23,13 +23,13 @@
                         <th class="py-3.5 px-4">Perihal</th>
                         <th class="py-3.5 px-4">Instruksi RTL</th>
                         <th class="py-3.5 px-4">Status Tindak Lanjut</th>
-                        <th class="py-3.5 px-4 text-right">Aksi</th>
+                        <th class="py-3.5 px-4 text-right whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($inboxItems as $item)
                         <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition">
-                            <td class="py-4 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                            <td class="py-4 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                                 {{ $item->disposisi->no_agenda ?? '-' }}
                                 <div class="text-xs text-slate-500 font-sans font-normal">
                                     {{ $item->disposisi ? $item->disposisi->created_at->format('d/m/Y H:i') : '' }}
@@ -49,26 +49,28 @@
                                     @if($item->is_arsip) <x-ts:badge color="amber" text="Arsip" /> @endif
                                 </div>
                             </td>
-                            <td class="py-4 px-4">
+                            <td class="py-4 px-4 whitespace-nowrap">
                                 @if($item->status_tindak_lanjut === 'done')
                                     <x-ts:badge color="emerald" icon="check" text="Selesai / Paraf" />
                                 @else
                                     <x-ts:badge color="amber" text="Belum Paraf" />
                                 @endif
                             </td>
-                            <td class="py-4 px-4 text-right space-x-2">
-                                @if($item->status_tindak_lanjut === 'done')
-                                    <x-ts:button size="xs" color="slate" outline disabled icon="check" class="opacity-60 cursor-not-allowed">
-                                        Sudah Diparaf
+                            <td class="py-4 px-4 text-right whitespace-nowrap">
+                                <div class="inline-flex items-center justify-end gap-1.5">
+                                    @if($item->status_tindak_lanjut === 'done')
+                                        <x-ts:button size="xs" color="slate" outline disabled icon="check" class="opacity-60 cursor-not-allowed">
+                                            Sudah Diparaf
+                                        </x-ts:button>
+                                    @else
+                                        <x-ts:button wire:click="openModalParaf({{ $item->id }})" x-on:click="$tsui.open('modal-paraf')" size="xs" color="indigo" icon="check-badge">
+                                            Tindak Lanjut & Paraf
+                                        </x-ts:button>
+                                    @endif
+                                    <x-ts:button href="{{ route('kepegawaian.surat.disposisi.show', $item->surat_disposisi_id) }}" size="xs" color="slate" outline icon="eye">
+                                        Detail
                                     </x-ts:button>
-                                @else
-                                    <x-ts:button wire:click="openModalParaf({{ $item->id }})" x-on:click="$tsui.open('modal-paraf')" size="xs" color="indigo" icon="check-badge">
-                                        Tindak Lanjut & Paraf
-                                    </x-ts:button>
-                                @endif
-                                <x-ts:button href="{{ route('kepegawaian.surat.disposisi.show', $item->surat_disposisi_id) }}" size="xs" color="slate" outline icon="eye">
-                                    Detail
-                                </x-ts:button>
+                                </div>
                             </td>
                         </tr>
                     @empty
