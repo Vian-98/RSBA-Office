@@ -92,16 +92,6 @@ class JadwalAbsensiDuaBulanSeeder extends Seeder
             'toleransi_telat_menit' => 15,
         ]);
 
-        $shiftOff = JadwalShift::firstOrCreate(['kode' => 'OFF'], [
-            'nama'                  => 'Libur Shift / OFF',
-            'jam_masuk'             => '00:00:00',
-            'jam_keluar'            => '00:00:00',
-            'warna'                 => '#EF4444',
-            'lintas_hari'           => false,
-            'aktif'                 => true,
-            'toleransi_telat_menit' => 0,
-        ]);
-
         // ---------------------------------------------------------------------
         // 3. MASTER RUANGAN & ATRIBUT BYPASS DOKTER
         // ---------------------------------------------------------------------
@@ -364,30 +354,33 @@ class JadwalAbsensiDuaBulanSeeder extends Seeder
             $shiftPagi->id,
             $shiftSiang->id,
             $shiftMalam->id,
-            $shiftOff->id,
+            null, // LIBUR (menggunakan opsi default teratas "LIBUR" / shift_id = null)
         ];
 
         $roomsSetup = [
             [
-                'ruangan'     => $ruanganIgd,
-                'koordinator' => $koorIgdKary,
-                'karyawans'   => [$stafIgd1, $stafIgd2],
-                'offset'      => [0, 2], // Person 1 starts Pagi, Person 2 starts Malam
-                'tipe'        => 'karyawan',
+                'ruangan'        => $ruanganIgd,
+                'koordinator'    => $koorIgdKary,
+                'karyawans'      => [$stafIgd1, $stafIgd2],
+                'reguler_staff'  => [$koorIgdKary],
+                'offset'         => [0, 2], // Person 1 starts Pagi, Person 2 starts Malam
+                'tipe'           => 'karyawan',
             ],
             [
-                'ruangan'     => $ruanganVip,
-                'koordinator' => $koorVipKary,
-                'karyawans'   => [$stafVip1, $stafVip2],
-                'offset'      => [1, 3], // Person 1 starts Siang, Person 2 starts OFF
-                'tipe'        => 'karyawan',
+                'ruangan'        => $ruanganVip,
+                'koordinator'    => $koorVipKary,
+                'karyawans'      => [$stafVip1, $stafVip2],
+                'reguler_staff'  => [$koorVipKary],
+                'offset'         => [1, 3], // Person 1 starts Siang, Person 2 starts LIBUR
+                'tipe'           => 'karyawan',
             ],
             [
-                'ruangan'     => $ruanganDokter,
-                'koordinator' => $dokter1,
-                'karyawans'   => [$dokter1, $dokter2],
-                'offset'      => [0, 2], // Dokter 1 starts Pagi, Dokter 2 starts Malam
-                'tipe'        => 'dokter',
+                'ruangan'        => $ruanganDokter,
+                'koordinator'    => $dokter1,
+                'karyawans'      => [$dokter1, $dokter2],
+                'reguler_staff'  => [],
+                'offset'         => [0, 2], // Dokter 1 starts Pagi, Dokter 2 starts Malam
+                'tipe'           => 'dokter',
             ],
         ];
 
@@ -420,6 +413,7 @@ class JadwalAbsensiDuaBulanSeeder extends Seeder
                 // Bersihkan detail lama jika ada
                 JadwalKerjaDetail::where('jadwal_kerja_id', $jadwal->id)->delete();
 
+                // 1. Shift Workers
                 foreach ($roomInfo['karyawans'] as $kIdx => $kary) {
                     $offset = $roomInfo['offset'][$kIdx] ?? 0;
 
@@ -437,13 +431,48 @@ class JadwalAbsensiDuaBulanSeeder extends Seeder
                             'updated_at'      => now(),
                         ]);
 
+                        $isOff = empty($chosenShiftId);
+                        $shiftObj = null;
+                        if ($chosenShiftId == $shiftPagi->id) $shiftObj = $shiftPagi;
+                        elseif ($chosenShiftId == $shiftSiang->id) $shiftObj = $shiftSiang;
+                        elseif ($chosenShiftId == $shiftMalam->id) $shiftObj = $shiftMalam;
+
                         $allScheduleDetails[] = [
                             'bulan'       => $bln,
                             'tanggal'     => $tgl,
                             'day'         => $day,
                             'karyawan'    => $kary,
-                            'shift'       => $chosenShiftId == $shiftPagi->id ? $shiftPagi : ($chosenShiftId == $shiftSiang->id ? $shiftSiang : ($chosenShiftId == $shiftMalam->id ? $shiftMalam : $shiftOff)),
-                            'is_off'      => $chosenShiftId == $shiftOff->id,
+                            'shift'       => $shiftObj,
+                            'is_off'      => $isOff,
+                            'ruangan'     => $rng,
+                        ];
+                    }
+                }
+
+                // 2. Regular Workers (Koordinator Ruangan: Senin-Jumat REGULER, Sabtu-Minggu LIBUR)
+                foreach ($roomInfo['reguler_staff'] as $kary) {
+                    for ($day = 1; $day <= $totalDays; $day++) {
+                        $tgl = sprintf('2026-%02d-%02d', $bln, $day);
+                        $cDate = Carbon::parse($tgl);
+                        $isWeekend = $cDate->isSaturday() || $cDate->isSunday();
+                        $chosenShiftId = $isWeekend ? null : $shiftReguler->id;
+
+                        $detail = JadwalKerjaDetail::create([
+                            'jadwal_kerja_id' => $jadwal->id,
+                            'karyawan_id'     => $kary->id,
+                            'shift_id'        => $chosenShiftId,
+                            'tanggal'         => $tgl,
+                            'created_at'      => now(),
+                            'updated_at'      => now(),
+                        ]);
+
+                        $allScheduleDetails[] = [
+                            'bulan'       => $bln,
+                            'tanggal'     => $tgl,
+                            'day'         => $day,
+                            'karyawan'    => $kary,
+                            'shift'       => $chosenShiftId ? $shiftReguler : null,
+                            'is_off'      => $isWeekend,
                             'ruangan'     => $rng,
                         ];
                     }

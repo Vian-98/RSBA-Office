@@ -1,281 +1,369 @@
 ﻿No.,"Employee ID","First Name",Department,Date,Time,"Punch State","Data Sources"
-1,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",01-01-2026,06:53,"Check In",Device
-2,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",01-01-2026,14:07,"Check Out",Device
-3,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",02-01-2026,13:55,"Check In",Device
-4,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",02-01-2026,21:05,"Check Out",Device
-5,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",03-01-2026,20:57,"Check In",Device
-6,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",04-01-2026,07:07,"Check Out",Device
-7,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",05-01-2026,06:49,"Check In",Device
-8,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",05-01-2026,14:08,"Check Out",Device
-9,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",06-01-2026,13:48,"Check In",Device
-10,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",06-01-2026,21:08,"Check Out",Device
-11,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",07-01-2026,20:51,"Check In",Device
-12,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",08-01-2026,07:05,"Check Out",Device
-13,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",09-01-2026,06:53,"Check In",Device
-14,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",09-01-2026,14:10,"Check Out",Device
-15,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",10-01-2026,13:56,"Check In",Device
+1,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",01-01-2026,06:51,"Check In",Device
+2,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",01-01-2026,14:05,"Check Out",Device
+3,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",02-01-2026,13:48,"Check In",Device
+4,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",02-01-2026,21:06,"Check Out",Device
+5,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",03-01-2026,20:51,"Check In",Device
+6,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",04-01-2026,07:08,"Check Out",Device
+7,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",05-01-2026,06:50,"Check In",Device
+8,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",05-01-2026,14:07,"Check Out",Device
+9,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",06-01-2026,13:53,"Check In",Device
+10,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",06-01-2026,21:09,"Check Out",Device
+11,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",07-01-2026,20:49,"Check In",Device
+12,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",08-01-2026,07:02,"Check Out",Device
+13,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",09-01-2026,06:52,"Check In",Device
+14,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",09-01-2026,14:07,"Check Out",Device
+15,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",10-01-2026,13:51,"Check In",Device
 16,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",10-01-2026,21:04,"Check Out",Device
-17,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",11-01-2026,20:53,"Check In",Device
-18,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",12-01-2026,07:10,"Check Out",Device
+17,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",11-01-2026,20:54,"Check In",Device
+18,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",12-01-2026,07:05,"Check Out",Device
 19,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",13-01-2026,06:57,"Check In",Device
-20,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",13-01-2026,14:07,"Check Out",Device
-21,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",14-01-2026,13:49,"Check In",Device
-22,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",14-01-2026,21:02,"Check Out",Device
+20,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",13-01-2026,14:09,"Check Out",Device
+21,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",14-01-2026,13:53,"Check In",Device
+22,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",14-01-2026,21:03,"Check Out",Device
 23,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",15-01-2026,20:54,"Check In",Device
-24,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",16-01-2026,07:02,"Check Out",Device
-25,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",17-01-2026,06:53,"Check In",Device
-26,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",17-01-2026,14:05,"Check Out",Device
-27,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",18-01-2026,13:57,"Check In",Device
-28,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",18-01-2026,21:04,"Check Out",Device
-29,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",19-01-2026,20:56,"Check In",Device
-30,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",20-01-2026,07:07,"Check Out",Device
-31,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",21-01-2026,06:48,"Check In",Device
-32,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",21-01-2026,14:06,"Check Out",Device
-33,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",22-01-2026,13:56,"Check In",Device
-34,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",22-01-2026,21:04,"Check Out",Device
-35,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",23-01-2026,20:55,"Check In",Device
-36,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",24-01-2026,07:10,"Check Out",Device
-37,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",25-01-2026,06:48,"Check In",Device
-38,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",25-01-2026,14:04,"Check Out",Device
-39,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",26-01-2026,13:48,"Check In",Device
-40,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",26-01-2026,21:03,"Check Out",Device
-41,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",27-01-2026,20:49,"Check In",Device
-42,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",28-01-2026,07:07,"Check Out",Device
-43,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",29-01-2026,06:57,"Check In",Device
-44,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",29-01-2026,14:06,"Check Out",Device
-45,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",30-01-2026,13:56,"Check In",Device
-46,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",30-01-2026,21:07,"Check Out",Device
-47,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",31-01-2026,20:50,"Check In",Device
-48,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",01-02-2026,07:06,"Check Out",Device
+24,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",16-01-2026,07:08,"Check Out",Device
+25,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",17-01-2026,06:51,"Check In",Device
+26,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",17-01-2026,14:10,"Check Out",Device
+27,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",18-01-2026,13:51,"Check In",Device
+28,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",18-01-2026,21:08,"Check Out",Device
+29,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",19-01-2026,20:48,"Check In",Device
+30,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",20-01-2026,07:09,"Check Out",Device
+31,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",21-01-2026,06:56,"Check In",Device
+32,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",21-01-2026,14:02,"Check Out",Device
+33,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",22-01-2026,13:51,"Check In",Device
+34,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",22-01-2026,21:02,"Check Out",Device
+35,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",23-01-2026,20:56,"Check In",Device
+36,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",24-01-2026,07:08,"Check Out",Device
+37,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",25-01-2026,06:55,"Check In",Device
+38,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",25-01-2026,14:08,"Check Out",Device
+39,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",26-01-2026,13:57,"Check In",Device
+40,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",26-01-2026,21:08,"Check Out",Device
+41,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",27-01-2026,20:55,"Check In",Device
+42,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",28-01-2026,07:06,"Check Out",Device
+43,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",29-01-2026,06:50,"Check In",Device
+44,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",29-01-2026,14:10,"Check Out",Device
+45,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",30-01-2026,13:57,"Check In",Device
+46,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",30-01-2026,21:05,"Check Out",Device
+47,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",31-01-2026,20:48,"Check In",Device
+48,22210264,"Arif Pamungkas","IGD (Instalasi Gawat Darurat)",01-02-2026,07:05,"Check Out",Device
 49,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",01-01-2026,20:57,"Check In",Device
-50,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",02-01-2026,07:09,"Check Out",Device
-51,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",03-01-2026,06:51,"Check In",Device
+50,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",02-01-2026,07:08,"Check Out",Device
+51,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",03-01-2026,06:53,"Check In",Device
 52,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",03-01-2026,14:07,"Check Out",Device
-53,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",04-01-2026,13:48,"Check In",Device
-54,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",04-01-2026,21:09,"Check Out",Device
-55,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",05-01-2026,20:53,"Check In",Device
+53,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",04-01-2026,13:54,"Check In",Device
+54,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",04-01-2026,21:07,"Check Out",Device
+55,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",05-01-2026,20:57,"Check In",Device
 56,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",06-01-2026,07:08,"Check Out",Device
-57,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",07-01-2026,06:49,"Check In",Device
-58,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",07-01-2026,14:03,"Check Out",Device
-59,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",08-01-2026,13:49,"Check In",Device
-60,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",08-01-2026,21:03,"Check Out",Device
-61,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",09-01-2026,20:51,"Check In",Device
+57,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",07-01-2026,06:50,"Check In",Device
+58,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",07-01-2026,14:07,"Check Out",Device
+59,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",08-01-2026,13:51,"Check In",Device
+60,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",08-01-2026,21:09,"Check Out",Device
+61,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",09-01-2026,20:54,"Check In",Device
 62,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",10-01-2026,07:06,"Check Out",Device
-63,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",11-01-2026,06:52,"Check In",Device
-64,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",11-01-2026,14:04,"Check Out",Device
+63,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",11-01-2026,06:55,"Check In",Device
+64,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",11-01-2026,14:06,"Check Out",Device
 65,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",12-01-2026,13:53,"Check In",Device
-66,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",12-01-2026,21:10,"Check Out",Device
-67,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",13-01-2026,20:57,"Check In",Device
-68,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",14-01-2026,07:09,"Check Out",Device
-69,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",15-01-2026,06:56,"Check In",Device
-70,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",15-01-2026,14:06,"Check Out",Device
-71,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",16-01-2026,13:49,"Check In",Device
-72,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",16-01-2026,21:08,"Check Out",Device
-73,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",17-01-2026,20:53,"Check In",Device
-74,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",18-01-2026,07:04,"Check Out",Device
-75,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",19-01-2026,06:53,"Check In",Device
-76,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",19-01-2026,14:05,"Check Out",Device
-77,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",20-01-2026,13:54,"Check In",Device
-78,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",20-01-2026,21:02,"Check Out",Device
-79,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",21-01-2026,20:55,"Check In",Device
-80,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",22-01-2026,07:06,"Check Out",Device
-81,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",23-01-2026,06:48,"Check In",Device
-82,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",23-01-2026,14:05,"Check Out",Device
-83,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",24-01-2026,13:56,"Check In",Device
-84,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",24-01-2026,21:06,"Check Out",Device
+66,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",12-01-2026,21:05,"Check Out",Device
+67,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",13-01-2026,20:53,"Check In",Device
+68,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",14-01-2026,07:10,"Check Out",Device
+69,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",15-01-2026,06:49,"Check In",Device
+70,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",15-01-2026,14:07,"Check Out",Device
+71,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",16-01-2026,13:50,"Check In",Device
+72,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",16-01-2026,21:06,"Check Out",Device
+73,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",17-01-2026,20:50,"Check In",Device
+74,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",18-01-2026,07:05,"Check Out",Device
+75,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",19-01-2026,06:57,"Check In",Device
+76,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",19-01-2026,14:06,"Check Out",Device
+77,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",20-01-2026,13:52,"Check In",Device
+78,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",20-01-2026,21:10,"Check Out",Device
+79,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",21-01-2026,20:48,"Check In",Device
+80,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",22-01-2026,07:05,"Check Out",Device
+81,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",23-01-2026,06:51,"Check In",Device
+82,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",23-01-2026,14:04,"Check Out",Device
+83,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",24-01-2026,13:53,"Check In",Device
+84,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",24-01-2026,21:07,"Check Out",Device
 85,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",25-01-2026,20:52,"Check In",Device
-86,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",26-01-2026,07:05,"Check Out",Device
-87,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",27-01-2026,06:51,"Check In",Device
-88,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",27-01-2026,14:02,"Check Out",Device
-89,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",28-01-2026,13:48,"Check In",Device
+86,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",26-01-2026,07:08,"Check Out",Device
+87,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",27-01-2026,06:53,"Check In",Device
+88,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",27-01-2026,14:04,"Check Out",Device
+89,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",28-01-2026,13:56,"Check In",Device
 90,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",28-01-2026,21:06,"Check Out",Device
-91,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",29-01-2026,20:52,"Check In",Device
-92,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",30-01-2026,07:06,"Check Out",Device
-93,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",31-01-2026,06:56,"Check In",Device
-94,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",31-01-2026,14:03,"Check Out",Device
-95,22200233,Rosiana,"Ruang Perawatan VIP",01-01-2026,13:48,"Check In",Device
-96,22200233,Rosiana,"Ruang Perawatan VIP",01-01-2026,21:07,"Check Out",Device
-97,22200233,Rosiana,"Ruang Perawatan VIP",02-01-2026,20:48,"Check In",Device
-98,22200233,Rosiana,"Ruang Perawatan VIP",03-01-2026,07:08,"Check Out",Device
-99,22200233,Rosiana,"Ruang Perawatan VIP",04-01-2026,06:51,"Check In",Device
-100,22200233,Rosiana,"Ruang Perawatan VIP",04-01-2026,14:08,"Check Out",Device
-101,22200233,Rosiana,"Ruang Perawatan VIP",05-01-2026,13:50,"Check In",Device
-102,22200233,Rosiana,"Ruang Perawatan VIP",05-01-2026,21:05,"Check Out",Device
-103,22200233,Rosiana,"Ruang Perawatan VIP",06-01-2026,20:54,"Check In",Device
-104,22200233,Rosiana,"Ruang Perawatan VIP",07-01-2026,07:05,"Check Out",Device
-105,22200233,Rosiana,"Ruang Perawatan VIP",08-01-2026,06:55,"Check In",Device
-106,22200233,Rosiana,"Ruang Perawatan VIP",08-01-2026,14:10,"Check Out",Device
-107,22200233,Rosiana,"Ruang Perawatan VIP",09-01-2026,13:54,"Check In",Device
-108,22200233,Rosiana,"Ruang Perawatan VIP",09-01-2026,21:02,"Check Out",Device
-109,22200233,Rosiana,"Ruang Perawatan VIP",10-01-2026,20:49,"Check In",Device
-110,22200233,Rosiana,"Ruang Perawatan VIP",11-01-2026,07:04,"Check Out",Device
-111,22200233,Rosiana,"Ruang Perawatan VIP",12-01-2026,06:51,"Check In",Device
-112,22200233,Rosiana,"Ruang Perawatan VIP",12-01-2026,14:08,"Check Out",Device
-113,22200233,Rosiana,"Ruang Perawatan VIP",13-01-2026,13:48,"Check In",Device
-114,22200233,Rosiana,"Ruang Perawatan VIP",13-01-2026,21:10,"Check Out",Device
-115,22200233,Rosiana,"Ruang Perawatan VIP",14-01-2026,20:54,"Check In",Device
-116,22200233,Rosiana,"Ruang Perawatan VIP",15-01-2026,07:09,"Check Out",Device
-117,22200233,Rosiana,"Ruang Perawatan VIP",16-01-2026,06:57,"Check In",Device
-118,22200233,Rosiana,"Ruang Perawatan VIP",16-01-2026,14:04,"Check Out",Device
-119,22200233,Rosiana,"Ruang Perawatan VIP",17-01-2026,13:56,"Check In",Device
-120,22200233,Rosiana,"Ruang Perawatan VIP",17-01-2026,21:05,"Check Out",Device
-121,22200233,Rosiana,"Ruang Perawatan VIP",18-01-2026,20:52,"Check In",Device
-122,22200233,Rosiana,"Ruang Perawatan VIP",19-01-2026,07:06,"Check Out",Device
-123,22200233,Rosiana,"Ruang Perawatan VIP",20-01-2026,06:55,"Check In",Device
-124,22200233,Rosiana,"Ruang Perawatan VIP",20-01-2026,14:03,"Check Out",Device
-125,22200233,Rosiana,"Ruang Perawatan VIP",21-01-2026,13:57,"Check In",Device
-126,22200233,Rosiana,"Ruang Perawatan VIP",21-01-2026,21:07,"Check Out",Device
-127,22200233,Rosiana,"Ruang Perawatan VIP",22-01-2026,20:51,"Check In",Device
-128,22200233,Rosiana,"Ruang Perawatan VIP",23-01-2026,07:09,"Check Out",Device
-129,22200233,Rosiana,"Ruang Perawatan VIP",24-01-2026,06:49,"Check In",Device
-130,22200233,Rosiana,"Ruang Perawatan VIP",24-01-2026,14:07,"Check Out",Device
-131,22200233,Rosiana,"Ruang Perawatan VIP",25-01-2026,13:54,"Check In",Device
-132,22200233,Rosiana,"Ruang Perawatan VIP",25-01-2026,21:05,"Check Out",Device
-133,22200233,Rosiana,"Ruang Perawatan VIP",26-01-2026,20:54,"Check In",Device
-134,22200233,Rosiana,"Ruang Perawatan VIP",27-01-2026,07:07,"Check Out",Device
-135,22200233,Rosiana,"Ruang Perawatan VIP",28-01-2026,06:54,"Check In",Device
-136,22200233,Rosiana,"Ruang Perawatan VIP",28-01-2026,14:08,"Check Out",Device
-137,22200233,Rosiana,"Ruang Perawatan VIP",29-01-2026,13:51,"Check In",Device
-138,22200233,Rosiana,"Ruang Perawatan VIP",29-01-2026,21:08,"Check Out",Device
-139,22200233,Rosiana,"Ruang Perawatan VIP",30-01-2026,20:54,"Check In",Device
-140,22200233,Rosiana,"Ruang Perawatan VIP",31-01-2026,07:06,"Check Out",Device
-141,22200234,"Siti Rahayu","Ruang Perawatan VIP",02-01-2026,06:49,"Check In",Device
-142,22200234,"Siti Rahayu","Ruang Perawatan VIP",02-01-2026,14:03,"Check Out",Device
-143,22200234,"Siti Rahayu","Ruang Perawatan VIP",03-01-2026,13:52,"Check In",Device
-144,22200234,"Siti Rahayu","Ruang Perawatan VIP",03-01-2026,21:03,"Check Out",Device
-145,22200234,"Siti Rahayu","Ruang Perawatan VIP",04-01-2026,20:53,"Check In",Device
-146,22200234,"Siti Rahayu","Ruang Perawatan VIP",05-01-2026,07:05,"Check Out",Device
-147,22200234,"Siti Rahayu","Ruang Perawatan VIP",06-01-2026,06:53,"Check In",Device
-148,22200234,"Siti Rahayu","Ruang Perawatan VIP",06-01-2026,14:03,"Check Out",Device
-149,22200234,"Siti Rahayu","Ruang Perawatan VIP",07-01-2026,13:52,"Check In",Device
-150,22200234,"Siti Rahayu","Ruang Perawatan VIP",07-01-2026,21:10,"Check Out",Device
-151,22200234,"Siti Rahayu","Ruang Perawatan VIP",08-01-2026,20:55,"Check In",Device
-152,22200234,"Siti Rahayu","Ruang Perawatan VIP",09-01-2026,07:05,"Check Out",Device
-153,22200234,"Siti Rahayu","Ruang Perawatan VIP",10-01-2026,06:57,"Check In",Device
-154,22200234,"Siti Rahayu","Ruang Perawatan VIP",10-01-2026,14:04,"Check Out",Device
-155,22200234,"Siti Rahayu","Ruang Perawatan VIP",11-01-2026,13:53,"Check In",Device
-156,22200234,"Siti Rahayu","Ruang Perawatan VIP",11-01-2026,21:06,"Check Out",Device
-157,22200234,"Siti Rahayu","Ruang Perawatan VIP",12-01-2026,20:50,"Check In",Device
-158,22200234,"Siti Rahayu","Ruang Perawatan VIP",13-01-2026,07:02,"Check Out",Device
-159,22200234,"Siti Rahayu","Ruang Perawatan VIP",14-01-2026,06:52,"Check In",Device
-160,22200234,"Siti Rahayu","Ruang Perawatan VIP",14-01-2026,14:06,"Check Out",Device
-161,22200234,"Siti Rahayu","Ruang Perawatan VIP",15-01-2026,13:53,"Check In",Device
-162,22200234,"Siti Rahayu","Ruang Perawatan VIP",15-01-2026,21:08,"Check Out",Device
-163,22200234,"Siti Rahayu","Ruang Perawatan VIP",16-01-2026,20:51,"Check In",Device
-164,22200234,"Siti Rahayu","Ruang Perawatan VIP",17-01-2026,07:05,"Check Out",Device
-165,22200234,"Siti Rahayu","Ruang Perawatan VIP",18-01-2026,06:55,"Check In",Device
-166,22200234,"Siti Rahayu","Ruang Perawatan VIP",18-01-2026,14:08,"Check Out",Device
-167,22200234,"Siti Rahayu","Ruang Perawatan VIP",19-01-2026,13:54,"Check In",Device
-168,22200234,"Siti Rahayu","Ruang Perawatan VIP",19-01-2026,21:04,"Check Out",Device
-169,22200234,"Siti Rahayu","Ruang Perawatan VIP",20-01-2026,20:53,"Check In",Device
-170,22200234,"Siti Rahayu","Ruang Perawatan VIP",21-01-2026,07:10,"Check Out",Device
-171,22200234,"Siti Rahayu","Ruang Perawatan VIP",22-01-2026,06:53,"Check In",Device
-172,22200234,"Siti Rahayu","Ruang Perawatan VIP",22-01-2026,14:03,"Check Out",Device
-173,22200234,"Siti Rahayu","Ruang Perawatan VIP",23-01-2026,13:48,"Check In",Device
-174,22200234,"Siti Rahayu","Ruang Perawatan VIP",23-01-2026,21:05,"Check Out",Device
-175,22200234,"Siti Rahayu","Ruang Perawatan VIP",24-01-2026,20:56,"Check In",Device
-176,22200234,"Siti Rahayu","Ruang Perawatan VIP",25-01-2026,07:04,"Check Out",Device
-177,22200234,"Siti Rahayu","Ruang Perawatan VIP",26-01-2026,06:57,"Check In",Device
-178,22200234,"Siti Rahayu","Ruang Perawatan VIP",26-01-2026,14:03,"Check Out",Device
-179,22200234,"Siti Rahayu","Ruang Perawatan VIP",27-01-2026,13:53,"Check In",Device
-180,22200234,"Siti Rahayu","Ruang Perawatan VIP",27-01-2026,21:09,"Check Out",Device
-181,22200234,"Siti Rahayu","Ruang Perawatan VIP",28-01-2026,20:54,"Check In",Device
-182,22200234,"Siti Rahayu","Ruang Perawatan VIP",29-01-2026,07:09,"Check Out",Device
-183,22200234,"Siti Rahayu","Ruang Perawatan VIP",30-01-2026,06:56,"Check In",Device
-184,22200234,"Siti Rahayu","Ruang Perawatan VIP",30-01-2026,14:02,"Check Out",Device
-185,22200234,"Siti Rahayu","Ruang Perawatan VIP",31-01-2026,13:50,"Check In",Device
-186,22200234,"Siti Rahayu","Ruang Perawatan VIP",31-01-2026,21:10,"Check Out",Device
-187,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",01-01-2026,06:50,"Check In",Device
-188,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",01-01-2026,14:10,"Check Out",Device
-189,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",02-01-2026,13:57,"Check In",Device
-190,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",02-01-2026,21:05,"Check Out",Device
-191,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",03-01-2026,20:54,"Check In",Device
-192,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",04-01-2026,07:03,"Check Out",Device
-193,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",05-01-2026,06:50,"Check In",Device
-194,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",05-01-2026,14:07,"Check Out",Device
-195,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",06-01-2026,13:56,"Check In",Device
-196,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",06-01-2026,21:04,"Check Out",Device
-197,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",07-01-2026,20:51,"Check In",Device
-198,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",08-01-2026,07:02,"Check Out",Device
-199,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",09-01-2026,06:49,"Check In",Device
-200,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",09-01-2026,14:04,"Check Out",Device
-201,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",10-01-2026,13:50,"Check In",Device
-202,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",10-01-2026,21:09,"Check Out",Device
-203,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",11-01-2026,20:54,"Check In",Device
-204,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",12-01-2026,07:02,"Check Out",Device
-205,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",13-01-2026,06:53,"Check In",Device
-206,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",13-01-2026,14:02,"Check Out",Device
-207,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",14-01-2026,13:49,"Check In",Device
-208,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",14-01-2026,21:04,"Check Out",Device
-209,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",15-01-2026,20:57,"Check In",Device
-210,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",16-01-2026,07:04,"Check Out",Device
-211,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",17-01-2026,06:49,"Check In",Device
-212,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",17-01-2026,14:07,"Check Out",Device
-213,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",18-01-2026,13:50,"Check In",Device
-214,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",18-01-2026,21:08,"Check Out",Device
-215,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",19-01-2026,20:50,"Check In",Device
-216,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",20-01-2026,07:07,"Check Out",Device
-217,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",21-01-2026,06:49,"Check In",Device
-218,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",21-01-2026,14:08,"Check Out",Device
-219,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",22-01-2026,13:49,"Check In",Device
-220,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",22-01-2026,21:03,"Check Out",Device
-221,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",23-01-2026,20:57,"Check In",Device
-222,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",24-01-2026,07:10,"Check Out",Device
-223,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",25-01-2026,06:57,"Check In",Device
-224,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",25-01-2026,14:10,"Check Out",Device
-225,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",26-01-2026,13:55,"Check In",Device
-226,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",26-01-2026,21:10,"Check Out",Device
-227,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",27-01-2026,20:57,"Check In",Device
-228,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",28-01-2026,07:05,"Check Out",Device
-229,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",29-01-2026,06:51,"Check In",Device
-230,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",29-01-2026,14:03,"Check Out",Device
-231,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",30-01-2026,13:57,"Check In",Device
-232,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",30-01-2026,21:07,"Check Out",Device
-233,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",31-01-2026,20:55,"Check In",Device
-234,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",01-02-2026,07:03,"Check Out",Device
-235,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",01-01-2026,20:49,"Check In",Device
-236,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",02-01-2026,07:02,"Check Out",Device
-237,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",03-01-2026,06:57,"Check In",Device
-238,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",03-01-2026,14:03,"Check Out",Device
-239,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",04-01-2026,13:53,"Check In",Device
-240,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",04-01-2026,21:02,"Check Out",Device
-241,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",05-01-2026,20:48,"Check In",Device
-242,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",06-01-2026,07:02,"Check Out",Device
-243,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",07-01-2026,06:55,"Check In",Device
-244,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",07-01-2026,14:05,"Check Out",Device
-245,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",08-01-2026,13:50,"Check In",Device
-246,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",08-01-2026,21:08,"Check Out",Device
-247,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",09-01-2026,20:48,"Check In",Device
-248,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",10-01-2026,07:10,"Check Out",Device
-249,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",11-01-2026,06:52,"Check In",Device
-250,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",11-01-2026,14:03,"Check Out",Device
-251,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",12-01-2026,13:54,"Check In",Device
-252,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",12-01-2026,21:02,"Check Out",Device
-253,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",13-01-2026,20:50,"Check In",Device
-254,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",14-01-2026,07:08,"Check Out",Device
-255,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",15-01-2026,06:50,"Check In",Device
-256,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",15-01-2026,14:06,"Check Out",Device
-257,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",16-01-2026,13:54,"Check In",Device
-258,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",16-01-2026,21:08,"Check Out",Device
-259,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",17-01-2026,20:51,"Check In",Device
-260,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",18-01-2026,07:09,"Check Out",Device
-261,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",19-01-2026,06:53,"Check In",Device
-262,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",19-01-2026,14:09,"Check Out",Device
-263,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",20-01-2026,13:48,"Check In",Device
-264,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",20-01-2026,21:04,"Check Out",Device
-265,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",21-01-2026,20:55,"Check In",Device
-266,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",22-01-2026,07:09,"Check Out",Device
-267,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",23-01-2026,06:53,"Check In",Device
-268,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",23-01-2026,14:06,"Check Out",Device
-269,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",24-01-2026,13:51,"Check In",Device
-270,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",24-01-2026,21:07,"Check Out",Device
-271,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",25-01-2026,20:53,"Check In",Device
-272,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",26-01-2026,07:06,"Check Out",Device
-273,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",27-01-2026,06:49,"Check In",Device
-274,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",27-01-2026,14:09,"Check Out",Device
-275,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",28-01-2026,13:56,"Check In",Device
-276,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",28-01-2026,21:03,"Check Out",Device
-277,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",29-01-2026,20:49,"Check In",Device
-278,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",30-01-2026,07:09,"Check Out",Device
-279,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",31-01-2026,06:55,"Check In",Device
-280,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",31-01-2026,14:10,"Check Out",Device
+91,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",29-01-2026,20:48,"Check In",Device
+92,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",30-01-2026,07:05,"Check Out",Device
+93,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",31-01-2026,06:50,"Check In",Device
+94,21220175,Afrizal,"IGD (Instalasi Gawat Darurat)",31-01-2026,14:07,"Check Out",Device
+95,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",01-01-2026,07:53,"Check In",Device
+96,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",01-01-2026,16:06,"Check Out",Device
+97,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",02-01-2026,07:50,"Check In",Device
+98,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",02-01-2026,16:06,"Check Out",Device
+99,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",05-01-2026,07:53,"Check In",Device
+100,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",05-01-2026,16:08,"Check Out",Device
+101,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",06-01-2026,07:54,"Check In",Device
+102,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",06-01-2026,16:02,"Check Out",Device
+103,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",07-01-2026,07:51,"Check In",Device
+104,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",07-01-2026,16:02,"Check Out",Device
+105,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",08-01-2026,07:52,"Check In",Device
+106,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",08-01-2026,16:09,"Check Out",Device
+107,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",09-01-2026,07:53,"Check In",Device
+108,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",09-01-2026,16:06,"Check Out",Device
+109,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",12-01-2026,07:51,"Check In",Device
+110,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",12-01-2026,16:08,"Check Out",Device
+111,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",13-01-2026,07:51,"Check In",Device
+112,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",13-01-2026,16:02,"Check Out",Device
+113,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",14-01-2026,07:57,"Check In",Device
+114,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",14-01-2026,16:03,"Check Out",Device
+115,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",15-01-2026,07:48,"Check In",Device
+116,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",15-01-2026,16:06,"Check Out",Device
+117,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",16-01-2026,07:54,"Check In",Device
+118,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",16-01-2026,16:08,"Check Out",Device
+119,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",19-01-2026,07:48,"Check In",Device
+120,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",19-01-2026,16:09,"Check Out",Device
+121,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",20-01-2026,07:48,"Check In",Device
+122,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",20-01-2026,16:02,"Check Out",Device
+123,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",21-01-2026,07:54,"Check In",Device
+124,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",21-01-2026,16:05,"Check Out",Device
+125,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",22-01-2026,07:53,"Check In",Device
+126,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",22-01-2026,16:05,"Check Out",Device
+127,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",23-01-2026,07:56,"Check In",Device
+128,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",23-01-2026,16:04,"Check Out",Device
+129,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",26-01-2026,07:56,"Check In",Device
+130,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",26-01-2026,16:05,"Check Out",Device
+131,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",27-01-2026,07:52,"Check In",Device
+132,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",27-01-2026,16:09,"Check Out",Device
+133,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",28-01-2026,07:51,"Check In",Device
+134,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",28-01-2026,16:04,"Check Out",Device
+135,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",29-01-2026,07:50,"Check In",Device
+136,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",29-01-2026,16:09,"Check Out",Device
+137,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",30-01-2026,07:53,"Check In",Device
+138,22230383,"Fika Erisandy","IGD (Instalasi Gawat Darurat)",30-01-2026,16:03,"Check Out",Device
+139,22200233,Rosiana,"Ruang Perawatan VIP",01-01-2026,13:53,"Check In",Device
+140,22200233,Rosiana,"Ruang Perawatan VIP",01-01-2026,21:05,"Check Out",Device
+141,22200233,Rosiana,"Ruang Perawatan VIP",02-01-2026,20:51,"Check In",Device
+142,22200233,Rosiana,"Ruang Perawatan VIP",03-01-2026,07:08,"Check Out",Device
+143,22200233,Rosiana,"Ruang Perawatan VIP",04-01-2026,06:57,"Check In",Device
+144,22200233,Rosiana,"Ruang Perawatan VIP",04-01-2026,14:08,"Check Out",Device
+145,22200233,Rosiana,"Ruang Perawatan VIP",05-01-2026,13:52,"Check In",Device
+146,22200233,Rosiana,"Ruang Perawatan VIP",05-01-2026,21:03,"Check Out",Device
+147,22200233,Rosiana,"Ruang Perawatan VIP",06-01-2026,20:56,"Check In",Device
+148,22200233,Rosiana,"Ruang Perawatan VIP",07-01-2026,07:04,"Check Out",Device
+149,22200233,Rosiana,"Ruang Perawatan VIP",08-01-2026,06:55,"Check In",Device
+150,22200233,Rosiana,"Ruang Perawatan VIP",08-01-2026,14:06,"Check Out",Device
+151,22200233,Rosiana,"Ruang Perawatan VIP",09-01-2026,13:55,"Check In",Device
+152,22200233,Rosiana,"Ruang Perawatan VIP",09-01-2026,21:08,"Check Out",Device
+153,22200233,Rosiana,"Ruang Perawatan VIP",10-01-2026,20:54,"Check In",Device
+154,22200233,Rosiana,"Ruang Perawatan VIP",11-01-2026,07:07,"Check Out",Device
+155,22200233,Rosiana,"Ruang Perawatan VIP",12-01-2026,06:51,"Check In",Device
+156,22200233,Rosiana,"Ruang Perawatan VIP",12-01-2026,14:08,"Check Out",Device
+157,22200233,Rosiana,"Ruang Perawatan VIP",13-01-2026,13:52,"Check In",Device
+158,22200233,Rosiana,"Ruang Perawatan VIP",13-01-2026,21:04,"Check Out",Device
+159,22200233,Rosiana,"Ruang Perawatan VIP",14-01-2026,20:50,"Check In",Device
+160,22200233,Rosiana,"Ruang Perawatan VIP",15-01-2026,07:06,"Check Out",Device
+161,22200233,Rosiana,"Ruang Perawatan VIP",16-01-2026,06:50,"Check In",Device
+162,22200233,Rosiana,"Ruang Perawatan VIP",16-01-2026,14:05,"Check Out",Device
+163,22200233,Rosiana,"Ruang Perawatan VIP",17-01-2026,13:53,"Check In",Device
+164,22200233,Rosiana,"Ruang Perawatan VIP",17-01-2026,21:06,"Check Out",Device
+165,22200233,Rosiana,"Ruang Perawatan VIP",18-01-2026,20:51,"Check In",Device
+166,22200233,Rosiana,"Ruang Perawatan VIP",19-01-2026,07:02,"Check Out",Device
+167,22200233,Rosiana,"Ruang Perawatan VIP",20-01-2026,06:50,"Check In",Device
+168,22200233,Rosiana,"Ruang Perawatan VIP",20-01-2026,14:03,"Check Out",Device
+169,22200233,Rosiana,"Ruang Perawatan VIP",21-01-2026,13:51,"Check In",Device
+170,22200233,Rosiana,"Ruang Perawatan VIP",21-01-2026,21:08,"Check Out",Device
+171,22200233,Rosiana,"Ruang Perawatan VIP",22-01-2026,20:49,"Check In",Device
+172,22200233,Rosiana,"Ruang Perawatan VIP",23-01-2026,07:02,"Check Out",Device
+173,22200233,Rosiana,"Ruang Perawatan VIP",24-01-2026,06:56,"Check In",Device
+174,22200233,Rosiana,"Ruang Perawatan VIP",24-01-2026,14:06,"Check Out",Device
+175,22200233,Rosiana,"Ruang Perawatan VIP",25-01-2026,13:51,"Check In",Device
+176,22200233,Rosiana,"Ruang Perawatan VIP",25-01-2026,21:10,"Check Out",Device
+177,22200233,Rosiana,"Ruang Perawatan VIP",26-01-2026,20:49,"Check In",Device
+178,22200233,Rosiana,"Ruang Perawatan VIP",27-01-2026,07:09,"Check Out",Device
+179,22200233,Rosiana,"Ruang Perawatan VIP",28-01-2026,06:54,"Check In",Device
+180,22200233,Rosiana,"Ruang Perawatan VIP",28-01-2026,14:03,"Check Out",Device
+181,22200233,Rosiana,"Ruang Perawatan VIP",29-01-2026,13:53,"Check In",Device
+182,22200233,Rosiana,"Ruang Perawatan VIP",29-01-2026,21:04,"Check Out",Device
+183,22200233,Rosiana,"Ruang Perawatan VIP",30-01-2026,20:48,"Check In",Device
+184,22200233,Rosiana,"Ruang Perawatan VIP",31-01-2026,07:06,"Check Out",Device
+185,22200234,"Siti Rahayu","Ruang Perawatan VIP",02-01-2026,06:54,"Check In",Device
+186,22200234,"Siti Rahayu","Ruang Perawatan VIP",02-01-2026,14:10,"Check Out",Device
+187,22200234,"Siti Rahayu","Ruang Perawatan VIP",03-01-2026,13:51,"Check In",Device
+188,22200234,"Siti Rahayu","Ruang Perawatan VIP",03-01-2026,21:10,"Check Out",Device
+189,22200234,"Siti Rahayu","Ruang Perawatan VIP",04-01-2026,20:49,"Check In",Device
+190,22200234,"Siti Rahayu","Ruang Perawatan VIP",05-01-2026,07:07,"Check Out",Device
+191,22200234,"Siti Rahayu","Ruang Perawatan VIP",06-01-2026,06:53,"Check In",Device
+192,22200234,"Siti Rahayu","Ruang Perawatan VIP",06-01-2026,14:08,"Check Out",Device
+193,22200234,"Siti Rahayu","Ruang Perawatan VIP",07-01-2026,13:55,"Check In",Device
+194,22200234,"Siti Rahayu","Ruang Perawatan VIP",07-01-2026,21:10,"Check Out",Device
+195,22200234,"Siti Rahayu","Ruang Perawatan VIP",08-01-2026,20:56,"Check In",Device
+196,22200234,"Siti Rahayu","Ruang Perawatan VIP",09-01-2026,07:10,"Check Out",Device
+197,22200234,"Siti Rahayu","Ruang Perawatan VIP",10-01-2026,06:48,"Check In",Device
+198,22200234,"Siti Rahayu","Ruang Perawatan VIP",10-01-2026,14:07,"Check Out",Device
+199,22200234,"Siti Rahayu","Ruang Perawatan VIP",11-01-2026,13:53,"Check In",Device
+200,22200234,"Siti Rahayu","Ruang Perawatan VIP",11-01-2026,21:09,"Check Out",Device
+201,22200234,"Siti Rahayu","Ruang Perawatan VIP",12-01-2026,20:48,"Check In",Device
+202,22200234,"Siti Rahayu","Ruang Perawatan VIP",13-01-2026,07:08,"Check Out",Device
+203,22200234,"Siti Rahayu","Ruang Perawatan VIP",14-01-2026,06:51,"Check In",Device
+204,22200234,"Siti Rahayu","Ruang Perawatan VIP",14-01-2026,14:05,"Check Out",Device
+205,22200234,"Siti Rahayu","Ruang Perawatan VIP",15-01-2026,13:55,"Check In",Device
+206,22200234,"Siti Rahayu","Ruang Perawatan VIP",15-01-2026,21:03,"Check Out",Device
+207,22200234,"Siti Rahayu","Ruang Perawatan VIP",16-01-2026,20:48,"Check In",Device
+208,22200234,"Siti Rahayu","Ruang Perawatan VIP",17-01-2026,07:09,"Check Out",Device
+209,22200234,"Siti Rahayu","Ruang Perawatan VIP",18-01-2026,06:49,"Check In",Device
+210,22200234,"Siti Rahayu","Ruang Perawatan VIP",18-01-2026,14:05,"Check Out",Device
+211,22200234,"Siti Rahayu","Ruang Perawatan VIP",19-01-2026,13:50,"Check In",Device
+212,22200234,"Siti Rahayu","Ruang Perawatan VIP",19-01-2026,21:03,"Check Out",Device
+213,22200234,"Siti Rahayu","Ruang Perawatan VIP",20-01-2026,20:55,"Check In",Device
+214,22200234,"Siti Rahayu","Ruang Perawatan VIP",21-01-2026,07:07,"Check Out",Device
+215,22200234,"Siti Rahayu","Ruang Perawatan VIP",22-01-2026,06:57,"Check In",Device
+216,22200234,"Siti Rahayu","Ruang Perawatan VIP",22-01-2026,14:05,"Check Out",Device
+217,22200234,"Siti Rahayu","Ruang Perawatan VIP",23-01-2026,13:54,"Check In",Device
+218,22200234,"Siti Rahayu","Ruang Perawatan VIP",23-01-2026,21:02,"Check Out",Device
+219,22200234,"Siti Rahayu","Ruang Perawatan VIP",24-01-2026,20:50,"Check In",Device
+220,22200234,"Siti Rahayu","Ruang Perawatan VIP",25-01-2026,07:05,"Check Out",Device
+221,22200234,"Siti Rahayu","Ruang Perawatan VIP",26-01-2026,06:51,"Check In",Device
+222,22200234,"Siti Rahayu","Ruang Perawatan VIP",26-01-2026,14:03,"Check Out",Device
+223,22200234,"Siti Rahayu","Ruang Perawatan VIP",27-01-2026,13:48,"Check In",Device
+224,22200234,"Siti Rahayu","Ruang Perawatan VIP",27-01-2026,21:09,"Check Out",Device
+225,22200234,"Siti Rahayu","Ruang Perawatan VIP",28-01-2026,20:52,"Check In",Device
+226,22200234,"Siti Rahayu","Ruang Perawatan VIP",29-01-2026,07:03,"Check Out",Device
+227,22200234,"Siti Rahayu","Ruang Perawatan VIP",30-01-2026,06:51,"Check In",Device
+228,22200234,"Siti Rahayu","Ruang Perawatan VIP",30-01-2026,14:09,"Check Out",Device
+229,22200234,"Siti Rahayu","Ruang Perawatan VIP",31-01-2026,13:55,"Check In",Device
+230,22200234,"Siti Rahayu","Ruang Perawatan VIP",31-01-2026,21:06,"Check Out",Device
+231,21220077,Agustina,"Ruang Perawatan VIP",01-01-2026,07:51,"Check In",Device
+232,21220077,Agustina,"Ruang Perawatan VIP",01-01-2026,16:09,"Check Out",Device
+233,21220077,Agustina,"Ruang Perawatan VIP",02-01-2026,07:55,"Check In",Device
+234,21220077,Agustina,"Ruang Perawatan VIP",02-01-2026,16:06,"Check Out",Device
+235,21220077,Agustina,"Ruang Perawatan VIP",05-01-2026,07:51,"Check In",Device
+236,21220077,Agustina,"Ruang Perawatan VIP",05-01-2026,16:10,"Check Out",Device
+237,21220077,Agustina,"Ruang Perawatan VIP",06-01-2026,07:57,"Check In",Device
+238,21220077,Agustina,"Ruang Perawatan VIP",06-01-2026,16:08,"Check Out",Device
+239,21220077,Agustina,"Ruang Perawatan VIP",07-01-2026,07:56,"Check In",Device
+240,21220077,Agustina,"Ruang Perawatan VIP",07-01-2026,16:09,"Check Out",Device
+241,21220077,Agustina,"Ruang Perawatan VIP",08-01-2026,07:48,"Check In",Device
+242,21220077,Agustina,"Ruang Perawatan VIP",08-01-2026,16:07,"Check Out",Device
+243,21220077,Agustina,"Ruang Perawatan VIP",09-01-2026,07:56,"Check In",Device
+244,21220077,Agustina,"Ruang Perawatan VIP",09-01-2026,16:06,"Check Out",Device
+245,21220077,Agustina,"Ruang Perawatan VIP",12-01-2026,07:48,"Check In",Device
+246,21220077,Agustina,"Ruang Perawatan VIP",12-01-2026,16:09,"Check Out",Device
+247,21220077,Agustina,"Ruang Perawatan VIP",13-01-2026,07:49,"Check In",Device
+248,21220077,Agustina,"Ruang Perawatan VIP",13-01-2026,16:05,"Check Out",Device
+249,21220077,Agustina,"Ruang Perawatan VIP",14-01-2026,07:56,"Check In",Device
+250,21220077,Agustina,"Ruang Perawatan VIP",14-01-2026,16:06,"Check Out",Device
+251,21220077,Agustina,"Ruang Perawatan VIP",15-01-2026,07:54,"Check In",Device
+252,21220077,Agustina,"Ruang Perawatan VIP",15-01-2026,16:09,"Check Out",Device
+253,21220077,Agustina,"Ruang Perawatan VIP",16-01-2026,07:52,"Check In",Device
+254,21220077,Agustina,"Ruang Perawatan VIP",16-01-2026,16:03,"Check Out",Device
+255,21220077,Agustina,"Ruang Perawatan VIP",19-01-2026,07:53,"Check In",Device
+256,21220077,Agustina,"Ruang Perawatan VIP",19-01-2026,16:07,"Check Out",Device
+257,21220077,Agustina,"Ruang Perawatan VIP",20-01-2026,07:54,"Check In",Device
+258,21220077,Agustina,"Ruang Perawatan VIP",20-01-2026,16:09,"Check Out",Device
+259,21220077,Agustina,"Ruang Perawatan VIP",21-01-2026,07:56,"Check In",Device
+260,21220077,Agustina,"Ruang Perawatan VIP",21-01-2026,16:02,"Check Out",Device
+261,21220077,Agustina,"Ruang Perawatan VIP",22-01-2026,07:51,"Check In",Device
+262,21220077,Agustina,"Ruang Perawatan VIP",22-01-2026,16:06,"Check Out",Device
+263,21220077,Agustina,"Ruang Perawatan VIP",23-01-2026,07:49,"Check In",Device
+264,21220077,Agustina,"Ruang Perawatan VIP",23-01-2026,16:09,"Check Out",Device
+265,21220077,Agustina,"Ruang Perawatan VIP",26-01-2026,07:53,"Check In",Device
+266,21220077,Agustina,"Ruang Perawatan VIP",26-01-2026,16:05,"Check Out",Device
+267,21220077,Agustina,"Ruang Perawatan VIP",27-01-2026,07:51,"Check In",Device
+268,21220077,Agustina,"Ruang Perawatan VIP",27-01-2026,16:04,"Check Out",Device
+269,21220077,Agustina,"Ruang Perawatan VIP",28-01-2026,07:50,"Check In",Device
+270,21220077,Agustina,"Ruang Perawatan VIP",28-01-2026,16:10,"Check Out",Device
+271,21220077,Agustina,"Ruang Perawatan VIP",29-01-2026,07:49,"Check In",Device
+272,21220077,Agustina,"Ruang Perawatan VIP",29-01-2026,16:08,"Check Out",Device
+273,21220077,Agustina,"Ruang Perawatan VIP",30-01-2026,07:54,"Check In",Device
+274,21220077,Agustina,"Ruang Perawatan VIP",30-01-2026,16:04,"Check Out",Device
+275,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",01-01-2026,06:57,"Check In",Device
+276,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",01-01-2026,14:04,"Check Out",Device
+277,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",02-01-2026,13:51,"Check In",Device
+278,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",02-01-2026,21:04,"Check Out",Device
+279,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",03-01-2026,20:52,"Check In",Device
+280,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",04-01-2026,07:10,"Check Out",Device
+281,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",05-01-2026,06:48,"Check In",Device
+282,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",05-01-2026,14:06,"Check Out",Device
+283,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",06-01-2026,13:56,"Check In",Device
+284,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",06-01-2026,21:08,"Check Out",Device
+285,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",07-01-2026,20:50,"Check In",Device
+286,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",08-01-2026,07:06,"Check Out",Device
+287,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",09-01-2026,06:54,"Check In",Device
+288,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",09-01-2026,14:06,"Check Out",Device
+289,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",10-01-2026,13:56,"Check In",Device
+290,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",10-01-2026,21:10,"Check Out",Device
+291,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",11-01-2026,20:53,"Check In",Device
+292,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",12-01-2026,07:04,"Check Out",Device
+293,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",13-01-2026,06:50,"Check In",Device
+294,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",13-01-2026,14:02,"Check Out",Device
+295,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",14-01-2026,13:57,"Check In",Device
+296,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",14-01-2026,21:04,"Check Out",Device
+297,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",15-01-2026,20:51,"Check In",Device
+298,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",16-01-2026,07:06,"Check Out",Device
+299,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",17-01-2026,06:57,"Check In",Device
+300,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",17-01-2026,14:07,"Check Out",Device
+301,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",18-01-2026,13:56,"Check In",Device
+302,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",18-01-2026,21:06,"Check Out",Device
+303,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",19-01-2026,20:49,"Check In",Device
+304,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",20-01-2026,07:04,"Check Out",Device
+305,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",21-01-2026,06:51,"Check In",Device
+306,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",21-01-2026,14:10,"Check Out",Device
+307,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",22-01-2026,13:54,"Check In",Device
+308,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",22-01-2026,21:03,"Check Out",Device
+309,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",23-01-2026,20:52,"Check In",Device
+310,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",24-01-2026,07:04,"Check Out",Device
+311,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",25-01-2026,06:52,"Check In",Device
+312,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",25-01-2026,14:10,"Check Out",Device
+313,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",26-01-2026,13:56,"Check In",Device
+314,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",26-01-2026,21:06,"Check Out",Device
+315,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",27-01-2026,20:51,"Check In",Device
+316,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",28-01-2026,07:09,"Check Out",Device
+317,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",29-01-2026,06:50,"Check In",Device
+318,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",29-01-2026,14:09,"Check Out",Device
+319,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",30-01-2026,13:55,"Check In",Device
+320,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",30-01-2026,21:02,"Check Out",Device
+321,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",31-01-2026,20:51,"Check In",Device
+322,401,"dr. Arif Budiman","Koordinasi Dokter Jaga / Poli",01-02-2026,07:10,"Check Out",Device
+323,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",01-01-2026,20:49,"Check In",Device
+324,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",02-01-2026,07:07,"Check Out",Device
+325,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",03-01-2026,06:49,"Check In",Device
+326,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",03-01-2026,14:05,"Check Out",Device
+327,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",04-01-2026,13:48,"Check In",Device
+328,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",04-01-2026,21:10,"Check Out",Device
+329,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",05-01-2026,20:56,"Check In",Device
+330,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",06-01-2026,07:06,"Check Out",Device
+331,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",07-01-2026,06:54,"Check In",Device
+332,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",07-01-2026,14:04,"Check Out",Device
+333,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",08-01-2026,13:53,"Check In",Device
+334,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",08-01-2026,21:06,"Check Out",Device
+335,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",09-01-2026,20:53,"Check In",Device
+336,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",10-01-2026,07:03,"Check Out",Device
+337,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",11-01-2026,06:51,"Check In",Device
+338,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",11-01-2026,14:06,"Check Out",Device
+339,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",12-01-2026,13:53,"Check In",Device
+340,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",12-01-2026,21:06,"Check Out",Device
+341,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",13-01-2026,20:56,"Check In",Device
+342,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",14-01-2026,07:07,"Check Out",Device
+343,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",15-01-2026,06:57,"Check In",Device
+344,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",15-01-2026,14:06,"Check Out",Device
+345,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",16-01-2026,13:54,"Check In",Device
+346,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",16-01-2026,21:09,"Check Out",Device
+347,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",17-01-2026,20:51,"Check In",Device
+348,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",18-01-2026,07:05,"Check Out",Device
+349,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",19-01-2026,06:53,"Check In",Device
+350,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",19-01-2026,14:03,"Check Out",Device
+351,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",20-01-2026,13:53,"Check In",Device
+352,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",20-01-2026,21:09,"Check Out",Device
+353,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",21-01-2026,20:50,"Check In",Device
+354,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",22-01-2026,07:07,"Check Out",Device
+355,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",23-01-2026,06:50,"Check In",Device
+356,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",23-01-2026,14:03,"Check Out",Device
+357,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",24-01-2026,13:48,"Check In",Device
+358,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",24-01-2026,21:09,"Check Out",Device
+359,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",25-01-2026,20:51,"Check In",Device
+360,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",26-01-2026,07:05,"Check Out",Device
+361,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",27-01-2026,06:50,"Check In",Device
+362,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",27-01-2026,14:02,"Check Out",Device
+363,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",28-01-2026,13:57,"Check In",Device
+364,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",28-01-2026,21:09,"Check Out",Device
+365,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",29-01-2026,20:51,"Check In",Device
+366,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",30-01-2026,07:07,"Check Out",Device
+367,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",31-01-2026,06:56,"Check In",Device
+368,402,"dr. Sari Indrawati","Koordinasi Dokter Jaga / Poli",31-01-2026,14:04,"Check Out",Device
