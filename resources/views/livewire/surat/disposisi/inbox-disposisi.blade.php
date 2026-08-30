@@ -57,9 +57,15 @@
                                 @endif
                             </td>
                             <td class="py-4 px-4 text-right space-x-2">
-                                <x-ts:button wire:click="openModalParaf({{ $item->id }})" x-on:click="$tsui.open('modal-paraf')" size="xs" color="indigo" icon="check-badge">
-                                    Tindak Lanjut & Paraf
-                                </x-ts:button>
+                                @if($item->status_tindak_lanjut === 'done')
+                                    <x-ts:button size="xs" color="slate" outline disabled icon="check" class="opacity-60 cursor-not-allowed">
+                                        Sudah Diparaf
+                                    </x-ts:button>
+                                @else
+                                    <x-ts:button wire:click="openModalParaf({{ $item->id }})" x-on:click="$tsui.open('modal-paraf')" size="xs" color="indigo" icon="check-badge">
+                                        Tindak Lanjut & Paraf
+                                    </x-ts:button>
+                                @endif
                                 <x-ts:button href="{{ route('kepegawaian.surat.disposisi.show', $item->surat_disposisi_id) }}" size="xs" color="slate" outline icon="eye">
                                     Detail
                                 </x-ts:button>
