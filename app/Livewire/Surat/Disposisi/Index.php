@@ -4,16 +4,16 @@ namespace App\Livewire\Surat\Disposisi;
 
 use App\Models\Surat\SuratDisposisi;
 use App\Services\SuratDisposisiService;
-use Livewire\Component;
-use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
-use TallStackUi\Traits\Interactions;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Title('Surat Disposisi Direktur')]
 class Index extends Component
 {
-    use WithPagination, Interactions;
+    use WithPagination;
 
     #[Url]
     public string $search = '';
@@ -21,41 +21,10 @@ class Index extends Component
     #[Url]
     public string $statusFilter = 'all';
 
-    public bool $modalSettingPattern = false;
-    public string $patternInput = '';
-
-    public bool $modalPreview = false;
-    public ?SuratDisposisi $selectedDisposisi = null;
-
-    public function mount(SuratDisposisiService $service): void
+    #[On('pattern-updated')]
+    public function refreshPattern(): void
     {
-        $this->patternInput = $service->getNoAgendaPattern();
-    }
-
-    public function showPreview(int $id): void
-    {
-        $this->selectedDisposisi = SuratDisposisi::with(['details', 'direktur'])->find($id);
-        if ($this->selectedDisposisi) {
-            $this->modalPreview = true;
-        }
-    }
-
-    public function openModalSetting(): void
-    {
-        $service = app(SuratDisposisiService::class);
-        $this->patternInput = $service->getNoAgendaPattern();
-        $this->modalSettingPattern = true;
-    }
-
-    public function savePatternSetting(SuratDisposisiService $service): void
-    {
-        $this->validate([
-            'patternInput' => 'required|string|max:100',
-        ]);
-
-        $service->saveNoAgendaPattern($this->patternInput);
-        $this->modalSettingPattern = false;
-        $this->toast()->success('Berhasil', 'Format No. Agenda berhasil diperbarui.')->send();
+        // Refresh component view when agenda pattern is updated
     }
 
     public function deleteDisposisi(int $id): void
@@ -63,7 +32,6 @@ class Index extends Component
         $disposisi = SuratDisposisi::find($id);
         if ($disposisi) {
             $disposisi->delete();
-            $this->toast()->success('Berhasil', 'Data disposisi berhasil dihapus.')->send();
         }
     }
 
