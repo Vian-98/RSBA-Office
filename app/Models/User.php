@@ -85,7 +85,7 @@ class User extends Authenticatable
      */
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole('Super-Admin') || $this->can('super-admin-bypass');
+        return $this->hasRole('Super-Admin') || rescue(fn () => $this->hasPermissionTo('super-admin-bypass'), false, false);
     }
 
     /**
@@ -93,7 +93,7 @@ class User extends Authenticatable
      */
     public function isKoordinator(): bool
     {
-        if ($this->isSuperAdmin() || $this->can('edit-kepegawaian-jadwal-kerja')) {
+        if ($this->isSuperAdmin() || $this->hasRole('Koordinator') || $this->hasRole('Koordinator-Dokter')) {
             return true;
         }
 
@@ -123,7 +123,7 @@ class User extends Authenticatable
      */
     public function isKepalaDept(): bool
     {
-        if ($this->isSuperAdmin() || $this->can('approve-jadwal-kabid')) {
+        if ($this->isSuperAdmin() || $this->hasRole('Kepala-Bidang')) {
             return true;
         }
 
@@ -144,7 +144,7 @@ class User extends Authenticatable
      */
     public function isWadir(): bool
     {
-        if ($this->isSuperAdmin() || $this->can('approve-jadwal-wadir')) {
+        if ($this->isSuperAdmin() || $this->hasRole('Wadir') || $this->hasRole('Wakil-Direktur') || $this->hasRole('Wadir-Medis-Keperawatan') || $this->hasRole('Wadir-SDM-Umum') || $this->hasRole('Wadir-Keuangan')) {
             return true;
         }
 
@@ -162,7 +162,7 @@ class User extends Authenticatable
 
     public function isKabagSDM(): bool
     {
-        if ($this->can('view-kepegawaian-karyawan')) {
+        if ($this->hasRole('Staff-SDM') || $this->hasRole('Ka. SDM') || rescue(fn () => $this->hasPermissionTo('view-kepegawaian-karyawan'), false, false)) {
             return true;
         }
 
@@ -181,7 +181,7 @@ class User extends Authenticatable
 
     public function isKabagUmum(): bool
     {
-        if ($this->can('manage-umum-asset')) {
+        if ($this->hasRole('Bagian-Umum') || $this->hasRole('Ka. Umum') || rescue(fn () => $this->hasPermissionTo('manage-umum-asset'), false, false)) {
             return true;
         }
 
@@ -200,7 +200,7 @@ class User extends Authenticatable
 
     public function isKabagKeuangan(): bool
     {
-        if ($this->can('view-keuangan-hutang')) {
+        if ($this->hasRole('Keuangan') || $this->hasRole('Pajak') || rescue(fn () => $this->hasPermissionTo('view-keuangan-hutang'), false, false)) {
             return true;
         }
 
@@ -311,7 +311,7 @@ class User extends Authenticatable
      */
     public function getRuanganKoordinatorIds(): ?array
     {
-        if ($this->isSuperAdmin() || $this->isWadir() || $this->can('view-kepegawaian-karyawan') || $this->can('edit-kepegawaian-jadwal-kerja')) {
+        if ($this->isSuperAdmin() || $this->isWadir() || rescue(fn () => $this->hasPermissionTo('view-kepegawaian-karyawan'), false, false) || rescue(fn () => $this->hasPermissionTo('edit-kepegawaian-jadwal-kerja'), false, false)) {
             return null; // null = akses semua ruangan
         }
 

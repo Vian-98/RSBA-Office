@@ -41,6 +41,7 @@ class Notif extends Component
 
     protected function buildNotifications($user): array
     {
+        $items = [];
 
         // 1. General Welcome
         $items[] = [
@@ -125,49 +126,34 @@ class Notif extends Component
             report($e);
         }
 
-        // 4. Pelanggaran Aturan Jadwal Kerja (Untuk Koordinator Ruangan, Staff-SDM, & Super-Admin)
-        try {
-            $aturanService = app(\App\Services\AturanJadwalService::class);
-            $query = \App\Models\Sdm\JadwalKerja::with(['ruangan']);
-
-            $ruanganIds = $user->getRuanganKoordinatorIds();
-            if ($ruanganIds !== null) {
-                // Jika koordinator ruangan biasa, hanya ambil ruangan yang dikoordinasikan
-                if (!empty($ruanganIds)) {
-                    $query->whereIn('ruangan_id', $ruanganIds);
-                } else {
-                    $query->whereRaw('1=0');
-                }
-            }
-
-            // Ambil 10 jadwal aktif (tidak terkunci) terupdate dalam 60 hari terakhir
-            $activeSchedules = $query->where('status', '!=', \App\Enums\StatusJadwalKerja::LOCKED)
-                ->where('created_at', '>=', now()->subDays(60))
-                ->orderBy('updated_at', 'desc')
-                ->take(10)
+        // 4. Jadwal Menunggu Persetujuan (Untuk Koordinator, Kabid, Wadir & SDM)
+        if ($user && ($user->isKoordinator() || $user->can('edit-kepegawaian-jadwal-kerja') || $user->isWadir() || $user->isKepalaDept())) {
+            try {
+                $pendingSchedules = \App\Models\Sdm\JadwalKerja::whereIn('status', [
+                    \App\Enums\StatusJadwalKerja::MENUNGGU_KABID,
+                    \App\Enums\StatusJadwalKerja::MENUNGGU_WADIR,
+                ])
+                ->with('ruangan')
+                ->latest('updated_at')
+                ->take(3)
                 ->get();
 
-            foreach ($activeSchedules as $sched) {
-                /** @var \App\Models\Sdm\JadwalKerja $sched */
-                $violations = $aturanService->checkViolations($sched);
-                if (!empty($violations)) {
-                    $totalViolations = count($violations);
-                    $sample = $violations[0]['message'];
-                    
+                foreach ($pendingSchedules as $sched) {
+                    $statusLabel = $sched->status === \App\Enums\StatusJadwalKerja::MENUNGGU_WADIR ? 'Menunggu Approval Wadir' : 'Menunggu Approval Kabid';
                     $items[] = [
-                        'id' => 'jadwal-violation-' . $sched->id . '-' . $totalViolations,
-                        'type' => 'danger',
-                        'icon' => 'tabler.alert-triangle',
-                        'title' => 'Peringatan Jadwal: ' . ($sched->ruangan->nama ?? 'Ruangan'),
-                        'message' => "Ditemukan {$totalViolations} potensi pelanggaran aturan jadwal. Contoh: \"{$sample}\"",
+                        'id' => 'jadwal-pending-' . $sched->id . '-' . $sched->status->value,
+                        'type' => 'warning',
+                        'icon' => 'tabler.calendar-time',
+                        'title' => 'Persetujuan Jadwal: ' . ($sched->ruangan->nama ?? 'Ruangan'),
+                        'message' => "Jadwal {$sched->nama_bulan_tahun} {$statusLabel}.",
                         'time' => $sched->updated_at->diffForHumans(),
                         'route' => 'kepegawaian.jadwal-kerja.kelola',
                         'route_params' => ['id' => $sched->id],
                     ];
                 }
+            } catch (\Throwable $e) {
+                report($e);
             }
-        } catch (\Throwable $e) {
-            report($e);
         }
 
         // 5. Digital Signature Notifications (Pengajuan Ditolak & Menunggu Approval)

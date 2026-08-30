@@ -35,7 +35,11 @@ class ProfileImageCacheController extends Controller
             return $this->getDefaultImage($width, $height);
         }
 
-        return response($image['content'])
+        $binaryContent = isset($image['is_base64']) && $image['is_base64'] 
+            ? base64_decode($image['content']) 
+            : $image['content'];
+
+        return response($binaryContent)
             ->header('Content-Type', $image['mime'])
             ->header('Cache-Control', 'public');
     }
@@ -66,8 +70,9 @@ class ProfileImageCacheController extends Controller
             ->toWebp(80);
 
         return [
-            'content' => $img->toString(),
-            'mime' => 'image/webp'
+            'content'   => base64_encode($img->toString()),
+            'is_base64' => true,
+            'mime'      => 'image/webp'
         ];
     }
 
