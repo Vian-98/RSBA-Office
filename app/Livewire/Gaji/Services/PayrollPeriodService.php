@@ -94,6 +94,7 @@ class PayrollPeriodService
         int $formSp3JabatanId,
         int $karyawanCount,
         float $totalGajiBersih,
+        ?int $formSp3VerifikatorKeuanganId = null,
         ?int $userId = null
     ): void {
         $lock = DB::table('sdm_payroll_period_locks')->where('periode', $periode)->first();
@@ -138,6 +139,7 @@ class PayrollPeriodService
                 'status' => 'pending',
                 'payroll_periode' => $periode,
                 'jabatan_id' => $formSp3JabatanId,
+                'verifikator_keuangan_id' => $formSp3VerifikatorKeuanganId,
                 'created_by' => $userId ?: auth()->id(),
                 'created_at' => now(),
                 'updated_at' => now(),
