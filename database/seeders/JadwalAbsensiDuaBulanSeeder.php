@@ -187,7 +187,7 @@ class JadwalAbsensiDuaBulanSeeder extends Seeder
                 DB::table('sdm_kary_jabatan')->updateOrInsert(
                     ['karyawan_id' => $karyawan->id, 'jabatan_id' => $jabatan->id],
                     [
-                        'bagian_id'   => $jabatan->bagian_id,
+                        'bagian_id'   => $ruangan?->bagian_id ?? $jabatan->bagian_id,
                         'tgl_mulai'   => '2025-01-01',
                         'created_at'  => now(),
                         'updated_at'  => now(),

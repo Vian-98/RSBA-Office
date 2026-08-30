@@ -60,17 +60,21 @@ class JadwalKerja extends Model
             ->whereIn('id', $ids)
             ->get()
             ->map(fn (Karyawan $karyawan) => $karyawan->active_bagian_id)
+            ->filter()
             ->values();
 
-        if ($bagianIds->isNotEmpty() && $bagianIds->every(fn ($id) => $id !== null) && $bagianIds->unique()->count() === 1) {
+        if ($bagianIds->isNotEmpty() && $bagianIds->unique()->count() === 1) {
             return (int) $bagianIds->first();
         }
 
-        if (($bagianIds->isEmpty() || $bagianIds->every(fn ($id) => $id === null)) && $ruanganId) {
-            return \App\Models\Ruangan::whereKey($ruanganId)->value('bagian_id');
+        if ($ruanganId) {
+            $ruanganBagianId = \App\Models\Ruangan::whereKey($ruanganId)->value('bagian_id');
+            if ($ruanganBagianId) {
+                return (int) $ruanganBagianId;
+            }
         }
 
-        return null;
+        return $bagianIds->isNotEmpty() ? (int) $bagianIds->first() : null;
     }
 
     public function approvalLogs()

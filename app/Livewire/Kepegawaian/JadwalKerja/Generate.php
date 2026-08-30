@@ -57,9 +57,30 @@ class Generate extends Component
         $user = Auth::user();
         $karyawanId = $user?->karyawan_id ?? $user?->id ?? 1;
 
-        $isKoorDokter = $user?->isKoordinatorDokter() ?? false;
-        $isKoorKaryawan = $user?->isKoordinatorKaryawan() ?? false;
-        $tipeJadwal = $isKoorDokter ? 'dokter' : 'karyawan';
+        $isStructuralAdmin = $user && ($user->isSuperAdmin() || $user->isWadir() || $user->isKepalaDept() || $user->can('add-kepegawaian-jadwal-kerja') || $user->can('edit-kepegawaian-jadwal-kerja'));
+
+        $isKoorDokter = !$isStructuralAdmin && ($user?->isKoordinatorDokter() ?? false);
+        $isKoorKaryawan = !$isStructuralAdmin && ($user?->isKoordinatorKaryawan() ?? false);
+
+        // Tentukan tipe jadwal secara cerdas
+        if ($isKoorDokter) {
+            $tipeJadwal = 'dokter';
+        } elseif ($isKoorKaryawan) {
+            $tipeJadwal = 'karyawan';
+        } elseif (!empty($this->tipe)) {
+            $tipeJadwal = $this->tipe;
+        } else {
+            $hasDokterOnly = Karyawan::where('ruangan_id', $this->ruangan_id)
+                ->whereNull('resign_at')
+                ->whereHas('dokterRecord')
+                ->exists()
+                && !Karyawan::where('ruangan_id', $this->ruangan_id)
+                ->whereNull('resign_at')
+                ->whereDoesntHave('dokterRecord')
+                ->exists();
+
+            $tipeJadwal = $hasDokterOnly ? 'dokter' : 'karyawan';
+        }
 
         // Cek apakah jadwal sudah ada
         $exists = JadwalKerja::where('ruangan_id', $this->ruangan_id)
@@ -76,16 +97,17 @@ class Generate extends Component
         $karyawansQuery = Karyawan::where('ruangan_id', $this->ruangan_id)
             ->whereNull('resign_at');
 
-        if ($isKoorDokter) {
+        if ($tipeJadwal === 'dokter') {
             $karyawansQuery->whereHas('dokterRecord');
-        } elseif ($isKoorKaryawan) {
+        } else {
             $karyawansQuery->whereDoesntHave('dokterRecord');
         }
 
         $karyawans = $karyawansQuery->get();
 
         if ($karyawans->isEmpty()) {
-            $this->toast()->error('Gagal Generate Jadwal', 'Tidak ditemukan data pegawai aktif pada ruangan ini. Pastikan pegawai telah ditempatkan ke ruangan ini pada menu Karyawan.')->send();
+            $labelKelompok = $tipeJadwal === 'dokter' ? 'Dokter' : 'Pegawai Non-Dokter';
+            $this->toast()->error('Gagal Generate Jadwal', "Tidak ditemukan data {$labelKelompok} aktif pada ruangan ini. Pastikan data penempatan pegawai di menu Karyawan sudah sesuai.")->send();
             return;
         }
 
