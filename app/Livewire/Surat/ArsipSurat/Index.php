@@ -209,11 +209,62 @@ class Index extends Component
 
             if ($result && ($result['success'] ?? false)) {
                 $docstoreData = $result;
-            } else {
-                $errorMessage = 'Gagal terhubung ke bank surat Docstore (API Offline/Error).';
             }
         } catch (\Throwable $e) {
             $errorMessage = 'Gagal terhubung ke bank surat Docstore: ' . $e->getMessage();
+        }
+
+        // 3. Merge & pastikan Surat Disposisi Direktur tampil di Arsip Surat
+        if (in_array($this->filterType, ['all', 'surat_disposisi', 'disposisi'])) {
+            $disposisiQuery = \App\Models\Surat\SuratDisposisi::query();
+
+            if (!empty($this->search)) {
+                $searchKeyword = '%' . $this->search . '%';
+                $disposisiQuery->where(function ($q) use ($searchKeyword) {
+                    $q->where('no_agenda', 'like', $searchKeyword)
+                        ->orWhere('no_surat', 'like', $searchKeyword)
+                        ->orWhere('perihal', 'like', $searchKeyword)
+                        ->orWhere('asal_surat', 'like', $searchKeyword);
+                });
+            }
+
+            $localDisposisi = $disposisiQuery->latest()->get();
+
+            if (!$docstoreData) {
+                $docstoreData = ['success' => true, 'data' => []];
+            }
+            if (!isset($docstoreData['data'])) {
+                $docstoreData['data'] = [];
+            }
+
+            foreach ($localDisposisi as $disp) {
+                $alreadyExists = false;
+                foreach ($docstoreData['data'] as $existingDoc) {
+                    if (
+                        ($existingDoc['document_number'] ?? '') === $disp->no_agenda ||
+                        ($existingDoc['docstore_key'] ?? '') === $disp->docstore_key
+                    ) {
+                        $alreadyExists = true;
+                        break;
+                    }
+                }
+
+                if (!$alreadyExists) {
+                    array_unshift($docstoreData['data'], [
+                        'docstore_key' => $disp->docstore_key ?: ('DISP-' . $disp->id),
+                        'document_type' => 'surat_disposisi',
+                        'document_number' => $disp->no_agenda,
+                        'status' => 'approved',
+                        'synced_at' => $disp->created_at ? $disp->created_at->toIso8601String() : null,
+                        'content' => [
+                            'title' => 'Disposisi #' . $disp->no_agenda . ': ' . $disp->perihal,
+                            'perihal' => $disp->perihal,
+                            'no_surat' => $disp->no_surat,
+                            'asal_surat' => $disp->asal_surat,
+                        ],
+                    ]);
+                }
+            }
         }
 
         return view('livewire.surat.arsip-surat.index', [

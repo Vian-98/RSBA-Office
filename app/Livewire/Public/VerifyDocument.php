@@ -184,6 +184,34 @@ class VerifyDocument extends Component
             return;
         }
 
+        // 4. Cari pada Surat Disposisi Direktur
+        $disposisi = \App\Models\Surat\SuratDisposisi::where('signature_hash', $this->hash)
+            ->orWhere('docstore_key', $this->hash)
+            ->first();
+
+        if ($disposisi) {
+            $this->documentTypeLabel = 'Surat Disposisi Direktur';
+            $this->nomorSurat = $disposisi->no_agenda;
+            $this->tanggalSurat = $disposisi->tgl_surat ? $disposisi->tgl_surat->format('d F Y') : '-';
+            $this->namaPegawai = 'Direktur RS Bintang Amin';
+            $this->unitKerja = 'Direksi RS Bintang Amin';
+            $this->perihal = 'Disposisi #' . $disposisi->no_agenda . ': ' . $disposisi->perihal;
+            $this->signedAt = $disposisi->signed_at ? $disposisi->signed_at->format('d/m/Y H:i') : ($disposisi->created_at ? $disposisi->created_at->format('d/m/Y H:i') : '-');
+
+            $this->approvals = $disposisi->details->map(function ($det) {
+                return [
+                    'nama' => $det->nama_tujuan,
+                    'jabatan' => 'Penerima Disposisi',
+                    'status' => $det->status_tindak_lanjut === 'done' ? 'Disetujui / Paraf' : 'Pending',
+                    'approved_at' => $det->tgl_paraf ? $det->tgl_paraf->format('d/m/Y H:i') : '-',
+                ];
+            })->toArray();
+
+            $this->isValid = true;
+            $this->logScanEvent('surat_disposisi', $disposisi->id);
+            return;
+        }
+
         // 3. Fallback: Cari di signature_logs
         $log = SignatureLogs::where('data_hash', $this->hash)
             ->orWhere('signature', $this->hash)

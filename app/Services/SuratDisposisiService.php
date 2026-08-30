@@ -196,6 +196,15 @@ class SuratDisposisiService
                 }
             }
 
+            // Sync to Bank Surat Docstore Vault & Arsip
+            try {
+                if (class_exists(\App\Services\DocstoreSyncService::class)) {
+                    app(\App\Services\DocstoreSyncService::class)->syncDisposisi($disposisi);
+                }
+            } catch (\Throwable $e) {
+                // Ignore sync exceptions so transaction succeeds
+            }
+
             return $disposisi;
         });
     }

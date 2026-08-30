@@ -122,6 +122,72 @@ class DocstoreSyncService
     }
 
     /**
+     * Sinkronisasi Surat Disposisi Direktur ke Bank Surat Docstore.
+     */
+    public function syncDisposisi(\App\Models\Surat\SuratDisposisi $disposisi): bool
+    {
+        $recipientsList = [];
+        foreach ($disposisi->details as $det) {
+            $recipientsList[] = [
+                'nama' => $det->nama_tujuan,
+                'is_info' => (bool)$det->is_info,
+                'is_action' => (bool)$det->is_action,
+                'is_arsip' => (bool)$det->is_arsip,
+                'status' => $det->status_tindak_lanjut,
+                'tgl_paraf' => $det->tgl_paraf ? $det->tgl_paraf->toIso8601String() : null,
+            ];
+        }
+
+        $payload = [
+            'document_type'   => 'surat_disposisi',
+            'document_id'     => $disposisi->id,
+            'document_number' => $disposisi->no_agenda,
+            'status'          => $disposisi->status ?? 'approved',
+            'content'         => [
+                'title'          => "Surat Disposisi Direktur #" . $disposisi->no_agenda . ": " . $disposisi->perihal,
+                'no_agenda'      => $disposisi->no_agenda,
+                'no_surat'       => $disposisi->no_surat,
+                'tgl_surat'      => $disposisi->tgl_surat ? $disposisi->tgl_surat->format('Y-m-d') : null,
+                'perihal'        => $disposisi->perihal,
+                'asal_surat'     => $disposisi->asal_surat,
+                'catatan'        => $disposisi->catatan,
+                'diterima_oleh'  => $disposisi->diterima_oleh,
+                'tgl_diterima'   => $disposisi->tgl_diterima ? $disposisi->tgl_diterima->format('Y-m-d') : null,
+                'jam_diterima'   => $disposisi->jam_diterima,
+                'recipients'     => $recipientsList,
+                'signature_hash' => $disposisi->signature_hash,
+            ],
+            'signatures'      => [
+                [
+                    'signature'      => 'SIG_' . $disposisi->signature_hash,
+                    'original_data'  => $disposisi->no_agenda . '|' . $disposisi->no_surat . '|' . $disposisi->perihal,
+                    'signer_name'    => 'Direktur RS Bintang Amin',
+                    'signer_role'    => 'Direktur Utama',
+                    'status'         => 'approved',
+                    'signed_at'      => $disposisi->created_at ? $disposisi->created_at->toIso8601String() : now()->toIso8601String(),
+                    'signature_hash' => $disposisi->signature_hash,
+                ]
+            ],
+        ];
+
+        try {
+            $response = $this->client->postDocument($payload);
+
+            if ($response && ($response['success'] ?? false)) {
+                $docstoreKey = $response['docstore_key'] ?? ($response['data']['docstore_key'] ?? null);
+                if ($docstoreKey) {
+                    $disposisi->update(['docstore_key' => $docstoreKey]);
+                }
+                return true;
+            }
+        } catch (\Throwable $e) {
+            Log::error('Exception syncDisposisi to docstore: ' . $e->getMessage());
+        }
+
+        return false;
+    }
+
+    /**
      * Sinkronisasi Dokumen Tanda Tangan Digital langsung ke Bank Surat Docstore.
      */
     public function syncDigitalSignatureDoc(Model $doc, string $pdfBase64, array $signatureData): bool

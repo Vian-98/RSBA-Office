@@ -35,6 +35,9 @@
                     @case('receipt-2')
                         <x-tabler-receipt-2 class="size-4" />
                         @break
+                    @case('send')
+                        <x-tabler-send class="size-4" />
+                        @break
                     @default
                         <x-tabler-file-text class="size-4" />
                 @endswitch

@@ -61,6 +61,14 @@ class SuratKategoriArsipSeeder extends Seeder
                 'is_system'   => true,
                 'is_active'   => true,
             ],
+            [
+                'kode'        => 'surat_disposisi',
+                'nama'        => 'Disposisi Direktur',
+                'deskripsi'   => 'Surat lembar penerus & disposisi instruksi Direktur RS Bintang Amin',
+                'icon'        => 'send',
+                'is_system'   => true,
+                'is_active'   => true,
+            ],
         ];
 
         foreach ($categories as $cat) {
