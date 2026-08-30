@@ -181,6 +181,8 @@ class PermissionSeeder extends Seeder
             'view-kepegawaian-surat-balasan-penelitian',
             'view-kepegawaian-surat-perintah-tugas',
             'view-kepegawaian-surat-arsip',
+            'view-kepegawaian-surat-disposisi',
+            'view-kepegawaian-surat-disposisi-inbox',
             'view-keuangan-kuitansi',
             'print-keuangan-kuitansi',
             'add-keuangan-kuitansi',

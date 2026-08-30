@@ -55,4 +55,15 @@ Route::middleware(['auth', 'web'])->group(function () {
 
     Route::get('/kepegawaian/surat/perintah-tugas/{id}/pdf', [App\Http\Controllers\Surat\SuratPerintahTugasPdfController::class, 'download'])->name('kepegawaian.surat.perintah-tugas.pdf');
     Route::get('/kepegawaian/surat/perintah-tugas/{id}/preview-pdf', [App\Http\Controllers\Surat\SuratPerintahTugasPdfController::class, 'stream'])->name('kepegawaian.surat.perintah-tugas.preview-pdf');
+
+    // Disposisi Routes
+    Route::get('/kepegawaian/surat/disposisi', App\Livewire\Surat\Disposisi\Index::class)->name('kepegawaian.surat.disposisi.index');
+    Route::get('/kepegawaian/surat/disposisi/create', App\Livewire\Surat\Disposisi\Add::class)->name('kepegawaian.surat.disposisi.add');
+    Route::get('/kepegawaian/surat/disposisi/inbox', App\Livewire\Surat\Disposisi\InboxDisposisi::class)->name('kepegawaian.surat.disposisi.inbox');
+    Route::get('/kepegawaian/surat/disposisi/{id}', App\Livewire\Surat\Disposisi\Show::class)->name('kepegawaian.surat.disposisi.show');
+    Route::get('/kepegawaian/surat/disposisi/{id}/print', function ($id) {
+        $disposisi = App\Models\Surat\SuratDisposisi::with(['details', 'direktur'])->findOrFail($id);
+        return view('livewire.surat.disposisi.print', compact('disposisi'));
+    })->name('kepegawaian.surat.disposisi.print');
 });
+

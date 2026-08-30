@@ -177,6 +177,7 @@ class RoleSeeder extends Seeder
         $pajakRole = Role::firstOrCreate(['name' => 'Pajak']);
         $safeSync($pajakRole, $pajakPermissions);
 
+        $dokterRole = Role::firstOrCreate(['name' => 'Dokter']);
         $safeSync($dokterRole, array_unique(array_merge($commonPermissions, ['view-kepegawaian-jadwal-kerja', 'view-dokter'])));
 
         $koordinatorPermissions = array_unique(array_merge($commonPermissions, [
