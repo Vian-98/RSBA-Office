@@ -131,6 +131,11 @@ class JadwalAbsensiDuaBulanSeeder extends Seeder
             'tingkat_id' => $tingkatWadir->id,
             'kode_surat' => 'WADIR-MEDIS',
         ]);
+        $jabKabidKep = Jabatan::firstOrCreate(['nama' => 'Kabid Keperawatan & Rawat Inap'], [
+            'bagian_id'  => $bagianKeperawatan->id,
+            'tingkat_id' => $tingkatKabid->id,
+            'kode_surat' => 'KABID-KEP',
+        ]);
         $jabKoorIgd = Jabatan::firstOrCreate(['nama' => 'Kepala Ruangan IGD'], [
             'bagian_id'  => $bagianIgd->id,
             'tingkat_id' => $tingkatKoor->id,
@@ -216,13 +221,22 @@ class JadwalAbsensiDuaBulanSeeder extends Seeder
             return [$karyawan, $user];
         };
 
-        // A. WADIR MEDIS
+        // A1. WADIR MEDIS
         [$wadirMedisKary, $wadirMedisUser] = $createPerson(
             ['nip' => 'DOK-WADIR-001', 'pin_absen' => '2001', 'nama' => 'Dr. Eng. I Muhammad Faisal S.T., M.T.', 'kategori_kerja' => KategoriKerja::REGULER],
             ['name' => 'Dr. Eng. I Muhammad Faisal S.T., M.T.', 'email' => 'zkii0110011@gmail.com'],
             $jabWadirMedis,
             null,
             'Wadir-Medis-Keperawatan'
+        );
+
+        // A2. KEPALA BIDANG KEPERAWATAN & RAWAT INAP
+        [$kabidKepKary, $kabidKepUser] = $createPerson(
+            ['nip' => 'NIP-KABID-KEP-001', 'pin_absen' => '3001', 'nama' => 'Ns. Hendra Wijaya, S.Kep., M.Kep.', 'kategori_kerja' => KategoriKerja::REGULER],
+            ['name' => 'Ns. Hendra Wijaya, S.Kep., M.Kep.', 'email' => 'kabid_keperawatan@rsba.com'],
+            $jabKabidKep,
+            null,
+            'Kepala-Bidang'
         );
 
         // B. KOORDINATOR 1: Karu IGD
