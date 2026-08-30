@@ -24,9 +24,20 @@ class Index extends Component
     public bool $modalSettingPattern = false;
     public string $patternInput = '';
 
+    public bool $modalPreview = false;
+    public ?SuratDisposisi $selectedDisposisi = null;
+
     public function mount(SuratDisposisiService $service): void
     {
         $this->patternInput = $service->getNoAgendaPattern();
+    }
+
+    public function showPreview(int $id): void
+    {
+        $this->selectedDisposisi = SuratDisposisi::with(['details', 'direktur'])->find($id);
+        if ($this->selectedDisposisi) {
+            $this->modalPreview = true;
+        }
     }
 
     public function openModalSetting(): void
