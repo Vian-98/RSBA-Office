@@ -1,8 +1,7 @@
 <div class="flex flex-col gap-2">
-    {{-- <div class="flex flex-col gap-2 rounded-md bg-white p-3"> --}}
     <div class="flex flex-col gap-2 lg:grid lg:grid-cols-4">
         <div class="col-span-2 w-full">
-            <livewire:Asset.Title :assetBarang="$assetBarang" />
+            <livewire:Asset.Title :assetBarang="$assetBarang" :key="'asset-title-' . ($assetBarang?->id ?? 'non-asset')" />
         </div>
 
         <div x-data="durasiMaintenance()" class="col-span-2 w-full rounded-md border-2 border-gray-200 p-2">
@@ -12,17 +11,34 @@
                     <span class="text-2xl font-semibold text-red-500" x-text="displayDuration"></span>
                 </div>
                 <span class="text-xs text-gray-400" x-text="'Mulai : '+startTime"></span>
-
             </div>
         </div>
     </div>
 
     <div class="flex w-full flex-col gap-3 lg:grid lg:grid-cols-2">
+        @if ($assetBarang)
+            <div class="flex flex-col gap-3 rounded-md border-2 border-gray-200 p-2">
+                <livewire:Maintenance.Work.ListKomponen :$assetBarang :key="'komponen-' . ($assetBarang?->id ?? 0)" />
+            </div>
+        @else
+            <div class="flex flex-col gap-3 rounded-md border-2 border-gray-200 p-3 bg-white">
+                <div class="flex items-center gap-2 border-b pb-2">
+                    <span class="font-bold text-gray-800 text-sm">Informasi Pengaduan Non-Aset</span>
+                </div>
+                <div class="text-xs text-gray-600 space-y-1.5">
+                    <p><strong>No. Tiket:</strong> <span class="font-mono text-indigo-600 font-bold">{{ $jadwal?->request?->nomor_tiket ?? ('#REQ-' . ($jadwal?->maintc_request_id ?? '-')) }}</span></p>
+                    <p><strong>Ruangan / Lokasi:</strong> {{ $jadwal?->request?->ruangan?->nama ?? '-' }}</p>
+                    <p><strong>Pelapor:</strong> {{ $jadwal?->request?->user_request ?? '-' }}</p>
+                    <p><strong>Catatan Kerusakan:</strong> {{ $jadwal?->request?->note ?? '-' }}</p>
+                    @if ($jadwal?->note)
+                        <p><strong>Catatan Koordinasi:</strong> {{ $jadwal->note }}</p>
+                    @endif
+                </div>
+            </div>
+        @endif
+
         <div class="flex flex-col gap-3 rounded-md border-2 border-gray-200 p-2">
-            <livewire:Maintenance.Work.ListKomponen :$assetBarang key="'komponen-'{{ $assetBarang->id }}" />
-        </div>
-        <div class="flex flex-col gap-3 rounded-md border-2 border-gray-200 p-2">
-            <livewire:Maintenance.Work.ListRiwayat :assetBarang="$assetBarang" key="'riwayat-'{{ $assetBarang->id }}" />
+            <livewire:Maintenance.Work.ListRiwayat :assetBarang="$assetBarang" :workId="$jadwal?->work?->id" :jadwalId="$jadwal?->id" :key="'riwayat-' . ($assetBarang?->id ?? 'work-' . ($jadwal?->work?->id ?? $jadwal?->id))" />
         </div>
     </div>
 
@@ -31,7 +47,6 @@
             Tutup
         </x-ts:button>
     </div>
-    {{-- </div> --}}
 </div>
 
 @script

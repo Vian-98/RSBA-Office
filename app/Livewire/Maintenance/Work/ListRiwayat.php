@@ -23,14 +23,18 @@ class ListRiwayat extends Component implements HasTable, HasForms, HasActions
     use InteractsWithActions;
     use InteractsWithTable, InteractsWithForms;
 
-    public ?object $assetBarang;
+    public ?object $assetBarang = null;
+    public ?int $workId = null;
+    public ?int $jadwalId = null;
 
     #[Locked]
-    public ?int $jadwalIdSelected;
+    public ?int $jadwalIdSelected = null;
 
-    public function mount($assetBarang)
+    public function mount($assetBarang = null, $workId = null, $jadwalId = null)
     {
         $this->assetBarang = $assetBarang;
+        $this->workId = $workId;
+        $this->jadwalId = $jadwalId;
     }
 
     #[On('maintenance-work-finished')]
@@ -44,7 +48,9 @@ class ListRiwayat extends Component implements HasTable, HasForms, HasActions
         return $table
             ->query(
                 Work::with('jadwal', 'jadwal.teknisi.user')
-                    ->where('asset_id', $this->assetBarang->id)
+                    ->when($this->assetBarang?->id, fn($q) => $q->where('asset_id', $this->assetBarang->id))
+                    ->when(!$this->assetBarang?->id && $this->workId, fn($q) => $q->where('id', $this->workId))
+                    ->when(!$this->assetBarang?->id && !$this->workId && $this->jadwalId, fn($q) => $q->where('maintc_jadwal_id', $this->jadwalId))
                     ->latest('created_at')
             )
             ->columns([
@@ -101,7 +107,7 @@ class ListRiwayat extends Component implements HasTable, HasForms, HasActions
 
 
     #[Locked]
-    public int $selectedId;
+    public int $selectedId = 0;
 
     private function openModal($id, $modal)
     {

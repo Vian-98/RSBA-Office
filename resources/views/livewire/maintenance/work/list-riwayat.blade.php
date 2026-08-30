@@ -7,7 +7,7 @@
 
     <x-filament::modal id="modal-maintenance-work-add" width="max-w-6xl" :close-by-clicking-away="false" :close-by-escaping="false">
         <x-slot:heading>Maintenance</x-slot:heading>
-        <livewire:Maintenance.Work.Add :assetId="$assetBarang->id" :workId="$selectedId" :key="'maintenance-work-' . Str::random()" />
+        <livewire:Maintenance.Work.Add :assetId="$assetBarang?->id" :workId="$selectedId" :key="'maintenance-work-' . Str::random()" />
     </x-filament::modal>
 
 

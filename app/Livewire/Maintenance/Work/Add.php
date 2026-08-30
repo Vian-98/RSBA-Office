@@ -41,10 +41,10 @@ class Add extends Component
     public AssetBarangForm $formAssetBarang;
 
     #[Locked]
-    public int $assetId; //Is Main Asset Id
+    public ?int $assetId = null; //Is Main Asset Id
 
     #[Locked]
-    public ?int $workId;
+    public ?int $workId = null;
 
     public $status;
     public ?string $keterangan = null;
@@ -91,13 +91,17 @@ class Add extends Component
         ];
     }
 
-    public function mount($assetId, $workId)
+    public function mount($workId = null, $assetId = null)
     {
-        $this->assetId = $assetId;
-
         $this->workId = $workId;
+        $this->assetId = $assetId ? (int) $assetId : null;
 
-        $this->maintenanceWork = MaintenanceWork::with('asset')->findOrFail($this->workId);
+        if ($this->workId) {
+            $this->maintenanceWork = MaintenanceWork::with('asset')->findOrFail($this->workId);
+            if (!$this->assetId && $this->maintenanceWork->asset_id) {
+                $this->assetId = $this->maintenanceWork->asset_id;
+            }
+        }
     }
 
     // Dokumentasi Files Variable

@@ -43,9 +43,6 @@
                 <button type="button" @click="opacity = 80" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Semi (80%)</button>
                 <button type="button" @click="opacity = 100" class="px-2 py-1 bg-white border border-indigo-200 rounded-lg text-slate-700 hover:text-indigo-600 font-semibold transition-colors">Solid (100%)</button>
             </div>
-            <p class="text-[10px] text-slate-500 mt-1 italic">
-                💡 Turunkan transparansi jika stempel menutupi teks/tabel pada lembar surat agar tulisan di bawahnya tetap terbaca.
-            </p>
         </div>
     </div>
 

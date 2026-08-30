@@ -12,15 +12,16 @@ use Livewire\Component;
 #[Isolate]
 class Index extends Component
 {
-    public ?AssetBarang $assetBarang;
+    public ?AssetBarang $assetBarang = null;
+    public ?Jadwal $jadwal = null;
 
     public $tanggal_mulai;
 
     public function mount($jadwalId)
     {
-        $jadwal = Jadwal::findOrFail($jadwalId);
-        $this->assetBarang = $jadwal->request->asset;
-        $this->tanggal_mulai = $jadwal->work->mulai; //tanggal work order dimulai
+        $this->jadwal = Jadwal::with(['request.asset.barang', 'request.asset.ruangan', 'request.ruangan', 'work'])->findOrFail($jadwalId);
+        $this->assetBarang = $this->jadwal->request?->asset;
+        $this->tanggal_mulai = $this->jadwal->work?->mulai; //tanggal work order dimulai
     }
 
     public function render()
