@@ -304,6 +304,14 @@ class JadwalAbsensiDuaBulanSeeder extends Seeder
             'Dokter'
         );
 
+        $spesUmum = \App\Models\Sdm\DokterSpesialisasi::firstOrCreate(['nama' => 'Dokter Umum']);
+        foreach ([$wadirMedisKary, $dokter1, $dokter2] as $dokKary) {
+            \App\Models\Sdm\Dokter::updateOrInsert(
+                ['karyawan_id' => $dokKary->id],
+                ['spesialis_id' => $spesUmum->id, 'created_at' => now(), 'updated_at' => now()]
+            );
+        }
+
         // ---------------------------------------------------------------------
         // 5. PENUGASAN KOORDINATOR RUANGAN (sdm_ruangan_koordinator)
         // ---------------------------------------------------------------------

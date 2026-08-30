@@ -179,8 +179,10 @@ class Kelola extends Component
         }
 
         $user = Auth::user();
-        $isKoorDokter = $user?->isKoordinatorDokter() ?? false;
-        $isKoorKaryawan = $user?->isKoordinatorKaryawan() ?? false;
+        $isStructuralApprover = $user && ($user->isSuperAdmin() || $user->isWadir() || $user->isKepalaDept() || $user->can('approve-jadwal-wadir') || $user->can('approve-jadwal-kabid') || $user->can('view-kepegawaian-karyawan') || $user->can('edit-kepegawaian-jadwal-kerja'));
+
+        $isKoorDokter = !$isStructuralApprover && ($user?->isKoordinatorDokter() ?? false);
+        $isKoorKaryawan = !$isStructuralApprover && ($user?->isKoordinatorKaryawan() ?? false);
 
         // Sinkronisasi detail adalah operasi tulis. User Guest/read-only tidak
         // boleh mengubah atau menghapus detail hanya karena membuka halaman.
@@ -197,11 +199,13 @@ class Kelola extends Component
 
             $isDokter = $karyawan->dokterRecord()->exists();
 
-            if ($isKoorDokter && !$isDokter) {
-                continue; // Koordinator Dokter hanya melihat Dokter
-            }
-            if ($isKoorKaryawan && $isDokter) {
-                continue; // Koordinator Karyawan (Karu) hanya melihat Non-Dokter
+            if (!$isStructuralApprover) {
+                if ($isKoorDokter && !$isDokter) {
+                    continue; // Koordinator Dokter murni hanya melihat Dokter
+                }
+                if ($isKoorKaryawan && $isDokter) {
+                    continue; // Koordinator Karyawan (Karu) murni hanya melihat Non-Dokter
+                }
             }
 
             $row = [
