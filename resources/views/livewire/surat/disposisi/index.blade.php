@@ -95,12 +95,15 @@
                                     <x-ts:badge color="amber" text="Draft" />
                                 @endif
                             </td>
-                            <td class="py-4 px-4 text-right space-x-2">
-                                <x-ts:button href="{{ route('kepegawaian.surat.disposisi.show', $item->id) }}" size="xs" color="indigo" outline icon="eye">
+                            <td class="py-4 px-4 text-right space-x-1.5">
+                                <x-ts:button href="{{ route('kepegawaian.surat.disposisi.show', $item->id) }}" size="xs" color="indigo" outline icon="eye" title="Lihat Detail">
                                     Detail
                                 </x-ts:button>
-                                <x-ts:button href="{{ route('kepegawaian.surat.disposisi.print', $item->id) }}" target="_blank" size="xs" color="slate" outline icon="printer">
+                                <x-ts:button onclick="printDocument('{{ route('kepegawaian.surat.disposisi.print', $item->id) }}')" type="button" size="xs" color="slate" outline icon="printer" title="Cetak Browser">
                                     Cetak
+                                </x-ts:button>
+                                <x-ts:button href="{{ route('kepegawaian.surat.disposisi.download', $item->id) }}" size="xs" color="emerald" outline icon="arrow-down-tray" title="Unduh File PDF">
+                                    Unduh PDF
                                 </x-ts:button>
                             </td>
                         </tr>
@@ -137,4 +140,29 @@
             <x-ts:button wire:click="savePatternSetting" color="indigo">Simpan Format</x-ts:button>
         </x-slot>
     </x-ts:modal>
+
+    <script>
+    function printDocument(url) {
+        let iframe = document.getElementById('print-iframe');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'print-iframe';
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            iframe.style.visibility = 'hidden';
+            document.body.appendChild(iframe);
+        }
+        iframe.src = url;
+        iframe.onload = function() {
+            setTimeout(function() {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }, 300);
+        };
+    }
+    </script>
 </div>

@@ -65,5 +65,7 @@ Route::middleware(['auth', 'web'])->group(function () {
         $disposisi = App\Models\Surat\SuratDisposisi::with(['details', 'direktur'])->findOrFail($id);
         return view('livewire.surat.disposisi.print', compact('disposisi'));
     })->name('kepegawaian.surat.disposisi.print');
+    Route::get('/kepegawaian/surat/disposisi/{id}/download', [App\Http\Controllers\Surat\SuratDisposisiPdfController::class, 'download'])
+        ->name('kepegawaian.surat.disposisi.download');
 });
 

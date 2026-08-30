@@ -9,9 +9,12 @@
                 Disposisi #{{ $disposisi->no_agenda }}
             </h1>
         </div>
-        <div class="flex items-center gap-3">
-            <x-ts:button href="{{ route('kepegawaian.surat.disposisi.print', $disposisi->id) }}" target="_blank" color="indigo" icon="printer" size="sm">
-                Cetak / Download PDF Resmi
+        <div class="flex items-center gap-2">
+            <x-ts:button onclick="printDocument('{{ route('kepegawaian.surat.disposisi.print', $disposisi->id) }}')" type="button" color="slate" outline icon="printer" size="sm">
+                Cetak Dokumen
+            </x-ts:button>
+            <x-ts:button href="{{ route('kepegawaian.surat.disposisi.download', $disposisi->id) }}" color="indigo" icon="arrow-down-tray" size="sm">
+                Unduh PDF
             </x-ts:button>
         </div>
     </div>
@@ -35,16 +38,23 @@
 
             <!-- Verification QR Box -->
             @if($disposisi->signature_hash)
+                @php
+                    $verifyUrl = config('services.docstore.verify_app_url', env('VERIFY_APP_URL', 'http://localhost:5173'));
+                    $targetVerifyLink = rtrim($verifyUrl, '/') . '/?hash=' . $disposisi->signature_hash;
+                    if (!empty($disposisi->docstore_key)) {
+                        $targetVerifyLink = rtrim($verifyUrl, '/') . '/?key=' . $disposisi->docstore_key;
+                    }
+                @endphp
                 <div class="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-xl p-3">
                     <div class="p-2 bg-white rounded-lg border shadow-xs">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data={{ urlencode(url('/verify-document/' . $disposisi->signature_hash)) }}" alt="QR Keabsahan" class="w-14 h-14" />
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data={{ urlencode($targetVerifyLink) }}" alt="QR Keabsahan" class="w-14 h-14" />
                     </div>
                     <div>
                         <x-ts:badge color="emerald" icon="check-badge" text="TTD DIGITAL DIREKTUR" />
                         <p class="text-[11px] text-emerald-800 dark:text-emerald-300 mt-1 font-medium">
                             Dokumen Sah & Terverifikasi
                         </p>
-                        <a href="{{ url('/verify-document/' . $disposisi->signature_hash) }}" target="_blank" class="text-[10px] text-indigo-600 hover:underline">
+                        <a href="{{ $targetVerifyLink }}" target="_blank" class="text-[10px] text-indigo-600 hover:underline font-semibold flex items-center gap-1 mt-0.5">
                             Verifikasi Publik &rarr;
                         </a>
                     </div>
@@ -139,4 +149,29 @@
             <div>Tgl/Jam: <strong class="text-slate-700 dark:text-slate-300">{{ $disposisi->tgl_diterima ? $disposisi->tgl_diterima->format('d/m/Y') : '-' }} {{ $disposisi->jam_diterima }}</strong></div>
         </div>
     </div>
+
+    <script>
+    function printDocument(url) {
+        let iframe = document.getElementById('print-iframe');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'print-iframe';
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            iframe.style.visibility = 'hidden';
+            document.body.appendChild(iframe);
+        }
+        iframe.src = url;
+        iframe.onload = function() {
+            setTimeout(function() {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }, 300);
+        };
+    }
+    </script>
 </div>

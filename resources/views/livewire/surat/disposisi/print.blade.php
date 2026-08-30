@@ -209,8 +209,15 @@
                 <td style="text-align: right;">
                     <div>Paraf Direktur :</div>
                     @if($disposisi->signature_hash)
+                        @php
+                            $verifyUrl = config('services.docstore.verify_app_url', env('VERIFY_APP_URL', 'http://localhost:5173'));
+                            $targetVerifyLink = rtrim($verifyUrl, '/') . '/?hash=' . $disposisi->signature_hash;
+                            if (!empty($disposisi->docstore_key)) {
+                                $targetVerifyLink = rtrim($verifyUrl, '/') . '/?key=' . $disposisi->docstore_key;
+                            }
+                        @endphp
                         <div class="qr-box">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data={{ urlencode(url('/verify-document/' . $disposisi->signature_hash)) }}" alt="QR Direktur" />
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data={{ urlencode($targetVerifyLink) }}" alt="QR Direktur" />
                             <div style="font-size: 8px; font-family: monospace;">HASH: {{ substr($disposisi->signature_hash, 0, 12) }}...</div>
                         </div>
                     @else
