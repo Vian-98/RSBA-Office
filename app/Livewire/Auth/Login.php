@@ -41,7 +41,7 @@ class Login extends Component
 
             if (Auth::user()) {
                 $this->toast()
-                    ->success('Selamat Datang!', Auth::user()->karyawan->nama)
+                    ->success('Selamat Datang!', Auth::user()->name)
                     ->flash()
                     ->send();
 

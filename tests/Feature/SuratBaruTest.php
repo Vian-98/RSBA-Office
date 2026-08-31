@@ -227,15 +227,15 @@ class SuratBaruTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        // 1. Kasus 17/08/2026 s.d 03/09/2026 (Agustus s.d September) -> Dihitung 2 bulan kalender
+        // 1. Kasus 17/08/2026 s.d 03/09/2026 (18 hari, <=30 hari) -> Dihitung 1 bulan
         \Livewire\Livewire::test(\App\Livewire\Surat\BalasanPkl\Add::class)
             ->set('tgl_mulai', '2026-08-17')
             ->set('tgl_selesai', '2026-09-03')
-            ->assertSet('lama_praktik_bulan', 2)
-            // Kasus 17/08/2026 s.d 22/10/2026 (Agustus, September, Oktober) -> Dihitung 3 bulan
+            ->assertSet('lama_praktik_bulan', 1)
+            // Kasus 17/08/2026 s.d 22/10/2026 (67 hari, ceil(67/30)) -> Dihitung 3 bulan
             ->set('tgl_selesai', '2026-10-22')
             ->assertSet('lama_praktik_bulan', 3)
-            // Kasus 17/08/2026 s.d 31/08/2026 (dalam bulan yang sama) -> Dihitung 1 bulan
+            // Kasus 17/08/2026 s.d 31/08/2026 (15 hari, <=30 hari) -> Dihitung 1 bulan
             ->set('tgl_selesai', '2026-08-31')
             ->assertSet('lama_praktik_bulan', 1)
             // 2. Override manual: aktifkan toggle gembok manual lalu isi angka 6
@@ -245,7 +245,7 @@ class SuratBaruTest extends TestCase
             // Ganti tanggal tidak boleh mengubah angka 6 saat mode manual
             ->set('tgl_selesai', '2026-11-22')
             ->assertSet('lama_praktik_bulan', 6)
-            // 3. Kembalikan ke otomatis (gembok terkunci) -> Otomatis hitung ulang kalender (Agustus s.d November = 4 bulan)
+            // 3. Kembalikan ke otomatis (gembok terkunci) -> Otomatis hitung ulang (98 hari / 30 = 4 bulan)
             ->call('toggleManualBulan')
             ->assertSet('is_manual_bulan', false)
             ->assertSet('lama_praktik_bulan', 4);
