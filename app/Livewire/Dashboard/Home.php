@@ -59,7 +59,9 @@ class Home extends Component
                     $this->loadUmumData();
                 } elseif ($user->isKabagKeuangan()) {
                     $this->loadKeuanganData();
-                } elseif ($user->isKoordinator()) {
+                } elseif ($user->can('approve-jadwal-kabid') || $user->isKepalaDept()) {
+                    $this->loadBagianData();
+                } elseif ($user->isKoordinator() || !empty($user->getRuanganKoordinatorIdsOnly())) {
                     $this->loadKoordinatorData();
                 } else {
                     $this->loadGuestData();
@@ -86,6 +88,42 @@ class Home extends Component
         $this->recentCuti = SuratCuti::with('karyawan')->latest()->take(5)->get()->toArray();
         $this->recentPurchases = Pembelian::with('supplier')->latest()->take(5)->get()->toArray();
         $this->recentMaintenance = Jadwal::with('asset')->latest()->take(5)->get()->toArray();
+    }
+
+    private function loadBagianData()
+    {
+        $user = Auth::user();
+        $ruanganIds = $user->getAccessibleRuanganIds('view') ?? [];
+
+        if ($ruanganIds && count($ruanganIds) > 0) {
+            $bagian = $user->karyawan?->active_bagian ?? $user->karyawan?->jabatan->first()?->bagian;
+            $namaBagian = $bagian?->nama ?? 'Bidang Kerja';
+            
+            $this->stats = [
+                'ruangan_nama' => $namaBagian,
+                'karyawan_count' => Karyawan::whereIn('ruangan_id', $ruanganIds)->count(),
+                'pending_cuti' => SuratCuti::whereIn('status', [StatusApproval::PENDING, StatusApproval::WAITING])
+                    ->whereHas('karyawan', function($q) use ($ruanganIds) {
+                        $q->whereIn('ruangan_id', $ruanganIds);
+                    })->count(),
+            ];
+
+            $this->recentCuti = SuratCuti::with('karyawan')
+                ->whereHas('karyawan', function($q) use ($ruanganIds) {
+                    $q->whereIn('ruangan_id', $ruanganIds);
+                })
+                ->latest()
+                ->take(5)
+                ->get()
+                ->toArray();
+        } else {
+            $this->stats = [
+                'ruangan_nama' => 'Tidak ada ruangan',
+                'karyawan_count' => 0,
+                'pending_cuti' => 0,
+            ];
+            $this->recentCuti = [];
+        }
     }
 
     private function loadSdmData()
@@ -126,7 +164,7 @@ class Home extends Component
 
     private function loadKoordinatorData()
     {
-        $ruanganIds = Auth::user()->getRuanganKoordinatorIds();
+        $ruanganIds = Auth::user()->getRuanganKoordinatorIdsOnly();
 
         if ($ruanganIds && count($ruanganIds) > 0) {
             $ruanganNames = \App\Models\Ruangan::whereIn('id', $ruanganIds)->pluck('nama')->toArray();

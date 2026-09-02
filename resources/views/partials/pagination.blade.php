@@ -8,7 +8,7 @@
                     <x-ts:icon name="tabler.chevron-left" class="h-4 w-4" />
                 </span>
             @else
-                <button type="button" wire:click="previousPage" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
+                <button type="button" wire:click="previousPage('{{ $paginator->getPageName() }}')" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
                     <x-ts:icon name="tabler.chevron-left" class="h-4 w-4" />
                 </button>
             @endif
@@ -30,7 +30,7 @@
                                 {{ $page }}
                             </span>
                         @else
-                            <button type="button" wire:click="gotoPage({{ $page }})" class="inline-flex h-9 min-w-9 px-3 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50 hover:text-slate-800 transition-colors">
+                            <button type="button" wire:click="gotoPage({{ $page }}, '{{ $paginator->getPageName() }}')" class="inline-flex h-9 min-w-9 px-3 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50 hover:text-slate-800 transition-colors">
                                 {{ $page }}
                             </button>
                         @endif
@@ -40,7 +40,7 @@
 
             {{-- Next Page Link --}}
             @if ($paginator->hasMorePages())
-                <button type="button" wire:click="nextPage" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
+                <button type="button" wire:click="nextPage('{{ $paginator->getPageName() }}')" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors">
                     <x-ts:icon name="tabler.chevron-right" class="h-4 w-4" />
                 </button>
             @else

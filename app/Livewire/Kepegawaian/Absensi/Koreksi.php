@@ -170,7 +170,7 @@ class Koreksi extends Component
     public function render()
     {
         $user = auth()->user();
-        $allowedRuanganIds = ($user?->isSuperAdmin() || $user?->can('view-kepegawaian-laporan')) ? null : $user?->getRuanganKoordinatorIds(); // null = semua, [] = tidak ada
+        $allowedRuanganIds = $user?->getAccessibleRuanganIds('view'); // null = semua, array = ter-scope
 
         // Filter dropdown berdasarkan akses koordinator
         $ruangans  = $allowedRuanganIds !== null

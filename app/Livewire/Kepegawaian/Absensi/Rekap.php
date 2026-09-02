@@ -278,10 +278,7 @@ class Rekap extends Component
     public function render()
     {
         $user = auth()->user();
-        $allowedRuanganIds = null;
-        if ($user && !$user->isSuperAdmin() && !$user->can('view-kepegawaian-laporan')) {
-            $allowedRuanganIds = $user->getRuanganKoordinatorIds() ?? [];
-        }
+        $allowedRuanganIds = $user?->getAccessibleRuanganIds('view');
 
         // Query dropdown options
         $ruanganQuery = Ruangan::where('is_active', true)->orderBy('nama');

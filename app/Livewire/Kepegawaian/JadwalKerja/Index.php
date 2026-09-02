@@ -230,73 +230,54 @@ class Index extends Component implements HasForms, HasTable, HasActions
 
         $user = Auth::user();
         if ($user) {
-            $isSuperAdmin = $user->isSuperAdmin();
-            $isGlobalApprover = $isSuperAdmin || $user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir') || $user->can('view-kepegawaian-laporan');
+            $isGlobalApprover = $user->isSuperAdmin() 
+                || $user->can('super-admin-bypass') 
+                || $user->can('approve-jadwal-wadir') 
+                || $user->can('view-kepegawaian-laporan');
 
             if ($isGlobalApprover) {
-                // Super-Admin, SDM, Wadir, dan Direktur dapat melihat seluruh daftar jadwal seluruh ruangan/bagian
-            } elseif ($this->isRestrictedGuest($user)) {
+                // Super-Admin, SDM, Wadir dapat melihat seluruh daftar jadwal seluruh ruangan/bagian
+            } elseif ($user->can('approve-jadwal-kabid') || $user->isKepalaDept()) {
+                // KaBid hanya melihat ruangan di bawah Bidang/Bagian aktifnya
+                $bagianIds = $user->getActiveBagianIds();
+                $accessibleRuanganIds = $user->getAccessibleRuanganIds('view') ?? [];
+                
+                if (empty($bagianIds) && empty($accessibleRuanganIds)) {
+                    $query->whereRaw('0 = 1');
+                } else {
+                    $query->where(function ($scope) use ($bagianIds, $accessibleRuanganIds) {
+                        if (!empty($bagianIds)) {
+                            $scope->whereIn('bagian_id', $bagianIds);
+                        }
+                        if (!empty($accessibleRuanganIds)) {
+                            $scope->orWhereIn('ruangan_id', $accessibleRuanganIds);
+                        }
+                    });
+                }
+            } elseif ($user->isKoordinator() || $user->can('edit-kepegawaian-jadwal-kerja')) {
+                // Koordinator Ruangan hanya melihat ruangan yang dikoordinasikannya
+                $koorIds = $user->getRuanganKoordinatorIdsOnly();
+                if (empty($koorIds)) {
+                    $koorIds = $user->getAccessibleRuanganIds('manage') ?? [];
+                }
+                
+                if (empty($koorIds)) {
+                    $query->whereRaw('0 = 1');
+                } else {
+                    $query->whereIn('ruangan_id', $koorIds);
+                    if ($user->isDokter()) {
+                        $query->where('tipe', 'dokter');
+                    }
+                }
+            } else {
+                // User biasa (staf/dokter pelaksana): hanya melihat ruangan sendiri yang berstatus published/locked
                 $ownRuanganIds = $user->getOwnRuanganIds();
-
                 if (empty($ownRuanganIds)) {
                     $query->whereRaw('0 = 1');
                 } else {
                     $query->whereIn('ruangan_id', $ownRuanganIds)
                         ->where('tipe', $user->isDokter() ? 'dokter' : 'karyawan')
                         ->whereIn('status', ['published', 'locked']);
-                }
-            } elseif ($user->can('approve-jadwal-kabid') || $user->isKepalaDept()) {
-                $bagianIds = $user->getActiveBagianIds();
-                $legacyBagianRuanganIds = $user->getBagianScopedRuanganIds() ?? [];
-                $koorIds = $user->getRuanganKoordinatorIds() ?? [];
-                if (empty($bagianIds) && empty($legacyBagianRuanganIds) && empty($koorIds)) {
-                    $query->whereRaw('0 = 1');
-                } else {
-                    $query->where(function ($scope) use ($bagianIds, $legacyBagianRuanganIds, $koorIds) {
-                        if (!empty($bagianIds)) {
-                            $scope->whereIn('bagian_id', $bagianIds);
-                        }
-
-                        if (!empty($legacyBagianRuanganIds)) {
-                            $scope->orWhere(function ($legacy) use ($legacyBagianRuanganIds) {
-                                $legacy->whereNull('bagian_id')
-                                    ->whereIn('ruangan_id', $legacyBagianRuanganIds);
-                            });
-                        }
-
-                        if (!empty($koorIds)) {
-                            $scope->orWhereIn('ruangan_id', $koorIds);
-                        }
-                    });
-                }
-            } elseif ($user->isKoordinatorDokter()) {
-                $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
-                if (empty($ruanganIds)) {
-                    $query->whereRaw('0 = 1');
-                } else {
-                    $query->whereIn('ruangan_id', $ruanganIds)->where('tipe', 'dokter');
-                }
-            } elseif ($user->isKoordinatorKaryawan()) {
-                $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
-                $ownRuanganId = $user->karyawan?->ruangan_id;
-                if ($ownRuanganId && !in_array($ownRuanganId, $ruanganIds)) {
-                    $ruanganIds[] = $ownRuanganId;
-                }
-                
-                if (empty($ruanganIds)) {
-                    $query->whereRaw('0 = 1');
-                } else {
-                    $query->whereIn('ruangan_id', $ruanganIds)->where('tipe', 'karyawan');
-                }
-            } else {
-                // User biasa: hanya melihat ruangan tempat dia ditugaskan (teman seruangan)
-                $ownRuanganId = $user->karyawan?->ruangan_id;
-                $isDokter = $user->isDokter();
-                if ($ownRuanganId) {
-                    $query->where('ruangan_id', $ownRuanganId)
-                        ->where('tipe', $isDokter ? 'dokter' : 'karyawan');
-                } else {
-                    $query->whereRaw('0 = 1');
                 }
             }
         }
@@ -332,21 +313,13 @@ class Index extends Component implements HasForms, HasTable, HasActions
             ->recordActions([
                 Action::make('kelola')
                     ->label(fn (JadwalKerja $record): string => 
-                        Auth::user()?->isSuperAdmin() ||
-                        Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
-                        Auth::user()?->can('approve-jadwal-wadir') || 
-                        Auth::user()?->can('approve-jadwal-kabid') || 
-                        (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
+                        Auth::user()?->canManageRuangan($record->ruangan_id) || Auth::user()?->can('approve-jadwal-kabid') || Auth::user()?->can('approve-jadwal-wadir')
                             ? 'Kelola' 
                             : 'Lihat'
                     )
                     ->iconButton()
                     ->icon(fn (JadwalKerja $record): string => 
-                        Auth::user()?->isSuperAdmin() ||
-                        Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
-                        Auth::user()?->can('approve-jadwal-wadir') || 
-                        Auth::user()?->can('approve-jadwal-kabid') || 
-                        (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? []))
+                        Auth::user()?->canManageRuangan($record->ruangan_id) || Auth::user()?->can('approve-jadwal-kabid') || Auth::user()?->can('approve-jadwal-wadir')
                             ? 'tabler-list-details' 
                             : 'tabler-eye'
                     )
@@ -362,10 +335,7 @@ class Index extends Component implements HasForms, HasTable, HasActions
                     ->successNotificationTitle('Jadwal berhasil dihapus')
                     ->visible(fn (JadwalKerja $record): bool => 
                         in_array($record->status, [\App\Enums\StatusJadwalKerja::DRAFT, \App\Enums\StatusJadwalKerja::DITOLAK]) && 
-                        (Auth::user()?->isSuperAdmin() ||
-                         Auth::user()?->can('delete-kepegawaian-jadwal-kerja') || 
-                         Auth::user()?->can('edit-kepegawaian-jadwal-kerja') || 
-                         (Auth::user()?->isKoordinator() && in_array($record->ruangan_id, Auth::user()->getRuanganKoordinatorIds() ?? [])))
+                        (Auth::user()?->canManageRuangan($record->ruangan_id) || Auth::user()?->can('delete-kepegawaian-jadwal-kerja'))
                     ),
             ]);
     }

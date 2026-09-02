@@ -266,14 +266,13 @@ class Generate extends Component
         ])->toArray();
 
         $user = Auth::user();
-        $ruanganQuery = \App\Models\Ruangan::where('is_active', true);
+        $ruanganQuery = \App\Models\Ruangan::where('is_active', true)->orderBy('nama');
         
-        if ($user && !$user->isSuperAdmin() && !$user->can('add-kepegawaian-jadwal-kerja') && !$user->can('edit-kepegawaian-jadwal-kerja')) {
-            $ruanganIds = $user->getRuanganKoordinatorIds() ?? [];
-            if ($user->karyawan?->ruangan_id) {
-                $ruanganIds[] = $user->karyawan->ruangan_id;
+        if ($user) {
+            $accessibleRuanganIds = $user->getAccessibleRuanganIds('manage');
+            if ($accessibleRuanganIds !== null) {
+                $ruanganQuery->whereIn('id', $accessibleRuanganIds);
             }
-            $ruanganQuery->whereIn('id', array_unique($ruanganIds));
         }
 
         $ruanganOptions = $ruanganQuery->select('id', 'nama')->get()->map(fn($item) => ['value' => $item->id, 'label' => $item->nama])->toArray();

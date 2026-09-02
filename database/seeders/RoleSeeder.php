@@ -58,7 +58,8 @@ class RoleSeeder extends Seeder
             'view-permissions',
             'view-menus',
             'add-menu',
-            'view-settings'
+            'view-settings',
+            'super-admin-bypass'
         ];
         $executivePermissions = array_values(array_filter($allPermissions, fn($p) => !in_array($p, $systemSettingsOnly)));
 
@@ -68,17 +69,15 @@ class RoleSeeder extends Seeder
         $wadirAlias = Role::firstOrCreate(['name' => 'Wadir']);
         $direktur   = Role::firstOrCreate(['name' => 'Direktur']);
 
-        $safeSync($kabid, $executivePermissions);
-        $safeSync($wadir, $executivePermissions);
-        $safeSync($wadirAlias, $executivePermissions);
-        $safeSync($wadirMedis, $executivePermissions);
-        $safeSync($wadirSdm, $executivePermissions);
-        $safeSync($wadirKeu, $executivePermissions);
-        $safeSync($direktur, $executivePermissions);
+        $kabidPermissions = array_values(array_filter($executivePermissions, fn($p) => $p !== 'approve-jadwal-wadir' && $p !== 'super-admin-bypass'));
 
-        $safeSync($kabid, array_unique(array_merge($executivePermissions, ['approve-jadwal-kabid'])));
-        $safeSync($wadir, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir'])));
-        $safeSync($wadirAlias, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir'])));
+        $safeSync($kabid, array_unique(array_merge($kabidPermissions, ['approve-jadwal-kabid'])));
+        $safeSync($wadir, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir', 'super-admin-bypass'])));
+        $safeSync($wadirAlias, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir', 'super-admin-bypass'])));
+        $safeSync($wadirMedis, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir', 'super-admin-bypass'])));
+        $safeSync($wadirSdm, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir', 'super-admin-bypass'])));
+        $safeSync($wadirKeu, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir', 'super-admin-bypass'])));
+        $safeSync($direktur, array_unique(array_merge($executivePermissions, ['approve-jadwal-wadir', 'super-admin-bypass'])));
 
         // 1. SDM permissions
         $sdmKeywords = ['kepegawaian', 'karyawan', 'dokter', 'cuti', 'sp3', 'jasmed', 'akreditasi', 'verifikasi', 'tanda-tangan-digital', 'export-karyawan', 'bagian', 'jabatan', 'ruangan', 'spesialis', 'surat', 'gaji', 'view-master'];

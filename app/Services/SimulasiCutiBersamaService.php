@@ -22,10 +22,10 @@ class SimulasiCutiBersamaService
 
         $tanggals = $cutiBersama->tanggal->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))->toArray();
 
-        // Map partisipasi (is_ikut: true/false) dari database
-        $partisipasiMap = \App\Models\Sdm\CutiBersamaKaryawan::where('cuti_bersama_id', $cutiBersama->id)
-            ->pluck('is_ikut', 'karyawan_id')
-            ->all();
+        // Map partisipasi & override dari database
+        $partisipasiRecords = \App\Models\Sdm\CutiBersamaKaryawan::where('cuti_bersama_id', $cutiBersama->id)
+            ->get(['karyawan_id', 'is_ikut', 'override_status'])
+            ->keyBy('karyawan_id');
 
         $karyawans = Karyawan::with(['latestJabatan.jabatan'])->orderBy('nama')->get();
         $karyawanIds = $karyawans->pluck('id')->all();
@@ -65,7 +65,9 @@ class SimulasiCutiBersamaService
 
         foreach ($karyawans as $karyawan) {
             $isReguler = ($karyawan->kategori_kerja === KategoriKerja::REGULER);
-            $isIkut    = isset($partisipasiMap[$karyawan->id]) ? (bool)$partisipasiMap[$karyawan->id] : true;
+            $partisipasiRecord = $partisipasiRecords->get($karyawan->id);
+            $isIkut = $partisipasiRecord ? (bool)$partisipasiRecord->is_ikut : true;
+            $overrideStatus = $partisipasiRecord?->override_status ?? 'auto';
             $hariDipotongKaryawan = 0;
 
             foreach ($tanggals as $tglStr) {
@@ -80,13 +82,27 @@ class SimulasiCutiBersamaService
                     'shift_nama' => $jadwalDetail?->shift?->nama ?? 'Libur / Non-Shift',
                     'potong_cuti' => false,
                     'is_ikut'     => $isIkut,
+                    'override_status' => $overrideStatus,
                     'status_aksi' => '',
                     'keterangan' => '',
                 ];
 
-                if (!$isIkut) {
+                if (!$isIkut || $overrideStatus === 'dikecualikan') {
+                    $totalPegawaiDikecualikan++;
                     $hasil['status_aksi'] = 'DIKECUALIKAN';
-                    $hasil['keterangan'] = 'Dikecualikan dari Cuti Bersama (Tidak Ikut)';
+                    $hasil['keterangan'] = 'Dikecualikan dari Cuti Bersama';
+                } elseif ($overrideStatus === 'potong_cuti' && $cutiBersama->potong_cuti_tahunan) {
+                    // Manual Override: Pegawai memilih libur cuti bersama (potong cuti)
+                    $hasil['potong_cuti'] = true;
+                    $hasil['status_aksi'] = 'DIPOTONG_CUTI';
+                    $hasil['keterangan'] = 'Memotong kuota Cuti Tahunan (Pilihan Manual Libur Cuti Bersama)';
+                    $hariDipotongKaryawan++;
+                    $totalHariDipotong++;
+                } elseif ($overrideStatus === 'tetap_hadir') {
+                    // Manual Override: Ditugaskan masuk piket
+                    $hasil['status_aksi'] = 'HADIR_PIKET';
+                    $hasil['keterangan'] = 'Ditugaskan piket dinas (Manual Override), tidak memotong cuti';
+                    $totalPegawaiPiket++;
                 } elseif (!$jadwalDetail) {
                     $totalJadwalBelumAda++;
                     $hasil['status_aksi'] = 'JADWAL_BELUM_ADA';
@@ -99,9 +115,17 @@ class SimulasiCutiBersamaService
                     if ($cutiBersama->potong_cuti_tahunan) {
                         if ($isShiftWorker) {
                             if ($hasShift) {
-                                // Shift worker scheduled to work (Piket/Shift)
-                                $hasil['status_aksi'] = 'TETAP_HADIR';
-                                $hasil['keterangan'] = 'Masuk piket shift, tidak memotong cuti';
+                                // Cek apakah ada record absen di jadwal_detail atau absensi_staging
+                                $hasAbsenJadwal = (!is_null($jadwalDetail->absen_masuk_at) || !is_null($jadwalDetail->absen_keluar_at) || in_array($jadwalDetail->status_kehadiran?->value ?? $jadwalDetail->status_kehadiran, ['hadir', 'terlambat', 'pulang_cepat']));
+                                $hasAbsenStaging = (bool) $absensiStagingMap->get($karyawan->id . '|' . $tglStr, false);
+
+                                if ($hasAbsenJadwal || $hasAbsenStaging) {
+                                    $hasil['status_aksi'] = 'HADIR_PIKET';
+                                    $hasil['keterangan'] = 'Hadir dinas shift (' . $jadwalDetail->shift?->nama . '), tidak memotong cuti';
+                                } else {
+                                    $hasil['status_aksi'] = 'TERJADWAL_PIKET';
+                                    $hasil['keterangan'] = 'Terjadwal dinas shift (' . $jadwalDetail->shift?->nama . ') pelayanan 24 jam, tidak memotong cuti';
+                                }
                                 $totalPegawaiPiket++;
                             } else {
                                 // Shift worker off day
@@ -121,11 +145,10 @@ class SimulasiCutiBersamaService
                                 } else {
                                     // Cek apakah ada record absen di jadwal_detail atau absensi_staging
                                     $hasAbsenJadwal = (!is_null($jadwalDetail->absen_masuk_at) || !is_null($jadwalDetail->absen_keluar_at) || in_array($jadwalDetail->status_kehadiran?->value ?? $jadwalDetail->status_kehadiran, ['hadir', 'terlambat', 'pulang_cepat']));
-
                                     $hasAbsenStaging = (bool) $absensiStagingMap->get($karyawan->id . '|' . $tglStr, false);
 
                                     if ($hasAbsenJadwal || $hasAbsenStaging) {
-                                        $hasil['status_aksi'] = 'TETAP_HADIR';
+                                        $hasil['status_aksi'] = 'HADIR_PIKET';
                                         $hasil['keterangan'] = 'Terdeteksi ada presensi/absen mesin pada tanggal ini, tidak memotong cuti';
                                         $totalPegawaiPiket++;
                                     } else {
@@ -173,7 +196,7 @@ class SimulasiCutiBersamaService
             ];
         }
 
-        $totalPegawaiDikecualikan = count(array_filter($partisipasiMap, fn($v) => !(bool)$v));
+        $totalPegawaiDikecualikan = $partisipasiRecords->filter(fn($r) => !(bool)$r->is_ikut || $r->override_status === 'dikecualikan')->count();
 
         return [
             'cuti_bersama_id' => $cutiBersama->id,

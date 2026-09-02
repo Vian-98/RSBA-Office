@@ -87,7 +87,7 @@ class Index extends Component
         if ($this->selectedId) {
             $cutiBersama = CutiBersama::findOrFail($this->selectedId);
             if ($cutiBersama->status === 'diterapkan') {
-                $this->toast()->error('Tidak dapat mengubah event yang sudah diterapkan. Batalkan terlebih dahulu.')->send();
+                $this->toast()->error('Tidak dapat mengubah Cuti Bersama yang sudah diterapkan. Batalkan terlebih dahulu.')->send();
                 return;
             }
 
@@ -107,7 +107,8 @@ class Index extends Component
                 ]);
             }
 
-            $this->toast()->success('Event Cuti Bersama berhasil diperbarui.')->send();
+            $this->toast()->success('Cuti Bersama berhasil diperbarui.')->send();
+            $this->modalOpen = false;
         } else {
             $cutiBersama = CutiBersama::create([
                 'nama' => $this->nama,
@@ -125,22 +126,22 @@ class Index extends Component
                 ]);
             }
 
-            $this->toast()->success('Event Cuti Bersama baru berhasil dibuat (Draft).')->send();
+            $this->modalOpen = false;
+            $this->toast()->success('Cuti Bersama baru berhasil dibuat. Mengalihkan ke halaman simulasi...')->send();
+            return $this->redirect(route('kepegawaian.cuti-bersama.show', $cutiBersama->id), navigate: true);
         }
-
-        $this->modalOpen = false;
     }
 
     public function delete($id)
     {
         $cutiBersama = CutiBersama::findOrFail($id);
         if ($cutiBersama->status === 'diterapkan') {
-            $this->toast()->error('Event yang sudah diterapkan tidak bisa langsung dihapus. Batalkan terlebih dahulu.')->send();
+            $this->toast()->error('Cuti Bersama yang sudah diterapkan tidak bisa langsung dihapus. Batalkan terlebih dahulu.')->send();
             return;
         }
 
         $cutiBersama->delete();
-        $this->toast()->success('Event Cuti Bersama berhasil dihapus.')->send();
+        $this->toast()->success('Cuti Bersama berhasil dihapus.')->send();
     }
 
     public function render()

@@ -306,18 +306,51 @@ class User extends Authenticatable
     }
 
     /**
-     * Dapatkan daftar ruangan_id yang dikoordinasi user ini
-     * Return null jika Super-Admin/Staff-SDM/Wadir (artinya akses semua ruangan)
+     * Dapatkan daftar ruangan_id yang dapat diakses user berdasarkan tingkat wewenang (permission Spatie):
+     * 1. Global Scope (approve-jadwal-wadir, super-admin-bypass) -> return null (akses semua)
+     * 2. Department Scope (approve-jadwal-kabid) -> return array ruangan_id di bawah bagian aktifnya
+     * 3. Room Scope (edit-kepegawaian-jadwal-kerja / penugasan koordinator) -> return array ruangan_id yang dipimpin
+     * 4. Member Scope (view-kepegawaian-jadwal-kerja / default) -> return array ruangan_id tempat user ditugaskan
      */
-    public function getRuanganKoordinatorIds(): ?array
+    public function getAccessibleRuanganIds(?string $ability = 'view'): ?array
     {
-        if ($this->isSuperAdmin() || $this->isWadir() || rescue(fn () => $this->hasPermissionTo('view-kepegawaian-karyawan'), false, false) || rescue(fn () => $this->hasPermissionTo('edit-kepegawaian-jadwal-kerja'), false, false)) {
-            return null; // null = akses semua ruangan
+        // 1. Global Scope: Wadir, Super-Admin, SDM Pusat
+        if ($this->isSuperAdmin() 
+            || rescue(fn () => $this->hasPermissionTo('super-admin-bypass'), false, false) 
+            || rescue(fn () => $this->hasPermissionTo('approve-jadwal-wadir'), false, false)) {
+            return null;
         }
 
-        $idsFromPivot = $this->koordinatorRuangans()->pluck('ruangan_id')->toArray();
+        // 2. Department Scope: Kepala Bidang / Kepala Bagian
+        if (rescue(fn () => $this->hasPermissionTo('approve-jadwal-kabid'), false, false) || $this->isKepalaDept()) {
+            $bagianIds = $this->getActiveBagianIds();
+            if ($this->karyawan?->active_bagian_id && !in_array((int)$this->karyawan->active_bagian_id, $bagianIds)) {
+                $bagianIds[] = (int) $this->karyawan->active_bagian_id;
+            }
+            if (!empty($bagianIds)) {
+                return \App\Models\Ruangan::whereIn('bagian_id', $bagianIds)->pluck('id')->map(fn($id) => (int)$id)->toArray();
+            }
+        }
 
-        // Auto-check ruangan dari sdm_kary_ruangan atau ruangan_id utama jika user memegang Jabatan Level 4
+        // 3. Room Scope: Koordinator Ruangan (Karu / Dokter Jaga)
+        if ($this->isKoordinator()) {
+            $koorRuangans = $this->getRuanganKoordinatorIdsOnly();
+            if (!empty($koorRuangans)) {
+                return $koorRuangans;
+            }
+        }
+
+        // 4. Member / Staff Scope: Ruangan penugasan sendiri
+        return $this->getOwnRuanganIds();
+    }
+
+    /**
+     * Dapatkan daftar ruangan_id yang murni dikoordinasikan oleh user ini (tanpa fallback null global)
+     */
+    public function getRuanganKoordinatorIdsOnly(): array
+    {
+        $idsFromPivot = $this->koordinatorRuangans()->pluck('ruangan_id')->map(fn($id) => (int)$id)->toArray();
+
         $karyawan = $this->karyawan;
         if ($karyawan) {
             $hasKoorJabatan = $karyawan->jabatan()
@@ -327,15 +360,62 @@ class User extends Authenticatable
                 ->exists();
 
             if ($hasKoorJabatan) {
-                $assignedRooms = $karyawan->ruangans()->pluck('ruangan.id')->toArray();
+                $assignedRooms = $karyawan->ruangans()->pluck('ruangan.id')->map(fn($id) => (int)$id)->toArray();
                 if ($karyawan->ruangan_id) {
-                    $assignedRooms[] = $karyawan->ruangan_id;
+                    $assignedRooms[] = (int) $karyawan->ruangan_id;
                 }
-                return array_unique(array_merge($idsFromPivot, $assignedRooms));
+                return array_values(array_unique(array_merge($idsFromPivot, $assignedRooms)));
             }
         }
 
-        return $idsFromPivot;
+        return array_values(array_unique($idsFromPivot));
+    }
+
+    /**
+     * Cek apakah user berhak mengelola/mengedit ruangan tertentu
+     */
+    public function canManageRuangan(int $ruanganId): bool
+    {
+        if ($this->isSuperAdmin() 
+            || rescue(fn () => $this->hasPermissionTo('super-admin-bypass'), false, false) 
+            || rescue(fn () => $this->hasPermissionTo('approve-jadwal-wadir'), false, false)) {
+            return true;
+        }
+
+        // KaBid
+        if (rescue(fn () => $this->hasPermissionTo('approve-jadwal-kabid'), false, false) || $this->isKepalaDept()) {
+            $deptRooms = $this->getBagianScopedRuanganIds() ?? [];
+            return in_array($ruanganId, $deptRooms, true);
+        }
+
+        // Koordinator Ruangan
+        if ($this->isKoordinator()) {
+            return in_array($ruanganId, $this->getRuanganKoordinatorIdsOnly(), true);
+        }
+
+        return false;
+    }
+
+    /**
+     * Dapatkan daftar ruangan_id yang dikoordinasi user ini.
+     * Return null jika Global Approver (Wadir/Super-Admin/SDM)
+     */
+    public function getRuanganKoordinatorIds(): ?array
+    {
+        if ($this->isSuperAdmin() 
+            || rescue(fn () => $this->hasPermissionTo('super-admin-bypass'), false, false) 
+            || rescue(fn () => $this->hasPermissionTo('approve-jadwal-wadir'), false, false)) {
+            return null; // null = akses semua ruangan
+        }
+
+        if (rescue(fn () => $this->hasPermissionTo('approve-jadwal-kabid'), false, false)) {
+            $bagianScoped = $this->getBagianScopedRuanganIds();
+            if ($bagianScoped !== null) {
+                return $bagianScoped;
+            }
+        }
+
+        return $this->getRuanganKoordinatorIdsOnly();
     }
 
     /**

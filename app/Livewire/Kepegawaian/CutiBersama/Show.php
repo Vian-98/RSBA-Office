@@ -7,8 +7,10 @@ use App\Services\BatalkanCutiBersamaService;
 use App\Services\SimulasiCutiBersamaService;
 use App\Services\TerapkanCutiBersamaService;
 use App\Traits\AuthorizesFromRoute;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 use TallStackUi\Traits\Interactions;
 use Throwable;
 
@@ -17,13 +19,53 @@ class Show extends Component
 {
     use AuthorizesFromRoute;
     use Interactions;
+    use WithPagination;
 
     public int $id;
     public ?array $simulasiData = null;
     public $searchPegawai = '';
     public $filterKategori = 'semua'; // semua, potong, piket, roster, belum_ada
-
     public $filterPartisipasi = 'semua'; // semua, ikut, dikecualikan
+    public int $perPage = 15;
+
+    public $searchProyeksi = '';
+    public $filterProyeksi = 'semua'; // semua, defisit, aman
+    public int $perPageProyeksi = 15;
+
+    public function updatedSearchPegawai()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterKategori()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterPartisipasi()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSearchProyeksi()
+    {
+        $this->resetPage('proyeksiPage');
+    }
+
+    public function updatedFilterProyeksi()
+    {
+        $this->resetPage('proyeksiPage');
+    }
+
+    public function updatedPerPageProyeksi()
+    {
+        $this->resetPage('proyeksiPage');
+    }
 
     public function mount($id)
     {
@@ -42,53 +84,76 @@ class Show extends Component
         }
     }
 
+    public function setOverrideStatus(int $karyawanId, string $status)
+    {
+        $isIkut = ($status !== 'dikecualikan');
+
+        \App\Models\Sdm\CutiBersamaKaryawan::updateOrCreate(
+            ['cuti_bersama_id' => $this->id, 'karyawan_id' => $karyawanId],
+            [
+                'is_ikut' => $isIkut,
+                'override_status' => $status,
+            ]
+        );
+
+        $this->toast()->success('Pengaturan status pegawai berhasil disimpan.')->send();
+        $this->loadSimulasi();
+    }
+
     public function togglePartisipasi($karyawanId)
     {
         $existing = \App\Models\Sdm\CutiBersamaKaryawan::where('cuti_bersama_id', $this->id)
             ->where('karyawan_id', $karyawanId)
             ->first();
 
-        if ($existing) {
-            $existing->update(['is_ikut' => !$existing->is_ikut]);
-        } else {
-            \App\Models\Sdm\CutiBersamaKaryawan::create([
-                'cuti_bersama_id' => $this->id,
-                'karyawan_id' => $karyawanId,
-                'is_ikut' => false, // Default was true, so toggling makes it false
+        if ($existing && !$existing->is_ikut) {
+            $existing->update([
+                'is_ikut' => true,
+                'override_status' => 'auto',
             ]);
+        } else {
+            \App\Models\Sdm\CutiBersamaKaryawan::updateOrCreate(
+                ['cuti_bersama_id' => $this->id, 'karyawan_id' => $karyawanId],
+                [
+                    'is_ikut' => false,
+                    'override_status' => 'dikecualikan',
+                ]
+            );
         }
 
         $this->toast()->success('Status partisipasi pegawai berhasil diperbarui.')->send();
         $this->loadSimulasi();
     }
 
-    public function selectAllIkut()
+    public function setBulkOverrideStatus(string $status)
     {
         $filtered = $this->getFilteredKaryawanIds();
         if (empty($filtered)) return;
 
-        \App\Models\Sdm\CutiBersamaKaryawan::where('cuti_bersama_id', $this->id)
-            ->whereIn('karyawan_id', $filtered)
-            ->update(['is_ikut' => true]);
-
-        $this->toast()->success(count($filtered) . ' Pegawai diset menjadi PESERTA (IKUT).')->send();
-        $this->loadSimulasi();
-    }
-
-    public function selectAllTidakIkut()
-    {
-        $filtered = $this->getFilteredKaryawanIds();
-        if (empty($filtered)) return;
+        $isIkut = ($status !== 'dikecualikan');
 
         foreach ($filtered as $kId) {
             \App\Models\Sdm\CutiBersamaKaryawan::updateOrCreate(
                 ['cuti_bersama_id' => $this->id, 'karyawan_id' => $kId],
-                ['is_ikut' => false]
+                [
+                    'is_ikut' => $isIkut,
+                    'override_status' => $status,
+                ]
             );
         }
 
-        $this->toast()->warning(count($filtered) . ' Pegawai diset DIKECUALIKAN (TIDAK IKUT).')->send();
+        $this->toast()->success(count($filtered) . ' Pegawai berhasil diperbarui ke status: ' . strtoupper($status))->send();
         $this->loadSimulasi();
+    }
+
+    public function selectAllIkut()
+    {
+        $this->setBulkOverrideStatus('auto');
+    }
+
+    public function selectAllTidakIkut()
+    {
+        $this->setBulkOverrideStatus('dikecualikan');
     }
 
     protected function getFilteredKaryawanIds(): array
@@ -158,7 +223,7 @@ class Show extends Component
                 if ($partisipasi === 'dikecualikan' && ($item['is_ikut'] ?? true)) return false;
 
                 if ($filter === 'potong') return $item['status_aksi'] === 'DIPOTONG_CUTI';
-                if ($filter === 'piket') return $item['status_aksi'] === 'TETAP_HADIR';
+                if ($filter === 'piket') return in_array($item['status_aksi'], ['TERJADWAL_PIKET', 'HADIR_PIKET', 'TETAP_HADIR']);
                 if ($filter === 'roster') return $item['status_aksi'] === 'LIBUR_ROSTER';
                 if ($filter === 'belum_ada') return $item['status_aksi'] === 'JADWAL_BELUM_ADA';
                 if ($filter === 'dikecualikan') return $item['status_aksi'] === 'DIKECUALIKAN';
@@ -169,7 +234,7 @@ class Show extends Component
         $groupedDetails = $filteredDetails->groupBy('karyawan_id')->map(function ($items) {
             $first = $items->first();
             $totalHariDipotong = $items->where('status_aksi', 'DIPOTONG_CUTI')->count();
-            $totalHariPiket = $items->where('status_aksi', 'TETAP_HADIR')->count();
+            $totalHariPiket = $items->whereIn('status_aksi', ['TERJADWAL_PIKET', 'HADIR_PIKET', 'TETAP_HADIR'])->count();
             $totalHariRoster = $items->where('status_aksi', 'LIBUR_ROSTER')->count();
             $totalHariDikecualikan = $items->where('status_aksi', 'DIKECUALIKAN')->count();
 
@@ -178,6 +243,7 @@ class Show extends Component
                 'karyawan_nama' => $first['karyawan_nama'],
                 'kategori_kerja' => $first['kategori_kerja'],
                 'is_ikut' => $first['is_ikut'] ?? true,
+                'override_status' => $first['override_status'] ?? 'auto',
                 'total_hari_dipotong' => $totalHariDipotong,
                 'total_hari_piket' => $totalHariPiket,
                 'total_hari_roster' => $totalHariRoster,
@@ -186,10 +252,55 @@ class Show extends Component
             ];
         })->values();
 
+        $page = $this->getPage();
+        $totalGrouped = $groupedDetails->count();
+        $paginatedGrouped = new LengthAwarePaginator(
+            $groupedDetails->forPage($page, $this->perPage)->values(),
+            $totalGrouped,
+            $this->perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        $searchProyeksi = $this->searchProyeksi;
+        $filterProyeksi = $this->filterProyeksi;
+
+        $filteredProyeksi = collect($this->simulasiData['karyawan_summary'] ?? [])
+            ->filter(function ($k) use ($searchProyeksi, $filterProyeksi) {
+                if ($k['hari_terpotong'] <= 0) {
+                    return false;
+                }
+
+                if (!empty($searchProyeksi) && stripos($k['nama'], $searchProyeksi) === false) {
+                    return false;
+                }
+
+                if ($filterProyeksi === 'defisit' && !$k['is_minus']) {
+                    return false;
+                }
+
+                if ($filterProyeksi === 'aman' && $k['is_minus']) {
+                    return false;
+                }
+
+                return true;
+            })->values();
+
+        $pageProyeksi = $this->getPage('proyeksiPage');
+        $totalProyeksi = $filteredProyeksi->count();
+        $paginatedProyeksi = new LengthAwarePaginator(
+            $filteredProyeksi->forPage($pageProyeksi, $this->perPageProyeksi)->values(),
+            $totalProyeksi,
+            $this->perPageProyeksi,
+            $pageProyeksi,
+            ['pageName' => 'proyeksiPage', 'path' => request()->url(), 'query' => request()->query()]
+        );
+
         return view('livewire.kepegawaian.cuti-bersama.show', [
             'cutiBersama' => $cutiBersama,
             'details' => $filteredDetails,
-            'groupedDetails' => $groupedDetails,
+            'groupedDetails' => $paginatedGrouped,
+            'proyeksiSummary' => $paginatedProyeksi,
         ]);
     }
 }

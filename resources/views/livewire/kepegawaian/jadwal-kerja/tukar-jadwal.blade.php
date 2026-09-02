@@ -342,12 +342,12 @@
                                     <div>
                                         <span class="font-medium text-slate-500">Jadwal {{ $item->dokterPengaju?->nama }}:</span><br>
                                         <strong class="text-slate-800">{{ \Carbon\Carbon::parse($item->jadwalDetailPengaju?->tanggal)->translatedFormat('l, d M Y') }}</strong>
-                                        ({{ $item->jadwalDetailPengaju?->shift?->nama }})
+                                        ({{ $item->jadwalDetailPengaju?->shift?->nama ?? 'Libur / OFF' }})
                                     </div>
                                     <div>
                                         <span class="font-medium text-slate-500">Jadwal Anda ({{ $item->dokterPengganti?->nama }}):</span><br>
                                         <strong class="text-slate-800">{{ \Carbon\Carbon::parse($item->jadwalDetailPengganti?->tanggal)->translatedFormat('l, d M Y') }}</strong>
-                                        ({{ $item->jadwalDetailPengganti?->shift?->nama }})
+                                        ({{ $item->jadwalDetailPengganti?->shift?->nama ?? 'Libur / OFF' }})
                                     </div>
                                 </div>
                                 @if($item->alasan)
@@ -397,11 +397,11 @@
                                 <div class="text-xs text-slate-600 grid grid-cols-1 md:grid-cols-2 gap-2 bg-white p-3 rounded-lg border border-blue-200">
                                     <div>
                                         <span class="font-medium text-slate-500">Semula {{ $item->dokterPengaju?->nama }}:</span><br>
-                                        <strong class="text-slate-800">{{ \Carbon\Carbon::parse($item->jadwalDetailPengaju?->tanggal)->translatedFormat('l, d M Y') }}</strong> ({{ $item->jadwalDetailPengaju?->shift?->nama }})
+                                        <strong class="text-slate-800">{{ \Carbon\Carbon::parse($item->jadwalDetailPengaju?->tanggal)->translatedFormat('l, d M Y') }}</strong> ({{ $item->jadwalDetailPengaju?->shift?->nama ?? 'Libur / OFF' }})
                                     </div>
                                     <div>
                                         <span class="font-medium text-slate-500">Semula {{ $item->dokterPengganti?->nama }}:</span><br>
-                                        <strong class="text-slate-800">{{ \Carbon\Carbon::parse($item->jadwalDetailPengganti?->tanggal)->translatedFormat('l, d M Y') }}</strong> ({{ $item->jadwalDetailPengganti?->shift?->nama }})
+                                        <strong class="text-slate-800">{{ \Carbon\Carbon::parse($item->jadwalDetailPengganti?->tanggal)->translatedFormat('l, d M Y') }}</strong> ({{ $item->jadwalDetailPengganti?->shift?->nama ?? 'Libur / OFF' }})
                                     </div>
                                 </div>
                                 @if($item->alasan)
@@ -454,8 +454,8 @@
                                     {{ $row->dokterPengganti?->full_nama }}
                                 </td>
                                 <td class="p-3 text-xs">
-                                    <div><span class="text-slate-400">A:</span> {{ \Carbon\Carbon::parse($row->jadwalDetailPengaju?->tanggal)->translatedFormat('d/m/Y') }} ({{ $row->jadwalDetailPengaju?->shift?->nama }})</div>
-                                    <div><span class="text-slate-400">B:</span> {{ \Carbon\Carbon::parse($row->jadwalDetailPengganti?->tanggal)->translatedFormat('d/m/Y') }} ({{ $row->jadwalDetailPengganti?->shift?->nama }})</div>
+                                    <div><span class="text-slate-400">A:</span> {{ \Carbon\Carbon::parse($row->jadwalDetailPengaju?->tanggal)->translatedFormat('d/m/Y') }} ({{ $row->jadwalDetailPengaju?->shift?->nama ?? 'Libur / OFF' }})</div>
+                                    <div><span class="text-slate-400">B:</span> {{ \Carbon\Carbon::parse($row->jadwalDetailPengganti?->tanggal)->translatedFormat('d/m/Y') }} ({{ $row->jadwalDetailPengganti?->shift?->nama ?? 'Libur / OFF' }})</div>
                                 </td>
                                 <td class="p-3">
                                     @php $color = $row->status->color(); @endphp
@@ -465,10 +465,16 @@
                                 </td>
                                 <td class="p-3 text-xs text-slate-600">
                                     @if($row->disetujuiOleh)
-                                        <div>Approved by: <strong>{{ $row->disetujuiOleh->karyawan?->full_nama ?? $row->disetujuiOleh->email }}</strong></div>
+                                        @if($row->status === \App\Enums\StatusTukarJadwal::DISETUJUI)
+                                            <div><span class="text-emerald-700 font-semibold">Disetujui oleh:</span> <strong>{{ $row->disetujuiOleh->karyawan?->full_nama ?? $row->disetujuiOleh->email }}</strong></div>
+                                        @elseif($row->status === \App\Enums\StatusTukarJadwal::DITOLAK_WADIR)
+                                            <div><span class="text-rose-700 font-semibold">Ditolak oleh:</span> <strong>{{ $row->disetujuiOleh->karyawan?->full_nama ?? $row->disetujuiOleh->email }}</strong></div>
+                                        @else
+                                            <div><span>Diproses oleh:</span> <strong>{{ $row->disetujuiOleh->karyawan?->full_nama ?? $row->disetujuiOleh->email }}</strong></div>
+                                        @endif
                                     @endif
                                     @if($row->catatan_wadir)
-                                        <div class="italic text-slate-400">"{{ $row->catatan_wadir }}"</div>
+                                        <div class="italic text-slate-500 mt-0.5">"{{ $row->catatan_wadir }}"</div>
                                     @endif
                                 </td>
                             </tr>

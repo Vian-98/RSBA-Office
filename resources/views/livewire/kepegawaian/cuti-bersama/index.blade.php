@@ -2,12 +2,12 @@
     {{-- Header --}}
     <div class="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm">
         <div>
-            <h2 class="text-lg font-semibold text-gray-800">Kelola Event Cuti Bersama</h2>
+            <h2 class="text-lg font-semibold text-gray-800">Kelola Cuti Bersama</h2>
             <p class="text-sm text-gray-500">Master pengajuan dan simulasi pemotongan cuti bersama institusi.</p>
         </div>
         <div>
             <x-ts:button icon="tabler.plus" wire:click="openModal">
-                Tambah Event Cuti Bersama
+                Tambah Cuti Bersama
             </x-ts:button>
         </div>
     </div>
@@ -16,7 +16,7 @@
     <div class="rounded-lg bg-white p-4 shadow-sm flex flex-col gap-4">
         <div class="flex items-center justify-between gap-4">
             <div class="w-72">
-                <x-ts:input wire:model.live.debounce.300ms="search" placeholder="Cari nama event..." icon="tabler.search" />
+                <x-ts:input wire:model.live.debounce.300ms="search" placeholder="Cari nama cuti bersama..." icon="tabler.search" />
             </div>
         </div>
 
@@ -24,9 +24,9 @@
             <table class="w-full text-left text-sm text-gray-600">
                 <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                     <tr>
-                        <th class="px-4 py-3">Nama Event</th>
-                        <th class="px-4 py-3">Tanggal Event</th>
-                        <th class="px-4 py-3">Sifat Event</th>
+                        <th class="px-4 py-3">Nama Cuti Bersama</th>
+                        <th class="px-4 py-3">Tanggal</th>
+                        <th class="px-4 py-3">Sifat</th>
                         <th class="px-4 py-3">Potong Kuota</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Diproses Oleh</th>
@@ -85,8 +85,8 @@
                                     <x-ts:button.circle sm color="indigo" href="{{ route('kepegawaian.cuti-bersama.show', $event->id) }}" icon="tabler.eye" title="Simulasi & Detail" />
                                     
                                     @if($event->status !== 'diterapkan')
-                                        <x-ts:button.circle sm color="amber" wire:click="openModal({{ $event->id }})" icon="tabler.edit" title="Edit Event" />
-                                        <x-ts:button.circle sm color="red" wire:click="delete({{ $event->id }})" wire:confirm="Yakin ingin menghapus event ini?" icon="tabler.trash" title="Hapus Event" />
+                                        <x-ts:button.circle sm color="amber" wire:click="openModal({{ $event->id }})" icon="tabler.edit" title="Edit Data" />
+                                        <x-ts:button.circle sm color="red" wire:click="delete({{ $event->id }})" wire:confirm="Yakin ingin menghapus data Cuti Bersama ini?" icon="tabler.trash" title="Hapus Data" />
                                     @endif
                                 </div>
                             </td>
@@ -94,7 +94,7 @@
                     @empty
                         <tr>
                             <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                                Belum ada data event Cuti Bersama. Klik <strong>Tambah Event Cuti Bersama</strong> untuk membuat baru.
+                                Belum ada data Cuti Bersama. Klik <strong>Tambah Cuti Bersama</strong> untuk membuat baru.
                             </td>
                         </tr>
                     @endforelse
@@ -104,7 +104,7 @@
 
         @if($events->hasPages())
             <div class="mt-4 pt-4 border-t border-slate-100">
-                {{ $events->onEachSide(1)->links('partials.pagination', ['paginatorLabel' => 'Event']) }}
+                {{ $events->onEachSide(1)->links('partials.pagination', ['paginatorLabel' => 'Cuti Bersama']) }}
             </div>
         @endif
     </div>
@@ -112,11 +112,11 @@
     {{-- Modal Form --}}
     <x-ts:modal wire="modalOpen" size="lg" class="relative z-50">
         <x-slot:title>
-            {{ $selectedId ? 'Edit Event Cuti Bersama' : 'Tambah Event Cuti Bersama Baru' }}
+            {{ $selectedId ? 'Edit Cuti Bersama' : 'Tambah Cuti Bersama Baru' }}
         </x-slot:title>
 
         <form wire:submit.prevent="save" class="flex flex-col gap-4 p-2">
-            <x-ts:input wire:model="nama" label="Nama Event" placeholder="Contoh: Cuti Bersama Idul Fitri 2026" required />
+            <x-ts:input wire:model="nama" label="Nama Cuti Bersama" placeholder="Contoh: Cuti Bersama Idul Fitri 2026" required />
             
             <x-ts:textarea wire:model="keterangan" label="Keterangan / Surat Edaran" placeholder="Nomor SK atau penjelasan tambahan..." />
 
@@ -128,7 +128,7 @@
 
             <div class="flex justify-end gap-2 mt-4 pt-4 border-t">
                 <x-ts:button color="gray" flat wire:click="closeModal">Batal</x-ts:button>
-                <x-ts:button type="submit" color="indigo">Simpan Event</x-ts:button>
+                <x-ts:button type="submit" color="indigo">Simpan</x-ts:button>
             </div>
         </form>
     </x-ts:modal>

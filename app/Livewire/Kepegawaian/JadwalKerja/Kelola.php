@@ -60,83 +60,49 @@ class Kelola extends Component
         $canManage = false;
 
         if ($user) {
-            if ($user->isSuperAdmin()) {
+            $isSuperAdmin = $user->isSuperAdmin() || $user->can('super-admin-bypass');
+            $isWadir = $isSuperAdmin || $user->can('approve-jadwal-wadir');
+            $isKabid = $user->can('approve-jadwal-kabid') || $user->isKepalaDept();
+            $isKoor = $user->isKoordinator() || $user->can('edit-kepegawaian-jadwal-kerja');
+
+            if ($isWadir) {
                 $canView = true;
                 $canManage = true;
-            } else {
-                $isRestrictedGuest = !$user->isKoordinator()
-                    && !$user->isKepalaDept()
-                    && !$user->isWadir()
-                    && !$user->can('view-kepegawaian-jadwal-kerja');
-
-                if ($isRestrictedGuest) {
-                    $canView = in_array(
-                        (int) $this->jadwalKerja->ruangan_id,
-                        $user->getOwnRuanganIds(),
-                        true
-                    ) && in_array($this->jadwalKerja->status, [
-                        StatusJadwalKerja::PUBLISHED,
-                        StatusJadwalKerja::LOCKED,
-                    ], true)
-                    && $this->jadwalKerja->tipe === ($user->isDokter() ? 'dokter' : 'karyawan');
-                }
-
-                $isGlobalApprover = $user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir') || $user->can('view-kepegawaian-laporan');
-
-                if (!$isRestrictedGuest && $isGlobalApprover) {
-                    $canView = true;
-                    if ($user->can('edit-kepegawaian-jadwal-kerja') || $user->can('approve-jadwal-wadir')) {
-                        $canManage = true;
-                    }
-                } elseif (!$isRestrictedGuest && ($user->can('approve-jadwal-kabid') || $user->isKepalaDept())) {
-                    $bagianIds = $user->getActiveBagianIds();
-                    $legacyBagianRuanganIds = $user->getBagianScopedRuanganIds() ?? [];
-                    $koorIds = $user->getRuanganKoordinatorIds() ?? [];
-                    $jadwalBagianId = $this->jadwalKerja->bagian_id
-                        ?? $this->jadwalKerja->ruangan?->bagian_id;
-                    $hasDepartmentAccess = $jadwalBagianId
-                        && in_array((int) $jadwalBagianId, $bagianIds, true);
-                    $hasLegacyRoomAccess = !$this->jadwalKerja->bagian_id
-                        && in_array($this->jadwalKerja->ruangan_id, $legacyBagianRuanganIds);
-                    $hasCoordinatorRoomAccess = in_array($this->jadwalKerja->ruangan_id, (array) $koorIds);
-
-                    if ($hasDepartmentAccess || $hasLegacyRoomAccess || $hasCoordinatorRoomAccess) {
-                        $canView = true;
-                        $canManage = true;
-                    }
-                }
-
-                $ownRuanganId = $user->karyawan?->ruangan_id;
-                $koorIds = $user->isKoordinator() ? $user->getRuanganKoordinatorIds() : [];
-
-                if ($koorIds === null) {
-                    // Access all rooms for SDM / Wadir / Super-Admin
-                    if ($user->can('edit-kepegawaian-jadwal-kerja')) {
-                        $canView = true;
-                        $canManage = true;
-                    }
-                } else if (in_array($this->jadwalKerja->ruangan_id, (array) $koorIds)) {
+            } elseif ($isKabid) {
+                // Cek apakah jadwal ini berada di bagian yang dinaungi oleh KaBid
+                $bagianIds = $user->getActiveBagianIds();
+                $jadwalBagianId = $this->jadwalKerja->bagian_id ?? $this->jadwalKerja->ruangan?->bagian_id;
+                $deptRuanganIds = $user->getBagianScopedRuanganIds() ?? [];
+                
+                if (($jadwalBagianId && in_array((int)$jadwalBagianId, $bagianIds, true)) || in_array((int)$this->jadwalKerja->ruangan_id, $deptRuanganIds, true)) {
                     $canView = true;
                     $canManage = true;
                 }
-
-                if (!$isRestrictedGuest && $ownRuanganId && $this->jadwalKerja->ruangan_id === $ownRuanganId) {
+            } elseif ($isKoor) {
+                // Koordinator Ruangan
+                $koorRuangans = $user->getRuanganKoordinatorIdsOnly();
+                if (in_array((int)$this->jadwalKerja->ruangan_id, $koorRuangans, true)) {
                     $canView = true;
-                    if ($user->isKoordinator() || $user->can('approve-jadwal-kabid') || $user->isKepalaDept()) {
-                        $canManage = true;
+                    $canManage = true;
+                }
+            } else {
+                // Member / Staf biasa: hanya melihat ruangan sendiri jika sudah Published/Locked
+                $ownRuangans = $user->getOwnRuanganIds();
+                if (in_array((int)$this->jadwalKerja->ruangan_id, $ownRuangans, true)) {
+                    if (in_array($this->jadwalKerja->status, [StatusJadwalKerja::PUBLISHED, StatusJadwalKerja::LOCKED], true)) {
+                        $canView = true;
+                        $canManage = false;
                     }
                 }
+            }
 
-                // Validasi tipe jadwal: Koor Dokter hanya boleh buka tipe=dokter, Koor Karyawan hanya tipe=karyawan
-                // Hanya berlaku untuk koordinator ruangan murni (bukan pejabat struktural / approver seperti Kabid, Wadir, SDM)
-                $isStructuralApprover = $user->can('approve-jadwal-wadir') || $user->can('approve-jadwal-kabid') || $user->can('view-kepegawaian-karyawan') || $user->isKepalaDept() || $user->isWadir();
-                if (!$isStructuralApprover) {
-                    if ($user->isKoordinatorDokter() && $this->jadwalKerja->tipe !== 'dokter') {
-                        abort(403, 'Akses Ditolak: Anda berstatus Koordinator Dokter, jadwal ini adalah Jadwal Shift Karyawan.');
-                    }
-                    if ($user->isKoordinatorKaryawan() && $this->jadwalKerja->tipe === 'dokter') {
-                        abort(403, 'Akses Ditolak: Jadwal Shift Dokter tidak dapat dikelola oleh Koordinator Karyawan.');
-                    }
+            // Validasi tipe jadwal khusus koordinator murni (Dokter vs Non-Dokter)
+            if ($canManage && !$isWadir && !$isKabid) {
+                if ($user->isDokter() && $this->jadwalKerja->tipe !== 'dokter') {
+                    abort(403, 'Akses Ditolak: Anda berstatus Koordinator Dokter, jadwal ini adalah Jadwal Shift Karyawan.');
+                }
+                if (!$user->isDokter() && $this->jadwalKerja->tipe === 'dokter') {
+                    abort(403, 'Akses Ditolak: Jadwal Shift Dokter tidak dapat dikelola oleh Koordinator Non-Dokter.');
                 }
             }
         }
