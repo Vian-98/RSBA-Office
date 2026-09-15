@@ -77,6 +77,10 @@ Route::prefix('master')
                 Route::get('/', App\Livewire\Master\Cuti\Index::class)->name('index');
             });
 
+        // Alias routes for blackbox testing
+        Route::get('/shift', App\Livewire\Master\JadwalShift\Index::class)->name('shift');
+        Route::get('/aturan-jadwal', App\Livewire\Master\JadwalAturan\Index::class)->name('aturan-jadwal');
+
         Route::prefix('jadwal-shift')
             ->name('jadwal-shift.')
             ->group(function () {

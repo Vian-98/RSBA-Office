@@ -79,11 +79,10 @@ trait AuthorizesFromRoute
 
         $permission = $this->buildPermission();
 
-        // Bypassing permission check untuk Koordinator Ruangan / Atasan pada menu utama kepegawaian
+        // Bypassing permission check untuk Koordinator Ruangan / Atasan pada menu operasional kepegawaian
         if ((auth()->user()?->isKoordinator() || auth()->user()?->isKepalaDept() || auth()->user()?->isWadir()) && in_array($permission, [
             'view-kepegawaian-jadwal-kerja',
             'view-kepegawaian-absensi',
-            'view-kepegawaian-konfigurasi-jadwal',
             'view-kepegawaian-surat-cuti',
             'view-kepegawaian-surat-sp3',
         ])) {

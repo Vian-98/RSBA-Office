@@ -25,14 +25,14 @@ class KonfigurasiJadwal extends Component
         $user = auth()->user();
         $canAccess = $user && (
             $user->isSuperAdmin()
-            || $user->isKoordinator()
+            || $user->isWadir()
             || $user->can('view-kepegawaian-konfigurasi-jadwal')
         );
 
         abort_unless(
             $canAccess,
             403,
-            "Akses Ditolak: Anda belum memiliki hak akses ke halaman Konfigurasi Jadwal. Fitur ini memerlukan wewenang Koordinator Ruangan atau izin khusus (view-kepegawaian-konfigurasi-jadwal)."
+            "Akses Ditolak: Anda tidak memiliki hak akses ke halaman Konfigurasi Jadwal. Fitur ini memerlukan wewenang SDM atau izin khusus."
         );
 
         return view('livewire.kepegawaian.konfigurasi-jadwal');

@@ -36,7 +36,6 @@ class AuthServiceProvider extends ServiceProvider
                     'edit-kepegawaian-jadwal-kerja',
                     'delete-kepegawaian-jadwal-kerja',
                     'view-kepegawaian-absensi',
-                    'view-kepegawaian-konfigurasi-jadwal',
                     'view-kepegawaian-surat-cuti',
                     'view-kepegawaian-surat-sp3',
                 ];

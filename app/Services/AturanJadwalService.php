@@ -93,7 +93,7 @@ class AturanJadwalService
                         $prevDate = Carbon::parse($prevDetail->tanggal);
                         $currDate = Carbon::parse($detail->tanggal);
 
-                        if ($prevDate->diffInDays($currDate) === 1) {
+                        if ((int) $prevDate->diffInDays($currDate) === 1) {
                             $prevKeluarStr = $prevDetail->shift->jam_keluar ?? '14:00';
                             $currMasukStr = $shift->jam_masuk ?? '07:00';
 
